@@ -34,6 +34,30 @@
 (require 'recentf)
 (require 'seq)
 
+(defgroup consult nil
+  "Various functions using `completing-read'."
+  :group 'convenience)
+
+(defface consult-mark
+  '((t :inherit error :weight normal))
+  "Face used to highlight marks in `consult-marks'."
+  :group 'consult)
+
+(defface consult-file
+  '((t :inherit font-lock-function-name-face :weight normal))
+  "Face used to highlight files in `consult-switch-buffer'."
+  :group 'consult)
+
+(defface consult-bookmark
+  '((t :inherit font-lock-constant-face :weight normal))
+  "Face used to highlight bookmarks in `consult-switch-buffer'."
+  :group 'consult)
+
+(defface consult-view
+  '((t :inherit font-lock-keyword-face :weight normal))
+  "Face used to highlight views in `consult-switch-buffer'."
+  :group 'consult)
+
 ;; TODO is there a more generic solution for sorting?
 (defvar selectrum-should-sort-p)
 
@@ -42,8 +66,7 @@
 (declare-function selectrum-read "selectrum")
 
 (defvar consult-marks-history ()
-  "History for the command `consult-marks'.
-This is probably not so useful, since marks can move with text.")
+  "History for the command `consult-marks'.")
 
 ;; see https://github.com/raxod502/selectrum/issues/226
 ;;;###autoload
@@ -74,7 +97,7 @@ This is probably not so useful, since marks can move with text.")
                      for line-num = (line-number-at-pos pos t)
                      for line-str = (buffer-substring (- pos col-num) (line-end-position))
                      for cand-str = (concat (substring line-str 0 col-num)
-                                            #("┃" 0 1 (face error))
+                                            #("┃" 0 1 (face consult-mark))
                                             (substring line-str col-num))
 
                      maximize line-num into max-line-num
@@ -118,7 +141,7 @@ This is probably not so useful, since marks can move with text.")
                     (mapcar (lambda (x)
                               (propertize
                                x
-                               'face font-lock-keyword-face
+                               'face 'consult-view
                                'consult-candidate 'bookmark
                                'selectrum-candidate-display-right-margin
                                (propertize "View" 'face 'completions-annotations)))
@@ -126,7 +149,7 @@ This is probably not so useful, since marks can move with text.")
          (bookmarks (mapcar (lambda (x)
                               (propertize
                                (car x)
-                               'face font-lock-constant-face
+                               'face 'consult-bookmark
                                'consult-candidate 'bookmark
                                'selectrum-candidate-display-right-margin
                                (propertize "Bookmark" 'face 'completions-annotations)))
@@ -134,7 +157,7 @@ This is probably not so useful, since marks can move with text.")
          (all-files (mapcar (lambda (x)
                               (propertize
                                (abbreviate-file-name x)
-                               'face font-lock-builtin-face
+                               'face 'consult-file
                                'consult-candidate 'file
                                'selectrum-candidate-display-right-margin
                                (propertize "File" 'face 'completions-annotations)))
