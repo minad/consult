@@ -1,4 +1,4 @@
-;;; consult.el --- Various commands using completing-read -*- lexical-binding: t -*-
+;;; consult.el --- Consult things using completing-read -*- lexical-binding: t -*-
 
 ;; Author: The selectrum contributors
 ;; Created: 2020
@@ -35,7 +35,7 @@
 (require 'seq)
 
 (defgroup consult nil
-  "Various commands using `completing-read'."
+  "Consult things using `completing-read'."
   :group 'convenience)
 
 (defface consult-mark
