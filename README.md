@@ -22,8 +22,6 @@ For now these commands are provided:
 * `consult-bookmark`: Select or create bookmark
 * `consult-apropos`: Replacement for `apropos` with completion
 
-The commands are based on the versions found in the [selectrum wiki](https://github.com/raxod502/selectrum/wiki/Useful-Commands).
-
 ## Usage
 
 The consult library will only provide commands and never add keybindings. In order to
@@ -47,3 +45,10 @@ use the enhanced functions, you must configure the keybindings yourself.
   ;; Replace functions
   (fset 'multi-occur #'consult-multi-occur))
 ~~~
+
+## Acknowledgments
+
+You can probably guess from the name that this package is inspired by [counsel](https://github.com/abo-abo/swiper/blob/master/counsel.el).
+Note that we are far from counsel in terms of covered functionality.
+Many of the commands found in this package are derived from the
+[selectrum wiki](https://github.com/raxod502/selectrum/wiki/Useful-Commands).
