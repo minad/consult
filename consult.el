@@ -39,7 +39,6 @@
 ;; TODO consult-minibuffer-history
 ;; TODO consult-bindings
 ;; TODO consult-personal-bindings
-;; TODO consult-bookmark
 ;; TODO consult-outline
 ;; TODO consult-minor-mode
 ;; TODO consult-major-mode
@@ -348,6 +347,14 @@ Otherwise replace the just-yanked text with the chosen text."
   (if (custom-theme-p theme)
       (enable-theme theme)
     (load-theme theme :no-confirm)))
+
+;;;###autoload
+(defun consult-bookmark (name)
+  "If bookmark NAME exists, open it, otherwise set bookmark under the given NAME."
+  (interactive (list (completing-read "Bookmark: " (bookmark-all-names) nil nil nil 'bookmark-history)))
+  (if (assoc name bookmark-alist)
+      (bookmark-jump name)
+    (bookmark-set name)))
 
 (provide 'consult)
 ;;; consult.el ends here

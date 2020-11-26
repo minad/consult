@@ -19,6 +19,7 @@ For now these commands are provided:
 * `consult-yank`, `consult-yank-pop`: Enhanced version of `yank` and `yank-pop` which allows selecting from the kill-ring.
 * `consult-register`: Select from list of registers
 * `consult-theme`: Select a theme and disable all currently enabled themes
+* `consult-bookmark`: Select or create bookmark
 
 The commands are based on the versions found in the [selectrum wiki](https://github.com/raxod502/selectrum/wiki/Useful-Commands).
 
