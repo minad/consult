@@ -1,4 +1,4 @@
-# consult.el - Consult things using completing-read
+# consult.el - Consultation using completing-read
 
 This package provides various commands based on the Emacs completion function `completing-read`.
 The functions should be compatible with any completion-system based on the standard Emacs API,
@@ -8,8 +8,7 @@ before release.
 
 ## Available commands
 
-Most commands provided by consult follow the naming scheme `consult-thing`.
-For now these commands are provided:
+Most provided commands follow the naming scheme `consult-thing`. This is the list of currently supported commands:
 
 * `consult-multi-occur`: Replacement for `multi-occur`
 * `consult-recent-file` (`-other-window`, `-other-frame`): Select a recent files (you might prefer the more powerful `consult-buffer` instead)

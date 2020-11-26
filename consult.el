@@ -1,4 +1,4 @@
-;;; consult.el --- Consult things using completing-read -*- lexical-binding: t -*-
+;;; consult.el --- Consultation using completing-read -*- lexical-binding: t -*-
 
 ;; Author: The selectrum contributors
 ;; Created: 2020
@@ -24,8 +24,10 @@
 
 ;;; Commentary:
 
-;; Consult implements a set of commands which
-;; use `completing-read' to select from a list of candidates.
+;; Consult implements a set of commands which use `completing-read' to select
+;; from a list of candidates. Most provided commands follow the naming scheme `consult-thing`.
+;; Some commands are drop-in replacements for existing functions, e.g., consult-apropos.
+;; Other commands provide additional non-existing functionality, e.g., consult-line.
 
 ;;; Code:
 
@@ -44,7 +46,7 @@
 ;; TODO consult-major-mode
 
 (defgroup consult nil
-  "Consult things using `completing-read'."
+  "Consultation using `completing-read'."
   :group 'convenience)
 
 (defface consult-mark
