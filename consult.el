@@ -195,7 +195,8 @@ This command obeys narrowing."
          (hidden-bufs (seq-filter (lambda (x) (= (aref x 0) 32)) bufs))
          (visible-bufs (seq-filter (lambda (x) (/= (aref x 0) 32)) bufs))
          ;; TODO implement a solution to allow registration of custom virtual buffers.
-         ;; Right now this uses view bookmarks.
+         ;; Alternatively just hard-code other view libraries like perspective etc?
+         ;; Right now only bookmarks-view is supported.
          ;; https://github.com/minad/bookmark-view/blob/master/bookmark-view.el
          (views (if (fboundp 'bookmark-view-names)
                     (mapcar (lambda (x)
