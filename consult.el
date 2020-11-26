@@ -84,12 +84,12 @@
   "Face used to highlight line numbers in selections."
   :group 'consult)
 
-(defcustom consult-on #("+" 0 1 (face (:inherit 'success :weight bold)))
+(defcustom consult-on #("+ " 0 1 (face (:inherit 'success :weight bold)))
   "Symbol used to show enabled modes."
   :type 'string
   :group 'consult)
 
-(defcustom consult-off #("-" 0 1 (face (:inherit 'error :weight bold)))
+(defcustom consult-off #("- " 0 1 (face (:inherit 'error :weight bold)))
   "Symbol used to show disabled modes."
   :type 'string
   :group 'consult)
@@ -483,8 +483,9 @@ Otherwise replace the just-yanked text with the chosen text."
       (dolist (mode minor-mode-list)
         (when (and (boundp mode) (commandp mode))
           (push (cons (concat
-                       (if (symbol-value mode) consult-on consult-off)
-                       " "
+                       (propertize " "
+                                   'display
+                                   (if (symbol-value mode) consult-on consult-off))
                        (symbol-name mode)
                        (let* ((lighter (cdr (assq mode minor-mode-alist)))
                               (str (and lighter (propertize (string-trim (format-mode-line (cons t lighter)))
