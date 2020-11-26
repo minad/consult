@@ -12,10 +12,10 @@ Most commands provided by consult follow the naming scheme `consult-thing`.
 For now these commands are provided:
 
 * `consult-multi-occur`: Replacement for `multi-occur`
-* `consult-recent-file`: Select a recent files (you might prefer the more powerful `consult-buffer` instead)
+* `consult-recent-file`, `consult-recent-file-other-window`, `consult-recent-file-other-frame`: Select a recent files (you might prefer the more powerful `consult-buffer` instead)
 * `consult-mark`: Jump to a marker in the `mark-ring`
 * `consult-line`: Jump to a line matching the selected text
-* `consult-buffer`: Enhanced version of `switch-to-buffer` with support for virtual buffers
+* `consult-buffer`, `consult-buffer-other-window`, `consult-buffer-other-frame`: Enhanced version of `switch-to-buffer` with support for virtual buffers
 * `consult-yank`, `consult-yank-pop`: Enhanced version of `yank` and `yank-pop` which allows selecting from the kill-ring.
 * `consult-register`: Select from list of registers
 * `consult-theme`: Select a theme and disable all currently enabled themes

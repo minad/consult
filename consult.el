@@ -34,6 +34,16 @@
 (require 'recentf)
 (require 'seq)
 
+;; TODO consult-apropos
+;; TODO consult-command-history
+;; TODO consult-minibuffer-history
+;; TODO consult-bindings
+;; TODO consult-personal-bindings
+;; TODO consult-bookmark
+;; TODO consult-outline
+;; TODO consult-minor-mode
+;; TODO consult-major-mode
+
 (defgroup consult nil
   "Consult things using `completing-read'."
   :group 'convenience)
@@ -154,19 +164,32 @@ This command obeys narrowing."
     (forward-line (- (cdr (assoc chosen candidates-alist)) curr-line))
     (beginning-of-line-text 1)))
 
+(defmacro consult--recent-file-read ()
+  '(list (completing-read
+          "Find recent file: "
+          (mapcar #'abbreviate-file-name recentf-list)
+          nil t nil 'file-name-history)))
+
 ;;;###autoload
 (defun consult-recent-file (file)
   "Find recent FILE using `completing-read'."
-  (interactive (list (completing-read
-                      "Find recent file: "
-                      (mapcar #'abbreviate-file-name recentf-list)
-                      nil t nil 'file-name-history)))
+  (interactive (consult--recent-file-read))
   (find-file file))
 
 ;;;###autoload
-(defun consult-buffer ()
-  "Enhanced `switch-to-buffer' command with support for virtual buffers."
-  (interactive)
+(defun consult-recent-file-other-frame (file)
+  "Find recent FILE using `completing-read'."
+  (interactive (consult--recent-file-read))
+  (find-file-other-frame file))
+
+;;;###autoload
+(defun consult-recent-file-other-window (file)
+  "Find recent FILE using `completing-read'."
+  (interactive (consult--recent-file-read))
+  (find-file-other-window file))
+
+(defun consult--buffer (buffer-switch file-switch bookmark-switch)
+  "Generic implementation of `consult-buffer'."
   (let* ((curr-buf (window-buffer (minibuffer-selected-window)))
          (curr-file (or (buffer-file-name curr-buf) ""))
          (bufs (mapcar #'buffer-name (delq curr-buf (buffer-list))))
@@ -179,21 +202,21 @@ This command obeys narrowing."
                     (mapcar (lambda (x)
                               (propertize x
                                           'face 'consult-view
-                                          'consult-candidate #'bookmark-jump
+                                          'consult-switch bookmark-switch
                                           'selectrum-candidate-display-right-margin
                                           (propertize "View" 'face 'completions-annotations)))
                             (bookmark-view-names))))
          (bookmarks (mapcar (lambda (x)
                               (propertize (car x)
                                           'face 'consult-bookmark
-                                          'consult-candidate #'bookmark-jump
+                                          'consult-switch bookmark-switch
                                           'selectrum-candidate-display-right-margin
                                           (propertize "Bookmark" 'face 'completions-annotations)))
                             bookmark-alist))
          (all-files (mapcar (lambda (x)
                               (propertize (abbreviate-file-name x)
                                           'face 'consult-file
-                                          'consult-candidate #'find-file
+                                          'consult-switch file-switch
                                           'selectrum-candidate-display-right-margin
                                           (propertize "File" 'face 'completions-annotations)))
                             recentf-list))
@@ -222,7 +245,25 @@ This command obeys narrowing."
                     (cons 'candidates all-cands))))))
          (selectrum-should-sort-p) ;; TODO more generic?
          (chosen (selectrum-read "Switch to: " gen-cands))) ;; TODO can this be replaced by completing-read?
-    (funcall (or (get-text-property 0 'consult-candidate chosen) #'switch-to-buffer) chosen)))
+    (funcall (or (get-text-property 0 'consult-switch chosen) buffer-switch) chosen)))
+
+;;;###autoload
+(defun consult-buffer-other-frame ()
+  "Enhanced `switch-to-buffer-other-frame' command with support for virtual buffers."
+  (interactive)
+  (consult--buffer #'switch-to-buffer-other-frame #'find-file-other-frame #'bookmark-jump-other-frame))
+
+;;;###autoload
+(defun consult-buffer-other-window ()
+  "Enhanced `switch-to-buffer-other-window' command with support for virtual buffers."
+  (interactive)
+  (consult--buffer #'switch-to-buffer-other-window #'find-file-other-window #'bookmark-jump-other-window))
+
+;;;###autoload
+(defun consult-buffer ()
+  "Enhanced `switch-to-buffer-other-window' command with support for virtual buffers."
+  (interactive)
+  (consult--buffer #'switch-to-buffer #'find-file #'bookmark-jump))
 
 (defun consult--yank-read ()
   "Open kill ring menu and return chosen text."
