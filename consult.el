@@ -234,10 +234,10 @@ This command obeys narrowing."
              ((string-prefix-p "f " input)
               (list (cons 'input (substring input 2))
                     (cons 'candidates files)))
-             ((string-prefix-p "v " input)
+             ((and views (string-prefix-p "v " input)) ;; Only narrow if there are views
               (list (cons 'input (substring input 2))
                     (cons 'candidates views)))
-             ((string-prefix-p "m " input)
+             ((and bookmarks (string-prefix-p "m " input)) ;; Only narrow if there are bookmarks
               (list (cons 'input (substring input 2))
                     (cons 'candidates bookmarks)))
              (t
