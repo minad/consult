@@ -10,7 +10,7 @@ For now these functions are provided:
 
 * `consult-multi-occur`: Replacement for `multi-occur`
 * `consult-recent-file`: Select a recent files
-* `consult-marks`: Jump to a marker in the `mark-ring`
+* `consult-mark`: Jump to a marker in the `mark-ring`
 * `consult-buffer`: Enhanced version of `switch-to-buffer` with support for virtual buffers
 * `consult-yank`, `consult-yank-pop`: Enhanced version of `yank` and `yank-pop` which allows selecting from the kill-ring.
 * `consult-register`: Select from list of registers

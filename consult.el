@@ -40,7 +40,7 @@
 
 (defface consult-mark
   '((t :inherit error :weight normal))
-  "Face used to highlight marks in `consult-marks'."
+  "Face used to highlight marks in `consult-mark'."
   :group 'consult)
 
 (defface consult-file
@@ -65,8 +65,8 @@
 ;; or move selectrum-dependent functions to a separate file
 (declare-function selectrum-read "selectrum")
 
-(defvar consult-marks-history ()
-  "History for the command `consult-marks'.")
+(defvar consult-mark-history ()
+  "History for the command `consult-mark'.")
 
 ;; see https://github.com/raxod502/selectrum/issues/226
 ;;;###autoload
@@ -80,7 +80,7 @@
   (occur-1 regexp nlines bufs))
 
 ;;;###autoload
-(defun consult-marks ()
+(defun consult-mark ()
   "Jump to a marker in `mark-ring', signified by a highlighted vertical bar."
   (interactive)
   (unless (marker-position (mark-marker))
@@ -111,7 +111,7 @@
                                    (setcar cand (apply #'format form (car cand))))
                                  unformatted-candidates))
          (selectrum-should-sort-p)
-         (chosen (completing-read "Go to marker: " candidates-alist nil t nil consult-marks-history)))
+         (chosen (completing-read "Go to marker: " candidates-alist nil t nil consult-mark-history)))
     (goto-char (cdr (assoc chosen candidates-alist)))))
 
 ;;;###autoload
@@ -120,7 +120,7 @@
   (interactive (list (completing-read
                       "Find recent file: "
                       (mapcar #'abbreviate-file-name recentf-list)
-                      nil t)))
+                      nil t nil 'file-name-history)))
   (find-file file))
 
 ;;;###autoload
@@ -259,7 +259,7 @@ Otherwise replace the just-yanked text with the chosen text."
 
 ;;;###autoload
 (defun consult-theme (theme)
-  "Enable a theme from the list of `custom-available-themes'."
+  "Enable THEME from the list of `custom-available-themes'."
   (interactive (list (intern
 		      (completing-read
 		       "Theme: "
