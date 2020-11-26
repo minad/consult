@@ -137,21 +137,27 @@
   "Simplified completing read function.
 
 PROMPT is the string to prompt with.
-CANDIDATES is the candidate list or alist.
+CANDIDATES is the candidate list or alist. For alists, the cdr is returned.
 PREDICATE is a filter function for the candidates.
 REQUIRE-MATCH equals t means that an exact match is required.
 HISTORY is the symbol of the history variable.
 DEFAULT is the default input.
 SORT should be set to nil if the candidates are already sorted."
-  (completing-read prompt
-                   (if sort
-                       candidates
-                     (lambda (str pred action)
-                       (if (eq action 'metadata)
-                           '(metadata (cycle-sort-function . identity)
-                                      (display-sort-function . identity))
-                         (complete-with-action action candidates str pred))))
-                   predicate require-match nil history default))
+  (cl-assert (or (not candidates) (stringp (car candidates)) (consp (car candidates))))
+  (cl-assert (or (not (consp (car candidates))) require-match))
+  (let ((result (completing-read
+                 prompt
+                 (if sort
+                     candidates
+                   (lambda (str pred action)
+                     (if (eq action 'metadata)
+                         '(metadata (cycle-sort-function . identity)
+                                    (display-sort-function . identity))
+                       (complete-with-action action candidates str pred))))
+                 predicate require-match nil history default)))
+    (if (and result (consp (car candidates)))
+        (cdr (assoc result candidates))
+      result)))
 
 ;; see https://github.com/raxod502/selectrum/issues/226
 ;;;###autoload
@@ -193,12 +199,12 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                                    (setcar cand (concat (propertize (format form (caar cand))
                                                                     'face 'completions-annotations)
                                                         " " (cdar cand))))
-                                 unformatted-candidates))
-         (chosen (consult--read "Go to mark: " candidates-alist
-                                :sort nil
-                                :require-match t
-                                :history 'consult-mark-history)))
-    (goto-char (cdr (assoc chosen candidates-alist)))))
+                                 unformatted-candidates)))
+    (goto-char (consult--read "Go to mark: "
+                              candidates-alist
+                              :sort nil
+                              :require-match t
+                              :history 'consult-mark-history))))
 
 ;;;###autoload
 (defun consult-line ()
@@ -232,20 +238,20 @@ This command obeys narrowing."
               (setq line (1+ line)))
             (nreverse candidates)))
          (chosen (consult--read "Jump to matching line: "
-                                candidates-alist
+                                (or candidates-alist (user-error "No lines"))
                                 :sort nil
                                 :require-match t
                                 :history 'consult-line-history
                                 :default default-cand)))
     (push-mark (point) t)
-    (forward-line (- (cdr (assoc chosen candidates-alist)) curr-line))
+    (forward-line (- chosen curr-line))
     (beginning-of-line-text 1)))
 
 (defmacro consult--recent-file-read ()
   "Read recent file via `completing-read'."
   '(list (consult--read
           "Find recent file: "
-          (mapcar #'abbreviate-file-name recentf-list)
+          (or (mapcar #'abbreviate-file-name recentf-list) (user-error "No recent files"))
           :require-match t
           :history 'file-name-history)))
 
@@ -418,26 +424,22 @@ Otherwise replace the just-yanked text with the chosen text."
                                              (register-describe-oneline r))
                                      r))
                              (sort (copy-sequence register-alist) #'car-less-than-car))))
-      (unless candidates-alist
-        (user-error "All registers are empty"))
-      (cdr (assoc (consult--read "Register: " candidates-alist
-                                 :sort nil
-                                 :require-match t
-                                 :history 'consult-register-history)
-                  candidates-alist)))))
-    (condition-case nil
-        (jump-to-register reg)
-      (error (insert-register reg))))
+      (consult--read "Register: "
+                     (or candidates-alist (user-error "All registers are empty"))
+                     :sort nil
+                     :require-match t
+                     :history 'consult-register-history))))
+  (condition-case nil
+      (jump-to-register reg)
+    (error (insert-register reg))))
 
 ;;;###autoload
 (defun consult-theme (theme)
   "Enable THEME from the list of `custom-available-themes'."
   (interactive (list (intern
-		      (consult--read
-		       "Theme: "
-                       (mapcar #'symbol-name (custom-available-themes))
-                       :require-match t
-                       :history 'consult-theme-history))))
+		      (consult--read "Theme: " (mapcar #'symbol-name (custom-available-themes))
+                                     :require-match t
+                                     :history 'consult-theme-history))))
   (mapc #'disable-theme custom-enabled-themes)
   (if (custom-theme-p theme)
       (enable-theme theme)
@@ -482,30 +484,30 @@ Otherwise replace the just-yanked text with the chosen text."
 ;;;###autoload
 (defun consult-minor-mode (mode)
   "Enable or disable minor MODE."
-  (interactive (list
-                (let ((candidates-alist))
-                  (dolist (mode minor-mode-list)
-                    (when (and (boundp mode) (commandp mode))
-                      (push (cons (concat
-                                   (if (symbol-value mode) consult-on consult-off)
-                                   " "
-                                   (symbol-name mode)
-                                   (let* ((lighter (cdr (assq mode minor-mode-alist)))
-                                          (str (and lighter (propertize (string-trim (format-mode-line (cons t lighter)))
-                                                                        'face 'consult-lighter))))
-                                     (and str (not (string-blank-p str)) (format " [%s]" str))))
-                                  mode)
-                            candidates-alist)))
-                  (setq candidates-alist (sort candidates-alist (lambda (x y) (string< (car x) (car y)))))
-                  (setq candidates-alist (sort candidates-alist
-                                               (lambda (x y)
-                                                 (> (if (symbol-value (cdr x)) 1 0)
-                                                    (if (symbol-value (cdr y)) 1 0)))))
-                  (cdr (assoc (consult--read "Minor modes: " candidates-alist
-                                             :sort nil
-                                             :require-match t
-                                             :history 'consult-minor-mode-history)
-                              candidates-alist)))))
+  (interactive
+   (list
+    (let ((candidates-alist))
+      (dolist (mode minor-mode-list)
+        (when (and (boundp mode) (commandp mode))
+          (push (cons (concat
+                       (if (symbol-value mode) consult-on consult-off)
+                       " "
+                       (symbol-name mode)
+                       (let* ((lighter (cdr (assq mode minor-mode-alist)))
+                              (str (and lighter (propertize (string-trim (format-mode-line (cons t lighter)))
+                                                            'face 'consult-lighter))))
+                         (and str (not (string-blank-p str)) (format " [%s]" str))))
+                      mode)
+                candidates-alist)))
+      (setq candidates-alist (sort candidates-alist (lambda (x y) (string< (car x) (car y)))))
+      (setq candidates-alist (sort candidates-alist
+                                   (lambda (x y)
+                                     (> (if (symbol-value (cdr x)) 1 0)
+                                        (if (symbol-value (cdr y)) 1 0)))))
+      (consult--read "Minor modes: " candidates-alist
+                     :sort nil
+                     :require-match t
+                     :history 'consult-minor-mode-history))))
   (call-interactively mode))
 
 (provide 'consult)
