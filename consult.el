@@ -41,6 +41,8 @@
 (require 'seq)
 (require 'subr-x)
 
+;; TODO configure sorting via the completing-read metadata api instead of using selectrum-should-sort-p
+;; TODO is it possible to add prefix/suffix/margin annotations using the standard completing-read api? (instead of consult-property-*)
 ;; TODO check completing-read commands and add missing histories
 ;; TODO consult-bindings
 ;; TODO consult-personal-bindings
@@ -159,7 +161,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
             (mapcar (lambda (marker)
                       (let* ((pos  (goto-char (marker-position marker)))
                              (col  (current-column))
-                             ;; TODO line-number-at-pos is a very slow function, replace it!
+                             ;; TODO line-number-at-pos is a very slow function, can this be replaced?
                              (line (line-number-at-pos pos t))
                              (lstr (buffer-substring (- pos col) (line-end-position)))
                              (cand (concat (substring lstr 0 col)
