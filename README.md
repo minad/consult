@@ -39,6 +39,7 @@ use the enhanced functions, you must configure the keybindings yourself.
          ("M-g m" . consult-mark)
          ("M-g l" . consult-line)
          ("C-x r x" . consult-register)
+         ("C-x r b" . consult-bookmark)
          ("M-y" . consult-yank-pop))
   :config
   ;; Replace functions
