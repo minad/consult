@@ -85,32 +85,31 @@
   (interactive)
   (unless (marker-position (mark-marker))
     (user-error "No marks exist"))
-  (let* ((candidates-alist
+  (let* ((all-markers (cl-remove-duplicates (cons (mark-marker) mark-ring)
+                                            :test (lambda (x y) (= (marker-position x) (marker-position y)))))
+         (max-line-num 0)
+         (max-col-num 0)
+         (unformatted-candidates
           (save-excursion
-            (cl-loop for marker in (cl-remove-duplicates
-                                    (cons (mark-marker) mark-ring)
-                                    :test (lambda (x y) (= (marker-position x) (marker-position y))))
-
-                     for pos      = (goto-char (marker-position marker))
-                     for col-num  = (current-column)
-                     ;; TODO line-number-at-pos is a very slow function, replace it!
-                     for line-num = (line-number-at-pos pos t)
-                     for line-str = (buffer-substring (- pos col-num) (line-end-position))
-                     for cand-str = (concat (substring line-str 0 col-num)
-                                            #("┃" 0 1 (face consult-mark))
-                                            (substring line-str col-num))
-
-                     maximize line-num into max-line-num
-                     maximize col-num into max-col-num
-
-                     collect (list pos line-num col-num cand-str) into candidates
-
-                     finally return
-                     (cl-loop with form = (format "%%%dd %%%dd %%s"
-                                                  (length (number-to-string max-line-num))
-                                                  (length (number-to-string max-col-num)))
-                              for cand in candidates
-                              collect (cons (apply #'format form (cdr cand)) (car cand))))))
+            (mapcar (lambda (marker)
+                      (let* ((pos      (goto-char (marker-position marker)))
+                             (col-num  (current-column))
+                             ;; TODO line-number-at-pos is a very slow function, replace it!
+                             (line-num (line-number-at-pos pos t))
+                             (line-str (buffer-substring (- pos col-num) (line-end-position)))
+                             (cand-str (concat (substring line-str 0 col-num)
+                                               #("┃" 0 1 (face consult-mark))
+                                               (substring line-str col-num))))
+                        (setq max-line-num (max line-num max-line-num)
+                              max-col-num (max col-num max-col-num))
+                        (cons (list line-num col-num cand-str) pos)))
+                    all-markers)))
+         (form (format "%%%dd %%%dd %%s"
+                       (length (number-to-string max-line-num))
+                       (length (number-to-string max-col-num))))
+         (candidates-alist (mapc (lambda (cand)
+                                   (setcar cand (apply #'format form (car cand))))
+                                 unformatted-candidates))
          (selectrum-should-sort-p)
          (chosen (completing-read "Go to marker: " candidates-alist nil t nil consult-marks-history)))
     (goto-char (cdr (assoc chosen candidates-alist)))))
