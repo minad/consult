@@ -22,6 +22,7 @@ Most provided commands follow the naming scheme `consult-thing`. This is the lis
 * `consult-apropos`: Replacement for `apropos` with completion
 * `consult-command-history`: Select a command from the `command-history`
 * `consult-minibuffer-history`: Insert a string from the `minibuffer-history`
+* `consult-minor-mode`: Enable/disable minor mode
 
 ## Usage
 

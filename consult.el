@@ -45,7 +45,6 @@
 ;; TODO consult-bindings
 ;; TODO consult-personal-bindings
 ;; TODO consult-outline
-;; TODO consult-minor-mode
 ;; TODO consult-major-mode
 
 (defgroup consult nil
@@ -56,6 +55,11 @@
 (defface consult-mark
   '((t :inherit error :weight normal))
   "Face used to highlight marks in `consult-mark'."
+  :group 'consult)
+
+(defface consult-lighter
+  '((t :inherit font-lock-keyword-face :weight normal))
+  "Face used to highlight lighters in `consult-minor-mode'."
   :group 'consult)
 
 (defface consult-file
@@ -71,6 +75,31 @@
 (defface consult-view
   '((t :inherit font-lock-keyword-face :weight normal))
   "Face used to highlight views in `consult-buffer'."
+  :group 'consult)
+
+(defcustom consult-on #("+" 0 1 (face (:foreground "DarkGreen")))
+  "Symbol used to show enabled modes."
+  :type 'string
+  :group 'consult)
+
+(defcustom consult-off #("-" 0 1 (face (:foreground "DarkRed")))
+  "Symbol used to show disabled modes."
+  :type 'string
+  :group 'consult)
+
+(defcustom consult-property-prefix 'selectrum-candidate-display-prefix
+  "Property key used to enhance candidates with prefix information."
+  :type 'symbol
+  :group 'consult)
+
+(defcustom consult-property-suffix 'selectrum-candidate-display-suffix
+  "Property key used to enhance candidates with suffix information."
+  :type 'symbol
+  :group 'consult)
+
+(defcustom consult-property-margin 'selectrum-candidate-display-right-margin
+  "Property key used to enhance candidates with information displayed at the right-margin."
+  :type 'symbol
   :group 'consult)
 
 (defvar consult-mark-history ()
@@ -92,22 +121,10 @@
   "History for the command `consult-register'.")
 
 (defvar consult-theme-history nil
-  "History for the theme `consult-theme'.")
+  "History for the command `consult-theme'.")
 
-(defcustom consult-property-prefix 'selectrum-candidate-display-prefix
-  "Property key used to enhance candidates with prefix information."
-  :type 'symbol
-  :group 'consult)
-
-(defcustom consult-property-suffix 'selectrum-candidate-display-suffix
-  "Property key used to enhance candidates with suffix information."
-  :type 'symbol
-  :group 'consult)
-
-(defcustom consult-property-margin 'selectrum-candidate-display-right-margin
-  "Property key used to enhance candidates with information displayed at the right-margin."
-  :type 'symbol
-  :group 'consult)
+(defvar consult-minor-mode-history nil
+  "History for the command `consult-minor-mode'.")
 
 ;; TODO is there a more generic solution for sorting?
 (defvar selectrum-should-sort-p)
@@ -428,6 +445,33 @@ Otherwise replace the just-yanked text with the chosen text."
                                       (cl-remove-duplicates minibuffer-history :test #'equal)
                                       nil nil nil 'consult-minibuffer-history)))
   (insert (substring-no-properties str)))
+
+;;;###autoload
+(defun consult-minor-mode (mode)
+  "Enable or disable minor MODE."
+  (interactive (list
+                (let ((candidates-alist)
+                      (selectrum-should-sort-p)) ;; TODO more generic?
+                  (dolist (mode minor-mode-list)
+                    (when (and (boundp mode) (commandp mode))
+                      (push (cons (concat
+                                   (if (symbol-value mode) consult-on consult-off)
+                                   " "
+                                   (symbol-name mode)
+                                   (let* ((lighter (cdr (assq mode minor-mode-alist)))
+                                          (str (and lighter (propertize (string-trim (format-mode-line (cons t lighter)))
+                                                                        'face 'consult-lighter))))
+                                     (and str (not (string-blank-p str)) (format " [%s]" str))))
+                                  mode)
+                            candidates-alist)))
+                  (setq candidates-alist (sort candidates-alist (lambda (x y) (string< (car x) (car y)))))
+                  (setq candidates-alist (sort candidates-alist
+                                               (lambda (x y)
+                                                 (> (if (symbol-value (cdr x)) 1 0)
+                                                    (if (symbol-value (cdr y)) 1 0)))))
+                  (cdr (assoc (completing-read "Minor modes: " candidates-alist nil t nil 'consult-minor-mode-history)
+                              candidates-alist)))))
+  (call-interactively mode))
 
 (provide 'consult)
 ;;; consult.el ends here
