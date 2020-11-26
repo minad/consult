@@ -12,10 +12,10 @@ Most commands provided by consult follow the naming scheme `consult-thing`.
 For now these commands are provided:
 
 * `consult-multi-occur`: Replacement for `multi-occur`
-* `consult-recent-file`, `consult-recent-file-other-window`, `consult-recent-file-other-frame`: Select a recent files (you might prefer the more powerful `consult-buffer` instead)
+* `consult-recent-file` (`-other-window`, `-other-frame`): Select a recent files (you might prefer the more powerful `consult-buffer` instead)
 * `consult-mark`: Jump to a marker in the `mark-ring`
 * `consult-line`: Jump to a line matching the selected text
-* `consult-buffer`, `consult-buffer-other-window`, `consult-buffer-other-frame`: Enhanced version of `switch-to-buffer` with support for virtual buffers
+* `consult-buffer` (`-other-window`, `-other-frame`): Enhanced version of `switch-to-buffer` with support for virtual buffers
 * `consult-yank`, `consult-yank-pop`: Enhanced version of `yank` and `yank-pop` which allows selecting from the kill-ring.
 * `consult-register`: Select from list of registers
 * `consult-theme`: Select a theme and disable all currently enabled themes
@@ -33,6 +33,8 @@ use the enhanced functions, you must configure the keybindings yourself.
   :demand t
   ;; Replace bindings
   :bind (("C-x b" . consult-buffer)
+         ("C-x 4 b" . consult-buffer-other-window)
+         ("C-x 5 b" . consult-buffer-other-frame)
          ("M-g m" . consult-mark)
          ("M-g l" . consult-line)
          ("C-x r x" . consult-register)
