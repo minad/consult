@@ -118,13 +118,6 @@
 (defvar consult-minor-mode-history nil
   "History for the command `consult-minor-mode'.")
 
-;; TODO is there a more generic solution for sorting?
-(defvar selectrum-should-sort-p)
-
-;; TODO try to reduce selectrum-read usage
-;; or move selectrum-dependent functions to a separate file
-(declare-function selectrum-read "selectrum")
-
 (cl-defun consult--read (prompt candidates &key predicate require-match history default (sort t))
   "Simplified completing read function.
 
@@ -267,6 +260,11 @@ This command obeys narrowing."
   "Find recent FILE using `completing-read'."
   (interactive (consult--recent-file-read))
   (find-file-other-window file))
+
+;; TODO try to reduce selectrum-read usage
+;; or move selectrum-dependent functions to a separate file
+(defvar selectrum-should-sort-p)
+(declare-function selectrum-read "selectrum")
 
 (defun consult--buffer (buffer-switch file-switch bookmark-switch)
   "Generic implementation of `consult-buffer'.
