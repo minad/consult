@@ -49,7 +49,8 @@ use the enhanced functions, you must configure the keybindings yourself.
 
 ## Acknowledgments
 
-You can probably guess from the name that this package is inspired by [counsel](https://github.com/abo-abo/swiper/blob/master/counsel.el).
+You can probably guess from the name that this package is inspired by and partially derived from
+[counsel](https://github.com/abo-abo/swiper/blob/master/counsel.el) (Author Oleh Krehel, Copyright Free Software Foundation, Inc.).
 Note that we are far from counsel in terms of covered functionality.
-Many of the commands found in this package are derived from the
+Furthermore some of the commands found in this package were taken from the
 [selectrum wiki](https://github.com/raxod502/selectrum/wiki/Useful-Commands).
