@@ -261,6 +261,7 @@ Dependending on the selected item BUFFER-SWITCH, FILE-SWITCH or BOOKMARK-SWITCH 
                                           'face 'consult-view
                                           'consult-switch bookmark-switch
                                           consult-property-margin
+                                          ;; TODO the completions-annotations face is ignored by selectrum?
                                           (propertize "View" 'face 'completions-annotations)))
                             (bookmark-view-names))))
          (bookmarks (mapcar (lambda (x)
@@ -268,6 +269,7 @@ Dependending on the selected item BUFFER-SWITCH, FILE-SWITCH or BOOKMARK-SWITCH 
                                           'face 'consult-bookmark
                                           'consult-switch bookmark-switch
                                           consult-property-margin
+                                          ;; TODO the completions-annotations face is ignored by selectrum?
                                           (propertize "Bookmark" 'face 'completions-annotations)))
                             bookmark-alist))
          (all-files (mapcar (lambda (x)
@@ -275,6 +277,7 @@ Dependending on the selected item BUFFER-SWITCH, FILE-SWITCH or BOOKMARK-SWITCH 
                                           'face 'consult-file
                                           'consult-switch file-switch
                                           consult-property-margin
+                                          ;; TODO the completions-annotations face is ignored by selectrum?
                                           (propertize "File" 'face 'completions-annotations)))
                             recentf-list))
          (files (remove curr-file all-files))
