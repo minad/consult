@@ -37,8 +37,7 @@
 (require 'seq)
 (require 'subr-x)
 
-;; TODO consult-command-history
-;; TODO consult-minibuffer-history
+;; TODO check completing-read commands and add missing histories
 ;; TODO consult-bindings
 ;; TODO consult-personal-bindings
 ;; TODO consult-outline
@@ -78,6 +77,18 @@
 
 (defvar consult-apropos-history nil
   "History for the command `consult-apropos'.")
+
+(defvar consult-minibuffer-history nil
+  "History for the command `consult-minibuffer-history'.")
+
+(defvar consult-command-history nil
+  "History for the command `consult-command-history'.")
+
+(defvar consult-register-history nil
+  "History for the command `consult-register'.")
+
+(defvar consult-theme-history nil
+  "History for the theme `consult-theme'.")
 
 (defcustom consult-property-prefix 'selectrum-candidate-display-prefix
   "Property key used to enhance candidates with prefix information."
@@ -143,7 +154,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                                                         " " (cdar cand))))
                                  unformatted-candidates))
          (selectrum-should-sort-p) ;; TODO more generic?
-         (chosen (completing-read "Go to mark: " candidates-alist nil t nil consult-mark-history)))
+         (chosen (completing-read "Go to mark: " candidates-alist nil t nil 'consult-mark-history)))
     (goto-char (cdr (assoc chosen candidates-alist)))))
 
 ;;;###autoload
@@ -359,7 +370,7 @@ Otherwise replace the just-yanked text with the chosen text."
                                     r))
                             (sort (copy-sequence register-alist) #'car-less-than-car)))
          (selectrum-should-sort-p) ;; TODO more generic?
-         (chosen (completing-read "Register: " candidates-alist nil t))
+         (chosen (completing-read "Register: " candidates-alist nil t nil 'consult-register-history))
          (chosen-reg (cdr (assoc chosen candidates-alist))))
     (condition-case nil
         (jump-to-register chosen-reg)
@@ -371,7 +382,8 @@ Otherwise replace the just-yanked text with the chosen text."
   (interactive (list (intern
 		      (completing-read
 		       "Theme: "
-                       (mapcar #'symbol-name (custom-available-themes))))))
+                       (mapcar #'symbol-name (custom-available-themes))
+                       nil t nil 'consult-theme-history))))
   (mapc #'disable-theme custom-enabled-themes)
   (if (custom-theme-p theme)
       (enable-theme theme)
@@ -396,6 +408,22 @@ Otherwise replace the just-yanked text with the chosen text."
   (when (string= pattern "")
     (user-error "No pattern given"))
   (apropos pattern))
+
+;;;###autoload
+(defun consult-command-history (cmd)
+  "Select CMD from the command history."
+  (interactive (list (completing-read "Command: "
+                                      (mapcar #'prin1-to-string command-history)
+                                      nil nil nil 'consult-command-history)))
+  (eval (read cmd)))
+
+;;;###autoload
+(defun consult-minibuffer-history (str)
+  "Insert STR from minibuffer history."
+  (interactive (list (completing-read "Command: "
+                                      (cl-remove-duplicates minibuffer-history :test #'equal)
+                                      nil nil nil 'consult-minibuffer-history)))
+  (insert (substring-no-properties str)))
 
 (provide 'consult)
 ;;; consult.el ends here
