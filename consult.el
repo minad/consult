@@ -79,17 +79,17 @@
   "Face used to highlight views in `consult-buffer'."
   :group 'consult)
 
-(defface consult-line-number
+(defface consult-linum
   '((t :inherit completions-annotations :weight normal))
   "Face used to highlight line numbers in selections."
   :group 'consult)
 
-(defcustom consult-on #("+" 0 1 (face (:foreground "DarkGreen" :weight bold)))
+(defcustom consult-on #("+" 0 1 (face (:inherit 'success :weight bold)))
   "Symbol used to show enabled modes."
   :type 'string
   :group 'consult)
 
-(defcustom consult-off #("-" 0 1 (face (:foreground "DarkRed" :weight bold)))
+(defcustom consult-off #("-" 0 1 (face (:inherit 'error :weight bold)))
   "Symbol used to show disabled modes."
   :type 'string
   :group 'consult)
@@ -183,7 +183,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
          (candidates-alist (mapc (lambda (cand)
                                    ;; TODO use prefix here or make line number part of string?
                                    (setcar cand (concat (propertize (format form (caar cand))
-                                                                    'face 'consult-line-number)
+                                                                    'face 'consult-linum)
                                                         " " (cdar cand))))
                                  unformatted-candidates)))
     (goto-char (consult--read "Go to mark: "
@@ -216,7 +216,7 @@ This command obeys narrowing."
                 (let ((cand (concat (propertize " "
                                                 'display
                                                 (propertize (format line-format line)
-                                                            'face 'consult-line-number))
+                                                            'face 'consult-linum))
                                     str))
                       (dist (abs (- curr-line line))))
                   (when (or (not default-cand) (< dist default-cand-dist))
