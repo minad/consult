@@ -382,23 +382,27 @@ Otherwise replace the just-yanked text with the chosen text."
   nil)
 
 ;;;###autoload
-(defun consult-register ()
-  "Use a register. Either jump to location or insert the stored text."
-  (interactive)
-  (let* ((candidates-alist (mapcar
-                            (lambda (r)
-                              (setq r (car r))
-                              (cons (format "%s: %s"
-                                            (single-key-description r)
-                                            (register-describe-oneline r))
-                                    r))
-                            (sort (copy-sequence register-alist) #'car-less-than-car)))
-         (selectrum-should-sort-p) ;; TODO more generic?
-         (chosen (completing-read "Register: " candidates-alist nil t nil 'consult-register-history))
-         (chosen-reg (cdr (assoc chosen candidates-alist))))
+(defun consult-register (reg)
+  "Use register REG. Either jump to location or insert the stored text."
+  (interactive
+   (list
+    (let ((candidates-alist (mapcar
+                             (lambda (r)
+                               (setq r (car r))
+                               (cons (format "%s: %s"
+                                             (single-key-description r)
+                                             (register-describe-oneline r))
+                                     r))
+                             (sort (copy-sequence register-alist) #'car-less-than-car)))
+           (selectrum-should-sort-p)) ;; TODO more generic?
+      (unless candidates-alist
+        (user-error "All registers are empty"))
+      (cdr (assoc (completing-read "Register: " candidates-alist
+                                   nil t nil 'consult-register-history)
+                  candidates-alist)))))
     (condition-case nil
-        (jump-to-register chosen-reg)
-      (error (insert-register chosen-reg)))))
+        (jump-to-register reg)
+      (error (insert-register reg))))
 
 ;;;###autoload
 (defun consult-theme (theme)
