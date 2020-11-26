@@ -109,7 +109,7 @@
                                                                     'completions-annotations)
                                                         " " (cdar cand))))
                                  unformatted-candidates))
-         (selectrum-should-sort-p)
+         (selectrum-should-sort-p) ;; TODO more generic?
          (chosen (completing-read "Go to mark: " candidates-alist nil t nil consult-mark-history)))
     (goto-char (cdr (assoc chosen candidates-alist)))))
 
@@ -126,8 +126,7 @@
 (defun consult-buffer ()
   "Enhanced `switch-to-buffer' command with support for virtual buffers."
   (interactive)
-  (let* ((selectrum-should-sort-p)
-         (curr-buf (window-buffer (minibuffer-selected-window)))
+  (let* ((curr-buf (window-buffer (minibuffer-selected-window)))
          (curr-file (or (buffer-file-name curr-buf) ""))
          (bufs (mapcar #'buffer-name (delq curr-buf (buffer-list))))
          (hidden-bufs (seq-filter (lambda (x) (= (aref x 0) 32)) bufs))
@@ -180,8 +179,8 @@
              (t
               (list (cons 'input input)
                     (cons 'candidates all-cands))))))
-         ;; TODO can this be replaced by completing-read?
-         (chosen (selectrum-read "Switch to: " gen-cands)))
+         (selectrum-should-sort-p) ;; TODO more generic?
+         (chosen (selectrum-read "Switch to: " gen-cands))) ;; TODO can this be replaced by completing-read?
     (funcall (or (get-text-property 0 'consult-candidate chosen) #'switch-to-buffer) chosen)))
 
 (defun consult--yank-read ()
@@ -241,8 +240,7 @@ Otherwise replace the just-yanked text with the chosen text."
 (defun consult-register ()
   "Use a register. Either jump to location or insert the stored text."
   (interactive)
-  (let* ((selectrum-should-sort-p)
-         (candidates-alist (mapcar
+  (let* ((candidates-alist (mapcar
                             (lambda (r)
                               (setq r (car r))
                               (cons (format "%s: %s"
@@ -250,6 +248,7 @@ Otherwise replace the just-yanked text with the chosen text."
                                             (register-describe-oneline r))
                                     r))
                             (sort (copy-sequence register-alist) #'car-less-than-car)))
+         (selectrum-should-sort-p) ;; TODO more generic?
          (chosen (completing-read "Register: " candidates-alist nil t))
          (chosen-reg (cdr (assoc chosen candidates-alist))))
     (condition-case nil
