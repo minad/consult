@@ -68,6 +68,9 @@
 (defvar consult-mark-history ()
   "History for the command `consult-mark'.")
 
+(defvar consult-line-history nil
+  "History for the command `consult-line'.")
+
 ;; see https://github.com/raxod502/selectrum/issues/226
 ;;;###autoload
 (defun consult-multi-occur (bufs regexp &optional nlines)
@@ -112,6 +115,44 @@
          (selectrum-should-sort-p) ;; TODO more generic?
          (chosen (completing-read "Go to mark: " candidates-alist nil t nil consult-mark-history)))
     (goto-char (cdr (assoc chosen candidates-alist)))))
+
+;;;###autoload
+;; TODO there is a weird effect regarding font-locking. if a line has not been scrolled to yet,
+;; the line is not font-locked in consult-line. Can font-locking be enforced before accessing buffer-string?
+(defun consult-line ()
+  "Search for a matching line and jump to the line beginning.
+The default candidate is a non-empty line closest to point.
+This command obeys narrowing."
+  (interactive)
+  (let* ((curr-line (line-number-at-pos (point) t))
+         (buffer-lines (split-string (buffer-string) "\n"))
+         (line-format (format "%%%dd " (length (number-to-string (length buffer-lines)))))
+         (default-cand)
+         (default-cand-dist most-positive-fixnum)
+         (candidates-alist
+          (let ((candidates)
+                (line (line-number-at-pos (point-min) t)))
+            (dolist (str buffer-lines)
+              (unless (string-blank-p str)
+                (let ((cand (propertize str
+                                        'selectrum-candidate-display-prefix
+                                        (propertize (format line-format line)
+                                                    'face 'completions-annotations)))
+                      (dist (abs (- curr-line line))))
+                  (when (or (not default-cand) (< dist default-cand-dist))
+                    (setq default-cand cand
+                          default-cand-dist dist))
+                  (push (cons cand line) candidates)))
+              (setq line (1+ line)))
+            (nreverse candidates)))
+         (selectrum-should-sort-p) ;; TODO more generic?
+         (chosen (completing-read "Jump to matching line: "
+                                  candidates-alist
+                                  nil t nil 'consult-line-history
+                                  default-cand)))
+    (push-mark (point) t)
+    (forward-line (- (cdr (assoc chosen candidates-alist)) curr-line))
+    (beginning-of-line-text 1)))
 
 ;;;###autoload
 (defun consult-recent-file (file)

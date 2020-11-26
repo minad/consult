@@ -14,6 +14,7 @@ For now these commands are provided:
 * `consult-multi-occur`: Replacement for `multi-occur`
 * `consult-recent-file`: Select a recent files
 * `consult-mark`: Jump to a marker in the `mark-ring`
+* `consult-line`: Jump to a line matching the selected text
 * `consult-buffer`: Enhanced version of `switch-to-buffer` with support for virtual buffers
 * `consult-yank`, `consult-yank-pop`: Enhanced version of `yank` and `yank-pop` which allows selecting from the kill-ring.
 * `consult-register`: Select from list of registers
@@ -33,6 +34,7 @@ use the enhanced functions, you must configure the keybindings yourself.
   ;; Replace bindings
   :bind (("C-x b" . consult-buffer)
          ("M-g m" . consult-mark)
+         ("M-g l" . consult-line)
          ("C-x r x" . consult-register)
          ("M-y" . consult-yank-pop))
   :config
