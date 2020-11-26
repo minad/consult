@@ -43,7 +43,7 @@
 
 ;; TODO Decide on a consistent interactive-style, move all consult--read code to (interactive ...)?
 ;;      This makes sense for functions which can be used both interactively and non-interactively.
-;; TODO Is it possible to add prefix/suffix/margin annotations using the standard completing-read api? (instead of consult-property-*)
+;; TODO Is it possible to add prefix/suffix/margin annotations using the standard completing-read api?
 ;; TODO consult-bindings
 ;; TODO consult-personal-bindings
 ;; TODO consult-outline
@@ -79,29 +79,19 @@
   "Face used to highlight views in `consult-buffer'."
   :group 'consult)
 
-(defcustom consult-on #("+" 0 1 (face (:foreground "DarkGreen")))
+(defface consult-line-number
+  '((t :inherit completions-annotations :weight normal))
+  "Face used to highlight line numbers in selections."
+  :group 'consult)
+
+(defcustom consult-on #("+" 0 1 (face (:foreground "DarkGreen" :weight bold)))
   "Symbol used to show enabled modes."
   :type 'string
   :group 'consult)
 
-(defcustom consult-off #("-" 0 1 (face (:foreground "DarkRed")))
+(defcustom consult-off #("-" 0 1 (face (:foreground "DarkRed" :weight bold)))
   "Symbol used to show disabled modes."
   :type 'string
-  :group 'consult)
-
-(defcustom consult-property-prefix 'selectrum-candidate-display-prefix
-  "Property key used to enhance candidates with prefix information."
-  :type 'symbol
-  :group 'consult)
-
-(defcustom consult-property-suffix 'selectrum-candidate-display-suffix
-  "Property key used to enhance candidates with suffix information."
-  :type 'symbol
-  :group 'consult)
-
-(defcustom consult-property-margin 'selectrum-candidate-display-right-margin
-  "Property key used to enhance candidates with information displayed at the right-margin."
-  :type 'symbol
   :group 'consult)
 
 (defvar consult-mark-history ()
@@ -198,8 +188,9 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                     all-markers)))
          (form (format "%%%dd" (length (number-to-string max-line))))
          (candidates-alist (mapc (lambda (cand)
+                                   ;; TODO use prefix here or make line number part of string?
                                    (setcar cand (concat (propertize (format form (caar cand))
-                                                                    'face 'completions-annotations)
+                                                                    'face 'consult-line-number)
                                                         " " (cdar cand))))
                                  unformatted-candidates)))
     (goto-char (consult--read "Go to mark: "
@@ -229,10 +220,11 @@ This command obeys narrowing."
                  (default-cand-dist most-positive-fixnum))
             (dolist (str buffer-lines)
               (unless (string-blank-p str)
-                (let ((cand (propertize str
-                                        consult-property-prefix
-                                        (propertize (format line-format line)
-                                                    'face 'completions-annotations)))
+                (let ((cand (concat (propertize " "
+                                                'display
+                                                (propertize (format line-format line)
+                                                            'face 'consult-line-number))
+                                    str))
                       (dist (abs (- curr-line line))))
                   (when (or (not default-cand) (< dist default-cand-dist))
                     (setq default-cand cand
@@ -293,7 +285,7 @@ Dependending on the selected item BUFFER-SWITCH, FILE-SWITCH or BOOKMARK-SWITCH 
                               (propertize x
                                           'face 'consult-view
                                           'consult-switch bookmark-switch
-                                          consult-property-margin
+                                          'selectrum-candidate-display-right-margin
                                           ;; TODO the completions-annotations face is ignored by selectrum?
                                           (propertize "View" 'face 'completions-annotations)))
                             (bookmark-view-names))))
@@ -301,7 +293,7 @@ Dependending on the selected item BUFFER-SWITCH, FILE-SWITCH or BOOKMARK-SWITCH 
                               (propertize (car x)
                                           'face 'consult-bookmark
                                           'consult-switch bookmark-switch
-                                          consult-property-margin
+                                          'selectrum-candidate-display-right-margin
                                           ;; TODO the completions-annotations face is ignored by selectrum?
                                           (propertize "Bookmark" 'face 'completions-annotations)))
                             bookmark-alist))
@@ -309,7 +301,7 @@ Dependending on the selected item BUFFER-SWITCH, FILE-SWITCH or BOOKMARK-SWITCH 
                               (propertize (abbreviate-file-name x)
                                           'face 'consult-file
                                           'consult-switch file-switch
-                                          consult-property-margin
+                                          'selectrum-candidate-display-right-margin
                                           ;; TODO the completions-annotations face is ignored by selectrum?
                                           (propertize "File" 'face 'completions-annotations)))
                             recentf-list))
