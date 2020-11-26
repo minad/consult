@@ -13,5 +13,6 @@ For now these functions are provided:
 * `consult-marks`: Jump to a marker in the `mark-ring`
 * `consult-switch-buffer`: Enhanced version of `switch-to-buffer` with support for virtual buffers
 * `consult-yank`, `consult-yank-pop`: Enhanced version of `yank` and `yank-pop` which allows selecting from the kill-ring.
+* `consult-register`: Select from list of registers
 
 The commands are based on the versions found in the [selectrum wiki](https://github.com/raxod502/selectrum/wiki/Useful-Commands).

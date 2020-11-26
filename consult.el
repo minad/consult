@@ -112,8 +112,8 @@
                               for cand in candidates
                               collect (cons (apply #'format form (cdr cand)) (car cand))))))
          (selectrum-should-sort-p)
-         (cand (completing-read "Go to marker: " candidates-alist nil t nil consult-marks-history)))
-    (goto-char (cdr (assoc cand candidates-alist)))))
+         (chosen (completing-read "Go to marker: " candidates-alist nil t nil consult-marks-history)))
+    (goto-char (cdr (assoc chosen candidates-alist)))))
 
 ;;;###autoload
 (defun consult-find-recent-file (file)
@@ -186,11 +186,11 @@
               (list (cons 'input input)
                     (cons 'candidates all-cands))))))
          ;; TODO can this be replaced by completing-read?
-         (cand (selectrum-read "Switch to: " gen-cands)))
-    (pcase (get-text-property 0 'consult-candidate cand)
-      ('file (find-file cand))
-      ('bookmark (bookmark-jump cand))
-      (_ (switch-to-buffer cand)))))
+         (chosen (selectrum-read "Switch to: " gen-cands)))
+    (pcase (get-text-property 0 'consult-candidate chosen)
+      ('file (find-file chosen))
+      ('bookmark (bookmark-jump chosen))
+      (_ (switch-to-buffer chosen)))))
 
 (defun consult--yank-read ()
   "Open kill ring menu and return chosen text."
@@ -244,6 +244,25 @@ Otherwise replace the just-yanked text with the chosen text."
 	  (goto-char (prog1 (mark t)
 		       (set-marker (mark-marker) (point) (current-buffer)))))))
   nil)
+
+;;;###autoload
+(defun consult-register ()
+  "Use a register. Either jump to location or insert the stored text."
+  (interactive)
+  (let* ((selectrum-should-sort-p)
+         (candidates-alist (mapcar
+                            (lambda (r)
+                              (setq r (car r))
+                              (cons (format "%s: %s"
+                                            (single-key-description r)
+                                            (register-describe-oneline r))
+                                    r))
+                            (sort (copy-sequence register-alist) #'car-less-than-car)))
+         (chosen (completing-read "Register: " candidates-alist nil t))
+         (chosen-reg (cdr (assoc chosen candidates-alist))))
+    (condition-case nil
+        (jump-to-register chosen-reg)
+      (error (insert-register chosen-reg)))))
 
 (provide 'consult)
 ;;; consult.el ends here
