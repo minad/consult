@@ -358,18 +358,18 @@ Dependending on the selected item BUFFER-SWITCH, FILE-SWITCH or BOOKMARK-SWITCH 
   (interactive)
   (consult--buffer #'switch-to-buffer #'find-file #'bookmark-jump))
 
-(defun consult--yank-read ()
+(defmacro consult--yank-read ()
   "Open kill ring menu and return chosen text."
-  (consult--read "Ring: "
-                 (cl-remove-duplicates kill-ring :test #'equal :from-end t)
-                 :require-match t))
+  '(list (consult--read "Ring: "
+                        (cl-remove-duplicates kill-ring :test #'equal :from-end t)
+                        :require-match t)))
 
 ;; Insert chosen text.
 ;; Adapted from the Emacs yank function.
 ;;;###autoload
 (defun consult-yank (text)
   "Choose TEXT from the kill ring and insert it."
-  (interactive (list (consult--yank-read)))
+  (interactive (consult--yank-read))
   (setq yank-window-start (window-start))
   (push-mark)
   (insert-for-yank text)
@@ -393,7 +393,7 @@ See `yank-pop' for the meaning of ARG."
   "Choose TEXT from the kill ring.
 If there was no recent yank, insert the text.
 Otherwise replace the just-yanked text with the chosen text."
-  (interactive (list (consult--yank-read)))
+  (interactive (consult--yank-read))
   (if (not (eq last-command 'yank))
       (consult-yank text)
     (let ((inhibit-read-only t)
