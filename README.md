@@ -20,6 +20,7 @@ For now these commands are provided:
 * `consult-register`: Select from list of registers
 * `consult-theme`: Select a theme and disable all currently enabled themes
 * `consult-bookmark`: Select or create bookmark
+* `consult-apropos`: Replacement for `apropos` with completion
 
 The commands are based on the versions found in the [selectrum wiki](https://github.com/raxod502/selectrum/wiki/Useful-Commands).
 
@@ -40,7 +41,8 @@ use the enhanced functions, you must configure the keybindings yourself.
          ("M-g l" . consult-line)
          ("C-x r x" . consult-register)
          ("C-x r b" . consult-bookmark)
-         ("M-y" . consult-yank-pop))
+         ("M-y" . consult-yank-pop)
+         ("<help> a" . consult-apropos))
   :config
   ;; Replace functions
   (fset 'multi-occur #'consult-multi-occur))

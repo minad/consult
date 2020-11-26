@@ -33,8 +33,8 @@
 (require 'cl-lib)
 (require 'recentf)
 (require 'seq)
+(require 'thingatpt)
 
-;; TODO consult-apropos
 ;; TODO consult-command-history
 ;; TODO consult-minibuffer-history
 ;; TODO consult-bindings
@@ -79,6 +79,9 @@
 
 (defvar consult-line-history nil
   "History for the command `consult-line'.")
+
+(defvar consult-apropos-history nil
+  "History for the command `consult-apropos'.")
 
 ;; see https://github.com/raxod502/selectrum/issues/226
 ;;;###autoload
@@ -362,6 +365,18 @@ Otherwise replace the just-yanked text with the chosen text."
   (if (assoc name bookmark-alist)
       (bookmark-jump name)
     (bookmark-set name)))
+
+;;;###autoload
+(defun consult-apropos (pattern)
+  "Call `apropos' for selected PATTERN."
+  (interactive (list (completing-read "Apropos: "
+                                      obarray
+                                      (lambda (x) (or (fboundp x) (boundp x) (facep x) (symbol-plist x)))
+                                      nil nil 'consult-apropos-history
+                                      (thing-at-point 'symbol))))
+  (when (string= pattern "")
+    (user-error "No pattern given"))
+  (apropos pattern))
 
 (provide 'consult)
 ;;; consult.el ends here
