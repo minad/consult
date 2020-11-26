@@ -83,7 +83,8 @@
 ;; see https://github.com/raxod502/selectrum/issues/226
 ;;;###autoload
 (defun consult-multi-occur (bufs regexp &optional nlines)
-  "Improved version of `multi-occur' based on `completing-read-multiple'."
+  "Improved version of `multi-occur' based on `completing-read-multiple'.
+See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
   (interactive (cons
                 (mapcar #'get-buffer
                         (completing-read-multiple "Buffer: "
@@ -164,6 +165,7 @@ This command obeys narrowing."
     (beginning-of-line-text 1)))
 
 (defmacro consult--recent-file-read ()
+  "Read recent file via `completing-read'."
   '(list (completing-read
           "Find recent file: "
           (mapcar #'abbreviate-file-name recentf-list)
@@ -188,7 +190,8 @@ This command obeys narrowing."
   (find-file-other-window file))
 
 (defun consult--buffer (buffer-switch file-switch bookmark-switch)
-  "Generic implementation of `consult-buffer'."
+  "Generic implementation of `consult-buffer'.
+Dependending on the selected item BUFFER-SWITCH, FILE-SWITCH or BOOKMARK-SWITCH will be used to display the item."
   (let* ((curr-buf (window-buffer (minibuffer-selected-window)))
          (curr-file (or (buffer-file-name curr-buf) ""))
          (bufs (mapcar #'buffer-name (delq curr-buf (buffer-list))))
@@ -251,7 +254,10 @@ This command obeys narrowing."
 (defun consult-buffer-other-frame ()
   "Enhanced `switch-to-buffer-other-frame' command with support for virtual buffers."
   (interactive)
-  (consult--buffer #'switch-to-buffer-other-frame #'find-file-other-frame #'bookmark-jump-other-frame))
+  (consult--buffer #'switch-to-buffer-other-frame #'find-file-other-frame
+                   ;; bookmark-jump-other-frame is supported on Emacs >= 27.1
+                   ;; TODO which Emacs versions do we want to support?
+                   (if (fboundp 'bookmark-jump-other-frame) #'bookmark-jump-other-frame #'bookmark-jump)))
 
 ;;;###autoload
 (defun consult-buffer-other-window ()
