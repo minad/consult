@@ -41,7 +41,9 @@
 (require 'seq)
 (require 'subr-x)
 
-;; TODO is it possible to add prefix/suffix/margin annotations using the standard completing-read api? (instead of consult-property-*)
+;; TODO Decide on a consistent interactive-style, move all consult--read code to (interactive ...)?
+;;      This makes sense for functions which can be used both interactively and non-interactively.
+;; TODO Is it possible to add prefix/suffix/margin annotations using the standard completing-read api? (instead of consult-property-*)
 ;; TODO consult-bindings
 ;; TODO consult-personal-bindings
 ;; TODO consult-outline
