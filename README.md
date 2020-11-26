@@ -1,8 +1,8 @@
 # consult.el - Consultation using completing-read
 
 This package provides various commands based on the Emacs completion function `completing-read`.
-The functions should be compatible with completion-systems based on the standard Emacs API,
-e.g., Icomplete and Selectrum. Note that if you use Ivy or Helm, you don't need this library, since both
+The commands are compatible with completion-systems based on the standard Emacs API,
+e.g., Icomplete and Selectrum. Note that if you use Ivy or Helm, you don't need consult, since both libraries
 already bring their own rich set of additional commands.
 The goal is to keep the completion-system specifics in this library to a minimum.
 Commands which can only be implemented using Selectrum-specific extensions, will be packaged up separately before release.
@@ -11,24 +11,24 @@ Commands which can only be implemented using Selectrum-specific extensions, will
 
 Most provided commands follow the naming scheme `consult-thing`. This is the list of currently supported commands:
 
-* `consult-multi-occur`: Replacement for `multi-occur`
-* `consult-recent-file` (`-other-window`, `-other-frame`): Select a recent files (you might prefer the more powerful `consult-buffer` instead)
-* `consult-mark`: Jump to a marker in the `mark-ring`
-* `consult-line`: Jump to a line matching the selected text
-* `consult-buffer` (`-other-window`, `-other-frame`): Enhanced version of `switch-to-buffer` with support for virtual buffers
-* `consult-yank`, `consult-yank-pop`: Enhanced version of `yank` and `yank-pop` which allows selecting from the kill-ring.
-* `consult-register`: Select from list of registers
-* `consult-theme`: Select a theme and disable all currently enabled themes
-* `consult-bookmark`: Select or create bookmark
 * `consult-apropos`: Replacement for `apropos` with completion
+* `consult-bookmark`: Select or create bookmark
+* `consult-buffer` (`-other-window`, `-other-frame`): Enhanced version of `switch-to-buffer` with support for virtual buffers
 * `consult-command-history`: Select a command from the `command-history`
+* `consult-line`: Jump to a line matching the selected text
+* `consult-mark`: Jump to a marker in the `mark-ring`
 * `consult-minibuffer-history`: Insert a string from the `minibuffer-history`
 * `consult-minor-mode`: Enable/disable minor mode
+* `consult-multi-occur`: Replacement for `multi-occur`
+* `consult-recent-file` (`-other-window`, `-other-frame`): Select a recent files (you might prefer the more powerful `consult-buffer` instead)
+* `consult-register`: Select from list of registers
+* `consult-theme`: Select a theme and disable all currently enabled themes
+* `consult-yank`, `consult-yank-pop`: Enhanced version of `yank` and `yank-pop` which allows selecting from the kill-ring.
 
 ## Usage
 
-The consult library will only provide commands and never add keybindings. In order to
-use the enhanced functions, you must configure the keybindings yourself.
+The consult library only provides commands and does not add any keybindings. In order to
+use the enhanced commands, you must configure the keybindings yourself.
 
 ~~~ elisp
 ;; Example configuration
@@ -51,7 +51,7 @@ use the enhanced functions, you must configure the keybindings yourself.
 
 ## Acknowledgments
 
-You can probably guess from the name that this package is inspired by and partially derived from
+You probably guessed from the name that this package is inspired by and partially derived from
 [Counsel](https://github.com/abo-abo/swiper/blob/master/counsel.el) (Author Oleh Krehel, Copyright Free Software Foundation, Inc.).
 Note that we are far from counsel in terms of covered functionality.
 Furthermore some of the commands found in this package were taken from the
