@@ -41,9 +41,7 @@
 (require 'seq)
 (require 'subr-x)
 
-;; TODO configure sorting via the completing-read metadata api instead of using selectrum-should-sort-p
 ;; TODO is it possible to add prefix/suffix/margin annotations using the standard completing-read api? (instead of consult-property-*)
-;; TODO check completing-read commands and add missing histories
 ;; TODO consult-bindings
 ;; TODO consult-personal-bindings
 ;; TODO consult-outline
@@ -135,6 +133,26 @@
 ;; or move selectrum-dependent functions to a separate file
 (declare-function selectrum-read "selectrum")
 
+(cl-defun consult--read (prompt candidates &key predicate require-match history default (sort t))
+  "Simplified completing read function.
+
+PROMPT is the string to prompt with.
+CANDIDATES is the candidate list or alist.
+PREDICATE is a filter function for the candidates.
+REQUIRE-MATCH equals t means that an exact match is required.
+HISTORY is the symbol of the history variable.
+DEFAULT is the default input.
+SORT should be set to nil if the candidates are already sorted."
+  (completing-read prompt
+                   (if sort
+                       candidates
+                     (lambda (str pred action)
+                       (if (eq action 'metadata)
+                           '(metadata (cycle-sort-function . identity)
+                                      (display-sort-function . identity))
+                         (complete-with-action action candidates str pred))))
+                   predicate require-match nil history default))
+
 ;; see https://github.com/raxod502/selectrum/issues/226
 ;;;###autoload
 (defun consult-multi-occur (bufs regexp &optional nlines)
@@ -176,8 +194,10 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                                                                     'face 'completions-annotations)
                                                         " " (cdar cand))))
                                  unformatted-candidates))
-         (selectrum-should-sort-p) ;; TODO more generic?
-         (chosen (completing-read "Go to mark: " candidates-alist nil t nil 'consult-mark-history)))
+         (chosen (consult--read "Go to mark: " candidates-alist
+                                :sort nil
+                                :require-match t
+                                :history 'consult-mark-history)))
     (goto-char (cdr (assoc chosen candidates-alist)))))
 
 ;;;###autoload
@@ -211,21 +231,23 @@ This command obeys narrowing."
                   (push (cons cand line) candidates)))
               (setq line (1+ line)))
             (nreverse candidates)))
-         (selectrum-should-sort-p) ;; TODO more generic?
-         (chosen (completing-read "Jump to matching line: "
-                                  candidates-alist
-                                  nil t nil 'consult-line-history
-                                  default-cand)))
+         (chosen (consult--read "Jump to matching line: "
+                                candidates-alist
+                                :sort nil
+                                :require-match t
+                                :history 'consult-line-history
+                                :default default-cand)))
     (push-mark (point) t)
     (forward-line (- (cdr (assoc chosen candidates-alist)) curr-line))
     (beginning-of-line-text 1)))
 
 (defmacro consult--recent-file-read ()
   "Read recent file via `completing-read'."
-  '(list (completing-read
+  '(list (consult--read
           "Find recent file: "
           (mapcar #'abbreviate-file-name recentf-list)
-          nil t nil 'file-name-history)))
+          :require-match t
+          :history 'file-name-history)))
 
 ;;;###autoload
 (defun consult-recent-file (file)
@@ -332,9 +354,9 @@ Dependending on the selected item BUFFER-SWITCH, FILE-SWITCH or BOOKMARK-SWITCH 
 
 (defun consult--yank-read ()
   "Open kill ring menu and return chosen text."
-  (completing-read "Ring: "
-                   (cl-remove-duplicates kill-ring :test #'equal :from-end t)
-                   nil ':require-match))
+  (consult--read "Ring: "
+                 (cl-remove-duplicates kill-ring :test #'equal :from-end t)
+                 :require-match t))
 
 ;; Insert chosen text.
 ;; Adapted from the Emacs yank function.
@@ -395,12 +417,13 @@ Otherwise replace the just-yanked text with the chosen text."
                                              (single-key-description r)
                                              (register-describe-oneline r))
                                      r))
-                             (sort (copy-sequence register-alist) #'car-less-than-car)))
-           (selectrum-should-sort-p)) ;; TODO more generic?
+                             (sort (copy-sequence register-alist) #'car-less-than-car))))
       (unless candidates-alist
         (user-error "All registers are empty"))
-      (cdr (assoc (completing-read "Register: " candidates-alist
-                                   nil t nil 'consult-register-history)
+      (cdr (assoc (consult--read "Register: " candidates-alist
+                                 :sort nil
+                                 :require-match t
+                                 :history 'consult-register-history)
                   candidates-alist)))))
     (condition-case nil
         (jump-to-register reg)
@@ -410,10 +433,11 @@ Otherwise replace the just-yanked text with the chosen text."
 (defun consult-theme (theme)
   "Enable THEME from the list of `custom-available-themes'."
   (interactive (list (intern
-		      (completing-read
+		      (consult--read
 		       "Theme: "
                        (mapcar #'symbol-name (custom-available-themes))
-                       nil t nil 'consult-theme-history))))
+                       :require-match t
+                       :history 'consult-theme-history))))
   (mapc #'disable-theme custom-enabled-themes)
   (if (custom-theme-p theme)
       (enable-theme theme)
@@ -422,7 +446,7 @@ Otherwise replace the just-yanked text with the chosen text."
 ;;;###autoload
 (defun consult-bookmark (name)
   "If bookmark NAME exists, open it, otherwise set bookmark under the given NAME."
-  (interactive (list (completing-read "Bookmark: " (bookmark-all-names) nil nil nil 'bookmark-history)))
+  (interactive (list (consult--read "Bookmark: " (bookmark-all-names) :history 'bookmark-history)))
   (if (assoc name bookmark-alist)
       (bookmark-jump name)
     (bookmark-set name)))
@@ -430,11 +454,11 @@ Otherwise replace the just-yanked text with the chosen text."
 ;;;###autoload
 (defun consult-apropos (pattern)
   "Call `apropos' for selected PATTERN."
-  (interactive (list (completing-read "Apropos: "
-                                      obarray
-                                      (lambda (x) (or (fboundp x) (boundp x) (facep x) (symbol-plist x)))
-                                      nil nil 'consult-apropos-history
-                                      (thing-at-point 'symbol))))
+  (interactive (list (consult--read "Apropos: "
+                                    obarray
+                                    :predicate (lambda (x) (or (fboundp x) (boundp x) (facep x) (symbol-plist x)))
+                                    :history 'consult-apropos-history
+                                    :default (thing-at-point 'symbol))))
   (when (string= pattern "")
     (user-error "No pattern given"))
   (apropos pattern))
@@ -442,25 +466,24 @@ Otherwise replace the just-yanked text with the chosen text."
 ;;;###autoload
 (defun consult-command-history (cmd)
   "Select CMD from the command history."
-  (interactive (list (completing-read "Command: "
-                                      (mapcar #'prin1-to-string command-history)
-                                      nil nil nil 'consult-command-history)))
+  (interactive (list (consult--read "Command: "
+                                    (cl-remove-duplicates (mapcar #'prin1-to-string command-history) :test #'equal)
+                                    :history 'consult-command-history)))
   (eval (read cmd)))
 
 ;;;###autoload
 (defun consult-minibuffer-history (str)
   "Insert STR from minibuffer history."
-  (interactive (list (completing-read "Command: "
-                                      (cl-remove-duplicates minibuffer-history :test #'equal)
-                                      nil nil nil 'consult-minibuffer-history)))
+  (interactive (list (consult--read "Minibuffer: "
+                                    (cl-remove-duplicates minibuffer-history :test #'equal)
+                                    :history 'consult-minibuffer-history)))
   (insert (substring-no-properties str)))
 
 ;;;###autoload
 (defun consult-minor-mode (mode)
   "Enable or disable minor MODE."
   (interactive (list
-                (let ((candidates-alist)
-                      (selectrum-should-sort-p)) ;; TODO more generic?
+                (let ((candidates-alist))
                   (dolist (mode minor-mode-list)
                     (when (and (boundp mode) (commandp mode))
                       (push (cons (concat
@@ -478,7 +501,10 @@ Otherwise replace the just-yanked text with the chosen text."
                                                (lambda (x y)
                                                  (> (if (symbol-value (cdr x)) 1 0)
                                                     (if (symbol-value (cdr y)) 1 0)))))
-                  (cdr (assoc (completing-read "Minor modes: " candidates-alist nil t nil 'consult-minor-mode-history)
+                  (cdr (assoc (consult--read "Minor modes: " candidates-alist
+                                             :sort nil
+                                             :require-match t
+                                             :history 'consult-minor-mode-history)
                               candidates-alist)))))
   (call-interactively mode))
 
