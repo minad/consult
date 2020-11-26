@@ -181,7 +181,8 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                     all-markers)))
          (form (format "%%%dd" (length (number-to-string max-line))))
          (candidates-alist (mapc (lambda (cand)
-                                   ;; TODO use prefix here or make line number part of string?
+                                   ;; TODO use prefix here or keep the line number as part of string?
+                                   ;; If we would use a prefix, the alist approach would not work for duplicate lines!
                                    (setcar cand (concat (propertize (format form (caar cand))
                                                                     'face 'consult-linum)
                                                         " " (cdar cand))))
@@ -213,10 +214,13 @@ This command obeys narrowing."
                  (default-cand-dist most-positive-fixnum))
             (dolist (str buffer-lines)
               (unless (string-blank-p str)
-                (let ((cand (concat (propertize " "
-                                                'display
-                                                (propertize (format line-format line)
-                                                            'face 'consult-linum))
+                (let ((cand (concat (propertize
+                                     ;; HACK: Disambiguate the line by prepending it with a unicode
+                                     ;; character in the supplementary private use plane b.
+                                     ;; This will certainly have many ugly consequences.
+                                     (concat (list (+ #x100000 (mod line #xFFFE))))
+                                     'display (propertize (format line-format line)
+                                                          'face 'consult-linum))
                                     str))
                       (dist (abs (- curr-line line))))
                   (when (or (not default-cand) (< dist default-cand-dist))
