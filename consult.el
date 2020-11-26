@@ -47,7 +47,8 @@
 
 (defgroup consult nil
   "Consultation using `completing-read'."
-  :group 'convenience)
+  :group 'convenience
+  :prefix "consult-")
 
 (defface consult-mark
   '((t :inherit error :weight normal))
@@ -69,13 +70,6 @@
   "Face used to highlight views in `consult-buffer'."
   :group 'consult)
 
-;; TODO is there a more generic solution for sorting?
-(defvar selectrum-should-sort-p)
-
-;; TODO try to reduce selectrum-read usage
-;; or move selectrum-dependent functions to a separate file
-(declare-function selectrum-read "selectrum")
-
 (defvar consult-mark-history ()
   "History for the command `consult-mark'.")
 
@@ -84,6 +78,28 @@
 
 (defvar consult-apropos-history nil
   "History for the command `consult-apropos'.")
+
+(defcustom consult-property-prefix 'selectrum-candidate-display-prefix
+  "Property key used to enhance candidates with prefix information."
+  :type 'symbol
+  :group 'consult)
+
+(defcustom consult-property-suffix 'selectrum-candidate-display-suffix
+  "Property key used to enhance candidates with suffix information."
+  :type 'symbol
+  :group 'consult)
+
+(defcustom consult-property-margin 'selectrum-candidate-display-right-margin
+  "Property key used to enhance candidates with information displayed at the right-margin."
+  :type 'symbol
+  :group 'consult)
+
+;; TODO is there a more generic solution for sorting?
+(defvar selectrum-should-sort-p)
+
+;; TODO try to reduce selectrum-read usage
+;; or move selectrum-dependent functions to a separate file
+(declare-function selectrum-read "selectrum")
 
 ;; see https://github.com/raxod502/selectrum/issues/226
 ;;;###autoload
@@ -151,7 +167,7 @@ This command obeys narrowing."
             (dolist (str buffer-lines)
               (unless (string-blank-p str)
                 (let ((cand (propertize str
-                                        'selectrum-candidate-display-prefix
+                                        consult-property-prefix
                                         (propertize (format line-format line)
                                                     'face 'completions-annotations)))
                       (dist (abs (- curr-line line))))
@@ -212,21 +228,21 @@ Dependending on the selected item BUFFER-SWITCH, FILE-SWITCH or BOOKMARK-SWITCH 
                               (propertize x
                                           'face 'consult-view
                                           'consult-switch bookmark-switch
-                                          'selectrum-candidate-display-right-margin
+                                          consult-property-margin
                                           (propertize "View" 'face 'completions-annotations)))
                             (bookmark-view-names))))
          (bookmarks (mapcar (lambda (x)
                               (propertize (car x)
                                           'face 'consult-bookmark
                                           'consult-switch bookmark-switch
-                                          'selectrum-candidate-display-right-margin
+                                          consult-property-margin
                                           (propertize "Bookmark" 'face 'completions-annotations)))
                             bookmark-alist))
          (all-files (mapcar (lambda (x)
                               (propertize (abbreviate-file-name x)
                                           'face 'consult-file
                                           'consult-switch file-switch
-                                          'selectrum-candidate-display-right-margin
+                                          consult-property-margin
                                           (propertize "File" 'face 'completions-annotations)))
                             recentf-list))
          (files (remove curr-file all-files))
