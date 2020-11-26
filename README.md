@@ -1,10 +1,11 @@
 # consult.el - Consultation using completing-read
 
 This package provides various commands based on the Emacs completion function `completing-read`.
-The functions should be compatible with any completion-system based on the standard Emacs API,
-e.g., icomplete and selectrum. At least the goal is to keep the completion-system specifics to a minimum.
-Commands which can only be implemented using selectrum-specific extensions, will be packaged up separately
-before release.
+The functions should be compatible with completion-systems based on the standard Emacs API,
+e.g., Icomplete and Selectrum. Note that if you use Ivy or Helm, you don't need this library, since both
+already bring their own rich set of additional commands.
+The goal is to keep the completion-system specifics in this library to a minimum.
+Commands which can only be implemented using Selectrum-specific extensions, will be packaged up separately before release.
 
 ## Available commands
 
@@ -51,7 +52,7 @@ use the enhanced functions, you must configure the keybindings yourself.
 ## Acknowledgments
 
 You can probably guess from the name that this package is inspired by and partially derived from
-[counsel](https://github.com/abo-abo/swiper/blob/master/counsel.el) (Author Oleh Krehel, Copyright Free Software Foundation, Inc.).
+[Counsel](https://github.com/abo-abo/swiper/blob/master/counsel.el) (Author Oleh Krehel, Copyright Free Software Foundation, Inc.).
 Note that we are far from counsel in terms of covered functionality.
 Furthermore some of the commands found in this package were taken from the
-[selectrum wiki](https://github.com/raxod502/selectrum/wiki/Useful-Commands).
+[Selectrum wiki](https://github.com/raxod502/selectrum/wiki/Useful-Commands).
