@@ -45,17 +45,17 @@
 
 (defface consult-file
   '((t :inherit font-lock-function-name-face :weight normal))
-  "Face used to highlight files in `consult-switch-buffer'."
+  "Face used to highlight files in `consult-buffer'."
   :group 'consult)
 
 (defface consult-bookmark
   '((t :inherit font-lock-constant-face :weight normal))
-  "Face used to highlight bookmarks in `consult-switch-buffer'."
+  "Face used to highlight bookmarks in `consult-buffer'."
   :group 'consult)
 
 (defface consult-view
   '((t :inherit font-lock-keyword-face :weight normal))
-  "Face used to highlight views in `consult-switch-buffer'."
+  "Face used to highlight views in `consult-buffer'."
   :group 'consult)
 
 ;; TODO is there a more generic solution for sorting?
@@ -115,7 +115,7 @@
     (goto-char (cdr (assoc chosen candidates-alist)))))
 
 ;;;###autoload
-(defun consult-find-recent-file (file)
+(defun consult-recent-file (file)
   "Find recent FILE using `completing-read'."
   (interactive (list (completing-read
                       "Find recent file: "
@@ -124,7 +124,7 @@
   (find-file file))
 
 ;;;###autoload
-(defun consult-switch-buffer ()
+(defun consult-buffer ()
   "Enhanced `switch-to-buffer' function with support for virtual buffers."
   (interactive)
   (let* ((selectrum-should-sort-p)
@@ -138,28 +138,25 @@
          ;; https://github.com/minad/bookmark-view/blob/master/bookmark-view.el
          (views (if (fboundp 'bookmark-view-names)
                     (mapcar (lambda (x)
-                              (propertize
-                               x
-                               'face 'consult-view
-                               'consult-candidate 'bookmark
-                               'selectrum-candidate-display-right-margin
-                               (propertize "View" 'face 'completions-annotations)))
+                              (propertize x
+                                          'face 'consult-view
+                                          'consult-candidate #'bookmark-jump
+                                          'selectrum-candidate-display-right-margin
+                                          (propertize "View" 'face 'completions-annotations)))
                             (bookmark-view-names))))
          (bookmarks (mapcar (lambda (x)
-                              (propertize
-                               (car x)
-                               'face 'consult-bookmark
-                               'consult-candidate 'bookmark
-                               'selectrum-candidate-display-right-margin
-                               (propertize "Bookmark" 'face 'completions-annotations)))
+                              (propertize (car x)
+                                          'face 'consult-bookmark
+                                          'consult-candidate #'bookmark-jump
+                                          'selectrum-candidate-display-right-margin
+                                          (propertize "Bookmark" 'face 'completions-annotations)))
                             bookmark-alist))
          (all-files (mapcar (lambda (x)
-                              (propertize
-                               (abbreviate-file-name x)
-                               'face 'consult-file
-                               'consult-candidate 'file
-                               'selectrum-candidate-display-right-margin
-                               (propertize "File" 'face 'completions-annotations)))
+                              (propertize (abbreviate-file-name x)
+                                          'face 'consult-file
+                                          'consult-candidate #'find-file
+                                          'selectrum-candidate-display-right-margin
+                                          (propertize "File" 'face 'completions-annotations)))
                             recentf-list))
          (files (remove curr-file all-files))
          (all-cands (append visible-bufs files bookmarks))
@@ -186,10 +183,7 @@
                     (cons 'candidates all-cands))))))
          ;; TODO can this be replaced by completing-read?
          (chosen (selectrum-read "Switch to: " gen-cands)))
-    (pcase (get-text-property 0 'consult-candidate chosen)
-      ('file (find-file chosen))
-      ('bookmark (bookmark-jump chosen))
-      (_ (switch-to-buffer chosen)))))
+    (funcall (or (get-text-property 0 'consult-candidate chosen) #'switch-to-buffer) chosen)))
 
 (defun consult--yank-read ()
   "Open kill ring menu and return chosen text."
