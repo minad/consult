@@ -264,5 +264,17 @@ Otherwise replace the just-yanked text with the chosen text."
         (jump-to-register chosen-reg)
       (error (insert-register chosen-reg)))))
 
+;;;###autoload
+(defun consult-theme (theme)
+  "Enable a theme from the list of `custom-available-themes'."
+  (interactive (list (intern
+		      (completing-read
+		       "Theme: "
+                       (mapcar #'symbol-name (custom-available-themes))))))
+  (mapc #'disable-theme custom-enabled-themes)
+  (if (custom-theme-p theme)
+      (enable-theme theme)
+    (load-theme theme :no-confirm)))
+
 (provide 'consult)
 ;;; consult.el ends here
