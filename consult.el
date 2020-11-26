@@ -216,14 +216,15 @@ This command obeys narrowing."
   ;; We would observe this if consulting an unfontified line.
   ;; Therefore we have to enforce font-locking now.
   (jit-lock-fontify-now)
-  (let* ((curr-line (line-number-at-pos (point) t))
-         (buffer-lines (split-string (buffer-string) "\n"))
-         (line-format (format "%%%dd " (length (number-to-string (length buffer-lines)))))
-         (default-cand)
-         (default-cand-dist most-positive-fixnum)
+  (let* ((default-cand)
          (candidates-alist
-          (let ((candidates)
-                (line (line-number-at-pos (point-min) t)))
+          (let* ((candidates)
+                 (pos (point-min))
+                 (line (line-number-at-pos pos t))
+                 (curr-line (line-number-at-pos (point) t))
+                 (buffer-lines (split-string (buffer-string) "\n"))
+                 (line-format (format "%%%dd " (length (number-to-string (length buffer-lines)))))
+                 (default-cand-dist most-positive-fixnum))
             (dolist (str buffer-lines)
               (unless (string-blank-p str)
                 (let ((cand (propertize str
@@ -234,8 +235,9 @@ This command obeys narrowing."
                   (when (or (not default-cand) (< dist default-cand-dist))
                     (setq default-cand cand
                           default-cand-dist dist))
-                  (push (cons cand line) candidates)))
-              (setq line (1+ line)))
+                  (push (cons cand pos) candidates)))
+              (setq line (1+ line)
+                    pos (+ pos (length str) 1)))
             (nreverse candidates)))
          (chosen (consult--read "Jump to matching line: "
                                 (or candidates-alist (user-error "No lines"))
@@ -244,8 +246,7 @@ This command obeys narrowing."
                                 :history 'consult-line-history
                                 :default default-cand)))
     (push-mark (point) t)
-    (forward-line (- chosen curr-line))
-    (beginning-of-line-text 1)))
+    (goto-char chosen)))
 
 (defmacro consult--recent-file-read ()
   "Read recent file via `completing-read'."
