@@ -1,4 +1,4 @@
-;;; consult.el --- Various interactive functions using completing-read -*- lexical-binding: t -*-
+;;; consult.el --- Various commands using completing-read -*- lexical-binding: t -*-
 
 ;; Author: The selectrum contributors
 ;; Created: 2020
@@ -24,7 +24,7 @@
 
 ;;; Commentary:
 
-;; Consult implements a set of interactive functions which
+;; Consult implements a set of commands which
 ;; use `completing-read' to select from a list of candidates.
 
 ;;; Code:
@@ -35,7 +35,7 @@
 (require 'seq)
 
 (defgroup consult nil
-  "Various functions using `completing-read'."
+  "Various commands using `completing-read'."
   :group 'convenience)
 
 (defface consult-mark
@@ -125,7 +125,7 @@
 
 ;;;###autoload
 (defun consult-buffer ()
-  "Enhanced `switch-to-buffer' function with support for virtual buffers."
+  "Enhanced `switch-to-buffer' command with support for virtual buffers."
   (interactive)
   (let* ((selectrum-should-sort-p)
          (curr-buf (window-buffer (minibuffer-selected-window)))
