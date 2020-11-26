@@ -261,8 +261,9 @@ This command obeys narrowing."
   (interactive (consult--recent-file-read))
   (find-file-other-window file))
 
-;; TODO try to reduce selectrum-read usage
-;; or move selectrum-dependent functions to a separate file
+;; consult--buffer performs dynamic computation of the candidate set.
+;; this is currently not supported by completing-read+selectrum.
+;; therefore the selectrum api is used directly.
 (defvar selectrum-should-sort-p)
 (declare-function selectrum-read "selectrum")
 
@@ -305,7 +306,7 @@ Dependending on the selected item BUFFER-SWITCH, FILE-SWITCH or BOOKMARK-SWITCH 
                             recentf-list))
          (files (remove curr-file all-files))
          (all-cands (append visible-bufs files bookmarks))
-         (gen-cands
+         (generate
           (lambda (input)
             (cond
              ((string-prefix-p " " input)
@@ -326,8 +327,8 @@ Dependending on the selected item BUFFER-SWITCH, FILE-SWITCH or BOOKMARK-SWITCH 
              (t
               (list (cons 'input input)
                     (cons 'candidates all-cands))))))
-         (selectrum-should-sort-p) ;; TODO more generic?
-         (chosen (selectrum-read "Switch to: " gen-cands))) ;; TODO can this be replaced by completing-read?
+         (selectrum-should-sort-p)
+         (chosen (selectrum-read "Switch to: " generate)))
     (funcall (or (get-text-property 0 'consult-switch chosen) buffer-switch) chosen)))
 
 ;;;###autoload
