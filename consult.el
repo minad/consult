@@ -33,7 +33,7 @@
 (require 'cl-lib)
 (require 'recentf)
 (require 'seq)
-(require 'thingatpt)
+(require 'subr-x)
 
 ;; TODO consult-command-history
 ;; TODO consult-minibuffer-history
@@ -121,8 +121,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
          (form (format "%%%dd" (length (number-to-string max-line))))
          (candidates-alist (mapc (lambda (cand)
                                    (setcar cand (concat (propertize (format form (caar cand))
-                                                                    'face
-                                                                    'completions-annotations)
+                                                                    'face 'completions-annotations)
                                                         " " (cdar cand))))
                                  unformatted-candidates))
          (selectrum-should-sort-p) ;; TODO more generic?
@@ -130,13 +129,15 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
     (goto-char (cdr (assoc chosen candidates-alist)))))
 
 ;;;###autoload
-;; TODO there is a weird effect regarding font-locking. if a line has not been scrolled to yet,
-;; the line is not font-locked in consult-line. Can font-locking be enforced before accessing buffer-string?
 (defun consult-line ()
   "Search for a matching line and jump to the line beginning.
 The default candidate is a non-empty line closest to point.
 This command obeys narrowing."
   (interactive)
+  ;; Font-locking is lazy, i.e., if a line has not been looked at yet, the line is not font-locked.
+  ;; We would observe this if consulting an unfontified line.
+  ;; Therefore we have to enforce font-locking now.
+  (jit-lock-fontify-now)
   (let* ((curr-line (line-number-at-pos (point) t))
          (buffer-lines (split-string (buffer-string) "\n"))
          (line-format (format "%%%dd " (length (number-to-string (length buffer-lines)))))
