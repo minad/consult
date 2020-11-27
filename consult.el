@@ -44,8 +44,6 @@
 
 ;; TODO Decide on a consistent interactive-style, move all consult--read code to (interactive ...)?
 ;;      This makes sense for functions which can be used both interactively and non-interactively.
-;; TODO Is it possible to add prefix/suffix/margin annotations using the standard completing-read api?
-;; TODO reduce code duplication between consult-line, consult-mark, consult-outline?
 
 (defgroup consult nil
   "Consultation using `completing-read'."
@@ -186,6 +184,17 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                 (occur-read-primary-args)))
   (occur-1 regexp nlines bufs))
 
+(defun consult--add-linum (max-line candidates)
+  "Add line numbers to unformatted CANDIDATES. The MAX-LINE is needed to determine the width."
+  (let ((form (format "%%%dd" (length (number-to-string max-line)))))
+    (mapc (lambda (cand)
+            ;; TODO use prefix here or keep the line number as part of string?
+            ;; If we would use a prefix, the alist approach would not work for duplicate lines!
+            (setcar cand (concat (propertize (format form (caar cand))
+                                             'face 'consult-linum)
+                                 " " (cdar cand))))
+          candidates)))
+
 ;;;###autoload
 (defun consult-outline ()
   "Jump to an outline heading."
@@ -211,17 +220,10 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                           (point))
                           candidates)
                   (if (and (bolp) (not (eobp))) (forward-char 1))))
-              (nreverse candidates))))
-         (form (format "%%%dd" (length (number-to-string max-line))))
-         (candidates-alist (mapc (lambda (cand)
-                                   ;; TODO use prefix here or keep the line number as part of string?
-                                   ;; If we would use a prefix, the alist approach would not work for duplicate lines!
-                                   (setcar cand (concat (propertize (format form (caar cand))
-                                                                    'face 'consult-linum)
-                                                        " " (cdar cand))))
-                                 unformatted-candidates)))
+              (nreverse candidates)))))
+    (push-mark (point) t)
     (goto-char (consult--read "Go to heading: "
-                              candidates-alist
+                              (consult--add-linum max-line unformatted-candidates)
                               :sort nil
                               :require-match t
                               :history 'consult-outline-history))))
@@ -252,17 +254,10 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                                            (substring lstr col))))
                         (setq max-line (max line max-line))
                         (cons (cons line cand) pos)))
-                    all-markers)))
-         (form (format "%%%dd" (length (number-to-string max-line))))
-         (candidates-alist (mapc (lambda (cand)
-                                   ;; TODO use prefix here or keep the line number as part of string?
-                                   ;; If we would use a prefix, the alist approach would not work for duplicate lines!
-                                   (setcar cand (concat (propertize (format form (caar cand))
-                                                                    'face 'consult-linum)
-                                                        " " (cdar cand))))
-                                 unformatted-candidates)))
+                    all-markers))))
+    (push-mark (point) t)
     (goto-char (consult--read "Go to mark: "
-                              candidates-alist
+                              (consult--add-linum max-line unformatted-candidates)
                               :sort nil
                               :require-match t
                               :history 'consult-mark-history))))
@@ -304,7 +299,7 @@ This command obeys narrowing."
               (setq line (1+ line)
                     pos (+ pos (length str) 1)))
             (nreverse candidates)))
-         (chosen (consult--read "Jump to matching line: "
+         (chosen (consult--read "Go to line: "
                                 (or candidates-alist (user-error "No lines"))
                                 :sort nil
                                 :require-match t
