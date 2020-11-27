@@ -177,12 +177,16 @@
                   (propertize consult-on 'face 'consult-on)
                 (propertize consult-off 'face 'consult-off))))
 
-;; TODO move this to the selectrum-specific code
+;; TODO get rid of selectrum specifics where possible
+(defvar selectrum-should-sort-p)
+(defvar selectrum-mode)
+(declare-function selectrum-read "selectrum")
 (declare-function selectrum-get-current-candidate "selectrum")
 (declare-function selectrum--minibuffer-post-command-hook "selectrum")
 
-;; TODO this macro should not be selectrum specific.
-;; furthermore maybe selectrum could offer some api for preview?
+;; TODO previews:
+;; * only selectrum support is provided for now, icomplete should be supported too
+;; * maybe selectrum could offer an api to hook into instead of using advice
 (defmacro consult--preview (enabled save restore preview body)
   "Preview support for completion.
 ENABLED must be t to enable preview.
@@ -192,18 +196,18 @@ PREVIEW is a pair (variable . expression) which previews the given candidate.
 BODY is the body expression."
   (declare (indent 4))
   (let ((advice (make-symbol "advice")))
-    `(if ,enabled
+    `(if (and ,enabled (bound-and-true-p selectrum-mode)) ;; check for selectrum!
          (let ((,(car restore) ,save)
                (,advice
                 (lambda ()
                   (let ((,(car preview) (selectrum-get-current-candidate)))
                     (when (and ,(car preview) (not (string= "" ,(car preview))))
-                      ,(cadr preview))))))
+                      ,@(cdr preview))))))
            (advice-add #'selectrum--minibuffer-post-command-hook :after ,advice)
            (unwind-protect
                ,body
              (advice-remove #'selectrum--minibuffer-post-command-hook ,advice)
-             ,(cadr restore)))
+             ,@(cdr restore)))
        ,body)))
 
 (defun consult--window ()
@@ -654,12 +658,9 @@ Otherwise replace the just-yanked text with the selected text."
 ;;; Selectrum specific code
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; consult--buffer performs dynamic computation of the candidate set.
+;; TODO consult--buffer performs dynamic computation of the candidate set.
 ;; this is currently not supported by completing-read+selectrum.
 ;; therefore the selectrum api is used directly.
-(defvar selectrum-should-sort-p)
-(declare-function selectrum-read "selectrum")
-
 (defun consult--buffer (open-buffer open-file open-bookmark)
   "Generic implementation of `consult-buffer'.
 Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be used to display the item."
@@ -717,7 +718,6 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
              (t
               (list (cons 'input input)
                     (cons 'candidates all-cands))))))
-         (selectrum-should-sort-p)
          (selected
           (consult--preview consult-preview-buffer
               (current-window-configuration)
@@ -725,7 +725,8 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
               (buf (when (get-buffer buf)
                      (with-selected-window (consult--window)
                        (switch-to-buffer buf))))
-            (selectrum-read "Switch to: " generate))))
+            (let ((selectrum-should-sort-p))
+              (selectrum-read "Switch to: " generate)))))
     (cond
      ((get-buffer selected) (funcall open-buffer selected)) ;; buffers have priority
      ((member selected all-files) (funcall open-file selected))

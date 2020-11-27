@@ -9,11 +9,10 @@ or [Helm](https://github.com/emacs-helm/helm), you don't need consult,
 since both libraries already bring their own rich set of additional commands.
 
 The goal is to keep the completion-system specifics in this library to a minimum.
-Commands which cannot be implemented purely in terms of the standard API
-will be packaged up and released separately. As of now, only the `consult-buffer`
-implementation is problematic. Maybe I will provide a fallback variant of the command, which
-will work on all implementations, but will be a bit less rich than the variant offered
-if Selectrum is used.
+As of now, the `consult-buffer` command is only supported if Selectrum is used.
+We will probably provide a variant of `consult-buffer` which is a bit less rich,
+but works purely with `completing-read`. Furthermore live previews are only implemented
+for Selectrum as of now, but Icomplete support is planned.
 
 ## Available commands
 
