@@ -163,10 +163,10 @@
 (defvar consult-minor-mode-history nil
   "History for the command `consult-minor-mode'.")
 
-(defun consult--status-prefix (flag)
-  "Status prefix for given boolean FLAG."
+(defun consult--status-prefix (enabled)
+  "Status prefix for given boolean ENABLED."
   (propertize " " 'display
-              (if flag
+              (if enabled
                   (propertize consult-on 'face 'consult-on)
                 (propertize consult-off 'face 'consult-off))))
 
@@ -553,34 +553,38 @@ Otherwise replace the just-yanked text with the selected text."
 
 ;; TODO this macro should not be selectrum specific.
 ;; furthermore maybe selectrum could offer some api for preview?
-(defmacro consult--preview (bind preview &rest body)
+(defmacro consult--preview (enabled bind preview &rest body)
   "Preview support for completion.
 BIND is a bound variable.
 PREVIEW is the preview expression.
 BODY are the body expressions."
-  (declare (indent 2))
+  (declare (indent 3))
   (let ((advice (make-symbol "advice"))
         (var (car bind)))
-    `(let (,bind
-           (,advice
-            (lambda ()
-              (let ((,var (selectrum-get-current-candidate)))
-                (when (and ,var (not (string= "" ,var)))
-                  ,preview)))))
-       (advice-add #'selectrum--minibuffer-post-command-hook :after ,advice)
-       (unwind-protect
-           (progn ,@body)
-         (advice-remove #'selectrum--minibuffer-post-command-hook ,advice)
-         ,preview))))
+    `(let (,bind)
+       (if ,enabled
+           (let ((,advice
+                  (lambda ()
+                    (let ((,var (selectrum-get-current-candidate)))
+                      (when (and ,var (not (string= "" ,var)))
+                        ,preview)))))
+             (advice-add #'selectrum--minibuffer-post-command-hook :after ,advice)
+             (unwind-protect
+                 (progn ,@body)
+               (advice-remove #'selectrum--minibuffer-post-command-hook ,advice)
+               ,preview))
+         (progn ,@body)))))
 
 ;;;###autoload
 (defun consult-theme (theme)
   "Enable THEME from `consult-themes'."
   (interactive
    (list
-    (consult--preview (theme (and (car custom-enabled-themes)
-                                  (symbol-name (car custom-enabled-themes))))
-        (if consult-preview-theme (consult-theme (and theme (intern theme))))
+    (consult--preview
+        consult-preview-theme
+        (theme (and (car custom-enabled-themes)
+                    (symbol-name (car custom-enabled-themes))))
+      (consult-theme (and theme (intern theme)))
       (consult--read
        "Theme: "
        (mapcar #'symbol-name
@@ -659,14 +663,15 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                     (cons 'candidates all-cands))))))
          (selectrum-should-sort-p)
          (selected
-          (consult--preview (buf curr-buf)
+          (consult--preview consult-preview-buffer
+              (buf curr-buf)
               (when (and consult-preview-buffer (get-buffer buf))
                 (let ((win curr-win))
                   (while (not (window-live-p win))
                     (setq win (next-window)))
                   (with-selected-window win
                     (switch-to-buffer buf))))
-              (selectrum-read "Switch to: " generate))))
+            (selectrum-read "Switch to: " generate))))
     (funcall (cond
               ((get-buffer selected) open-buffer) ;; buffers have priority
               ((member selected all-files) open-file)
