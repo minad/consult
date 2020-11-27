@@ -84,13 +84,23 @@
   "Face used to highlight line numbers in selections."
   :group 'consult)
 
-(defcustom consult-on #("+ " 0 1 (face (:inherit 'success :weight bold)))
-  "Symbol used to show enabled modes."
+(defface consult-on
+  '((t :inherit success :weight bold))
+  "Face used for `consult-on'."
+  :group 'consult)
+
+(defface consult-off
+  '((t :inherit error :weight bold))
+  "Face used for `consult-off'."
+  :group 'consult)
+
+(defcustom consult-on "+ "
+  "Prefix string for active modes."
   :type 'string
   :group 'consult)
 
-(defcustom consult-off #("- " 0 1 (face (:inherit 'error :weight bold)))
-  "Symbol used to show disabled modes."
+(defcustom consult-off "- "
+  "Prefix string for disabled modes."
   :type 'string
   :group 'consult)
 
@@ -117,6 +127,13 @@
 
 (defvar consult-minor-mode-history nil
   "History for the command `consult-minor-mode'.")
+
+(defun consult--status-prefix (flag)
+  "Status prefix for given boolean FLAG."
+  (propertize " " 'display
+              (if flag
+                  (propertize consult-on 'face 'consult-on)
+                (propertize consult-off 'face 'consult-off))))
 
 (cl-defun consult--read (prompt candidates &key predicate require-match history default category (sort t))
   "Simplified completing read function.
@@ -283,7 +300,7 @@ This command obeys narrowing."
 
 (defun consult--buffer (buffer-switch file-switch bookmark-switch)
   "Generic implementation of `consult-buffer'.
-Dependending on the selected item BUFFER-SWITCH, FILE-SWITCH or BOOKMARK-SWITCH will be used to display the item."
+Depending on the selected item BUFFER-SWITCH, FILE-SWITCH or BOOKMARK-SWITCH will be used to display the item."
   (let* ((curr-buf (window-buffer (minibuffer-selected-window)))
          (curr-file (or (buffer-file-name curr-buf) ""))
          (bufs (mapcar #'buffer-name (delq curr-buf (buffer-list))))
@@ -503,9 +520,7 @@ Otherwise replace the just-yanked text with the chosen text."
       (dolist (mode minor-mode-list)
         (when (and (boundp mode) (commandp mode))
           (push (cons (concat
-                       (propertize " "
-                                   'display
-                                   (if (symbol-value mode) consult-on consult-off))
+                       (consult--status-prefix (symbol-value mode))
                        (symbol-name mode)
                        (let* ((lighter (cdr (assq mode minor-mode-alist)))
                               (str (and lighter (propertize (string-trim (format-mode-line (cons t lighter)))
