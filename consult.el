@@ -118,7 +118,7 @@
 (defvar consult-minor-mode-history nil
   "History for the command `consult-minor-mode'.")
 
-(cl-defun consult--read (prompt candidates &key predicate require-match history default (sort t))
+(cl-defun consult--read (prompt candidates &key predicate require-match history default category (sort t))
   "Simplified completing read function.
 
 PROMPT is the string to prompt with.
@@ -127,20 +127,29 @@ PREDICATE is a filter function for the candidates.
 REQUIRE-MATCH equals t means that an exact match is required.
 HISTORY is the symbol of the history variable.
 DEFAULT is the default input.
+CATEGORY is the completion category.
 SORT should be set to nil if the candidates are already sorted."
-  (cl-assert (or (not candidates) (stringp (car candidates)) (consp (car candidates))))
-  (cl-assert (or (not (consp (car candidates))) require-match))
+  ;; supported types
+  (cl-assert (or (not candidates) ;; nil
+                 (obarrayp candidates) ;; obarray
+                 (stringp (car candidates)) ;; string list
+                 (consp (car candidates)))) ;; alist
+  ;; alists can only be used if require-match=t
+  (cl-assert (or (not (and (consp candidates) (consp (car candidates)))) require-match))
   (let ((result (completing-read
                  prompt
-                 (if sort
+                 (if (and sort (not category))
                      candidates
                    (lambda (str pred action)
                      (if (eq action 'metadata)
-                         '(metadata (cycle-sort-function . identity)
-                                    (display-sort-function . identity))
+                         `(metadata
+                           ,@(if category `((category . ,category)))
+                           ,@(if (not sort) '((cycle-sort-function . identity)
+                                              (display-sort-function . identity))))
                        (complete-with-action action candidates str pred))))
                  predicate require-match nil history default)))
-    (if (and result (consp (car candidates)))
+    ;; if candidates is an alist, we lookup the key and return the value
+    (if (and result (consp candidates) (consp (car candidates)))
         (cdr (assoc result candidates))
       result)))
 
@@ -245,6 +254,7 @@ This command obeys narrowing."
           "Find recent file: "
           (or (mapcar #'abbreviate-file-name recentf-list) (user-error "No recent files"))
           :require-match t
+          :category 'file
           :history 'file-name-history)))
 
 ;;;###autoload
@@ -437,6 +447,7 @@ Otherwise replace the just-yanked text with the chosen text."
   (interactive (list (intern
 		      (consult--read "Theme: " (mapcar #'symbol-name (custom-available-themes))
                                      :require-match t
+                                     :category 'theme
                                      :history 'consult-theme-history))))
   (mapc #'disable-theme custom-enabled-themes)
   (if (custom-theme-p theme)
@@ -446,7 +457,9 @@ Otherwise replace the just-yanked text with the chosen text."
 ;;;###autoload
 (defun consult-bookmark (name)
   "If bookmark NAME exists, open it, otherwise set bookmark under the given NAME."
-  (interactive (list (consult--read "Bookmark: " (bookmark-all-names) :history 'bookmark-history)))
+  (interactive (list (consult--read "Bookmark: " (bookmark-all-names)
+                                    :history 'bookmark-history
+                                    :category 'bookmark)))
   (if (assoc name bookmark-alist)
       (bookmark-jump name)
     (bookmark-set name)))
@@ -458,6 +471,7 @@ Otherwise replace the just-yanked text with the chosen text."
                                     obarray
                                     :predicate (lambda (x) (or (fboundp x) (boundp x) (facep x) (symbol-plist x)))
                                     :history 'consult-apropos-history
+                                    :category 'symbol
                                     :default (thing-at-point 'symbol))))
   (when (string= pattern "")
     (user-error "No pattern given"))
@@ -468,6 +482,7 @@ Otherwise replace the just-yanked text with the chosen text."
   "Select CMD from the command history."
   (interactive (list (consult--read "Command: "
                                     (cl-remove-duplicates (mapcar #'prin1-to-string command-history) :test #'equal)
+                                    ;; :category 'command ;; TODO command category is wrong here I think? category "sexp"?
                                     :history 'consult-command-history)))
   (eval (read cmd)))
 
