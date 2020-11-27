@@ -42,9 +42,6 @@
 (require 'seq)
 (require 'subr-x)
 
-;; TODO implement preview for consult-mark
-;; TODO implement preview for consult-outline
-;; TODO implement preview for consult-line
 ;; TODO Decide on a consistent interactive-style, move all consult--read code to (interactive ...)?
 ;;      This makes sense for functions which can be used both interactively and non-interactively.
 
@@ -52,6 +49,16 @@
   "Consultation using `completing-read'."
   :group 'convenience
   :prefix "consult-")
+
+(defface consult-preview-line
+  '((t :inherit region))
+  "Face used to for line previews."
+  :group 'consult)
+
+(defface consult-preview-cursor
+  '((t :inherit cursor))
+  "Face used to for cursor previews."
+  :group 'consult)
 
 (defface consult-mark
   '((t :inherit error :weight normal))
@@ -78,7 +85,7 @@
   "Face used to highlight views in `consult-buffer'."
   :group 'consult)
 
-(defface consult-linum
+(defface consult-line-number
   '((t :inherit completions-annotations :weight normal))
   "Face used to highlight line numbers in selections."
   :group 'consult)
@@ -194,6 +201,29 @@
              ,(cadr restore)))
        ,body)))
 
+(defun consult--window ()
+  "Return live window."
+  (let ((win (minibuffer-selected-window)))
+    (while (not (window-live-p win))
+      (setq win (next-window)))
+    win))
+
+(defun consult--preview-line (cmd &optional arg)
+  (pcase cmd
+    ('restore
+     (remove-overlays nil nil 'consult-overlay t))
+    ('preview
+     (with-selected-window (consult--window)
+       (goto-char arg)
+       (recenter)
+       (remove-overlays nil nil 'consult-overlay t)
+       (let ((ov (make-overlay (line-beginning-position) (line-end-position))))
+         (overlay-put ov 'face 'consult-preview-line)
+         (overlay-put ov 'consult-overlay t))
+       (let ((ov (make-overlay (point) (1+ (point)))))
+         (overlay-put ov 'face 'consult-preview-cursor)
+         (overlay-put ov 'consult-overlay t))))))
+
 (cl-defun consult--read (prompt candidates &key
                                 predicate require-match history default
                                 category (sort t) (lookup #'identity) preview)
@@ -216,7 +246,7 @@ PREVIEW is a preview function."
                  (consp (car candidates)))) ;; alist
   ;; alists can only be used if require-match=t
   (cl-assert (or (not (and (consp candidates) (consp (car candidates)))) require-match))
-  (consult--preview (and preview (funcall preview 'enabled))
+  (consult--preview preview
       (funcall preview 'save)
       (state (funcall preview 'restore state))
       (cand (funcall preview 'preview (funcall lookup cand)))
@@ -246,14 +276,14 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                 (occur-read-primary-args)))
   (occur-1 regexp nlines bufs))
 
-(defun consult--add-linum (max-line candidates)
+(defun consult--add-line-number (max-line candidates)
   "Add line numbers to unformatted CANDIDATES. The MAX-LINE is needed to determine the width."
   (let ((form (format "%%%dd" (length (number-to-string max-line)))))
     (mapc (lambda (cand)
             ;; TODO use prefix here or keep the line number as part of string?
             ;; If we would use a prefix, the alist approach would not work for duplicate lines!
             (setcar cand (concat (propertize (format form (caar cand))
-                                             'face 'consult-linum)
+                                             'face 'consult-line-number)
                                  " " (cdar cand))))
           candidates)))
 
@@ -283,15 +313,19 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                         candidates)
                   (if (and (bolp) (not (eobp))) (forward-char 1))))
               (nreverse candidates))))
-         (candidates-alist (or (consult--add-linum max-line unformatted-candidates)
+         (candidates-alist (or (consult--add-line-number max-line unformatted-candidates)
                                (user-error "No headings")))
-         (selected (consult--read "Go to heading: " candidates-alist
-                                  :sort nil
-                                  :require-match t
-                                  :lookup (lambda (x) (cdr (assoc x candidates-alist)))
-                                  :history 'consult-outline-history)))
+         (selected
+          (save-excursion
+            (consult--read "Go to heading: " candidates-alist
+                           :sort nil
+                           :require-match t
+                           :lookup (lambda (x) (cdr (assoc x candidates-alist)))
+                           :history 'consult-outline-history
+                           :preview (and consult-preview-outline #'consult--preview-line)))))
     (push-mark (point) t)
-    (goto-char selected)))
+    (goto-char selected)
+    (recenter)))
 
 ;;;###autoload
 (defun consult-mark ()
@@ -320,15 +354,19 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                         (setq max-line (max line max-line))
                         (cons (cons line cand) pos)))
                     all-markers)))
-         (candidates-alist (or (consult--add-linum max-line unformatted-candidates)
+         (candidates-alist (or (consult--add-line-number max-line unformatted-candidates)
                                (user-error "No marks")))
-         (selected (cdr (consult--read "Go to mark: " candidates-alist
-                                       :sort nil
-                                       :require-match t
-                                       :lookup (lambda (x) (cdr (assoc x candidates-alist)))
-                                       :history 'consult-mark-history))))
+         (selected
+          (save-excursion
+            (consult--read "Go to mark: " candidates-alist
+                           :sort nil
+                           :require-match t
+                           :lookup (lambda (x) (cdr (assoc x candidates-alist)))
+                           :history 'consult-mark-history
+                           :preview (and consult-preview-mark #'consult--preview-line)))))
     (push-mark (point) t)
-    (goto-char selected)))
+    (goto-char selected)
+    (recenter)))
 
 ;;;###autoload
 (defun consult-line ()
@@ -357,7 +395,7 @@ This command obeys narrowing."
                                      ;; This will certainly have many ugly consequences.
                                      (concat (list (+ #x100000 (mod line #xFFFE))))
                                      'display (propertize (format line-format line)
-                                                          'face 'consult-linum))
+                                                          'face 'consult-line-number))
                                     str))
                       (dist (abs (- curr-line line))))
                   (when (or (not default-cand) (< dist default-cand-dist))
@@ -369,14 +407,18 @@ This command obeys narrowing."
             (unless candidates
               (user-error "No lines"))
             (nreverse candidates)))
-         (selected (consult--read "Go to line: " candidates-alist
-                                  :sort nil
-                                  :require-match t
-                                  :history 'consult-line-history
-                                  :lookup (lambda (x) (cdr (assoc x candidates-alist)))
-                                  :default default-cand)))
+         (selected
+          (save-excursion
+            (consult--read "Go to line: " candidates-alist
+                           :sort nil
+                           :require-match t
+                           :history 'consult-line-history
+                           :lookup (lambda (x) (cdr (assoc x candidates-alist)))
+                           :default default-cand
+                           :preview (and consult-preview-line #'consult--preview-line)))))
     (push-mark (point) t)
-    (goto-char selected)))
+    (goto-char selected)
+    (recenter)))
 
 (defmacro consult--recent-file-read ()
   "Read recent file via `completing-read'."
@@ -575,24 +617,24 @@ Otherwise replace the just-yanked text with the selected text."
   "Enable THEME from `consult-themes'."
   (interactive
    (list
-      (consult--read
-       "Theme: "
-       (mapcar #'symbol-name
-               (seq-filter (lambda (x) (or (not consult-themes)
-                                           (memq x consult-themes)))
-                           (custom-available-themes)))
-       :require-match t
-       :category 'theme
-       :history 'consult-theme-history
-       :lookup (lambda (x) (and x (intern x)))
-       :preview (lambda (cmd &optional arg)
-                  (pcase cmd
-                    ('enabled consult-preview-theme)
-                    ('save (car custom-enabled-themes))
-                    ('restore (consult-theme arg))
-                    ('preview (consult-theme arg))))
-       :default (and (car custom-enabled-themes)
-                     (symbol-name (car custom-enabled-themes))))))
+    (consult--read
+     "Theme: "
+     (mapcar #'symbol-name
+             (seq-filter (lambda (x) (or (not consult-themes)
+                                         (memq x consult-themes)))
+                         (custom-available-themes)))
+     :require-match t
+     :category 'theme
+     :history 'consult-theme-history
+     :lookup (lambda (x) (and x (intern x)))
+     :preview (and consult-preview-theme
+                   (lambda (cmd &optional arg)
+                     (pcase cmd
+                       ('save (car custom-enabled-themes))
+                       ('restore (consult-theme arg))
+                       ('preview (consult-theme arg)))))
+     :default (and (car custom-enabled-themes)
+                   (symbol-name (car custom-enabled-themes))))))
   (unless (equal theme (car custom-enabled-themes))
     (mapc #'disable-theme custom-enabled-themes)
     (when theme
@@ -613,8 +655,7 @@ Otherwise replace the just-yanked text with the selected text."
 (defun consult--buffer (open-buffer open-file open-bookmark)
   "Generic implementation of `consult-buffer'.
 Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be used to display the item."
-  (let* ((curr-win (minibuffer-selected-window))
-         (curr-buf (window-buffer curr-win))
+  (let* ((curr-buf (window-buffer (minibuffer-selected-window)))
          (curr-file (or (buffer-file-name curr-buf) ""))
          (all-bufs (mapcar #'buffer-name (delq curr-buf (buffer-list))))
          (hidden-bufs (seq-filter (lambda (x) (= (aref x 0) 32)) all-bufs))
@@ -674,9 +715,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
               (current-window-configuration)
               (state (set-window-configuration state))
               (buf (when (get-buffer buf)
-                     (while (not (window-live-p curr-win))
-                       (setq curr-win (next-window)))
-                     (with-selected-window curr-win
+                     (with-selected-window (consult--window)
                        (switch-to-buffer buf))))
             (selectrum-read "Switch to: " generate))))
     (cond
