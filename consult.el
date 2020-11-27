@@ -302,7 +302,6 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
 ;;;###autoload
 (defun consult-line ()
   "Search for a matching line and jump to the line beginning.
-The default candidate is a non-empty line closest to point.
 This command obeys narrowing."
   (interactive)
   ;; Font-locking is lazy, i.e., if a line has not been looked at yet, the line is not font-locked.
@@ -316,10 +315,9 @@ This command obeys narrowing."
                  (line (line-number-at-pos pos t))
                  (curr-line (line-number-at-pos (point) t))
                  (buffer-lines (split-string (buffer-string) "\n"))
-                 (line-format (format "%%%dd " (length (number-to-string (length buffer-lines)))))
-                 (default-cand-dist most-positive-fixnum))
+                 (line-format (format "%%%dd " (length (number-to-string (length buffer-lines))))))
             (dolist (str buffer-lines)
-              (unless (string-blank-p str)
+              (when (or (not (string-blank-p str)) (= line curr-line))
                 (let ((cand (concat (propertize
                                      ;; HACK: Disambiguate the line by prepending it with a unicode
                                      ;; character in the supplementary private use plane b.
@@ -327,11 +325,9 @@ This command obeys narrowing."
                                      (concat (list (+ #x100000 (mod line #xFFFE))))
                                      'display (propertize (format line-format line)
                                                           'face 'consult-linum))
-                                    str))
-                      (dist (abs (- curr-line line))))
-                  (when (or (not default-cand) (< dist default-cand-dist))
-                    (setq default-cand cand
-                          default-cand-dist dist))
+                                    str)))
+                  (when (= line curr-line)
+                    (setq default-cand cand))
                   (push (cons cand pos) candidates)))
               (setq line (1+ line)
                     pos (+ pos (length str) 1)))
