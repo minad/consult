@@ -100,6 +100,16 @@
   :type 'string
   :group 'consult)
 
+(defcustom consult-theme-preview t
+  "Enable theme preview during completion."
+  :type 'boolean
+  :group 'consult)
+
+(defcustom consult-theme-list nil
+  "List of themes."
+  :type '(repeat symbol)
+  :group 'consult)
+
 (defvar consult-face-history ()
   "History for the command `consult-face'.")
 
@@ -415,19 +425,6 @@ Otherwise replace the just-yanked text with the selected text."
     (error (insert-register reg))))
 
 ;;;###autoload
-(defun consult-theme (theme)
-  "Enable THEME from the list of `custom-available-themes'."
-  (interactive (list (intern
-		      (consult--read "Theme: " (mapcar #'symbol-name (custom-available-themes))
-                                     :require-match t
-                                     :category 'theme
-                                     :history 'consult-theme-history))))
-  (mapc #'disable-theme custom-enabled-themes)
-  (if (custom-theme-p theme)
-      (enable-theme theme)
-    (load-theme theme :no-confirm)))
-
-;;;###autoload
 (defun consult-bookmark (name)
   "If bookmark NAME exists, open it, otherwise set bookmark under the given NAME."
   (interactive (list (consult--read "Bookmark: " (bookmark-all-names)
@@ -524,6 +521,60 @@ Otherwise replace the just-yanked text with the selected text."
 ;; therefore the selectrum api is used directly.
 (defvar selectrum-should-sort-p)
 (declare-function selectrum-read "selectrum")
+(declare-function selectrum-get-current-candidate "selectrum")
+
+;; TODO this macro should not be selectrum specific.
+;; furthermore maybe selectrum could offer some api for preview?
+(defmacro consult--preview (flag bind preview &rest body)
+  "Preview support for completion.
+BIND is a bound variable.
+PREVIEW is the preview expression.
+BODY are the body expressions."
+  (declare (indent 3))
+  (let ((advice (make-symbol "advice"))
+        (var (car bind)))
+    `(let (,bind)
+       (if ,flag
+           (let ((,advice
+                  (lambda ()
+                    (let ((,var (selectrum-get-current-candidate)))
+                      (when (and ,var (not (string= "" ,var)))
+                        ,preview)))))
+             (advice-add #'selectrum--minibuffer-post-command-hook :after ,advice)
+             (unwind-protect
+                 (progn ,@body)
+               (advice-remove #'selectrum--minibuffer-post-command-hook ,advice)
+               ,preview))
+         (progn ,@body)))))
+
+;; TODO add theme list function variable
+
+;;;###autoload
+(defun consult-theme (theme)
+  "Enable THEME from `consult-theme-list'."
+  (interactive
+   (list
+    (consult--preview
+        consult-theme-preview
+        (theme (and (car custom-enabled-themes)
+                    (symbol-name (car custom-enabled-themes))))
+        (consult-theme (and theme (intern theme)))
+      (intern (consult--read
+               "Theme: "
+               (mapcar #'symbol-name
+                       (seq-filter (lambda (x) (or (not consult-theme-list)
+                                                   (memq x consult-theme-list)))
+                                   (custom-available-themes)))
+               :require-match t
+               :category 'theme
+               :history 'consult-theme-history
+               :default theme)))))
+  (unless (equal theme (car custom-enabled-themes))
+    (mapc #'disable-theme custom-enabled-themes)
+    (when theme
+      (if (custom-theme-p theme)
+          (enable-theme theme)
+        (load-theme theme :no-confirm)))))
 
 (defun consult--buffer (open-buffer open-file open-bookmark)
   "Generic implementation of `consult-buffer'.
