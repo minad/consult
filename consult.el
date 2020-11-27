@@ -525,27 +525,25 @@ Otherwise replace the just-yanked text with the selected text."
 
 ;; TODO this macro should not be selectrum specific.
 ;; furthermore maybe selectrum could offer some api for preview?
-(defmacro consult--preview (flag bind preview &rest body)
+(defmacro consult--preview (bind preview &rest body)
   "Preview support for completion.
 BIND is a bound variable.
 PREVIEW is the preview expression.
 BODY are the body expressions."
-  (declare (indent 3))
+  (declare (indent 2))
   (let ((advice (make-symbol "advice"))
         (var (car bind)))
-    `(let (,bind)
-       (if ,flag
-           (let ((,advice
-                  (lambda ()
-                    (let ((,var (selectrum-get-current-candidate)))
-                      (when (and ,var (not (string= "" ,var)))
-                        ,preview)))))
-             (advice-add #'selectrum--minibuffer-post-command-hook :after ,advice)
-             (unwind-protect
-                 (progn ,@body)
-               (advice-remove #'selectrum--minibuffer-post-command-hook ,advice)
-               ,preview))
-         (progn ,@body)))))
+    `(let (,bind
+           (,advice
+            (lambda ()
+              (let ((,var (selectrum-get-current-candidate)))
+                (when (and ,var (not (string= "" ,var)))
+                  ,preview)))))
+       (advice-add #'selectrum--minibuffer-post-command-hook :after ,advice)
+       (unwind-protect
+           (progn ,@body)
+         (advice-remove #'selectrum--minibuffer-post-command-hook ,advice)
+         ,preview))))
 
 ;; TODO add theme list function variable
 
@@ -554,11 +552,9 @@ BODY are the body expressions."
   "Enable THEME from `consult-theme-list'."
   (interactive
    (list
-    (consult--preview
-        consult-theme-preview
-        (theme (and (car custom-enabled-themes)
-                    (symbol-name (car custom-enabled-themes))))
-        (consult-theme (and theme (intern theme)))
+    (consult--preview (theme (and (car custom-enabled-themes)
+                                  (symbol-name (car custom-enabled-themes))))
+        (if consult-theme-preview (consult-theme (and theme (intern theme))))
       (intern (consult--read
                "Theme: "
                (mapcar #'symbol-name
