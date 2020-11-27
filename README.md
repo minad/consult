@@ -4,7 +4,7 @@ This package provides various commands based on the Emacs completion function `c
 The commands are compatible with completion-systems based on the standard Emacs API,
 e.g., [Icomplete](https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html) and
 [Selectrum](https://github.com/raxod502/selectrum).
-Note that if you use [Ivy](https://github.com/abo-abo/swiper/blob/master/ivy.el)
+Note that if you use [Ivy](https://github.com/abo-abo/swiper#ivy)
 or [Helm](https://github.com/emacs-helm/helm), you don't need consult,
 since both libraries already bring their own rich set of additional commands.
 
@@ -88,7 +88,7 @@ use the enhanced commands, you must configure the keybindings yourself.
 ## Acknowledgments
 
 You probably guessed from the name that this package is inspired by and partially derived from
-[Counsel](https://github.com/abo-abo/swiper/blob/master/counsel.el) (Author Oleh Krehel, Copyright Free Software Foundation, Inc.).
+[Counsel](https://github.com/abo-abo/swiper#counsel) (Author Oleh Krehel, Copyright Free Software Foundation, Inc.).
 Note that we are far from counsel in terms of covered functionality.
 Furthermore some of the commands found in this package were taken from the
 [Selectrum wiki](https://github.com/raxod502/selectrum/wiki/Useful-Commands).
