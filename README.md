@@ -17,21 +17,27 @@ they will be packaged up and released separately.
 
 Most provided commands follow the naming scheme `consult-thing`. This is the list of currently supported commands:
 
-* `consult-apropos`: Replacement for `apropos` with completion
-* `consult-bookmark`: Select or create bookmark
-* `consult-buffer` (`-other-window`, `-other-frame`): Enhanced version of `switch-to-buffer` with support for virtual buffers
-* `consult-command-history`: Select a command from the `command-history`
-* `consult-face`: Describe face with preview during selection
-* `consult-line`: Jump to a line matching the selected text
-* `consult-mark`: Jump to a marker in the `mark-ring`
-* `consult-minibuffer-history`: Insert a string from the `minibuffer-history`
-* `consult-minor-mode`: Enable/disable minor mode
-* `consult-multi-occur`: Replacement for `multi-occur`
-* `consult-outline`: Jump to a heading of the outline
-* `consult-recent-file` (`-other-window`, `-other-frame`): Select a recent files (you might prefer the more powerful `consult-buffer` instead)
-* `consult-register`: Select from list of registers
-* `consult-theme`: Select a theme and disable all currently enabled themes
-* `consult-yank`, `consult-yank-pop`: Enhanced version of `yank` and `yank-pop` which allows selecting from the kill-ring.
+* Buffers/Files/Bookmarks
+  * `consult-bookmark`: Select or create bookmark
+  * `consult-buffer` (`-other-window`, `-other-frame`): Enhanced version of `switch-to-buffer` with support for virtual buffers
+  * `consult-recent-file` (`-other-window`, `-other-frame`): Select a recent files (you might prefer the more powerful `consult-buffer` instead)
+* Editing
+  * `consult-register`: Select from list of registers
+  * `consult-yank`, `consult-yank-pop`: Enhanced version of `yank` and `yank-pop` which allows selecting from the kill-ring.
+* Help
+  * `consult-apropos`: Replacement for `apropos` with completion
+  * `consult-face`: Describe face with preview during selection
+* Histories
+  * `consult-command-history`: Select a command from the `command-history`
+  * `consult-minibuffer-history`: Insert a string from the `minibuffer-history`
+* Jumping/Search
+  * `consult-line`: Jump to a line matching the selected text
+  * `consult-mark`: Jump to a marker in the `mark-ring`
+  * `consult-outline`: Jump to a heading of the outline
+  * `consult-multi-occur`: Replacement for `multi-occur`
+* Miscellaneous
+  * `consult-minor-mode`: Enable/disable minor mode
+  * `consult-theme`: Select a theme and disable all currently enabled themes
 
 ## Usage
 
