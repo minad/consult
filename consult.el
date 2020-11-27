@@ -42,6 +42,9 @@
 (require 'seq)
 (require 'subr-x)
 
+;; TODO consult--buffer is broken, since it returns the selected type via a property.
+;;      This does not work if the user writes the candidate fully by hand. In that case the property is nil.
+;;      Use an association list or encode the type via a prefix character.
 ;; TODO Decide on a consistent interactive-style, move all consult--read code to (interactive ...)?
 ;;      This makes sense for functions which can be used both interactively and non-interactively.
 
