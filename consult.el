@@ -42,6 +42,9 @@
 (require 'seq)
 (require 'subr-x)
 
+;; TODO implement preview for consult-mark
+;; TODO implement preview for consult-outline
+;; TODO implement preview for consult-line
 ;; TODO Decide on a consistent interactive-style, move all consult--read code to (interactive ...)?
 ;;      This makes sense for functions which can be used both interactively and non-interactively.
 
@@ -100,17 +103,32 @@
   :type 'string
   :group 'consult)
 
-(defcustom consult-buffer-preview t
-  "Enable buffer preview during completion."
+(defcustom consult-preview-buffer t
+  "Enable buffer preview during selection."
   :type 'boolean
   :group 'consult)
 
-(defcustom consult-theme-preview t
-  "Enable theme preview during completion."
+(defcustom consult-preview-theme t
+  "Enable theme preview during selection."
   :type 'boolean
   :group 'consult)
 
-(defcustom consult-theme-list nil
+(defcustom consult-preview-mark t
+  "Enable mark preview during selection."
+  :type 'boolean
+  :group 'consult)
+
+(defcustom consult-preview-line t
+  "Enable line preview during selection."
+  :type 'boolean
+  :group 'consult)
+
+(defcustom consult-preview-outline t
+  "Enable outline preview during selection."
+  :type 'boolean
+  :group 'consult)
+
+(defcustom consult-themes nil
   "List of themes."
   :type '(repeat symbol)
   :group 'consult)
@@ -554,17 +572,17 @@ BODY are the body expressions."
 
 ;;;###autoload
 (defun consult-theme (theme)
-  "Enable THEME from `consult-theme-list'."
+  "Enable THEME from `consult-themes'."
   (interactive
    (list
     (consult--preview (theme (and (car custom-enabled-themes)
                                   (symbol-name (car custom-enabled-themes))))
-        (if consult-theme-preview (consult-theme (and theme (intern theme))))
+        (if consult-preview-theme (consult-theme (and theme (intern theme))))
       (intern (consult--read
                "Theme: "
                (mapcar #'symbol-name
-                       (seq-filter (lambda (x) (or (not consult-theme-list)
-                                                   (memq x consult-theme-list)))
+                       (seq-filter (lambda (x) (or (not consult-themes)
+                                                   (memq x consult-themes)))
                                    (custom-available-themes)))
                :require-match t
                :category 'theme
@@ -638,7 +656,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
          (selectrum-should-sort-p)
          (selected
           (consult--preview (buf curr-buf)
-              (when (and consult-buffer-preview (get-buffer buf))
+              (when (and consult-preview-buffer (get-buffer buf))
                 (let ((win curr-win))
                   (while (not (window-live-p win))
                     (setq win (next-window)))
