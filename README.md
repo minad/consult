@@ -21,7 +21,7 @@ Most provided commands follow the naming scheme `consult-thing`. This is the lis
 
 * Buffers/Files/Bookmarks
   * `consult-bookmark`: Select or create bookmark
-  * `consult-buffer` (`-other-window`, `-other-frame`): Enhanced version of `switch-to-buffer` with support for virtual buffers
+  * `consult-buffer` (`-other-window`, `-other-frame`): Enhanced version of `switch-to-buffer` with support for virtual buffers. Supports live preview.
   * `consult-recent-file` (`-other-window`, `-other-frame`): Select a recent files (you might prefer the more powerful `consult-buffer` instead)
 * Editing
   * `consult-register`: Select from list of registers
@@ -33,9 +33,9 @@ Most provided commands follow the naming scheme `consult-thing`. This is the lis
   * `consult-command-history`: Select a command from the `command-history`
   * `consult-minibuffer-history`: Insert a string from the `minibuffer-history`
 * Jumping/Search
-  * `consult-line`: Jump to a line matching the selected text
-  * `consult-mark`: Jump to a marker in the `mark-ring`
-  * `consult-outline`: Jump to a heading of the outline
+  * `consult-line`: Jump to a line matching the selected text. Supports live preview.
+  * `consult-mark`: Jump to a marker in the `mark-ring`. Supports live preview.
+  * `consult-outline`: Jump to a heading of the outline. Supports live preview.
   * `consult-multi-occur`: Replacement for `multi-occur`
 * Miscellaneous
   * `consult-minor-mode`: Enable/disable minor mode
