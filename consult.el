@@ -176,30 +176,27 @@
 
 ;; TODO this macro should not be selectrum specific.
 ;; furthermore maybe selectrum could offer some api for preview?
-(defmacro consult--preview (enabled bind preview &rest body)
-  "Preview support for completion.
-ENABLED must be t if preview should be performed.
-BIND is a bound variable.
-PREVIEW is the preview expression.
-BODY are the body expressions."
-  (declare (indent 3))
-  (let ((advice (make-symbol "advice"))
-        (var (car bind)))
-    `(let (,bind)
-       (if ,enabled
-           (let ((,advice
-                  (lambda ()
-                    (let ((,var (selectrum-get-current-candidate)))
-                      (when (and ,var (not (string= "" ,var)))
-                        ,preview)))))
-             (advice-add #'selectrum--minibuffer-post-command-hook :after ,advice)
-             (unwind-protect
-                 (progn ,@body)
-               (advice-remove #'selectrum--minibuffer-post-command-hook ,advice)
-               ,preview))
-         (progn ,@body)))))
+(defmacro consult--preview (enabled save restore preview body)
+  "Preview support for completion."
+  (declare (indent 4))
+  (let ((advice (make-symbol "advice")))
+    `(if ,enabled
+         (let ((,(car restore) ,save)
+               (,advice
+                (lambda ()
+                  (let ((,(car preview) (selectrum-get-current-candidate)))
+                    (when (and ,(car preview) (not (string= "" ,(car preview))))
+                      ,(cadr preview))))))
+           (advice-add #'selectrum--minibuffer-post-command-hook :after ,advice)
+           (unwind-protect
+               ,body
+             (advice-remove #'selectrum--minibuffer-post-command-hook ,advice)
+             ,(cadr restore)))
+       ,body)))
 
-(cl-defun consult--read (prompt candidates &key predicate require-match history default category (sort t) (lookup #'identity) preview)
+(cl-defun consult--read (prompt candidates &key
+                                predicate require-match history default
+                                category (sort t) (lookup #'identity) preview)
   "Simplified completing read function.
 
 PROMPT is the string to prompt with.
@@ -219,9 +216,10 @@ PREVIEW is a preview function."
                  (consp (car candidates)))) ;; alist
   ;; alists can only be used if require-match=t
   (cl-assert (or (not (and (consp candidates) (consp (car candidates)))) require-match))
-  (consult--preview preview
-      (cand default)
-      (funcall preview (funcall lookup cand))
+  (consult--preview (and preview (funcall preview 'enabled))
+      (funcall preview 'save)
+      (state (funcall preview 'restore state))
+      (cand (funcall preview 'preview (funcall lookup cand)))
     (funcall lookup
              (completing-read
               prompt
@@ -577,19 +575,24 @@ Otherwise replace the just-yanked text with the selected text."
   "Enable THEME from `consult-themes'."
   (interactive
    (list
-    (consult--read
-     "Theme: "
-     (mapcar #'symbol-name
-             (seq-filter (lambda (x) (or (not consult-themes)
-                                         (memq x consult-themes)))
-                         (custom-available-themes)))
-     :require-match t
-     :category 'theme
-     :history 'consult-theme-history
-     :lookup (lambda (x) (and x (intern x)))
-     :preview (and consult-preview-theme #'consult-theme)
-     :default (and (car custom-enabled-themes)
-                   (symbol-name (car custom-enabled-themes))))))
+      (consult--read
+       "Theme: "
+       (mapcar #'symbol-name
+               (seq-filter (lambda (x) (or (not consult-themes)
+                                           (memq x consult-themes)))
+                           (custom-available-themes)))
+       :require-match t
+       :category 'theme
+       :history 'consult-theme-history
+       :lookup (lambda (x) (and x (intern x)))
+       :preview (lambda (cmd &optional arg)
+                  (pcase cmd
+                    ('enabled consult-preview-theme)
+                    ('save (car custom-enabled-themes))
+                    ('restore (consult-theme arg))
+                    ('preview (consult-theme arg))))
+       :default (and (car custom-enabled-themes)
+                     (symbol-name (car custom-enabled-themes))))))
   (unless (equal theme (car custom-enabled-themes))
     (mapc #'disable-theme custom-enabled-themes)
     (when theme
@@ -668,20 +671,19 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
          (selectrum-should-sort-p)
          (selected
           (consult--preview consult-preview-buffer
-              (buf curr-buf)
-              (when (and consult-preview-buffer (get-buffer buf))
-                (let ((win curr-win))
-                  (while (not (window-live-p win))
-                    (setq win (next-window)))
-                  (with-selected-window win
-                    (switch-to-buffer buf))))
+              (current-window-configuration)
+              (state (set-window-configuration state))
+              (buf (when (get-buffer buf)
+                     (while (not (window-live-p curr-win))
+                       (setq curr-win (next-window)))
+                     (with-selected-window curr-win
+                       (switch-to-buffer buf))))
             (selectrum-read "Switch to: " generate))))
-    (funcall (cond
-              ((get-buffer selected) open-buffer) ;; buffers have priority
-              ((member selected all-files) open-file)
-              ((member selected bookmarks) open-bookmark)
-              (t open-buffer))
-             selected)))
+    (cond
+     ((get-buffer selected) (funcall open-buffer selected)) ;; buffers have priority
+     ((member selected all-files) (funcall open-file selected))
+     ((member selected bookmarks) (funcall open-bookmark selected))
+     ((and selected (not (string= "" selected))) (funcall open-buffer selected)))))
 
 ;;;###autoload
 (defun consult-buffer-other-frame ()
