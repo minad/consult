@@ -545,6 +545,7 @@ Otherwise replace the just-yanked text with the selected text."
 (defvar selectrum-should-sort-p)
 (declare-function selectrum-read "selectrum")
 (declare-function selectrum-get-current-candidate "selectrum")
+(declare-function selectrum--minibuffer-post-command-hook "selectrum")
 
 ;; TODO this macro should not be selectrum specific.
 ;; furthermore maybe selectrum could offer some api for preview?
