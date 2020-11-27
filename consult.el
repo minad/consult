@@ -170,7 +170,7 @@
                   (propertize consult-on 'face 'consult-on)
                 (propertize consult-off 'face 'consult-off))))
 
-(cl-defun consult--read (prompt candidates &key predicate require-match history default category (sort t))
+(cl-defun consult--read (prompt candidates &key predicate require-match history default category (sort t) (lookup #'identity))
   "Simplified completing read function.
 
 PROMPT is the string to prompt with.
@@ -180,7 +180,8 @@ REQUIRE-MATCH equals t means that an exact match is required.
 HISTORY is the symbol of the history variable.
 DEFAULT is the default input.
 CATEGORY is the completion category.
-SORT should be set to nil if the candidates are already sorted."
+SORT should be set to nil if the candidates are already sorted.
+LOOKUP is a function which is applied to the result."
   ;; supported types
   (cl-assert (or (not candidates) ;; nil
                  (obarrayp candidates) ;; obarray
@@ -188,22 +189,19 @@ SORT should be set to nil if the candidates are already sorted."
                  (consp (car candidates)))) ;; alist
   ;; alists can only be used if require-match=t
   (cl-assert (or (not (and (consp candidates) (consp (car candidates)))) require-match))
-  (let ((result (completing-read
-                 prompt
-                 (if (and sort (not category))
-                     candidates
-                   (lambda (str pred action)
-                     (if (eq action 'metadata)
-                         `(metadata
-                           ,@(if category `((category . ,category)))
-                           ,@(if (not sort) '((cycle-sort-function . identity)
-                                              (display-sort-function . identity))))
-                       (complete-with-action action candidates str pred))))
-                 predicate require-match nil history default)))
-    ;; if candidates is an alist, we lookup the list element
-    (if (and result (consp candidates) (consp (car candidates)))
-        (assoc result candidates)
-      result)))
+  (funcall lookup
+           (completing-read
+            prompt
+            (if (and sort (not category))
+                candidates
+              (lambda (str pred action)
+                (if (eq action 'metadata)
+                    `(metadata
+                      ,@(if category `((category . ,category)))
+                      ,@(if (not sort) '((cycle-sort-function . identity)
+                                         (display-sort-function . identity))))
+                  (complete-with-action action candidates str pred))))
+            predicate require-match nil history default)))
 
 ;; see https://github.com/raxod502/selectrum/issues/226
 ;;;###autoload
@@ -254,12 +252,13 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                         candidates)
                   (if (and (bolp) (not (eobp))) (forward-char 1))))
               (nreverse candidates))))
-         (selected (cdr (consult--read "Go to heading: "
-                                       (or (consult--add-linum max-line unformatted-candidates)
-                                           (user-error "No headings"))
-                                       :sort nil
-                                       :require-match t
-                                       :history 'consult-outline-history))))
+         (candidates-alist (or (consult--add-linum max-line unformatted-candidates)
+                               (user-error "No headings")))
+         (selected (consult--read "Go to heading: " candidates-alist
+                                  :sort nil
+                                  :require-match t
+                                  :lookup (lambda (x) (cdr (assoc x candidates-alist)))
+                                  :history 'consult-outline-history)))
     (push-mark (point) t)
     (goto-char selected)))
 
@@ -290,11 +289,12 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                         (setq max-line (max line max-line))
                         (cons (cons line cand) pos)))
                     all-markers)))
-         (selected (cdr (consult--read "Go to mark: "
-                                       (or (consult--add-linum max-line unformatted-candidates)
-                                           (user-error "No marks"))
+         (candidates-alist (or (consult--add-linum max-line unformatted-candidates)
+                               (user-error "No marks")))
+         (selected (cdr (consult--read "Go to mark: " candidates-alist
                                        :sort nil
                                        :require-match t
+                                       :lookup (lambda (x) (cdr (assoc x candidates-alist)))
                                        :history 'consult-mark-history))))
     (push-mark (point) t)
     (goto-char selected)))
@@ -335,13 +335,15 @@ This command obeys narrowing."
                   (push (cons cand pos) candidates)))
               (setq line (1+ line)
                     pos (+ pos (length str) 1)))
+            (unless candidates
+              (user-error "No lines"))
             (nreverse candidates)))
-         (selected (cdr (consult--read "Go to line: "
-                                       (or candidates-alist (user-error "No lines"))
-                                       :sort nil
-                                       :require-match t
-                                       :history 'consult-line-history
-                                       :default default-cand))))
+         (selected (consult--read "Go to line: " candidates-alist
+                                  :sort nil
+                                  :require-match t
+                                  :history 'consult-line-history
+                                  :lookup (lambda (x) (cdr (assoc x candidates-alist)))
+                                  :default default-cand)))
     (push-mark (point) t)
     (goto-char selected)))
 
@@ -438,11 +440,12 @@ Otherwise replace the just-yanked text with the selected text."
                                              (register-describe-oneline r))
                                      r))
                              (sort (copy-sequence register-alist) #'car-less-than-car))))
-      (cdr (consult--read "Register: "
-                          (or candidates-alist (user-error "All registers are empty"))
-                          :sort nil
-                          :require-match t
-                          :history 'consult-register-history)))))
+      (consult--read "Register: "
+                     (or candidates-alist (user-error "All registers are empty"))
+                     :sort nil
+                     :require-match t
+                     :lookup (lambda (x) (cdr (assoc x candidates-alist)))
+                     :history 'consult-register-history))))
   (condition-case nil
       (jump-to-register reg)
     (error (insert-register reg))))
@@ -509,10 +512,11 @@ Otherwise replace the just-yanked text with the selected text."
                                    (lambda (x y)
                                      (> (if (symbol-value (cdr x)) 1 0)
                                         (if (symbol-value (cdr y)) 1 0)))))
-      (cdr (consult--read "Minor modes: " candidates-alist
-                          :sort nil
-                          :require-match t
-                          :history 'consult-minor-mode-history)))))
+      (consult--read "Minor modes: " candidates-alist
+                     :sort nil
+                     :require-match t
+                     :lookup (lambda (x) (cdr (assoc x candidates-alist)))
+                     :history 'consult-minor-mode-history))))
   (call-interactively mode))
 
 ;;;###autoload
@@ -569,8 +573,6 @@ BODY are the body expressions."
          (advice-remove #'selectrum--minibuffer-post-command-hook ,advice)
          ,preview))))
 
-;; TODO add theme list function variable
-
 ;;;###autoload
 (defun consult-theme (theme)
   "Enable THEME from `consult-themes'."
@@ -579,16 +581,17 @@ BODY are the body expressions."
     (consult--preview (theme (and (car custom-enabled-themes)
                                   (symbol-name (car custom-enabled-themes))))
         (if consult-preview-theme (consult-theme (and theme (intern theme))))
-      (intern (consult--read
-               "Theme: "
-               (mapcar #'symbol-name
-                       (seq-filter (lambda (x) (or (not consult-themes)
-                                                   (memq x consult-themes)))
-                                   (custom-available-themes)))
-               :require-match t
-               :category 'theme
-               :history 'consult-theme-history
-               :default theme)))))
+      (consult--read
+       "Theme: "
+       (mapcar #'symbol-name
+               (seq-filter (lambda (x) (or (not consult-themes)
+                                           (memq x consult-themes)))
+                           (custom-available-themes)))
+       :require-match t
+       :category 'theme
+       :history 'consult-theme-history
+       :lookup #'intern
+       :default theme))))
   (unless (equal theme (car custom-enabled-themes))
     (mapc #'disable-theme custom-enabled-themes)
     (when theme
