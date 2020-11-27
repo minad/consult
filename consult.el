@@ -45,9 +45,6 @@
 ;; TODO Decide on a consistent interactive-style, move all consult--read code to (interactive ...)?
 ;;      This makes sense for functions which can be used both interactively and non-interactively.
 ;; TODO Is it possible to add prefix/suffix/margin annotations using the standard completing-read api?
-;; TODO consult-bindings
-;; TODO consult-personal-bindings
-;; TODO consult-major-mode
 ;; TODO reduce code duplication between consult-line, consult-mark, consult-outline?
 
 (defgroup consult nil
