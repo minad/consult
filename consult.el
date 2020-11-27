@@ -217,17 +217,18 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                          (cons
                           line
                           (buffer-substring (line-beginning-position) (line-end-position)))
-                          (point))
-                          candidates)
+                         (point))
+                        candidates)
                   (if (and (bolp) (not (eobp))) (forward-char 1))))
-              (nreverse candidates)))))
+              (nreverse candidates))))
+         (selected (cdr (consult--read "Go to heading: "
+                                       (or (consult--add-linum max-line unformatted-candidates)
+                                           (user-error "No headings"))
+                                       :sort nil
+                                       :require-match t
+                                       :history 'consult-outline-history))))
     (push-mark (point) t)
-    (goto-char (cdr (consult--read "Go to heading: "
-                                   (or (consult--add-linum max-line unformatted-candidates)
-                                       (user-error "No headings"))
-                                   :sort nil
-                                   :require-match t
-                                   :history 'consult-outline-history)))))
+    (goto-char selected)))
 
 ;;;###autoload
 (defun consult-mark ()
@@ -255,14 +256,15 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                                            (substring lstr col))))
                         (setq max-line (max line max-line))
                         (cons (cons line cand) pos)))
-                    all-markers))))
+                    all-markers)))
+         (selected (cdr (consult--read "Go to mark: "
+                                       (or (consult--add-linum max-line unformatted-candidates)
+                                           (user-error "No marks"))
+                                       :sort nil
+                                       :require-match t
+                                       :history 'consult-mark-history))))
     (push-mark (point) t)
-    (goto-char (cdr (consult--read "Go to mark: "
-                                   (or (consult--add-linum max-line unformatted-candidates)
-                                       (user-error "No marks"))
-                                   :sort nil
-                                   :require-match t
-                                   :history 'consult-mark-history)))))
+    (goto-char selected)))
 
 ;;;###autoload
 (defun consult-line ()
@@ -301,14 +303,14 @@ This command obeys narrowing."
               (setq line (1+ line)
                     pos (+ pos (length str) 1)))
             (nreverse candidates)))
-         (chosen (cdr (consult--read "Go to line: "
-                                     (or candidates-alist (user-error "No lines"))
-                                     :sort nil
-                                     :require-match t
-                                     :history 'consult-line-history
-                                     :default default-cand))))
+         (selected (cdr (consult--read "Go to line: "
+                                       (or candidates-alist (user-error "No lines"))
+                                       :sort nil
+                                       :require-match t
+                                       :history 'consult-line-history
+                                       :default default-cand))))
     (push-mark (point) t)
-    (goto-char chosen)))
+    (goto-char selected)))
 
 (defmacro consult--recent-file-read ()
   "Read recent file via `completing-read'."
@@ -338,12 +340,12 @@ This command obeys narrowing."
   (find-file-other-window file))
 
 (defmacro consult--yank-read ()
-  "Open kill ring menu and return chosen text."
+  "Open kill ring menu and return selected text."
   '(list (consult--read "Ring: "
                         (cl-remove-duplicates kill-ring :test #'equal :from-end t)
                         :require-match t)))
 
-;; Insert chosen text.
+;; Insert selected text.
 ;; Adapted from the Emacs yank function.
 ;;;###autoload
 (defun consult-yank (text)
@@ -365,13 +367,13 @@ See `yank-pop' for the meaning of ARG."
       (yank-pop (or arg 1))
     (call-interactively #'consult-yank)))
 
-;; Replace just-yanked text with chosen text.
+;; Replace just-yanked text with selected text.
 ;; Adapted from the Emacs yank-pop function.
 ;;;###autoload
 (defun consult-yank-replace (text)
   "Choose TEXT from the kill ring.
 If there was no recent yank, insert the text.
-Otherwise replace the just-yanked text with the chosen text."
+Otherwise replace the just-yanked text with the selected text."
   (interactive (consult--yank-read))
   (if (not (eq last-command 'yank))
       (consult-yank text)
@@ -584,8 +586,8 @@ Depending on the selected item BUFFER-SWITCH, FILE-SWITCH or BOOKMARK-SWITCH wil
               (list (cons 'input input)
                     (cons 'candidates all-cands))))))
          (selectrum-should-sort-p)
-         (chosen (selectrum-read "Switch to: " generate)))
-    (funcall (or (get-text-property 0 'consult-switch chosen) buffer-switch) chosen)))
+         (selected (selectrum-read "Switch to: " generate)))
+    (funcall (or (get-text-property 0 'consult-switch selected) buffer-switch) selected)))
 
 ;;;###autoload
 (defun consult-buffer-other-frame ()
