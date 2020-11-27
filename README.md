@@ -2,10 +2,16 @@
 
 This package provides various commands based on the Emacs completion function `completing-read`.
 The commands are compatible with completion-systems based on the standard Emacs API,
-e.g., Icomplete and Selectrum. Note that if you use Ivy or Helm, you don't need consult, since both libraries
-already bring their own rich set of additional commands.
+e.g., [Icomplete](https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html) and
+[Selectrum](https://github.com/raxod502/selectrum).
+Note that if you use [Ivy](https://github.com/abo-abo/swiper/blob/master/ivy.el)
+or [Helm](https://github.com/emacs-helm/helm), you don't need consult,
+since both libraries already bring their own rich set of additional commands.
+
 The goal is to keep the completion-system specifics in this library to a minimum.
-Commands which can only be implemented using Selectrum-specific extensions, will be packaged up separately before release.
+For now there are commands which use Selectrum-specific extensions. If it turns
+out that it is not possible to implement these commands based on the standard API,
+they will be packaged up and released separately.
 
 ## Available commands
 
@@ -33,19 +39,19 @@ use the enhanced commands, you must configure the keybindings yourself.
 ~~~ elisp
 ;; Example configuration
 (use-package consult
-  :demand t
   ;; Replace bindings
   :bind (("C-x b" . consult-buffer)
          ("C-x 4 b" . consult-buffer-other-window)
          ("C-x 5 b" . consult-buffer-other-frame)
+         ("M-s m" . consult-multi-occur)
          ("M-g m" . consult-mark)
          ("M-g l" . consult-line)
          ("C-x r x" . consult-register)
          ("C-x r b" . consult-bookmark)
          ("M-y" . consult-yank-pop)
          ("<help> a" . consult-apropos))
-  :config
-  ;; Replace functions
+  :init
+  ;; Replace functions (consult-multi-occur is a drop-in replacement)
   (fset 'multi-occur #'consult-multi-occur))
 ~~~
 
