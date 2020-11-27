@@ -184,7 +184,12 @@
 ;; TODO this macro should not be selectrum specific.
 ;; furthermore maybe selectrum could offer some api for preview?
 (defmacro consult--preview (enabled save restore preview body)
-  "Preview support for completion."
+  "Preview support for completion.
+ENABLED must be t to enable preview.
+SAVE is an expression which returns some state to save before preview.
+RESTORE is a pair (variable . expression) which restores the state.
+PREVIEW is a pair (variable . expression) which previews the given candidate.
+BODY is the body expression."
   (declare (indent 4))
   (let ((advice (make-symbol "advice")))
     `(if ,enabled
@@ -209,6 +214,9 @@
     win))
 
 (defun consult--preview-line (cmd &optional arg)
+  "Preview function for lines.
+CMD is the preview command.
+ARG is the command argument."
   (pcase cmd
     ('restore
      (remove-overlays nil nil 'consult-overlay t))
