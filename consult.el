@@ -37,6 +37,7 @@
 
 (require 'bookmark)
 (require 'cl-lib)
+(require 'outline)
 (require 'recentf)
 (require 'seq)
 (require 'subr-x)
@@ -46,8 +47,8 @@
 ;; TODO Is it possible to add prefix/suffix/margin annotations using the standard completing-read api?
 ;; TODO consult-bindings
 ;; TODO consult-personal-bindings
-;; TODO consult-outline
 ;; TODO consult-major-mode
+;; TODO reduce code duplication between consult-line, consult-mark, consult-outline?
 
 (defgroup consult nil
   "Consultation using `completing-read'."
@@ -106,6 +107,9 @@
 
 (defvar consult-face-history ()
   "History for the command `consult-face'.")
+
+(defvar consult-outline-history ()
+  "History for the command `consult-outline'.")
 
 (defvar consult-mark-history ()
   "History for the command `consult-mark'.")
@@ -186,11 +190,55 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
   (occur-1 regexp nlines bufs))
 
 ;;;###autoload
+(defun consult-outline ()
+  "Jump to an outline heading."
+  (interactive)
+  ;; Font-locking is lazy, i.e., if a line has not been looked at yet, the line is not font-locked.
+  ;; We would observe this if consulting an unfontified line.
+  ;; Therefore we have to enforce font-locking now.
+  (jit-lock-fontify-now)
+  (let* ((max-line 0)
+         (heading-regexp (concat "^\\(?:" outline-regexp "\\)"))
+         (unformatted-candidates
+          (save-excursion
+            (let ((candidates))
+              (goto-char (point-min))
+              (while (re-search-forward heading-regexp nil 'move)
+                (goto-char (match-beginning 0))
+                (let ((line (line-number-at-pos (point) t)))
+                  (setq max-line (max line max-line))
+                  (push (cons
+                         (cons
+                          line
+                          (buffer-substring (line-beginning-position) (line-end-position)))
+                          (point))
+                          candidates)
+                  (if (and (bolp) (not (eobp))) (forward-char 1))))
+              (nreverse candidates))))
+         (form (format "%%%dd" (length (number-to-string max-line))))
+         (candidates-alist (mapc (lambda (cand)
+                                   ;; TODO use prefix here or keep the line number as part of string?
+                                   ;; If we would use a prefix, the alist approach would not work for duplicate lines!
+                                   (setcar cand (concat (propertize (format form (caar cand))
+                                                                    'face 'consult-linum)
+                                                        " " (cdar cand))))
+                                 unformatted-candidates)))
+    (goto-char (consult--read "Go to heading: "
+                              candidates-alist
+                              :sort nil
+                              :require-match t
+                              :history 'consult-outline-history))))
+
+;;;###autoload
 (defun consult-mark ()
   "Jump to a marker in `mark-ring', signified by a highlighted vertical bar."
   (interactive)
   (unless (marker-position (mark-marker))
     (user-error "No marks exist"))
+  ;; Font-locking is lazy, i.e., if a line has not been looked at yet, the line is not font-locked.
+  ;; We would observe this if consulting an unfontified line.
+  ;; Therefore we have to enforce font-locking now.
+  (jit-lock-fontify-now)
   (let* ((all-markers (cl-remove-duplicates (cons (mark-marker) mark-ring)
                                             :test (lambda (x y) (= (marker-position x) (marker-position y)))))
          (max-line 0)

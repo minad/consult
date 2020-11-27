@@ -27,6 +27,7 @@ Most provided commands follow the naming scheme `consult-thing`. This is the lis
 * `consult-minibuffer-history`: Insert a string from the `minibuffer-history`
 * `consult-minor-mode`: Enable/disable minor mode
 * `consult-multi-occur`: Replacement for `multi-occur`
+* `consult-outline`: Jump to a heading of the outline
 * `consult-recent-file` (`-other-window`, `-other-frame`): Select a recent files (you might prefer the more powerful `consult-buffer` instead)
 * `consult-register`: Select from list of registers
 * `consult-theme`: Select a theme and disable all currently enabled themes
@@ -41,14 +42,16 @@ use the enhanced commands, you must configure the keybindings yourself.
 ;; Example configuration
 (use-package consult
   ;; Replace bindings
-  :bind (("C-x b" . consult-buffer)
+  :bind (("C-c o" . consult-outline)
+         ("C-x b" . consult-buffer)
          ("C-x 4 b" . consult-buffer-other-window)
          ("C-x 5 b" . consult-buffer-other-frame)
-         ("M-s m" . consult-multi-occur)
-         ("M-g m" . consult-mark)
-         ("M-g l" . consult-line)
          ("C-x r x" . consult-register)
          ("C-x r b" . consult-bookmark)
+         ("M-g o" . consult-outline)
+         ("M-g m" . consult-mark)
+         ("M-g l" . consult-line)
+         ("M-s m" . consult-multi-occur)
          ("M-y" . consult-yank-pop)
          ("<help> a" . consult-apropos))
   :init
