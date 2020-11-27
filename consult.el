@@ -1,6 +1,6 @@
 ;;; consult.el --- Consultation using completing-read -*- lexical-binding: t -*-
 
-;; Author: The selectrum contributors
+;; Author: The Selectrum contributors
 ;; Created: 2020
 ;; License: GPL-3.0-or-later
 ;; Version: 0.1
@@ -31,7 +31,7 @@
 
 ;;; This package is inspired by and partially derived from counsel by Oleh Krehel,
 ;;; Copyright Free Software Foundation, Inc.
-;;; Furthermore some of the commands found in this package were taken from the selectrum wiki.
+;;; Furthermore some of the commands found in this package were taken from the Selectrum wiki.
 
 ;;; Code:
 
@@ -103,6 +103,9 @@
   "Prefix string for disabled modes."
   :type 'string
   :group 'consult)
+
+(defvar consult-face-history ()
+  "History for the command `consult-face'.")
 
 (defvar consult-mark-history ()
   "History for the command `consult-mark'.")
@@ -292,97 +295,6 @@ This command obeys narrowing."
   (interactive (consult--recent-file-read))
   (find-file-other-window file))
 
-;; consult--buffer performs dynamic computation of the candidate set.
-;; this is currently not supported by completing-read+selectrum.
-;; therefore the selectrum api is used directly.
-(defvar selectrum-should-sort-p)
-(declare-function selectrum-read "selectrum")
-
-(defun consult--buffer (buffer-switch file-switch bookmark-switch)
-  "Generic implementation of `consult-buffer'.
-Depending on the selected item BUFFER-SWITCH, FILE-SWITCH or BOOKMARK-SWITCH will be used to display the item."
-  (let* ((curr-buf (window-buffer (minibuffer-selected-window)))
-         (curr-file (or (buffer-file-name curr-buf) ""))
-         (bufs (mapcar #'buffer-name (delq curr-buf (buffer-list))))
-         (hidden-bufs (seq-filter (lambda (x) (= (aref x 0) 32)) bufs))
-         (visible-bufs (seq-filter (lambda (x) (/= (aref x 0) 32)) bufs))
-         ;; TODO implement a solution to allow registration of custom virtual buffers.
-         ;; Alternatively just hard-code other view libraries like perspective etc?
-         ;; Right now only bookmarks-view is supported.
-         ;; https://github.com/minad/bookmark-view/blob/master/bookmark-view.el
-         (views (if (fboundp 'bookmark-view-names)
-                    (mapcar (lambda (x)
-                              (propertize x
-                                          'face 'consult-view
-                                          'consult-switch bookmark-switch
-                                          'selectrum-candidate-display-right-margin
-                                          ;; TODO the completions-annotations face is ignored by selectrum?
-                                          (propertize "View" 'face 'completions-annotations)))
-                            (bookmark-view-names))))
-         (bookmarks (mapcar (lambda (x)
-                              (propertize (car x)
-                                          'face 'consult-bookmark
-                                          'consult-switch bookmark-switch
-                                          'selectrum-candidate-display-right-margin
-                                          ;; TODO the completions-annotations face is ignored by selectrum?
-                                          (propertize "Bookmark" 'face 'completions-annotations)))
-                            bookmark-alist))
-         (all-files (mapcar (lambda (x)
-                              (propertize (abbreviate-file-name x)
-                                          'face 'consult-file
-                                          'consult-switch file-switch
-                                          'selectrum-candidate-display-right-margin
-                                          ;; TODO the completions-annotations face is ignored by selectrum?
-                                          (propertize "File" 'face 'completions-annotations)))
-                            recentf-list))
-         (files (remove curr-file all-files))
-         (all-cands (append visible-bufs files bookmarks))
-         (generate
-          (lambda (input)
-            (cond
-             ((string-prefix-p " " input)
-              (list (cons 'input (substring input 1))
-                    (cons 'candidates hidden-bufs)))
-             ((string-prefix-p "b " input)
-              (list (cons 'input (substring input 2))
-                    (cons 'candidates visible-bufs)))
-             ((string-prefix-p "f " input)
-              (list (cons 'input (substring input 2))
-                    (cons 'candidates files)))
-             ((and views (string-prefix-p "v " input)) ;; Only narrow if there are views
-              (list (cons 'input (substring input 2))
-                    (cons 'candidates views)))
-             ((and bookmarks (string-prefix-p "m " input)) ;; Only narrow if there are bookmarks
-              (list (cons 'input (substring input 2))
-                    (cons 'candidates bookmarks)))
-             (t
-              (list (cons 'input input)
-                    (cons 'candidates all-cands))))))
-         (selectrum-should-sort-p)
-         (chosen (selectrum-read "Switch to: " generate)))
-    (funcall (or (get-text-property 0 'consult-switch chosen) buffer-switch) chosen)))
-
-;;;###autoload
-(defun consult-buffer-other-frame ()
-  "Enhanced `switch-to-buffer-other-frame' command with support for virtual buffers."
-  (interactive)
-  (consult--buffer #'switch-to-buffer-other-frame #'find-file-other-frame
-                   ;; bookmark-jump-other-frame is supported on Emacs >= 27.1
-                   ;; TODO which Emacs versions do we want to support?
-                   (if (fboundp 'bookmark-jump-other-frame) #'bookmark-jump-other-frame #'bookmark-jump)))
-
-;;;###autoload
-(defun consult-buffer-other-window ()
-  "Enhanced `switch-to-buffer-other-window' command with support for virtual buffers."
-  (interactive)
-  (consult--buffer #'switch-to-buffer-other-window #'find-file-other-window #'bookmark-jump-other-window))
-
-;;;###autoload
-(defun consult-buffer ()
-  "Enhanced `switch-to-buffer-other-window' command with support for virtual buffers."
-  (interactive)
-  (consult--buffer #'switch-to-buffer #'find-file #'bookmark-jump))
-
 (defmacro consult--yank-read ()
   "Open kill ring menu and return chosen text."
   '(list (consult--read "Ring: "
@@ -538,6 +450,121 @@ Otherwise replace the just-yanked text with the chosen text."
                      :require-match t
                      :history 'consult-minor-mode-history))))
   (call-interactively mode))
+
+;;;###autoload
+(defun consult-face (face)
+  "Select FACE and show description."
+  (interactive
+   (list
+    (consult--read "Face: "
+                   (sort
+                    (mapcar (lambda (x)
+                              (cons
+                               (concat
+                                (format "%-40s " (car x))
+                                (propertize "abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ" 'face (car x)))
+                              (car x)))
+                            face-new-frame-defaults)
+                    (lambda (x y) (string< (car x) (car y))))
+                   :sort nil
+                   :require-match t
+                   :history 'consult-face-history)))
+  (describe-face face))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Selectrum specific code
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; consult--buffer performs dynamic computation of the candidate set.
+;; this is currently not supported by completing-read+selectrum.
+;; therefore the selectrum api is used directly.
+(defvar selectrum-should-sort-p)
+(declare-function selectrum-read "selectrum")
+
+(defun consult--buffer (buffer-switch file-switch bookmark-switch)
+  "Generic implementation of `consult-buffer'.
+Depending on the selected item BUFFER-SWITCH, FILE-SWITCH or BOOKMARK-SWITCH will be used to display the item."
+  (let* ((curr-buf (window-buffer (minibuffer-selected-window)))
+         (curr-file (or (buffer-file-name curr-buf) ""))
+         (bufs (mapcar #'buffer-name (delq curr-buf (buffer-list))))
+         (hidden-bufs (seq-filter (lambda (x) (= (aref x 0) 32)) bufs))
+         (visible-bufs (seq-filter (lambda (x) (/= (aref x 0) 32)) bufs))
+         ;; TODO implement a solution to allow registration of custom virtual buffers.
+         ;; Alternatively just hard-code other view libraries like perspective etc?
+         ;; Right now only bookmarks-view is supported.
+         ;; https://github.com/minad/bookmark-view/blob/master/bookmark-view.el
+         (views (if (fboundp 'bookmark-view-names)
+                    (mapcar (lambda (x)
+                              (propertize x
+                                          'face 'consult-view
+                                          'consult-switch bookmark-switch
+                                          'selectrum-candidate-display-right-margin
+                                          ;; TODO the completions-annotations face is ignored by selectrum?
+                                          (propertize "View" 'face 'completions-annotations)))
+                            (bookmark-view-names))))
+         (bookmarks (mapcar (lambda (x)
+                              (propertize (car x)
+                                          'face 'consult-bookmark
+                                          'consult-switch bookmark-switch
+                                          'selectrum-candidate-display-right-margin
+                                          ;; TODO the completions-annotations face is ignored by selectrum?
+                                          (propertize "Bookmark" 'face 'completions-annotations)))
+                            bookmark-alist))
+         (all-files (mapcar (lambda (x)
+                              (propertize (abbreviate-file-name x)
+                                          'face 'consult-file
+                                          'consult-switch file-switch
+                                          'selectrum-candidate-display-right-margin
+                                          ;; TODO the completions-annotations face is ignored by selectrum?
+                                          (propertize "File" 'face 'completions-annotations)))
+                            recentf-list))
+         (files (remove curr-file all-files))
+         (all-cands (append visible-bufs files bookmarks))
+         (generate
+          (lambda (input)
+            (cond
+             ((string-prefix-p " " input)
+              (list (cons 'input (substring input 1))
+                    (cons 'candidates hidden-bufs)))
+             ((string-prefix-p "b " input)
+              (list (cons 'input (substring input 2))
+                    (cons 'candidates visible-bufs)))
+             ((string-prefix-p "f " input)
+              (list (cons 'input (substring input 2))
+                    (cons 'candidates files)))
+             ((and views (string-prefix-p "v " input)) ;; Only narrow if there are views
+              (list (cons 'input (substring input 2))
+                    (cons 'candidates views)))
+             ((and bookmarks (string-prefix-p "m " input)) ;; Only narrow if there are bookmarks
+              (list (cons 'input (substring input 2))
+                    (cons 'candidates bookmarks)))
+             (t
+              (list (cons 'input input)
+                    (cons 'candidates all-cands))))))
+         (selectrum-should-sort-p)
+         (chosen (selectrum-read "Switch to: " generate)))
+    (funcall (or (get-text-property 0 'consult-switch chosen) buffer-switch) chosen)))
+
+;;;###autoload
+(defun consult-buffer-other-frame ()
+  "Enhanced `switch-to-buffer-other-frame' command with support for virtual buffers."
+  (interactive)
+  (consult--buffer #'switch-to-buffer-other-frame #'find-file-other-frame
+                   ;; bookmark-jump-other-frame is supported on Emacs >= 27.1
+                   ;; TODO which Emacs versions do we want to support?
+                   (if (fboundp 'bookmark-jump-other-frame) #'bookmark-jump-other-frame #'bookmark-jump)))
+
+;;;###autoload
+(defun consult-buffer-other-window ()
+  "Enhanced `switch-to-buffer-other-window' command with support for virtual buffers."
+  (interactive)
+  (consult--buffer #'switch-to-buffer-other-window #'find-file-other-window #'bookmark-jump-other-window))
+
+;;;###autoload
+(defun consult-buffer ()
+  "Enhanced `switch-to-buffer-other-window' command with support for virtual buffers."
+  (interactive)
+  (consult--buffer #'switch-to-buffer #'find-file #'bookmark-jump))
 
 (provide 'consult)
 ;;; consult.el ends here
