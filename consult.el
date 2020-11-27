@@ -100,6 +100,11 @@
   :type 'string
   :group 'consult)
 
+(defcustom consult-buffer-preview t
+  "Enable buffer preview during completion."
+  :type 'boolean
+  :group 'consult)
+
 (defcustom consult-theme-preview t
   "Enable theme preview during completion."
   :type 'boolean
@@ -575,7 +580,8 @@ BODY are the body expressions."
 (defun consult--buffer (open-buffer open-file open-bookmark)
   "Generic implementation of `consult-buffer'.
 Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be used to display the item."
-  (let* ((curr-buf (window-buffer (minibuffer-selected-window)))
+  (let* ((curr-win (minibuffer-selected-window))
+         (curr-buf (window-buffer curr-win))
          (curr-file (or (buffer-file-name curr-buf) ""))
          (all-bufs (mapcar #'buffer-name (delq curr-buf (buffer-list))))
          (hidden-bufs (seq-filter (lambda (x) (= (aref x 0) 32)) all-bufs))
@@ -630,9 +636,17 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
               (list (cons 'input input)
                     (cons 'candidates all-cands))))))
          (selectrum-should-sort-p)
-         (selected (selectrum-read "Switch to: " generate)))
+         (selected
+          (consult--preview (buf curr-buf)
+              (when (and consult-buffer-preview (get-buffer buf))
+                (let ((win curr-win))
+                  (while (not (window-live-p win))
+                    (setq win (next-window)))
+                  (with-selected-window win
+                    (switch-to-buffer buf))))
+              (selectrum-read "Switch to: " generate))))
     (funcall (cond
-              ((member selected all-bufs) open-buffer) ;; buffers have priority
+              ((get-buffer selected) open-buffer) ;; buffers have priority
               ((member selected all-files) open-file)
               ((member selected bookmarks) open-bookmark)
               (t open-buffer))
