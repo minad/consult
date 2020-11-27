@@ -170,7 +170,36 @@
                   (propertize consult-on 'face 'consult-on)
                 (propertize consult-off 'face 'consult-off))))
 
-(cl-defun consult--read (prompt candidates &key predicate require-match history default category (sort t) (lookup #'identity))
+;; TODO move this to the selectrum-specific code
+(declare-function selectrum-get-current-candidate "selectrum")
+(declare-function selectrum--minibuffer-post-command-hook "selectrum")
+
+;; TODO this macro should not be selectrum specific.
+;; furthermore maybe selectrum could offer some api for preview?
+(defmacro consult--preview (enabled bind preview &rest body)
+  "Preview support for completion.
+ENABLED must be t if preview should be performed.
+BIND is a bound variable.
+PREVIEW is the preview expression.
+BODY are the body expressions."
+  (declare (indent 3))
+  (let ((advice (make-symbol "advice"))
+        (var (car bind)))
+    `(let (,bind)
+       (if ,enabled
+           (let ((,advice
+                  (lambda ()
+                    (let ((,var (selectrum-get-current-candidate)))
+                      (when (and ,var (not (string= "" ,var)))
+                        ,preview)))))
+             (advice-add #'selectrum--minibuffer-post-command-hook :after ,advice)
+             (unwind-protect
+                 (progn ,@body)
+               (advice-remove #'selectrum--minibuffer-post-command-hook ,advice)
+               ,preview))
+         (progn ,@body)))))
+
+(cl-defun consult--read (prompt candidates &key predicate require-match history default category (sort t) (lookup #'identity) preview)
   "Simplified completing read function.
 
 PROMPT is the string to prompt with.
@@ -181,7 +210,8 @@ HISTORY is the symbol of the history variable.
 DEFAULT is the default input.
 CATEGORY is the completion category.
 SORT should be set to nil if the candidates are already sorted.
-LOOKUP is a function which is applied to the result."
+LOOKUP is a function which is applied to the result.
+PREVIEW is a preview function."
   ;; supported types
   (cl-assert (or (not candidates) ;; nil
                  (obarrayp candidates) ;; obarray
@@ -189,19 +219,22 @@ LOOKUP is a function which is applied to the result."
                  (consp (car candidates)))) ;; alist
   ;; alists can only be used if require-match=t
   (cl-assert (or (not (and (consp candidates) (consp (car candidates)))) require-match))
-  (funcall lookup
-           (completing-read
-            prompt
-            (if (and sort (not category))
-                candidates
-              (lambda (str pred action)
-                (if (eq action 'metadata)
-                    `(metadata
-                      ,@(if category `((category . ,category)))
-                      ,@(if (not sort) '((cycle-sort-function . identity)
-                                         (display-sort-function . identity))))
-                  (complete-with-action action candidates str pred))))
-            predicate require-match nil history default)))
+  (consult--preview preview
+      (cand default)
+      (funcall preview (funcall lookup cand))
+    (funcall lookup
+             (completing-read
+              prompt
+              (if (and sort (not category))
+                  candidates
+                (lambda (str pred action)
+                  (if (eq action 'metadata)
+                      `(metadata
+                        ,@(if category `((category . ,category)))
+                        ,@(if (not sort) '((cycle-sort-function . identity)
+                                           (display-sort-function . identity))))
+                    (complete-with-action action candidates str pred))))
+              predicate require-match nil history default))))
 
 ;; see https://github.com/raxod502/selectrum/issues/226
 ;;;###autoload
@@ -539,6 +572,31 @@ Otherwise replace the just-yanked text with the selected text."
                         :history 'consult-face-history))))
   (describe-face face))
 
+;;;###autoload
+(defun consult-theme (theme)
+  "Enable THEME from `consult-themes'."
+  (interactive
+   (list
+    (consult--read
+     "Theme: "
+     (mapcar #'symbol-name
+             (seq-filter (lambda (x) (or (not consult-themes)
+                                         (memq x consult-themes)))
+                         (custom-available-themes)))
+     :require-match t
+     :category 'theme
+     :history 'consult-theme-history
+     :lookup (lambda (x) (and x (intern x)))
+     :preview (and consult-preview-theme #'consult-theme)
+     :default (and (car custom-enabled-themes)
+                   (symbol-name (car custom-enabled-themes))))))
+  (unless (equal theme (car custom-enabled-themes))
+    (mapc #'disable-theme custom-enabled-themes)
+    (when theme
+      (if (custom-theme-p theme)
+          (enable-theme theme)
+        (load-theme theme :no-confirm)))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Selectrum specific code
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -548,60 +606,6 @@ Otherwise replace the just-yanked text with the selected text."
 ;; therefore the selectrum api is used directly.
 (defvar selectrum-should-sort-p)
 (declare-function selectrum-read "selectrum")
-(declare-function selectrum-get-current-candidate "selectrum")
-(declare-function selectrum--minibuffer-post-command-hook "selectrum")
-
-;; TODO this macro should not be selectrum specific.
-;; furthermore maybe selectrum could offer some api for preview?
-(defmacro consult--preview (enabled bind preview &rest body)
-  "Preview support for completion.
-BIND is a bound variable.
-PREVIEW is the preview expression.
-BODY are the body expressions."
-  (declare (indent 3))
-  (let ((advice (make-symbol "advice"))
-        (var (car bind)))
-    `(let (,bind)
-       (if ,enabled
-           (let ((,advice
-                  (lambda ()
-                    (let ((,var (selectrum-get-current-candidate)))
-                      (when (and ,var (not (string= "" ,var)))
-                        ,preview)))))
-             (advice-add #'selectrum--minibuffer-post-command-hook :after ,advice)
-             (unwind-protect
-                 (progn ,@body)
-               (advice-remove #'selectrum--minibuffer-post-command-hook ,advice)
-               ,preview))
-         (progn ,@body)))))
-
-;;;###autoload
-(defun consult-theme (theme)
-  "Enable THEME from `consult-themes'."
-  (interactive
-   (list
-    (consult--preview
-        consult-preview-theme
-        (theme (and (car custom-enabled-themes)
-                    (symbol-name (car custom-enabled-themes))))
-      (consult-theme (and theme (intern theme)))
-      (consult--read
-       "Theme: "
-       (mapcar #'symbol-name
-               (seq-filter (lambda (x) (or (not consult-themes)
-                                           (memq x consult-themes)))
-                           (custom-available-themes)))
-       :require-match t
-       :category 'theme
-       :history 'consult-theme-history
-       :lookup #'intern
-       :default theme))))
-  (unless (equal theme (car custom-enabled-themes))
-    (mapc #'disable-theme custom-enabled-themes)
-    (when theme
-      (if (custom-theme-p theme)
-          (enable-theme theme)
-        (load-theme theme :no-confirm)))))
 
 (defun consult--buffer (open-buffer open-file open-bookmark)
   "Generic implementation of `consult-buffer'.
