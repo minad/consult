@@ -42,9 +42,6 @@
 (require 'seq)
 (require 'subr-x)
 
-;; TODO consult--buffer is broken, since it returns the selected type via a property.
-;;      This does not work if the user writes the candidate fully by hand. In that case the property is nil.
-;;      Use an association list or encode the type via a prefix character.
 ;; TODO Decide on a consistent interactive-style, move all consult--read code to (interactive ...)?
 ;;      This makes sense for functions which can be used both interactively and non-interactively.
 
@@ -528,14 +525,14 @@ Otherwise replace the just-yanked text with the selected text."
 (defvar selectrum-should-sort-p)
 (declare-function selectrum-read "selectrum")
 
-(defun consult--buffer (buffer-switch file-switch bookmark-switch)
+(defun consult--buffer (open-buffer open-file open-bookmark)
   "Generic implementation of `consult-buffer'.
-Depending on the selected item BUFFER-SWITCH, FILE-SWITCH or BOOKMARK-SWITCH will be used to display the item."
+Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be used to display the item."
   (let* ((curr-buf (window-buffer (minibuffer-selected-window)))
          (curr-file (or (buffer-file-name curr-buf) ""))
-         (bufs (mapcar #'buffer-name (delq curr-buf (buffer-list))))
-         (hidden-bufs (seq-filter (lambda (x) (= (aref x 0) 32)) bufs))
-         (visible-bufs (seq-filter (lambda (x) (/= (aref x 0) 32)) bufs))
+         (all-bufs (mapcar #'buffer-name (delq curr-buf (buffer-list))))
+         (hidden-bufs (seq-filter (lambda (x) (= (aref x 0) 32)) all-bufs))
+         (visible-bufs (seq-filter (lambda (x) (/= (aref x 0) 32)) all-bufs))
          ;; TODO implement a solution to allow registration of custom virtual buffers.
          ;; Alternatively just hard-code other view libraries like perspective etc?
          ;; Right now only bookmarks-view is supported.
@@ -544,7 +541,6 @@ Depending on the selected item BUFFER-SWITCH, FILE-SWITCH or BOOKMARK-SWITCH wil
                     (mapcar (lambda (x)
                               (propertize x
                                           'face 'consult-view
-                                          'consult-switch bookmark-switch
                                           'selectrum-candidate-display-right-margin
                                           ;; TODO the completions-annotations face is ignored by selectrum?
                                           (propertize "View" 'face 'completions-annotations)))
@@ -552,7 +548,6 @@ Depending on the selected item BUFFER-SWITCH, FILE-SWITCH or BOOKMARK-SWITCH wil
          (bookmarks (mapcar (lambda (x)
                               (propertize (car x)
                                           'face 'consult-bookmark
-                                          'consult-switch bookmark-switch
                                           'selectrum-candidate-display-right-margin
                                           ;; TODO the completions-annotations face is ignored by selectrum?
                                           (propertize "Bookmark" 'face 'completions-annotations)))
@@ -560,7 +555,6 @@ Depending on the selected item BUFFER-SWITCH, FILE-SWITCH or BOOKMARK-SWITCH wil
          (all-files (mapcar (lambda (x)
                               (propertize (abbreviate-file-name x)
                                           'face 'consult-file
-                                          'consult-switch file-switch
                                           'selectrum-candidate-display-right-margin
                                           ;; TODO the completions-annotations face is ignored by selectrum?
                                           (propertize "File" 'face 'completions-annotations)))
@@ -590,7 +584,12 @@ Depending on the selected item BUFFER-SWITCH, FILE-SWITCH or BOOKMARK-SWITCH wil
                     (cons 'candidates all-cands))))))
          (selectrum-should-sort-p)
          (selected (selectrum-read "Switch to: " generate)))
-    (funcall (or (get-text-property 0 'consult-switch selected) buffer-switch) selected)))
+    (funcall (cond
+              ((member selected all-bufs) open-buffer) ;; buffers have priority
+              ((member selected all-files) open-file)
+              ((member selected bookmarks) open-bookmark)
+              (t open-buffer))
+             selected)))
 
 ;;;###autoload
 (defun consult-buffer-other-frame ()
