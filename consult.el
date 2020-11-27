@@ -1,4 +1,4 @@
-;;; consult.el --- Consultation using completing-read -*- lexical-binding: t -*-
+;;; consult.el --- Consulting completing-read -*- lexical-binding: t -*-
 
 ;; Author: The Selectrum contributors
 ;; Created: 2020

@@ -1,4 +1,4 @@
-# consult.el - Consultation using completing-read
+# consult.el - Consulting completing-read
 
 This package provides various commands based on the Emacs completion function `completing-read`.
 The commands are compatible with completion-systems based on the standard Emacs API,
