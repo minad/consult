@@ -9,9 +9,11 @@ or [Helm](https://github.com/emacs-helm/helm), you don't need consult,
 since both libraries already bring their own rich set of additional commands.
 
 The goal is to keep the completion-system specifics in this library to a minimum.
-For now there are commands which use Selectrum-specific extensions. If it turns
-out that it is not possible to implement these commands based on the standard API,
-they will be packaged up and released separately.
+Commands which cannot be implemented purely in terms of the standard API
+will be packaged up and released separately. As of now, only the `consult-buffer`
+implementation is problematic. Maybe I will provide a fallback variant of the command, which
+will work on all implementations, but will be a bit less rich than the variant offered
+if Selectrum is used.
 
 ## Available commands
 
@@ -38,6 +40,24 @@ Most provided commands follow the naming scheme `consult-thing`. This is the lis
 * Miscellaneous
   * `consult-minor-mode`: Enable/disable minor mode
   * `consult-theme`: Select a theme and disable all currently enabled themes
+
+## Screenshots
+
+consult-mark
+
+![consult-mark](https://github.com/minad/consult/blob/master/images/consult-mark.gif?raw=true|height)
+
+consult-line
+
+![consult-line](https://github.com/minad/consult/blob/master/images/consult-line.gif?raw=true)
+
+consult-outline
+
+![consult-outline](https://github.com/minad/consult/blob/master/images/consult-outline.gif?raw=true)
+
+consult-face
+
+![consult-face](https://github.com/minad/consult/blob/master/images/consult-face.gif?raw=true)
 
 ## Usage
 
