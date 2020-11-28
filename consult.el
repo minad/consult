@@ -181,6 +181,8 @@ nil shows all `custom-available-themes'."
 (declare-function selectrum-get-current-candidate "selectrum")
 (declare-function selectrum--minibuffer-post-command-hook "selectrum")
 
+;; TODO is it possible to support preview with default Emacs completion?
+;; right now selectrum and icomplete are supported.
 (defun consult--preview-setup (callback)
   "Begin preview by hooking into the completion system.
 Returns a function which must be called at the end of the preview.
@@ -405,6 +407,21 @@ The alist contains (string . position) pairs."
                     :history 'consult-mark-history
                     :preview (and consult-preview-mark #'consult--preview-line)))))
 
+;; HACK: Disambiguate the line by prepending it with unicode
+;; characters in the supplementary private use plane b.
+;; This will certainly have many ugly consequences.
+(defun consult--line-prefix (fmt line)
+  "Generate unique line number prefix string for LINE.
+FMT is the line number format string."
+  (let ((str) (n line))
+    (while (> n 0)
+      (push (+ #x100000 (% n #xFFFE)) str)
+      (setq n (/ n #xFFFE)))
+    (propertize (concat str)
+                'display
+                (propertize (format fmt line)
+                            'face 'consult-line-number))))
+
 (defun consult--line-candidates ()
   "Return alist of lines and positions."
   (when (minibufferp)
@@ -425,14 +442,7 @@ The alist contains (string . position) pairs."
         (let ((str (buffer-substring (line-beginning-position) (line-end-position)))
               (dist (abs (- curr-line line))))
           (unless (string-blank-p str)
-            (let ((cand (concat (propertize
-                            ;; HACK: Disambiguate the line by prepending it with a unicode
-                            ;; character in the supplementary private use plane b.
-                            ;; This will certainly have many ugly consequences.
-                            (concat (list (+ #x100000 (mod line #xFFFE))))
-                            'display (propertize (format line-format line)
-                                                 'face 'consult-line-number))
-                           str)))
+            (let ((cand (concat (consult--line-prefix line-format line) str)))
               (when (or (not default-cand) (< dist default-cand-dist))
                 (setq default-cand cand
                       default-cand-dist dist))

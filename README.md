@@ -2,8 +2,9 @@
 
 This package provides various commands based on the Emacs completion function `completing-read`.
 The commands are compatible with completion-systems based on the standard Emacs API,
-e.g., [Icomplete](https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html) and
-[Selectrum](https://github.com/raxod502/selectrum).
+e.g., the Emacs builtin [Icomplete](https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html) and
+[Selectrum](https://github.com/raxod502/selectrum). If Icomplete is used, it is recommended
+to install [Icomplete-vertical](https://github.com/oantolin/icomplete-vertical]).
 The goal is to keep the completion-system specifics in this library to a minimum.
 
 Note that if you use [Ivy](https://github.com/abo-abo/swiper#ivy)
