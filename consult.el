@@ -371,8 +371,7 @@ The alist contains (string . position) pairs."
   ;; We would observe this if consulting an unfontified line.
   ;; Therefore we have to enforce font-locking now.
   (jit-lock-fontify-now)
-  (let* ((all-markers (cl-remove-duplicates (cons (mark-marker) mark-ring)
-                                            :test (lambda (x y) (= (marker-position x) (marker-position y)))))
+  (let* ((all-markers (delete-dups (cons (mark-marker) (seq-copy mark-ring))))
          (max-line 0)
          (unformatted-candidates
           (save-excursion
@@ -502,7 +501,7 @@ This command obeys narrowing."
 (defun consult--yank-read ()
   "Open kill ring menu and return selected text."
   (consult--read "Ring: "
-                 (cl-remove-duplicates kill-ring :test #'equal :from-end t)
+                 (delete-dups (seq-copy kill-ring))
                  :require-match t))
 
 ;; Insert selected text.
@@ -613,7 +612,7 @@ Otherwise replace the just-yanked text with the selected text."
   (eval
    (read
     (consult--read "Command: "
-                   (cl-remove-duplicates (mapcar #'prin1-to-string command-history) :test #'equal)
+                   (delete-dups (mapcar #'prin1-to-string command-history))
                    ;; :category 'command ;; TODO command category is wrong here? category "sexp"?
                    :history 'consult-command-history))))
 
@@ -624,7 +623,7 @@ Otherwise replace the just-yanked text with the selected text."
   (insert
    (substring-no-properties
     (consult--read "Minibuffer: "
-                   (cl-remove-duplicates minibuffer-history :test #'equal)
+                   (delete-dups (seq-copy minibuffer-history))
                    :history 'consult-minibuffer-history))))
 
 (defun consult--minor-mode-candidates ()
