@@ -331,7 +331,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                          (cons
                           line
                           (buffer-substring (line-beginning-position) (line-end-position)))
-                         (point))
+                         (point-marker))
                         candidates)
                   (if (and (bolp) (not (eobp))) (forward-char 1))))
               (nreverse candidates)))))
@@ -375,7 +375,7 @@ The alist contains (string . position) pairs."
                                            #("┃" 0 1 (face consult-mark))
                                            (substring lstr col))))
                         (setq max-line (max line max-line))
-                        (cons (cons line cand) pos)))
+                        (cons (cons line cand) marker)))
                     all-markers))))
     (consult--add-line-number max-line unformatted-candidates)))
 
@@ -406,29 +406,30 @@ The alist contains (string . position) pairs."
   (jit-lock-fontify-now)
   (let* ((default-cand)
          (candidates)
-         (pos (point-min))
-         (line (line-number-at-pos pos t))
+         (line (line-number-at-pos (point-min) t))
          (curr-line (line-number-at-pos (point) t))
-         (buffer-lines (split-string (buffer-string) "\n"))
-         (line-format (format "%%%dd " (length (number-to-string (length buffer-lines)))))
+         (line-format (format "%%%dd " (length (number-to-string (line-number-at-pos (point-max))))))
          (default-cand-dist most-positive-fixnum))
-    (dolist (str buffer-lines)
-      (unless (string-blank-p str)
-        (let ((cand (concat (propertize
-                             ;; HACK: Disambiguate the line by prepending it with a unicode
-                             ;; character in the supplementary private use plane b.
-                             ;; This will certainly have many ugly consequences.
-                             (concat (list (+ #x100000 (mod line #xFFFE))))
-                             'display (propertize (format line-format line)
-                                                  'face 'consult-line-number))
-                            str))
+    (save-excursion
+      (goto-char (point-min))
+      (while (< (point) (point-max))
+        (let ((str (buffer-substring (line-beginning-position) (line-end-position)))
               (dist (abs (- curr-line line))))
-          (when (or (not default-cand) (< dist default-cand-dist))
-            (setq default-cand cand
-                  default-cand-dist dist))
-          (push (cons cand pos) candidates)))
-      (setq line (1+ line)
-            pos (+ pos (length str) 1)))
+          (unless (string-blank-p str)
+            (let ((cand (concat (propertize
+                            ;; HACK: Disambiguate the line by prepending it with a unicode
+                            ;; character in the supplementary private use plane b.
+                            ;; This will certainly have many ugly consequences.
+                            (concat (list (+ #x100000 (mod line #xFFFE))))
+                            'display (propertize (format line-format line)
+                                                 'face 'consult-line-number))
+                           str)))
+              (when (or (not default-cand) (< dist default-cand-dist))
+                (setq default-cand cand
+                      default-cand-dist dist))
+              (push (cons cand (point-marker)) candidates)))
+          (forward-line 1)
+          (setq line (1+ line)))))
     (unless candidates
       (user-error "No lines"))
     (cons default-cand (nreverse candidates))))

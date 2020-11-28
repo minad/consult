@@ -40,6 +40,12 @@ Most provided commands follow the naming scheme `consult-thing`. This is the lis
   * `consult-minor-mode`: Enable/disable minor mode
   * `consult-theme`: Select a theme and disable all currently enabled themes. Supports live preview.
 
+## Live previews
+
+Some of the commands support live previews. For example when you scroll through the items of `consult-line`,
+the buffer will jump to the corresponding position. It is possible to jump back and forth between
+the minibuffer and the buffer to perform recursive editing while a search is ongoing.
+
 ## Screenshots
 
 consult-mark
