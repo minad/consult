@@ -43,6 +43,7 @@
 (require 'seq)
 (require 'subr-x)
 
+;; TODO implement preview of virtual buffers? but it must be ensured that any newly opened files are closed again
 ;; TODO Decide on a consistent interactive-style, move all consult--read code to (interactive ...)?
 ;;      This makes sense for functions which can be used both interactively and non-interactively.
 
@@ -725,7 +726,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
               (state (set-window-configuration state))
               (buf (when (get-buffer buf)
                      (with-selected-window (consult--window)
-                       (switch-to-buffer buf))))
+                       (funcall open-buffer buf))))
             (let ((selectrum-should-sort-p))
               (selectrum-read "Switch to: " generate)))))
     (cond
