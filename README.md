@@ -14,6 +14,24 @@ We will probably provide a variant of `consult-buffer` which is a bit less rich,
 but works purely with `completing-read`. Furthermore live previews are only implemented
 for Selectrum as of now, but Icomplete support is planned.
 
+## Screenshots
+
+consult-mark
+
+![consult-mark](https://github.com/minad/consult/blob/master/images/consult-mark.gif?raw=true|height)
+
+consult-line
+
+![consult-line](https://github.com/minad/consult/blob/master/images/consult-line.gif?raw=true)
+
+consult-outline
+
+![consult-outline](https://github.com/minad/consult/blob/master/images/consult-outline.gif?raw=true)
+
+consult-face
+
+![consult-face](https://github.com/minad/consult/blob/master/images/consult-face.gif?raw=true)
+
 ## Available commands
 
 Most provided commands follow the naming scheme `consult-thing`.
@@ -58,28 +76,13 @@ Most provided commands follow the naming scheme `consult-thing`.
 
 Some of the commands support live previews. For example when you scroll through the items of `consult-line`,
 the buffer will jump to the corresponding position. It is possible to jump back and forth between
-the minibuffer and the buffer to perform recursive editing while a search is ongoing.
+the minibuffer and the buffer to perform recursive editing while a search is ongoing. In case
+you do not like live previews or find them distracting, for each of the commands supporting preview, there
+is a customizable variable which allows disabling the preview.
 
-## Screenshots
+## Package configuration
 
-consult-mark
-
-![consult-mark](https://github.com/minad/consult/blob/master/images/consult-mark.gif?raw=true|height)
-
-consult-line
-
-![consult-line](https://github.com/minad/consult/blob/master/images/consult-line.gif?raw=true)
-
-consult-outline
-
-![consult-outline](https://github.com/minad/consult/blob/master/images/consult-outline.gif?raw=true)
-
-consult-face
-
-![consult-face](https://github.com/minad/consult/blob/master/images/consult-face.gif?raw=true)
-
-## Usage
-
+It is recommended to manage package configurations with `use-package`.
 The consult library only provides commands and does not add any keybindings. In order to
 use the enhanced commands, you must configure the keybindings yourself.
 
@@ -103,6 +106,17 @@ use the enhanced commands, you must configure the keybindings yourself.
   ;; Replace functions (consult-multi-occur is a drop-in replacement)
   (fset 'multi-occur #'consult-multi-occur))
 ~~~
+
+### Configuration settings
+
+| Variable                | Def | Description                                  |
+|-------------------------|-----|----------------------------------------------|
+| consult-preview-buffer  | t   | Enable buffer preview during selection       |
+| consult-preview-theme   | t   | Enable theme preview during selection        |
+| consult-preview-mark    | t   | Enable mark preview during selection         |
+| consult-preview-line    | t   | Enable line preview during selection         |
+| consult-preview-outline | t   | Enable outline preview during selection      |
+| consult-themes          | nil | List of themes to be presented for selection |
 
 ## Acknowledgments
 

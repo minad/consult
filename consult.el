@@ -93,22 +93,12 @@
 
 (defface consult-on
   '((t :inherit success :weight bold))
-  "Face used for `consult-on'."
+  "Face used to signal enabled modes."
   :group 'consult)
 
 (defface consult-off
   '((t :inherit error :weight bold))
-  "Face used for `consult-off'."
-  :group 'consult)
-
-(defcustom consult-on "+ "
-  "Prefix string for active modes."
-  :type 'string
-  :group 'consult)
-
-(defcustom consult-off "- "
-  "Prefix string for disabled modes."
-  :type 'string
+  "Face used to signal disabled modes."
   :group 'consult)
 
 (defcustom consult-preview-buffer t
@@ -137,7 +127,8 @@
   :group 'consult)
 
 (defcustom consult-themes nil
-  "List of themes."
+  "List of themes to be presented for selection.
+nil shows all `custom-available-themes'."
   :type '(repeat symbol)
   :group 'consult)
 
@@ -175,8 +166,8 @@
   "Status prefix for given boolean ENABLED."
   (propertize " " 'display
               (if enabled
-                  (propertize consult-on 'face 'consult-on)
-                (propertize consult-off 'face 'consult-off))))
+                  (propertize "+ " 'face 'consult-on)
+                (propertize "- " 'face 'consult-off))))
 
 ;; TODO get rid of selectrum specifics where possible
 (defvar selectrum-should-sort-p)
