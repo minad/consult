@@ -16,29 +16,43 @@ for Selectrum as of now, but Icomplete support is planned.
 
 ## Available commands
 
-Most provided commands follow the naming scheme `consult-thing`. This is the list of currently supported commands:
+Most provided commands follow the naming scheme `consult-thing`.
 
-* Buffers/Files/Bookmarks
-  * `consult-bookmark`: Select or create bookmark
-  * `consult-buffer` (`-other-window`, `-other-frame`): Enhanced version of `switch-to-buffer` with support for virtual buffers. Supports live preview.
-  * `consult-recent-file` (`-other-window`, `-other-frame`): Select a recent files (you might prefer the more powerful `consult-buffer` instead)
-* Editing
-  * `consult-register`: Select from list of registers
+### Virtual Buffers
+
+  * `consult-buffer` (`-other-window`, `-other-frame`): Enhanced version of `switch-to-buffer` with support for virtual buffers.
+     Supports live preview and recursive editing while previewing.
+  * `consult-bookmark`: Select or create bookmark. You might prefer the more powerful `consult-buffer` instead, which includes bookmarks.
+  * `consult-recent-file` (`-other-window`, `-other-frame`): Select a recent files.
+     You might prefer the more powerful `consult-buffer` instead, which includes recent files.
+
+### Editing
+
+  * `consult-register`: Select from list of registers.
   * `consult-yank`, `consult-yank-pop`: Enhanced version of `yank` and `yank-pop` which allows selecting from the kill-ring.
-* Help
-  * `consult-apropos`: Replacement for `apropos` with completion
-  * `consult-face`: Describe face with preview during selection
-* Histories
-  * `consult-command-history`: Select a command from the `command-history`
-  * `consult-minibuffer-history`: Insert a string from the `minibuffer-history`
-* Jumping/Search
-  * `consult-line`: Jump to a line matching the selected text. Supports live preview.
-  * `consult-mark`: Jump to a marker in the `mark-ring`. Supports live preview.
-  * `consult-outline`: Jump to a heading of the outline. Supports live preview.
-  * `consult-multi-occur`: Replacement for `multi-occur`
-* Miscellaneous
-  * `consult-minor-mode`: Enable/disable minor mode
-  * `consult-theme`: Select a theme and disable all currently enabled themes. Supports live preview.
+
+### Help
+
+  * `consult-apropos`: Replacement for `apropos` with completion.
+  * `consult-face`: Describe face with preview during selection.
+
+### Histories
+
+  * `consult-command-history`: Select a command from the `command-history`.
+  * `consult-minibuffer-history`: Insert a string from the `minibuffer-history`.
+
+### Jumping and Search
+
+  * `consult-line`: Jump to a line matching the selected text. Supports live preview and recursive editing of the preview.
+  * `consult-mark`: Jump to a marker in the `mark-ring`. Supports live preview and recursive editing of the preview.
+  * `consult-outline`: Jump to a heading of the outline. Supports live preview and recursive editing of the preview.
+  * `consult-multi-occur`: Replacement for `multi-occur`.
+
+### Miscellaneous
+
+  * `consult-minor-mode`: Enable/disable minor mode.
+  * `consult-theme`: Select a theme and disable all currently enabled themes. Supports live preview of the theme while
+    scrolling through the candidates.
 
 ## Live previews
 
