@@ -44,8 +44,7 @@
 (require 'subr-x)
 
 ;; TODO implement preview of virtual buffers? but it must be ensured that any newly opened files are closed again
-;; TODO Decide on a consistent interactive-style, move all consult--read code to (interactive ...)?
-;;      This makes sense for functions which can be used both interactively and non-interactively.
+;; TODO implement preview for consult--yank-read
 
 (defgroup consult nil
   "Consultation using `completing-read'."
@@ -240,7 +239,7 @@ ARG is the command argument."
 
 (cl-defun consult--read (prompt candidates &key
                                 predicate require-match history default
-                                category (sort t) (lookup #'identity) preview)
+                                category (sort t) (lookup (lambda (_ x) x)) preview)
   "Simplified completing read function.
 
 PROMPT is the string to prompt with.
@@ -263,8 +262,8 @@ PREVIEW is a preview function."
   (consult--preview preview
       (funcall preview 'save)
       (state (funcall preview 'restore state))
-      (cand (funcall preview 'preview (funcall lookup cand)))
-    (funcall lookup
+      (cand (funcall preview 'preview (funcall lookup candidates cand)))
+    (funcall lookup candidates
              (completing-read
               prompt
               (if (and sort (not category))
@@ -301,10 +300,8 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                                  " " (cdar cand))))
           candidates)))
 
-;;;###autoload
-(defun consult-outline ()
-  "Jump to an outline heading."
-  (interactive)
+(defun consult--outline-candidates ()
+  "Return alist of outline headings and positions."
   ;; Font-locking is lazy, i.e., if a line has not been looked at yet, the line is not font-locked.
   ;; We would observe this if consulting an unfontified line.
   ;; Therefore we have to enforce font-locking now.
@@ -326,25 +323,26 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                          (point))
                         candidates)
                   (if (and (bolp) (not (eobp))) (forward-char 1))))
-              (nreverse candidates))))
-         (candidates-alist (or (consult--add-line-number max-line unformatted-candidates)
-                               (user-error "No headings")))
-         (selected
-          (save-excursion
-            (consult--read "Go to heading: " candidates-alist
-                           :sort nil
-                           :require-match t
-                           :lookup (lambda (x) (cdr (assoc x candidates-alist)))
-                           :history 'consult-outline-history
-                           :preview (and consult-preview-outline #'consult--preview-line)))))
-    (push-mark (point) t)
-    (goto-char selected)
-    (recenter)))
+              (nreverse candidates)))))
+    (or (consult--add-line-number max-line unformatted-candidates)
+        (user-error "No headings"))))
 
 ;;;###autoload
-(defun consult-mark ()
-  "Jump to a marker in `mark-ring', signified by a highlighted vertical bar."
+(defun consult-outline ()
+  "Jump to an outline heading."
   (interactive)
+  (consult--goto
+   (save-excursion
+     (consult--read "Go to heading: " (consult--outline-candidates)
+                    :sort nil
+                    :require-match t
+                    :lookup (lambda (candidates x) (cdr (assoc x candidates)))
+                    :history 'consult-outline-history
+                    :preview (and consult-preview-outline #'consult--preview-line)))))
+
+(defun consult--mark-candidates ()
+  "Return alist of lines containing markers.
+The alist contains (string . position) pairs."
   (unless (marker-position (mark-marker))
     (user-error "No marks"))
   ;; Font-locking is lazy, i.e., if a line has not been looked at yet, the line is not font-locked.
@@ -367,20 +365,62 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                                            (substring lstr col))))
                         (setq max-line (max line max-line))
                         (cons (cons line cand) pos)))
-                    all-markers)))
-         (candidates-alist (or (consult--add-line-number max-line unformatted-candidates)
-                               (user-error "No marks")))
-         (selected
-          (save-excursion
-            (consult--read "Go to mark: " candidates-alist
-                           :sort nil
-                           :require-match t
-                           :lookup (lambda (x) (cdr (assoc x candidates-alist)))
-                           :history 'consult-mark-history
-                           :preview (and consult-preview-mark #'consult--preview-line)))))
-    (push-mark (point) t)
-    (goto-char selected)
-    (recenter)))
+                    all-markers))))
+    (consult--add-line-number max-line unformatted-candidates)))
+
+(defun consult--goto (pos)
+  "Push current position to mark ring, go to POS and recenter."
+  (push-mark (point) t)
+  (goto-char pos)
+  (recenter))
+
+;;;###autoload
+(defun consult-mark ()
+  "Jump to a marker in `mark-ring', signified by a highlighted vertical bar."
+  (interactive)
+  (consult--goto
+   (save-excursion
+     (consult--read "Go to mark: " (consult--mark-candidates)
+                    :sort nil
+                    :require-match t
+                    :lookup (lambda (candidates x) (cdr (assoc x candidates)))
+                    :history 'consult-mark-history
+                    :preview (and consult-preview-mark #'consult--preview-line)))))
+
+(defun consult--line-candidates ()
+  "Return alist of lines and positions."
+  ;; Font-locking is lazy, i.e., if a line has not been looked at yet, the line is not font-locked.
+  ;; We would observe this if consulting an unfontified line.
+  ;; Therefore we have to enforce font-locking now.
+  (jit-lock-fontify-now)
+  (let* ((default-cand)
+         (candidates)
+         (pos (point-min))
+         (line (line-number-at-pos pos t))
+         (curr-line (line-number-at-pos (point) t))
+         (buffer-lines (split-string (buffer-string) "\n"))
+         (line-format (format "%%%dd " (length (number-to-string (length buffer-lines)))))
+         (default-cand-dist most-positive-fixnum))
+    (dolist (str buffer-lines)
+      (unless (string-blank-p str)
+        (let ((cand (concat (propertize
+                             ;; HACK: Disambiguate the line by prepending it with a unicode
+                             ;; character in the supplementary private use plane b.
+                             ;; This will certainly have many ugly consequences.
+                             (concat (list (+ #x100000 (mod line #xFFFE))))
+                             'display (propertize (format line-format line)
+                                                  'face 'consult-line-number))
+                            str))
+              (dist (abs (- curr-line line))))
+          (when (or (not default-cand) (< dist default-cand-dist))
+            (setq default-cand cand
+                  default-cand-dist dist))
+          (push (cons cand pos) candidates)))
+      (setq line (1+ line)
+            pos (+ pos (length str) 1)))
+    (unless candidates
+      (user-error "No lines"))
+    (cons default-cand (nreverse candidates))))
 
 ;;;###autoload
 (defun consult-line ()
@@ -388,118 +428,85 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
 The default candidate is a non-empty line closest to point.
 This command obeys narrowing."
   (interactive)
-  ;; Font-locking is lazy, i.e., if a line has not been looked at yet, the line is not font-locked.
-  ;; We would observe this if consulting an unfontified line.
-  ;; Therefore we have to enforce font-locking now.
-  (jit-lock-fontify-now)
-  (let* ((default-cand)
-         (candidates-alist
-          (let* ((candidates)
-                 (pos (point-min))
-                 (line (line-number-at-pos pos t))
-                 (curr-line (line-number-at-pos (point) t))
-                 (buffer-lines (split-string (buffer-string) "\n"))
-                 (line-format (format "%%%dd " (length (number-to-string (length buffer-lines)))))
-                 (default-cand-dist most-positive-fixnum))
-            (dolist (str buffer-lines)
-              (unless (string-blank-p str)
-                (let ((cand (concat (propertize
-                                     ;; HACK: Disambiguate the line by prepending it with a unicode
-                                     ;; character in the supplementary private use plane b.
-                                     ;; This will certainly have many ugly consequences.
-                                     (concat (list (+ #x100000 (mod line #xFFFE))))
-                                     'display (propertize (format line-format line)
-                                                          'face 'consult-line-number))
-                                    str))
-                      (dist (abs (- curr-line line))))
-                  (when (or (not default-cand) (< dist default-cand-dist))
-                    (setq default-cand cand
-                          default-cand-dist dist))
-                  (push (cons cand pos) candidates)))
-              (setq line (1+ line)
-                    pos (+ pos (length str) 1)))
-            (unless candidates
-              (user-error "No lines"))
-            (nreverse candidates)))
-         (selected
-          (save-excursion
-            (consult--read "Go to line: " candidates-alist
-                           :sort nil
-                           :require-match t
-                           :history 'consult-line-history
-                           :lookup (lambda (x) (cdr (assoc x candidates-alist)))
-                           :default default-cand
-                           :preview (and consult-preview-line #'consult--preview-line)))))
-    (push-mark (point) t)
-    (goto-char selected)
-    (recenter)))
+  (consult--goto
+   (let ((candidates (consult--line-candidates)))
+     (save-excursion
+       (consult--read "Go to line: " (cdr candidates)
+                      :sort nil
+                      :require-match t
+                      :history 'consult-line-history
+                      :lookup (lambda (candidates x) (cdr (assoc x candidates)))
+                      :default (car candidates)
+                      :preview (and consult-preview-line #'consult--preview-line))))))
 
-(defmacro consult--recent-file-read ()
+(defun consult--recent-file-read ()
   "Read recent file via `completing-read'."
-  '(list (consult--read
-          "Find recent file: "
-          (or (mapcar #'abbreviate-file-name recentf-list) (user-error "No recent files"))
-          :require-match t
-          :category 'file
-          :history 'file-name-history)))
+  (consult--read
+   "Find recent file: "
+   (or (mapcar #'abbreviate-file-name recentf-list) (user-error "No recent files"))
+   :require-match t
+   :category 'file
+   :history 'file-name-history))
 
 ;;;###autoload
-(defun consult-recent-file (file)
-  "Find recent FILE using `completing-read'."
-  (interactive (consult--recent-file-read))
-  (find-file file))
+(defun consult-recent-file ()
+  "Find recent using `completing-read'."
+  (interactive)
+  (find-file (consult--recent-file-read)))
 
 ;;;###autoload
-(defun consult-recent-file-other-frame (file)
-  "Find recent FILE using `completing-read'."
-  (interactive (consult--recent-file-read))
-  (find-file-other-frame file))
+(defun consult-recent-file-other-frame ()
+  "Find recent using `completing-read'."
+  (interactive)
+  (find-file-other-frame (consult--recent-file-read)))
 
 ;;;###autoload
-(defun consult-recent-file-other-window (file)
-  "Find recent FILE using `completing-read'."
-  (interactive (consult--recent-file-read))
-  (find-file-other-window file))
+(defun consult-recent-file-other-window ()
+  "Find recent using `completing-read'."
+  (interactive)
+  (find-file-other-window (consult--recent-file-read)))
 
-(defmacro consult--yank-read ()
+(defun consult--yank-read ()
   "Open kill ring menu and return selected text."
-  '(list (consult--read "Ring: "
-                        (cl-remove-duplicates kill-ring :test #'equal :from-end t)
-                        :require-match t)))
+  (consult--read "Ring: "
+                 (cl-remove-duplicates kill-ring :test #'equal :from-end t)
+                 :require-match t))
 
 ;; Insert selected text.
 ;; Adapted from the Emacs yank function.
 ;;;###autoload
-(defun consult-yank (text)
-  "Choose TEXT from the kill ring and insert it."
-  (interactive (consult--yank-read))
-  (setq yank-window-start (window-start))
-  (push-mark)
-  (insert-for-yank text)
-  (setq this-command 'yank)
-  nil)
+(defun consult-yank ()
+  "Select text from the kill ring and insert it."
+  (interactive)
+  (let ((text (consult--yank-read)))
+    (setq yank-window-start (window-start))
+    (push-mark)
+    (insert-for-yank text)
+    (setq this-command 'yank)
+    nil))
 
 ;;;###autoload
 (defun consult-yank-pop (&optional arg)
   "If there is a recent yank act like `yank-pop'.
-Otherwise choose text from the kill ring and insert it.
+Otherwise select text from the kill ring and insert it.
 See `yank-pop' for the meaning of ARG."
   (interactive "*p")
   (if (eq last-command 'yank)
       (yank-pop (or arg 1))
-    (call-interactively #'consult-yank)))
+    (consult-yank)))
 
 ;; Replace just-yanked text with selected text.
 ;; Adapted from the Emacs yank-pop function.
 ;;;###autoload
-(defun consult-yank-replace (text)
-  "Choose TEXT from the kill ring.
+(defun consult-yank-replace ()
+  "Select text from the kill ring.
 If there was no recent yank, insert the text.
 Otherwise replace the just-yanked text with the selected text."
-  (interactive (consult--yank-read))
+  (interactive)
   (if (not (eq last-command 'yank))
-      (consult-yank text)
-    (let ((inhibit-read-only t)
+      (consult-yank)
+    (let ((text (consult--yank-read))
+          (inhibit-read-only t)
 	  (before (< (point) (mark t))))
       (setq this-command 'yank)
       (if before
@@ -514,25 +521,29 @@ Otherwise replace the just-yanked text with the selected text."
 		       (set-marker (mark-marker) (point) (current-buffer)))))))
   nil)
 
+(defun consult--register-candidates ()
+  "Return alist of register descriptions and register names."
+  (mapcar
+   (lambda (r)
+     (setq r (car r))
+     (cons (format "%s: %s"
+                   (single-key-description r)
+                   (register-describe-oneline r))
+           r))
+   (or (sort (copy-sequence register-alist) #'car-less-than-car)
+       (user-error "All registers are empty"))))
+
 ;;;###autoload
 (defun consult-register (reg)
   "Use register REG. Either jump to location or insert the stored text."
   (interactive
    (list
-    (let ((candidates-alist (mapcar
-                             (lambda (r)
-                               (setq r (car r))
-                               (cons (format "%s: %s"
-                                             (single-key-description r)
-                                             (register-describe-oneline r))
-                                     r))
-                             (sort (copy-sequence register-alist) #'car-less-than-car))))
-      (consult--read "Register: "
-                     (or candidates-alist (user-error "All registers are empty"))
-                     :sort nil
-                     :require-match t
-                     :lookup (lambda (x) (cdr (assoc x candidates-alist)))
-                     :history 'consult-register-history))))
+    (consult--read "Register: "
+                   (consult--register-candidates)
+                   :sort nil
+                   :require-match t
+                   :lookup (lambda (candidates x) (cdr (assoc x candidates)))
+                   :history 'consult-register-history)))
   (condition-case nil
       (jump-to-register reg)
     (error (insert-register reg))))
@@ -548,83 +559,91 @@ Otherwise replace the just-yanked text with the selected text."
     (bookmark-set name)))
 
 ;;;###autoload
-(defun consult-apropos (pattern)
-  "Call `apropos' for selected PATTERN."
-  (interactive (list (consult--read "Apropos: "
-                                    obarray
-                                    :predicate (lambda (x) (or (fboundp x) (boundp x) (facep x) (symbol-plist x)))
-                                    :history 'consult-apropos-history
-                                    :category 'symbol
-                                    :default (thing-at-point 'symbol))))
-  (when (string= pattern "")
-    (user-error "No pattern given"))
-  (apropos pattern))
+(defun consult-apropos ()
+  "Select pattern and call `apropos'."
+  (interactive)
+  (let ((pattern
+         (consult--read "Apropos: "
+                        obarray
+                        :predicate (lambda (x) (or (fboundp x) (boundp x) (facep x) (symbol-plist x)))
+                        :history 'consult-apropos-history
+                        :category 'symbol
+                        :default (thing-at-point 'symbol))))
+    (if (string= pattern "")
+        (user-error "No pattern given")
+      (apropos pattern))))
 
 ;;;###autoload
-(defun consult-command-history (cmd)
-  "Select CMD from the command history."
-  (interactive (list (consult--read "Command: "
-                                    (cl-remove-duplicates (mapcar #'prin1-to-string command-history) :test #'equal)
-                                    ;; :category 'command ;; TODO command category is wrong here I think? category "sexp"?
-                                    :history 'consult-command-history)))
-  (eval (read cmd)))
+(defun consult-command-history ()
+  "Select and evaluate command from the command history."
+  (interactive)
+  (eval
+   (read
+    (consult--read "Command: "
+                   (cl-remove-duplicates (mapcar #'prin1-to-string command-history) :test #'equal)
+                   ;; :category 'command ;; TODO command category is wrong here I think? category "sexp"?
+                   :history 'consult-command-history))))
 
 ;;;###autoload
-(defun consult-minibuffer-history (str)
-  "Insert STR from minibuffer history."
-  (interactive (list (consult--read "Minibuffer: "
-                                    (cl-remove-duplicates minibuffer-history :test #'equal)
-                                    :history 'consult-minibuffer-history)))
-  (insert (substring-no-properties str)))
+(defun consult-minibuffer-history ()
+  "Insert string from minibuffer history."
+  (interactive)
+  (insert
+   (substring-no-properties
+    (consult--read "Minibuffer: "
+                   (cl-remove-duplicates minibuffer-history :test #'equal)
+                   :history 'consult-minibuffer-history))))
+
+(defun consult--minor-mode-candidates ()
+  "Return alist of minor-mode names and symbols."
+  (let ((candidates-alist))
+    (dolist (mode minor-mode-list)
+      (when (and (boundp mode) (commandp mode))
+        (push (cons (concat
+                     (consult--status-prefix (symbol-value mode))
+                     (symbol-name mode)
+                     (let* ((lighter (cdr (assq mode minor-mode-alist)))
+                            (str (and lighter (propertize (string-trim (format-mode-line (cons t lighter)))
+                                                          'face 'consult-lighter))))
+                       (and str (not (string-blank-p str)) (format " [%s]" str))))
+                    mode)
+              candidates-alist)))
+    (sort
+     (sort candidates-alist (lambda (x y) (string< (car x) (car y))))
+     (lambda (x y)
+       (> (if (symbol-value (cdr x)) 1 0)
+          (if (symbol-value (cdr y)) 1 0))))))
 
 ;;;###autoload
-(defun consult-minor-mode (mode)
-  "Enable or disable minor MODE."
-  (interactive
-   (list
-    (let ((candidates-alist))
-      (dolist (mode minor-mode-list)
-        (when (and (boundp mode) (commandp mode))
-          (push (cons (concat
-                       (consult--status-prefix (symbol-value mode))
-                       (symbol-name mode)
-                       (let* ((lighter (cdr (assq mode minor-mode-alist)))
-                              (str (and lighter (propertize (string-trim (format-mode-line (cons t lighter)))
-                                                            'face 'consult-lighter))))
-                         (and str (not (string-blank-p str)) (format " [%s]" str))))
-                      mode)
-                candidates-alist)))
-      (setq candidates-alist (sort candidates-alist (lambda (x y) (string< (car x) (car y)))))
-      (setq candidates-alist (sort candidates-alist
-                                   (lambda (x y)
-                                     (> (if (symbol-value (cdr x)) 1 0)
-                                        (if (symbol-value (cdr y)) 1 0)))))
-      (consult--read "Minor modes: " candidates-alist
-                     :sort nil
-                     :require-match t
-                     :lookup (lambda (x) (cdr (assoc x candidates-alist)))
-                     :history 'consult-minor-mode-history))))
-  (call-interactively mode))
+(defun consult-minor-mode ()
+  "Enable or disable minor mode."
+  (interactive)
+  (call-interactively
+   (consult--read "Minor modes: " (consult--minor-mode-candidates)
+                  :sort nil
+                  :require-match t
+                  :lookup (lambda (candidates x) (cdr (assoc x candidates)))
+                  :history 'consult-minor-mode-history)))
 
 ;;;###autoload
-(defun consult-face (face)
-  "Select FACE and show description."
-  (interactive
-   (list
-    (cdr (consult--read "Face: "
-                        (sort
-                         (mapcar (lambda (x)
-                                   (cons
-                                    (concat
-                                     (format "%-40s " (car x))
-                                     (propertize "abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ" 'face (car x)))
-                                    (car x)))
-                                 face-new-frame-defaults)
-                         (lambda (x y) (string< (car x) (car y))))
-                        :sort nil
-                        :require-match t
-                        :history 'consult-face-history))))
-  (describe-face face))
+(defun consult-face ()
+  "Select face and show description."
+  (interactive)
+  (describe-face
+   (consult--read "Face: "
+                  (sort
+                   (mapcar (lambda (x)
+                             (cons
+                              (concat
+                               (format "%-40s " (car x))
+                               (propertize "abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ" 'face (car x)))
+                              (car x)))
+                           face-new-frame-defaults)
+                   (lambda (x y) (string< (car x) (car y))))
+                  :sort nil
+                  :require-match t
+                  :lookup (lambda (candidates x) (cdr (assoc x candidates)))
+                  :history 'consult-face-history)))
 
 ;;;###autoload
 (defun consult-theme (theme)
@@ -640,7 +659,7 @@ Otherwise replace the just-yanked text with the selected text."
      :require-match t
      :category 'theme
      :history 'consult-theme-history
-     :lookup (lambda (x) (and x (intern x)))
+     :lookup (lambda (_ x) (and x (intern x)))
      :preview (and consult-preview-theme
                    (lambda (cmd &optional arg)
                      (pcase cmd
