@@ -4,14 +4,11 @@ This package provides various commands based on the Emacs completion function `c
 The commands are compatible with completion-systems based on the standard Emacs API,
 e.g., [Icomplete](https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html) and
 [Selectrum](https://github.com/raxod502/selectrum).
+The goal is to keep the completion-system specifics in this library to a minimum.
+
 Note that if you use [Ivy](https://github.com/abo-abo/swiper#ivy)
 or [Helm](https://github.com/emacs-helm/helm), you don't need consult,
 since both libraries already bring their own rich set of additional commands.
-
-The goal is to keep the completion-system specifics in this library to a minimum.
-As of now, the `consult-buffer` command is only supported if Selectrum is used.
-We will probably provide a variant of `consult-buffer` which is a bit less rich,
-but works purely with `completing-read`.
 
 ## Screenshots
 
@@ -39,6 +36,10 @@ Most provided commands follow the naming scheme `consult-thing`.
 
   * `consult-buffer` (`-other-window`, `-other-frame`): Enhanced version of `switch-to-buffer` with support for virtual buffers.
      Supports live preview and recursive editing while previewing.
+     If Selectrum is used `consult-buffer` supports prefixes for narrowing.
+     You can type `b SPC`, `f SPC`, `m SPC` and `v SPC` in order to narrow
+     to buffers, files, bookmarks and views respectively.
+     Unfortunately this is (not yet?) supported by the generic `completing-read` implementation.
   * `consult-bookmark`: Select or create bookmark. You might prefer the more powerful `consult-buffer` instead, which includes bookmarks.
   * `consult-recent-file` (`-other-window`, `-other-frame`): Select a recent files.
      You might prefer the more powerful `consult-buffer` instead, which includes recent files.

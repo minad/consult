@@ -132,13 +132,16 @@ nil shows all `custom-available-themes'."
   :type '(repeat symbol)
   :group 'consult)
 
-(defvar consult-face-history ()
+(defvar consult-buffer-history nil
+  "History for the command `consult-buffer'.")
+
+(defvar consult-face-history nil
   "History for the command `consult-face'.")
 
-(defvar consult-outline-history ()
+(defvar consult-outline-history nil
   "History for the command `consult-outline'.")
 
-(defvar consult-mark-history ()
+(defvar consult-mark-history nil
   "History for the command `consult-mark'.")
 
 (defvar consult-line-history nil
@@ -222,6 +225,10 @@ BODY is the body expression."
       (setq win (next-window)))
     win))
 
+(defmacro consult--with-window (&rest body)
+  "Run BODY with current live window."
+  `(with-selected-window (consult--window) ,@body))
+
 (defun consult--preview-line (cmd &optional arg)
   "Preview function for lines.
 CMD is the preview command.
@@ -230,7 +237,7 @@ ARG is the command argument."
     ('restore
      (remove-overlays nil nil 'consult-overlay t))
     ('preview
-     (with-selected-window (consult--window)
+     (consult--with-window
        (goto-char arg)
        (recenter)
        (remove-overlays nil nil 'consult-overlay t)
@@ -311,7 +318,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
   ;; We would observe this if consulting an unfontified line.
   ;; Therefore we have to enforce font-locking now.
   (when (minibufferp)
-    (user-error "consult-outline called inside the minibuffer"))
+    (user-error "Consult called inside the minibuffer"))
   (jit-lock-fontify-now)
   (let* ((max-line 0)
          (heading-regexp (concat "^\\(?:" outline-regexp "\\)"))
@@ -351,7 +358,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
   "Return alist of lines containing markers.
 The alist contains (string . position) pairs."
   (when (minibufferp)
-    (user-error "consult-mark called inside the minibuffer"))
+    (user-error "Consult called inside the minibuffer"))
   (unless (marker-position (mark-marker))
     (user-error "No marks"))
   ;; Font-locking is lazy, i.e., if a line has not been looked at yet, the line is not font-locked.
@@ -399,7 +406,7 @@ The alist contains (string . position) pairs."
 (defun consult--line-candidates ()
   "Return alist of lines and positions."
   (when (minibufferp)
-    (user-error "consult-line called inside the minibuffer"))
+    (user-error "Consult called inside the minibuffer"))
   ;; Font-locking is lazy, i.e., if a line has not been looked at yet, the line is not font-locked.
   ;; We would observe this if consulting an unfontified line.
   ;; Therefore we have to enforce font-locking now.
@@ -690,49 +697,15 @@ Otherwise replace the just-yanked text with the selected text."
           (enable-theme theme)
         (load-theme theme :no-confirm)))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; Selectrum specific code
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; TODO consult--buffer performs dynamic computation of the candidate set.
+;; TODO consult--buffer-selectrum performs dynamic computation of the candidate set.
 ;; this is currently not supported by completing-read+selectrum.
 ;; therefore the selectrum api is used directly.
-(defun consult--buffer (open-buffer open-file open-bookmark)
-  "Generic implementation of `consult-buffer'.
-Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be used to display the item."
-  (let* ((curr-buf (window-buffer (minibuffer-selected-window)))
-         (curr-file (or (buffer-file-name curr-buf) ""))
-         (all-bufs (mapcar #'buffer-name (delq curr-buf (buffer-list))))
-         (hidden-bufs (seq-filter (lambda (x) (= (aref x 0) 32)) all-bufs))
-         (visible-bufs (seq-filter (lambda (x) (/= (aref x 0) 32)) all-bufs))
-         ;; TODO implement a solution to allow registration of custom virtual buffers.
-         ;; Alternatively just hard-code other view libraries like perspective etc?
-         ;; Right now only bookmarks-view is supported.
-         ;; https://github.com/minad/bookmark-view/blob/master/bookmark-view.el
-         (views (if (fboundp 'bookmark-view-names)
-                    (mapcar (lambda (x)
-                              (propertize x
-                                          'face 'consult-view
-                                          'selectrum-candidate-display-right-margin
-                                          ;; TODO the completions-annotations face is ignored by selectrum?
-                                          (propertize "View" 'face 'completions-annotations)))
-                            (bookmark-view-names))))
-         (bookmarks (mapcar (lambda (x)
-                              (propertize (car x)
-                                          'face 'consult-bookmark
-                                          'selectrum-candidate-display-right-margin
-                                          ;; TODO the completions-annotations face is ignored by selectrum?
-                                          (propertize "Bookmark" 'face 'completions-annotations)))
-                            bookmark-alist))
-         (all-files (mapcar (lambda (x)
-                              (propertize (abbreviate-file-name x)
-                                          'face 'consult-file
-                                          'selectrum-candidate-display-right-margin
-                                          ;; TODO the completions-annotations face is ignored by selectrum?
-                                          (propertize "File" 'face 'completions-annotations)))
-                            recentf-list))
-         (files (remove curr-file all-files))
-         (all-cands (append visible-bufs files bookmarks))
+;; consult-buffer with selectrum supports prefixes for narrowing b, f, m, v
+(defun consult--buffer-selectrum (open-buffer hidden-bufs visible-bufs files views bookmarks)
+  "Select virtual buffer using `selectrum-read'.
+HIDDEN-BUFS, VISIBLE-BUFS, FILES, VIEWS and BOOKMARKS are the candidate lists.
+OPEN-BUFFER is used for preview."
+  (let* ((all-cands (append visible-bufs files bookmarks))
          (generate
           (lambda (input)
             (cond
@@ -753,16 +726,73 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                     (cons 'candidates bookmarks)))
              (t
               (list (cons 'input input)
-                    (cons 'candidates all-cands))))))
-         (selected
-          (consult--preview consult-preview-buffer
-              (current-window-configuration)
-              (state (set-window-configuration state))
-              (buf (when (get-buffer buf)
-                     (with-selected-window (consult--window)
-                       (funcall open-buffer buf))))
-            (let ((selectrum-should-sort-p))
-              (selectrum-read "Switch to: " generate)))))
+                    (cons 'candidates all-cands)))))))
+    (consult--preview consult-preview-buffer
+        (current-window-configuration)
+        (state (set-window-configuration state))
+        (buf (when (get-buffer buf)
+               (consult--with-window
+                 (funcall open-buffer buf))))
+      (let ((selectrum-should-sort-p))
+        (selectrum-read "Switch to: " generate
+                        :history 'consult-buffer-history)))))
+
+;; TODO consult--buffer-default does not support prefixes
+;; for narrowing like the Selectrum variant!
+(defun consult--buffer-default (open-buffer candidates)
+  "Select virtual buffer from a list of CANDIDATES using `completing-read'.
+OPEN-BUFFER is used for preview."
+  (consult--read "Switch to: " candidates
+                 :history 'consult-buffer-history
+                 :sort nil
+                 :preview (lambda (cmd &optional arg)
+                            (pcase cmd
+                              ('preview
+                               (when (get-buffer arg)
+                                 (consult--with-window
+                                   (funcall open-buffer arg))))))))
+
+(defun consult--buffer (open-buffer open-file open-bookmark)
+  "Backend implementation of `consult-buffer'.
+Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be used to display the item."
+  (let* ((curr-buf (window-buffer (minibuffer-selected-window)))
+         (curr-file (or (buffer-file-name curr-buf) ""))
+         (all-bufs (mapcar #'buffer-name (delq curr-buf (buffer-list))))
+         (hidden-bufs (seq-filter (lambda (x) (= (aref x 0) 32)) all-bufs))
+         (visible-bufs (seq-filter (lambda (x) (/= (aref x 0) 32)) all-bufs))
+         ;; TODO implement a solution to allow registration of custom virtual buffers.
+         ;; Alternatively just hard-code other view libraries like perspective etc?
+         ;; Right now only bookmarks-view is supported.
+         ;; https://github.com/minad/bookmark-view/blob/master/bookmark-view.el
+         (views (if (fboundp 'bookmark-view-names)
+                    (mapcar (lambda (x)
+                              (propertize x
+                                          'face 'consult-view
+                                          ;; TODO remove selectrum specifics if possible?
+                                          'selectrum-candidate-display-right-margin
+                                          ;; TODO the completions-annotations face is ignored by selectrum?
+                                          (propertize "View" 'face 'completions-annotations)))
+                            (bookmark-view-names))))
+         (bookmarks (mapcar (lambda (x)
+                              (propertize (car x)
+                                          'face 'consult-bookmark
+                                          ;; TODO remove selectrum specifics if possible?
+                                          'selectrum-candidate-display-right-margin
+                                          ;; TODO the completions-annotations face is ignored by selectrum?
+                                          (propertize "Bookmark" 'face 'completions-annotations)))
+                            bookmark-alist))
+         (all-files (mapcar (lambda (x)
+                              (propertize (abbreviate-file-name x)
+                                          'face 'consult-file
+                                          ;; TODO remove selectrum specifics if possible?
+                                          'selectrum-candidate-display-right-margin
+                                          ;; TODO the completions-annotations face is ignored by selectrum?
+                                          (propertize "File" 'face 'completions-annotations)))
+                            recentf-list))
+         (files (remove curr-file all-files))
+         (selected (if (bound-and-true-p selectrum-mode)
+                       (consult--buffer-selectrum open-buffer hidden-bufs visible-bufs files views bookmarks)
+                     (consult--buffer-default open-buffer (append visible-bufs files bookmarks)))))
     (cond
      ((get-buffer selected) (funcall open-buffer selected)) ;; buffers have priority
      ((member selected all-files) (funcall open-file selected))
