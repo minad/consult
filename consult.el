@@ -307,6 +307,8 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
   ;; Font-locking is lazy, i.e., if a line has not been looked at yet, the line is not font-locked.
   ;; We would observe this if consulting an unfontified line.
   ;; Therefore we have to enforce font-locking now.
+  (when (minibufferp)
+    (user-error "consult-outline called inside the minibuffer"))
   (jit-lock-fontify-now)
   (let* ((max-line 0)
          (heading-regexp (concat "^\\(?:" outline-regexp "\\)"))
@@ -345,6 +347,8 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
 (defun consult--mark-candidates ()
   "Return alist of lines containing markers.
 The alist contains (string . position) pairs."
+  (when (minibufferp)
+    (user-error "consult-mark called inside the minibuffer"))
   (unless (marker-position (mark-marker))
     (user-error "No marks"))
   ;; Font-locking is lazy, i.e., if a line has not been looked at yet, the line is not font-locked.
@@ -391,6 +395,8 @@ The alist contains (string . position) pairs."
 
 (defun consult--line-candidates ()
   "Return alist of lines and positions."
+  (when (minibufferp)
+    (user-error "consult-line called inside the minibuffer"))
   ;; Font-locking is lazy, i.e., if a line has not been looked at yet, the line is not font-locked.
   ;; We would observe this if consulting an unfontified line.
   ;; Therefore we have to enforce font-locking now.
