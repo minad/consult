@@ -169,30 +169,33 @@ nil shows all `custom-available-themes'."
                   (propertize "+ " 'face 'consult-on)
                 (propertize "- " 'face 'consult-off))))
 
-;; TODO get rid of selectrum specifics where possible
-(defvar selectrum-should-sort-p)
+(defvar icomplete-mode)
+(declare-function icomplete-post-command-hook "icomplete")
+
 (defvar selectrum-mode)
+(defvar selectrum-should-sort-p)
 (declare-function selectrum-read "selectrum")
 (declare-function selectrum-get-current-candidate "selectrum")
 (declare-function selectrum--minibuffer-post-command-hook "selectrum")
 
-;; TODO implement consult--preview-begin/end for icomplete
-;; TODO maybe selectrum could offer an api instead of advicing an internal function
-(defun consult--preview-begin (callback)
+(defun consult--preview-setup (callback)
   "Begin preview by hooking into the completion system.
-Returns a handle which must be passed to `consult--preview-end'.
+Returns a function which must be called at the end of the preview.
 CALLBACK is called with the current candidate."
-  (when (bound-and-true-p selectrum-mode)
+  (cond
+   ((bound-and-true-p selectrum-mode)
     (let ((advice (lambda ()
-                    (let ((cand (selectrum-get-current-candidate)))
-                      (when cand (funcall callback cand))))))
+                    (when-let (cand (selectrum-get-current-candidate))
+                      (funcall callback cand)))))
       (advice-add #'selectrum--minibuffer-post-command-hook :after advice)
-      advice)))
-
-(defun consult--preview-end (handle)
-  "End preview and destroy HANDLE."
-  (when handle
-    (advice-remove #'selectrum--minibuffer-post-command-hook handle)))
+      (lambda () (advice-remove #'selectrum--minibuffer-post-command-hook advice))))
+   ((bound-and-true-p icomplete-mode)
+    (let ((advice (lambda ()
+                    (when-let (cand (car completion-all-sorted-completions))
+                      (funcall callback cand)))))
+      (advice-add #'icomplete-post-command-hook :after advice)
+      (lambda () (advice-remove #'icomplete-post-command-hook advice))))
+   (t #'ignore)))
 
 (defmacro consult--preview (enabled save restore preview body)
   "Preview support for completion.
@@ -202,13 +205,13 @@ RESTORE is a pair (variable . expression) which restores the state.
 PREVIEW is a pair (variable . expression) which previews the given candidate.
 BODY is the body expression."
   (declare (indent 4))
-  (let ((handle (make-symbol "handle")))
+  (let ((finalize (make-symbol "finalize")))
     `(if ,enabled
          (let ((,(car restore) ,save)
-               (,handle (consult--preview-begin (lambda (,(car preview)) ,@(cdr preview)))))
+               (,finalize (consult--preview-setup (lambda (,(car preview)) ,@(cdr preview)))))
            (unwind-protect
                ,body
-             (consult--preview-end ,handle)
+             (funcall ,finalize)
              ,@(cdr restore)))
        ,body)))
 
@@ -659,24 +662,27 @@ Otherwise replace the just-yanked text with the selected text."
   "Enable THEME from `consult-themes'."
   (interactive
    (list
-    (consult--read
-     "Theme: "
-     (mapcar #'symbol-name
-             (seq-filter (lambda (x) (or (not consult-themes)
-                                         (memq x consult-themes)))
-                         (custom-available-themes)))
-     :require-match t
-     :category 'theme
-     :history 'consult-theme-history
-     :lookup (lambda (_ x) (and x (intern x)))
-     :preview (and consult-preview-theme
-                   (lambda (cmd &optional arg)
-                     (pcase cmd
-                       ('save (car custom-enabled-themes))
-                       ('restore (consult-theme arg))
-                       ('preview (consult-theme arg)))))
-     :default (and (car custom-enabled-themes)
-                   (symbol-name (car custom-enabled-themes))))))
+    (let ((avail-themes (custom-available-themes)))
+      (consult--read
+       "Theme: "
+       (mapcar #'symbol-name
+               (seq-filter (lambda (x) (or (not consult-themes)
+                                           (memq x consult-themes)))
+                           avail-themes))
+       :require-match t
+       :category 'theme
+       :history 'consult-theme-history
+       :lookup (lambda (_ x) (and x (intern x)))
+       :preview (and consult-preview-theme
+                     (lambda (cmd &optional arg)
+                       (pcase cmd
+                         ('save (car custom-enabled-themes))
+                         ('restore (consult-theme arg))
+                         ('preview
+                          (when (memq arg avail-themes)
+                            (consult-theme arg))))))
+       :default (and (car custom-enabled-themes)
+                     (symbol-name (car custom-enabled-themes)))))))
   (unless (equal theme (car custom-enabled-themes))
     (mapc #'disable-theme custom-enabled-themes)
     (when theme

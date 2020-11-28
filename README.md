@@ -11,8 +11,7 @@ since both libraries already bring their own rich set of additional commands.
 The goal is to keep the completion-system specifics in this library to a minimum.
 As of now, the `consult-buffer` command is only supported if Selectrum is used.
 We will probably provide a variant of `consult-buffer` which is a bit less rich,
-but works purely with `completing-read`. Furthermore live previews are only implemented
-for Selectrum as of now, but Icomplete support is planned.
+but works purely with `completing-read`.
 
 ## Screenshots
 
