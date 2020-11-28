@@ -43,7 +43,7 @@
 (require 'seq)
 (require 'subr-x)
 
-;; TODO implement preview of virtual buffers? but it must be ensured that any newly opened files are closed again
+;; TODO implement preview of virtual buffers? It must be ensured that any newly opened files are closed again.
 ;; TODO implement preview for consult--yank-read
 
 (defgroup consult nil
@@ -186,6 +186,8 @@ nil shows all `custom-available-themes'."
 Returns a function which must be called at the end of the preview.
 CALLBACK is called with the current candidate."
   (cond
+   ;; TODO is there a better selectrum api to achieve this?
+   ;; see https://github.com/raxod502/selectrum/issues/239
    ((bound-and-true-p selectrum-mode)
     (let ((advice (lambda ()
                     (when-let (cand (selectrum-get-current-candidate))
@@ -600,7 +602,7 @@ Otherwise replace the just-yanked text with the selected text."
    (read
     (consult--read "Command: "
                    (cl-remove-duplicates (mapcar #'prin1-to-string command-history) :test #'equal)
-                   ;; :category 'command ;; TODO command category is wrong here I think? category "sexp"?
+                   ;; :category 'command ;; TODO command category is wrong here? category "sexp"?
                    :history 'consult-command-history))))
 
 ;;;###autoload
@@ -701,6 +703,7 @@ Otherwise replace the just-yanked text with the selected text."
 ;; this is currently not supported by completing-read+selectrum.
 ;; therefore the selectrum api is used directly.
 ;; consult-buffer with selectrum supports prefixes for narrowing b, f, m, v
+;; see discussion https://github.com/raxod502/selectrum/issues/235#issuecomment-734835414
 (defun consult--buffer-selectrum (open-buffer hidden-bufs visible-bufs files views bookmarks)
   "Select virtual buffer using `selectrum-read'.
 HIDDEN-BUFS, VISIBLE-BUFS, FILES, VIEWS and BOOKMARKS are the candidate lists.
@@ -739,6 +742,7 @@ OPEN-BUFFER is used for preview."
 
 ;; TODO consult--buffer-default does not support prefixes
 ;; for narrowing like the Selectrum variant!
+;; see discussion https://github.com/raxod502/selectrum/issues/235#issuecomment-734835414
 (defun consult--buffer-default (open-buffer candidates)
   "Select virtual buffer from a list of CANDIDATES using `completing-read'.
 OPEN-BUFFER is used for preview."
@@ -771,6 +775,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                                           ;; TODO remove selectrum specifics if possible?
                                           'selectrum-candidate-display-right-margin
                                           ;; TODO the completions-annotations face is ignored by selectrum?
+                                          ;; see https://github.com/raxod502/selectrum/issues/236
                                           (propertize "View" 'face 'completions-annotations)))
                             (bookmark-view-names))))
          (bookmarks (mapcar (lambda (x)
@@ -779,6 +784,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                                           ;; TODO remove selectrum specifics if possible?
                                           'selectrum-candidate-display-right-margin
                                           ;; TODO the completions-annotations face is ignored by selectrum?
+                                          ;; see https://github.com/raxod502/selectrum/issues/236
                                           (propertize "Bookmark" 'face 'completions-annotations)))
                             bookmark-alist))
          (all-files (mapcar (lambda (x)
@@ -787,6 +793,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                                           ;; TODO remove selectrum specifics if possible?
                                           'selectrum-candidate-display-right-margin
                                           ;; TODO the completions-annotations face is ignored by selectrum?
+                                          ;; see https://github.com/raxod502/selectrum/issues/236
                                           (propertize "File" 'face 'completions-annotations)))
                             recentf-list))
          (files (remove curr-file all-files))
