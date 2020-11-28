@@ -45,6 +45,8 @@
 
 ;; TODO implement preview of virtual buffers? It must be ensured that any newly opened files are closed again.
 ;; TODO implement preview for consult--yank-read
+;; TODO consult-line, consult-mark, consult-outline preview should highlight the matched strings.
+;;      is there an easy way to achieve this?
 
 (defgroup consult nil
   "Consultation using `completing-read'."
