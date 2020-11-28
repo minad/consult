@@ -328,23 +328,21 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
   (jit-lock-fontify-now)
   (let* ((max-line 0)
          (heading-regexp (concat "^\\(?:" outline-regexp "\\)"))
-         (unformatted-candidates
-          (save-excursion
-            (let ((candidates))
-              (goto-char (point-min))
-              (while (re-search-forward heading-regexp nil 'move)
-                (goto-char (match-beginning 0))
-                (let ((line (line-number-at-pos (point) t)))
-                  (setq max-line (max line max-line))
-                  (push (cons
-                         (cons
-                          line
-                          (buffer-substring (line-beginning-position) (line-end-position)))
-                         (point-marker))
-                        candidates)
-                  (if (and (bolp) (not (eobp))) (forward-char 1))))
-              (nreverse candidates)))))
-    (or (consult--add-line-number max-line unformatted-candidates)
+         (unformatted-candidates))
+    (save-excursion
+      (goto-char (point-min))
+      (while (re-search-forward heading-regexp nil 'move)
+        (goto-char (match-beginning 0))
+        (let ((line (line-number-at-pos (point) t)))
+          (setq max-line (max line max-line))
+          (push (cons
+                 (cons
+                  line
+                  (buffer-substring (line-beginning-position) (line-end-position)))
+                 (point-marker))
+                unformatted-candidates)
+          (if (and (bolp) (not (eobp))) (forward-char 1)))))
+    (or (consult--add-line-number max-line (nreverse unformatted-candidates))
         (user-error "No headings"))))
 
 ;;;###autoload
@@ -371,29 +369,33 @@ The alist contains (string . position) pairs."
   ;; We would observe this if consulting an unfontified line.
   ;; Therefore we have to enforce font-locking now.
   (jit-lock-fontify-now)
-  (let* ((all-markers (delete-dups (cons (mark-marker) (seq-copy mark-ring))))
+  (let* ((all-markers (delete-dups (cons (mark-marker) (reverse mark-ring))))
          (max-line 0)
-         (unformatted-candidates
-          (save-excursion
-            (mapcar (lambda (marker)
-                      (let* ((pos  (goto-char (marker-position marker)))
-                             (col  (current-column))
-                             ;; TODO line-number-at-pos is a very slow function, can this be replaced?
-                             (line (line-number-at-pos pos t))
-                             (lstr (buffer-substring (- pos col) (line-end-position)))
-                             (cand (concat (substring lstr 0 col)
-                                           #("┃" 0 1 (face consult-mark))
-                                           (substring lstr col))))
-                        (setq max-line (max line max-line))
-                        (cons (cons line cand) marker)))
-                    all-markers))))
+         (min (point-min))
+         (max (point-max))
+         (unformatted-candidates))
+    (save-excursion
+      (dolist (marker all-markers)
+        (let ((pos (marker-position marker)))
+          (when (and (>= pos min) (<= pos max))
+            (goto-char pos)
+            (let* ((col  (current-column))
+                   ;; TODO line-number-at-pos is a very slow function, can this be replaced?
+                   (line (line-number-at-pos pos t))
+                   (lstr (buffer-substring (- pos col) (line-end-position)))
+                   (cand (concat (substring lstr 0 col)
+                                 #("┃" 0 1 (face consult-mark))
+                                 (substring lstr col))))
+              (setq max-line (max line max-line))
+              (push (cons (cons line cand) marker) unformatted-candidates))))))
     (consult--add-line-number max-line unformatted-candidates)))
 
 (defun consult--goto (pos)
   "Push current position to mark ring, go to POS and recenter."
-  (push-mark (point) t)
-  (goto-char pos)
-  (recenter))
+  (when pos
+    (push-mark (point) t)
+    (goto-char pos)
+    (recenter)))
 
 ;;;###autoload
 (defun consult-mark ()
@@ -433,13 +435,15 @@ FMT is the line number format string."
   (jit-lock-fontify-now)
   (let* ((default-cand)
          (candidates)
-         (line (line-number-at-pos (point-min) t))
+         (min (point-min))
+         (max (point-max))
+         (line (line-number-at-pos min t))
          (curr-line (line-number-at-pos (point) t))
-         (line-format (format "%%%dd " (length (number-to-string (line-number-at-pos (point-max))))))
+         (line-format (format "%%%dd " (length (number-to-string (line-number-at-pos max)))))
          (default-cand-dist most-positive-fixnum))
     (save-excursion
-      (goto-char (point-min))
-      (while (< (point) (point-max))
+      (goto-char min)
+      (while (< (point) max)
         (let ((str (buffer-substring (line-beginning-position) (line-end-position)))
               (dist (abs (- curr-line line))))
           (unless (string-blank-p str)
