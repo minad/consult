@@ -38,7 +38,7 @@ Most provided commands follow the naming scheme `consult-thing`. This is the lis
   * `consult-multi-occur`: Replacement for `multi-occur`
 * Miscellaneous
   * `consult-minor-mode`: Enable/disable minor mode
-  * `consult-theme`: Select a theme and disable all currently enabled themes
+  * `consult-theme`: Select a theme and disable all currently enabled themes. Supports live preview.
 
 ## Screenshots
 

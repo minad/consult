@@ -185,9 +185,24 @@
 (declare-function selectrum-get-current-candidate "selectrum")
 (declare-function selectrum--minibuffer-post-command-hook "selectrum")
 
-;; TODO previews:
-;; * only selectrum support is provided for now, icomplete should be supported too
-;; * maybe selectrum could offer an api to hook into instead of using advice
+;; TODO implement consult--preview-begin/end for icomplete
+;; TODO maybe selectrum could offer an api instead of advicing an internal function
+(defun consult--preview-begin (callback)
+  "Begin preview by hooking into the completion system.
+Returns a handle which must be passed to `consult--preview-end'.
+CALLBACK is called with the current candidate."
+  (when (bound-and-true-p selectrum-mode)
+    (let ((advice (lambda ()
+                    (let ((cand (selectrum-get-current-candidate)))
+                      (when cand (funcall callback cand))))))
+      (advice-add #'selectrum--minibuffer-post-command-hook :after advice)
+      advice)))
+
+(defun consult--preview-end (handle)
+  "End preview and destroy HANDLE."
+  (when handle
+    (advice-remove #'selectrum--minibuffer-post-command-hook handle)))
+
 (defmacro consult--preview (enabled save restore preview body)
   "Preview support for completion.
 ENABLED must be t to enable preview.
@@ -196,18 +211,13 @@ RESTORE is a pair (variable . expression) which restores the state.
 PREVIEW is a pair (variable . expression) which previews the given candidate.
 BODY is the body expression."
   (declare (indent 4))
-  (let ((advice (make-symbol "advice")))
-    `(if (and ,enabled (bound-and-true-p selectrum-mode)) ;; check for selectrum!
+  (let ((handle (make-symbol "handle")))
+    `(if ,enabled
          (let ((,(car restore) ,save)
-               (,advice
-                (lambda ()
-                  (let ((,(car preview) (selectrum-get-current-candidate)))
-                    (when (and ,(car preview) (not (string= "" ,(car preview))))
-                      ,@(cdr preview))))))
-           (advice-add #'selectrum--minibuffer-post-command-hook :after ,advice)
+               (,handle (consult--preview-begin (lambda (,(car preview)) ,@(cdr preview)))))
            (unwind-protect
                ,body
-             (advice-remove #'selectrum--minibuffer-post-command-hook ,advice)
+             (consult--preview-end ,handle)
              ,@(cdr restore)))
        ,body)))
 
@@ -262,7 +272,8 @@ PREVIEW is a preview function."
   (consult--preview preview
       (funcall preview 'save)
       (state (funcall preview 'restore state))
-      (cand (funcall preview 'preview (funcall lookup candidates cand)))
+      (cand (when-let (cand (funcall lookup candidates cand))
+              (funcall preview 'preview cand)))
     (funcall lookup candidates
              (completing-read
               prompt
