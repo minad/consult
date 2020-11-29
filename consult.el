@@ -938,8 +938,25 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
 (defvar consult--annotate-candidates-orig nil
   "Original highlighting function stored by `consult-annotate-mode'.")
 
-;; TODO we could also annotate commands with the keybinding, but emacs 28 already does that for us.
-;; The approach taken here is compatible with the emacs 28 keybinding annotation.
+;; Taken from Emacs 28, read-extended-command--annotation
+(defun consult--command-binding (cmd)
+  "Get keybinding for command CMD."
+  (let ((binding (where-is-internal cmd overriding-local-map t)))
+    (and binding (not (stringp binding)) (key-description binding))))
+
+(defun consult-annotate-command-only-binding (cand)
+  "Annotate command CAND with keybinding."
+  (if-let (binding (consult--command-binding (intern cand)))
+      ;; TODO selectrum specific!
+      (propertize cand
+                  'selectrum-candidate-display-suffix
+                  (propertize (format " (%s)" binding) 'face 'completions-annotations))
+    cand))
+
+(defun consult-annotate-command (cand)
+  "Annotate command CAND with binding and documentation string."
+  (consult-annotate-symbol (consult-annotate-command-only-binding cand)))
+
 (defun consult-annotate-symbol (cand)
   "Annotate symbol CAND with documentation string."
   (if-let (doc (let ((sym (intern cand)))
