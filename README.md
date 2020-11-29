@@ -97,9 +97,9 @@ use the enhanced commands, you must configure the keybindings yourself.
          ("C-x 5 b" . consult-buffer-other-frame)
          ("C-x r x" . consult-register)
          ("C-x r b" . consult-bookmark)
-         ("M-g o" . consult-outline)
-         ("M-g m" . consult-mark)
-         ("M-g l" . consult-line)
+         ("M-g o" . consult-outline) ;; "M-s o" is a good alternative
+         ("M-g m" . consult-mark)    ;; "M-s m" is a good alternative
+         ("M-g l" . consult-line)    ;; "M-s l" is a good alternative
          ("M-s m" . consult-multi-occur)
          ("M-y" . consult-yank-pop)
          ("<help> a" . consult-apropos))
