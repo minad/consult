@@ -913,7 +913,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
 
 ;;;; consult-annotate-mode - Enhancing existing commands with annotations
 
-(defcustom consult-annotate-commands
+(defcustom consult-annotate-alist
   '((describe-function . consult-annotate-symbol)
     (describe-variable . consult-annotate-variable)
     (describe-face . consult-annotate-face)
@@ -932,7 +932,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
   :type '(alist :key-type symbol :value-type function)
   :group 'consult)
 
-(defvar consult--annotate-command nil
+(defvar consult--annotate-this-command nil
   "Last command symbol saved in order to allow annotations.")
 
 (defvar consult--annotate-candidates-orig nil
@@ -989,14 +989,14 @@ INPUT is the input string."
    consult--annotate-candidates-orig
    input
    (if-let (annotate
-            (and consult--annotate-command
-                 (alist-get consult--annotate-command consult-annotate-commands)))
+            (and consult--annotate-this-command
+                 (alist-get consult--annotate-this-command consult-annotate-alist)))
        (mapcar (lambda (cand) (or (funcall annotate cand) cand)) candidates)
      candidates)))
 
 (defun consult--annotate-remember-command ()
   "Remember `this-command' for annotation."
-  (setq-local consult--annotate-command this-command))
+  (setq-local consult--annotate-this-command this-command))
 
 ;;;###autoload
 (define-minor-mode consult-annotate-mode

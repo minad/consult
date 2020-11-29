@@ -121,7 +121,7 @@ use the enhanced commands, you must configure the keybindings yourself.
   ;; Enable richer annotations for M-x.
   ;; I have this disabled by default, since I don't want to be flooded with information.
   ;; Annotations are only enabled by default for the describe-* class of functions.
-  ;; (add-to-list 'consult-annotate-commands
+  ;; (add-to-list 'consult-annotate-alist
   ;;              '(execute-extended-command . consult-annotate-symbol))
   )
 ~~~
@@ -130,7 +130,7 @@ use the enhanced commands, you must configure the keybindings yourself.
 
 | Variable                   | Def | Description                                             |
 |----------------------------|-----|---------------------------------------------------------|
-| consult-annotate-commands  | …   | Functions which should get a richer completion display. |
+| consult-annotate-alist     | …   | Functions which should get a richer completion display. |
 | consult-line-numbers-widen | t   | Show absolute line numbers when narrowing is active.    |
 | consult-preview-buffer     | t   | Enable buffer preview during selection                  |
 | consult-preview-theme      | t   | Enable theme preview during selection                   |
