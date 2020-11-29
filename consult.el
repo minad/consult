@@ -193,6 +193,7 @@ nil shows all `custom-available-themes'."
 ;; HACK until selectrum provides a better api
 ;; see https://github.com/minad/consult/issues/11
 (defmacro consult--selectrum-no-sort (body)
+  "Configure selectrum in BODY: Do not sort the candidates."
   `(minibuffer-with-setup-hook
        (lambda () (setq-local selectrum-should-sort-p nil))
      ,body))
@@ -200,11 +201,12 @@ nil shows all `custom-available-themes'."
 ;; HACK until selectrum provides a better api
 ;; see https://github.com/minad/consult/issues/11
 (defmacro consult--selectrum-no-move-default (body)
+  "Configure selectrum in BODY: Do not move the default candidate to the top."
   (let ((advice (make-symbol "advice")))
     `(if (bound-and-true-p selectrum-mode)
          (letrec ((,advice (lambda (args)
-                            (advice-remove #'selectrum-read ,advice)
-                            (append args '(:no-move-default-candidate t)))))
+                             (advice-remove #'selectrum-read ,advice)
+                             (append args '(:no-move-default-candidate t)))))
            (advice-add #'selectrum-read :filter-args ,advice)
            (unwind-protect
                ,body
