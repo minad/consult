@@ -814,7 +814,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                                           'selectrum-candidate-display-right-margin
                                           ;; TODO the completions-annotations face is ignored by selectrum?
                                           ;; see https://github.com/raxod502/selectrum/issues/236
-                                          (propertize "View" 'face 'completions-annotations)))
+                                          (propertize " View" 'face 'completions-annotations)))
                             (bookmark-view-names))))
          (bookmarks (mapcar (lambda (x)
                               (propertize (car x)
@@ -823,7 +823,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                                           'selectrum-candidate-display-right-margin
                                           ;; TODO the completions-annotations face is ignored by selectrum?
                                           ;; see https://github.com/raxod502/selectrum/issues/236
-                                          (propertize "Bookmark" 'face 'completions-annotations)))
+                                          (propertize " Bookmark" 'face 'completions-annotations)))
                             bookmark-alist))
          (all-files (mapcar (lambda (x)
                               (propertize (abbreviate-file-name x)
@@ -832,7 +832,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                                           'selectrum-candidate-display-right-margin
                                           ;; TODO the completions-annotations face is ignored by selectrum?
                                           ;; see https://github.com/raxod502/selectrum/issues/236
-                                          (propertize "File" 'face 'completions-annotations)))
+                                          (propertize " File" 'face 'completions-annotations)))
                             recentf-list))
          (files (remove curr-file all-files))
          (selected (if (bound-and-true-p selectrum-mode)
@@ -881,7 +881,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
         ;; TODO selectrum specific!
         (propertize cand
                     'selectrum-candidate-display-right-margin
-                    (consult--truncate-docstring doc))
+                    (concat " " (consult--truncate-docstring doc)))
       cand)))
 
 (defun consult-annotate-face (cand)

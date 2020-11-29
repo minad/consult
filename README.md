@@ -13,6 +13,10 @@ since both libraries already bring their own rich set of additional commands.
 
 ## Screenshots
 
+consult-annotate-mode
+
+![consult-annotate-mode](https://github.com/minad/consult/blob/master/images/consult-annotate-mode.gif?raw=true|height)
+
 consult-mark
 
 ![consult-mark](https://github.com/minad/consult/blob/master/images/consult-mark.gif?raw=true|height)
@@ -116,7 +120,7 @@ use the enhanced commands, you must configure the keybindings yourself.
   ;; Enable richer annotations for M-x.
   ;; I have this disabled by default, since I don't want to be flooded with information.
   ;; Annotations are only enabled by default for the describe-* class of functions.
-  ;; (add-to-list 'consult-annotate-command-alist
+  ;; (add-to-list 'consult-annotate-commands
   ;;              '(execute-extended-command . consult-annotate-symbol))
   )
 ~~~
