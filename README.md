@@ -1,15 +1,16 @@
 # consult.el - Consulting completing-read
 
-This package provides various commands based on the Emacs completion function `completing-read`.
+This package provides various commands based on the Emacs completion function `completing-read`, in particular
+a more advanced buffer switching command and a variant of [Swiper](https://github.com/abo-abo/swiper#swiper).
 The commands are compatible with completion-systems based on the standard Emacs API,
 e.g., the Emacs builtin [Icomplete](https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html) and
 [Selectrum](https://github.com/raxod502/selectrum). If Icomplete is used, it is recommended
 to install [Icomplete-vertical](https://github.com/oantolin/icomplete-vertical).
-The goal is to keep the completion-system specifics in this library to a minimum.
+The goal is to keep the completion-system specifics in this package to a minimum.
 
 Note that if you use [Ivy](https://github.com/abo-abo/swiper#ivy)
-or [Helm](https://github.com/emacs-helm/helm), you don't need consult,
-since both libraries already bring their own rich set of additional commands.
+or [Helm](https://github.com/emacs-helm/helm), you don't need Consult,
+since both packages already bring their own rich set of additional commands.
 
 ## Screenshots
 
@@ -86,7 +87,7 @@ is a customizable variable which allows disabling the preview.
 ## Package configuration
 
 It is recommended to manage package configurations with `use-package`.
-The consult library only provides commands and does not add any keybindings. In order to
+The Consult package only provides commands and does not add any keybindings. In order to
 use the enhanced commands, you must configure the keybindings yourself.
 
 ~~~ elisp
