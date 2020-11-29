@@ -183,8 +183,8 @@ nil shows all `custom-available-themes'."
 (declare-function selectrum-get-current-candidate "selectrum")
 (declare-function selectrum--minibuffer-post-command-hook "selectrum")
 
-;; TODO is it possible to support preview with default Emacs completion?
-;; right now selectrum and icomplete are supported.
+;; TODO this function contains completion-system specifics
+;; is there a more general mechanism which works everywhere or can this be cleaned up?
 (defun consult--preview-setup (callback)
   "Begin preview by hooking into the completion system.
 Returns a function which must be called at the end of the preview.
@@ -198,13 +198,28 @@ CALLBACK is called with the current candidate."
                       (funcall callback cand)))))
       (advice-add #'selectrum--minibuffer-post-command-hook :after advice)
       (lambda () (advice-remove #'selectrum--minibuffer-post-command-hook advice))))
+   ;; TODO is icomplete-post-command-hook the right function to add the advice?
    ((bound-and-true-p icomplete-mode)
     (let ((advice (lambda ()
                     (when-let (cand (car completion-all-sorted-completions))
                       (funcall callback cand)))))
       (advice-add #'icomplete-post-command-hook :after advice)
       (lambda () (advice-remove #'icomplete-post-command-hook advice))))
-   (t #'ignore)))
+   ;; TODO for default Emacs completion, I advise three functions. Is there a better way?
+   (t
+    (let ((advice (lambda (&rest _)
+                    (let ((cand (minibuffer-contents)))
+                      (when (test-completion cand
+                                             minibuffer-completion-table
+                                             minibuffer-completion-predicate)
+                        (funcall callback cand))))))
+      (advice-add #'minibuffer-complete-word  :after advice)
+      (advice-add #'minibuffer-complete :after advice)
+      (advice-add #'minibuffer-completion-help  :after advice)
+      (lambda ()
+        (advice-remove #'minibuffer-complete advice)
+        (advice-remove #'minibuffer-complete-word advice)
+        (advice-remove #'minibuffer-completion-help advice))))))
 
 (defmacro consult--preview (enabled save restore preview body)
   "Preview support for completion.
