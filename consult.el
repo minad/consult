@@ -874,25 +874,39 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
 (defun consult-annotate-symbol (cand)
   "Annotate symbol CAND with documentation string."
   (let ((sym (intern cand)))
-    (if-let (doc (cond
-                  ((fboundp sym) (ignore-errors (documentation sym)))
-                  ((facep sym) (documentation-property sym 'face-documentation))
-                  (t (documentation-property sym 'variable-documentation))))
+    (when-let (doc (cond
+                    ((fboundp sym) (ignore-errors (documentation sym)))
+                    ((facep sym) (documentation-property sym 'face-documentation))
+                    (t (documentation-property sym 'variable-documentation))))
         ;; TODO selectrum specific!
         (propertize cand
                     'selectrum-candidate-display-right-margin
-                    (concat " " (consult--truncate-docstring doc)))
-      cand)))
+                    (concat " " (consult--truncate-docstring doc))))))
 
 (defun consult-annotate-face (cand)
   "Annotate face CAND with documentation string and face example."
   (let ((sym (intern cand)))
-    (if-let (doc (documentation-property sym 'face-documentation))
-        (format "%-40s    %s    %s"
-                cand
-                (propertize "abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ" 'face sym)
-                (consult--truncate-docstring doc))
-      cand)))
+    (when-let (doc (documentation-property sym 'face-documentation))
+      (format "%-40s    %s    %s"
+              cand
+              (propertize "abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ" 'face sym)
+              (consult--truncate-docstring doc)))))
+
+;; taken from embark.el, originally `describe-package-1`
+(defun consult--package-desc (pkg)
+  "Return the description structure for package PKG."
+  (or (car (alist-get pkg package-alist))
+      (if-let ((built-in (assq pkg package--builtins)))
+          (package--from-builtin built-in)
+        (car (alist-get pkg package-archive-contents)))))
+
+(defun consult-annotate-package (cand)
+  "Annotate package CAND with documentation."
+  (when-let ((desc (consult--package-desc (intern (replace-regexp-in-string "-[[:digit:]\\.-]+$" "" cand)))))
+    ;; TODO selectrum specific!
+    (propertize cand
+                'selectrum-candidate-display-right-margin
+                (concat " " (consult--truncate-docstring (package-desc-summary desc))))))
 
 (defvar consult--annotate-command nil
   "Last command symbol saved in order to allow annotations.")
@@ -907,9 +921,13 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
     (describe-symbol . consult-annotate-symbol)
     (helpful-callable . consult-annotate-symbol)
     (helpful-variable . consult-annotate-symbol)
-    (helpful-command . consult-annotate-symbol))
+    (helpful-command . consult-annotate-symbol)
+    (describe-package . consult-annotate-package)
+    (package-install . consult-annotate-package)
+    (package-delete . consult-annotate-package)
+    (package-reinstall . consult-annotate-package))
   "Functions which should a richer completion display, if `consult-annotate-mode' is enabled."
-  :type 'alist
+  :type '(alist :key-type symbol :value-type function)
   :group 'consult)
 
 (defun consult--annotate-candidates (input candidates)
@@ -921,7 +939,7 @@ INPUT is the input string."
    (if-let (annotate
             (and consult--annotate-command
                  (alist-get consult--annotate-command consult-annotate-commands)))
-       (mapcar annotate candidates)
+       (mapcar (lambda (cand) (or (funcall annotate cand) cand)) candidates)
      candidates)))
 
 (defun consult--annotate-remember-command ()
