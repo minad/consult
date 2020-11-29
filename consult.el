@@ -129,6 +129,11 @@ nil shows all `custom-available-themes'."
   :type '(repeat symbol)
   :group 'consult)
 
+(defcustom consult-line-numbers-widen t
+  "Show absolute line numbers when narrowing is active."
+  :type 'boolean
+  :group 'consult)
+
 (defvar consult-buffer-history nil
   "History for the command `consult-buffer'.")
 
@@ -357,7 +362,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
   ;; TODO can this be optimized, at least add some progress message?
   (jit-lock-fontify-now)
   (let* ((max-line 0)
-         (line (line-number-at-pos (point-min) t))
+         (line (line-number-at-pos (point-min) consult-line-numbers-widen))
          (heading-regexp (concat "^\\(?:" outline-regexp "\\)"))
          (unformatted-candidates))
     (save-excursion
@@ -416,7 +421,7 @@ The alist contains (string . position) pairs."
             (goto-char pos)
             (let* ((col  (current-column))
                    ;; TODO line-number-at-pos is a very slow function, can this be replaced?
-                   (line (line-number-at-pos pos t))
+                   (line (line-number-at-pos pos consult-line-numbers-widen))
                    (lstr (buffer-substring (- pos col) (line-end-position)))
                    (cand (concat (substring lstr 0 col)
                                  #("┃" 0 1 (face consult-mark))
@@ -470,9 +475,9 @@ WIDTH is the line number width."
          (candidates)
          (pos (point-min))
          (max (point-max))
-         (line (line-number-at-pos pos t))
-         (curr-line (line-number-at-pos (point) t))
-         (line-width (length (number-to-string (line-number-at-pos max t))))
+         (line (line-number-at-pos pos consult-line-numbers-widen))
+         (curr-line (line-number-at-pos (point) consult-line-numbers-widen))
+         (line-width (length (number-to-string (line-number-at-pos max consult-line-numbers-widen))))
          (default-cand-dist most-positive-fixnum))
     (save-excursion
       (goto-char pos)

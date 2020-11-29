@@ -110,14 +110,15 @@ use the enhanced commands, you must configure the keybindings yourself.
 
 ### Configuration settings
 
-| Variable                | Def | Description                                  |
-|-------------------------|-----|----------------------------------------------|
-| consult-preview-buffer  | t   | Enable buffer preview during selection       |
-| consult-preview-theme   | t   | Enable theme preview during selection        |
-| consult-preview-mark    | t   | Enable mark preview during selection         |
-| consult-preview-line    | t   | Enable line preview during selection         |
-| consult-preview-outline | t   | Enable outline preview during selection      |
-| consult-themes          | nil | List of themes to be presented for selection |
+| Variable                   | Def | Description                                          |
+|----------------------------|-----|------------------------------------------------------|
+| consult-line-numbers-widen | t   | Show absolute line numbers when narrowing is active. |
+| consult-preview-buffer     | t   | Enable buffer preview during selection               |
+| consult-preview-theme      | t   | Enable theme preview during selection                |
+| consult-preview-mark       | t   | Enable mark preview during selection                 |
+| consult-preview-line       | t   | Enable line preview during selection                 |
+| consult-preview-outline    | t   | Enable outline preview during selection              |
+| consult-themes             | nil | List of themes to be presented for selection         |
 
 ## Acknowledgments
 
