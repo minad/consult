@@ -878,7 +878,10 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                   ((fboundp sym) (ignore-errors (documentation sym)))
                   ((facep sym) (documentation-property sym 'face-documentation))
                   (t (documentation-property sym 'variable-documentation))))
-        (propertize cand 'selectrum-candidate-display-right-margin (consult--truncate-docstring doc))
+        ;; TODO selectrum specific!
+        (propertize cand
+                    'selectrum-candidate-display-right-margin
+                    (consult--truncate-docstring doc))
       cand)))
 
 (defun consult-annotate-face (cand)
@@ -929,6 +932,10 @@ INPUT is the input string."
 (define-minor-mode consult-annotate-mode
   "Annotate candidates with richer information."
   :global t
+  ;; TODO is there a possibility to hook into the other completion systems,
+  ;; in order to allow similar annotations?
+  ;; Probably there is some possibility to hook into the Emacs completion metadata access
+  ;; and overwriting it there.
   (if consult-annotate-mode
       (progn
         (setq consult--annotate-candidates-orig selectrum-highlight-candidates-function
