@@ -50,7 +50,8 @@ the completion display with documentation strings.
 ### Help/Discoverability
 
   * `consult-apropos`: Replacement for `apropos` with completion.
-  * `consult-annotate-mode`: Enable this mode to annotates completions with richer information (e.g. `M-x`, `describe-face`, `describe-symbol`).
+  * `consult-annotate-mode`: Enable this mode to annotates completions with richer information
+    (e.g. `M-x`, `describe-face`, `describe-symbol`, `helpful-function`, etc).
 
 ### Histories
 
@@ -106,7 +107,14 @@ use the enhanced commands, you must configure the keybindings yourself.
   :config
   ;; Enable richer annotations during completion
   ;; Works only with selectrum as of now.
-  (consult-annotate-mode))
+  (consult-annotate-mode)
+
+  ;; Enable richer annotations for M-x.
+  ;; I have this disabled by default, since I don't want to be flooded with information.
+  ;; Annotations are only enabled by default for the describe-* class of functions.
+  ;; (add-to-list 'consult-annotate-command-alist
+  ;;              '(execute-extended-command . consult-annotate-symbol))
+  )
 ~~~
 
 ### Configuration settings

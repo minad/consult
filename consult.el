@@ -865,15 +865,6 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
   (interactive)
   (consult--buffer #'switch-to-buffer #'find-file #'bookmark-jump))
 
-(defun consult--annotate-category ()
-  "Return category of current completion."
-  (completion-metadata-get
-   (completion-metadata
-    (buffer-substring-no-properties (field-beginning) (point))
-    minibuffer-completion-table
-    minibuffer-completion-predicate)
-   'category))
-
 (defun consult--truncate-docstring (str)
   "Truncate documentation string STR."
   (truncate-string-to-width (car (split-string str "\n")) 80 0 32 "…"))
@@ -903,33 +894,30 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
 (defvar consult--annotate-command nil
   "Last command symbol saved in order to allow annotations.")
 
-(defvar consult--original-highlight-function nil
+(defvar consult--annotate-candidates-orig nil
   "Original highlighting function stored by `consult-annotate-mode'.")
-
-(defvar consult-annotate-category-alist
-  '((command . consult-annotate-symbol)
-    (symbol . consult-annotate-symbol))
-  "List of categories which should be enriched by `consult-annotate-candidates'.")
 
 (defvar consult-annotate-command-alist
   '((describe-function . consult-annotate-symbol)
     (describe-variable . consult-annotate-symbol)
     (describe-face . consult-annotate-face)
-    (describe-symbol . consult-annotate-symbol))
+    (describe-symbol . consult-annotate-symbol)
+    (helpful-callable . consult-annotate-symbol)
+    (helpful-variable . consult-annotate-symbol)
+    (helpful-command . consult-annotate-symbol))
   "List of functions which should be enriched by `consult-annotate-candidates'.")
 
 (defun consult--annotate-candidates (input candidates)
-  "Annotate CANDIDATES with richer information, e.g., faces and documentation string.
+  "Annotate CANDIDATES with richer information.
 INPUT is the input string."
   (funcall
-   consult--original-highlight-function
+   consult--annotate-candidates-orig
    input
-   (let ((category (consult--annotate-category)))
-     (if-let (annotate
-              (or (and category (alist-get category consult-annotate-category-alist))
-                  (and consult--annotate-command (alist-get consult--annotate-command consult-annotate-command-alist))))
-         (mapcar annotate candidates)
-       candidates))))
+   (if-let (annotate
+            (and consult--annotate-command
+                 (alist-get consult--annotate-command consult-annotate-command-alist)))
+       (mapcar annotate candidates)
+     candidates)))
 
 (defun consult--annotate-remember-command ()
   "Remember `this-command' for annotation."
@@ -941,10 +929,10 @@ INPUT is the input string."
   :global t
   (if consult-annotate-mode
       (progn
-        (setq consult--original-highlight-function selectrum-highlight-candidates-function
+        (setq consult--annotate-candidates-orig selectrum-highlight-candidates-function
               selectrum-highlight-candidates-function #'consult--annotate-candidates)
         (add-hook 'minibuffer-setup-hook #'consult--annotate-remember-command))
-    (setq selectrum-highlight-candidates-function consult--original-highlight-function)
+    (setq selectrum-highlight-candidates-function consult--annotate-candidates-orig)
     (remove-hook 'minibuffer-setup-hook #'consult--annotate-remember-command)))
 
 (provide 'consult)
