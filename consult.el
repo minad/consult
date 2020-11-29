@@ -137,9 +137,6 @@ nil shows all `custom-available-themes'."
 (defvar consult-buffer-history nil
   "History for the command `consult-buffer'.")
 
-(defvar consult-face-history nil
-  "History for the command `consult-face'.")
-
 (defvar consult-outline-history nil
   "History for the command `consult-outline'.")
 
@@ -179,6 +176,7 @@ nil shows all `custom-available-themes'."
 
 (defvar selectrum-mode)
 (defvar selectrum-should-sort-p)
+(defvar selectrum-highlight-candidates-function)
 (declare-function selectrum-read "selectrum")
 (declare-function selectrum-get-current-candidate "selectrum")
 (declare-function selectrum--minibuffer-post-command-hook "selectrum")
@@ -704,26 +702,6 @@ Otherwise replace the just-yanked text with the selected text."
                   :history 'consult-minor-mode-history)))
 
 ;;;###autoload
-(defun consult-face ()
-  "Select face and show description."
-  (interactive)
-  (describe-face
-   (consult--read "Face: "
-                  (sort
-                   (mapcar (lambda (x)
-                             (cons
-                              (concat
-                               (format "%-40s " (car x))
-                               (propertize "abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ" 'face (car x)))
-                              (car x)))
-                           face-new-frame-defaults)
-                   (lambda (x y) (string< (car x) (car y))))
-                  :sort nil
-                  :require-match t
-                  :lookup (lambda (candidates x) (cdr (assoc x candidates)))
-                  :history 'consult-face-history)))
-
-;;;###autoload
 (defun consult-theme (theme)
   "Enable THEME from `consult-themes'."
   (interactive
@@ -886,6 +864,88 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
   "Enhanced `switch-to-buffer-other-window' command with support for virtual buffers."
   (interactive)
   (consult--buffer #'switch-to-buffer #'find-file #'bookmark-jump))
+
+(defun consult--category ()
+  "Return category of current completion."
+  (completion-metadata-get
+   (completion-metadata
+    (buffer-substring-no-properties (field-beginning) (point))
+    minibuffer-completion-table
+    minibuffer-completion-predicate)
+   'category))
+
+(defun consult--truncate-docstring (str)
+  "Truncate documentation string STR."
+  (truncate-string-to-width (car (split-string str "\n")) 80 0 32 "…"))
+
+;; TODO we could also annotate commands with the keybinding, but emacs 28 already does that for us.
+;; The approach taken here is compatible with the emacs 28 keybinding annotation.
+(defun consult-annotate-symbol (cand)
+  "Annotate symbol CAND with documentation string."
+  (let ((sym (intern cand)))
+    (if-let (doc (cond
+                  ((fboundp sym) (ignore-errors (documentation sym)))
+                  ((facep sym) (documentation-property sym 'face-documentation))
+                  (t (documentation-property sym 'variable-documentation))))
+        (propertize cand 'selectrum-candidate-display-right-margin (consult--truncate-docstring doc))
+      cand)))
+
+(defun consult-annotate-face (cand)
+  "Annotate face CAND with documentation string and face example."
+  (let ((sym (intern cand)))
+    (if-let (doc (documentation-property sym 'face-documentation))
+        (format "%-40s    %s    %s"
+                cand
+                (propertize "abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ" 'face sym)
+                (consult--truncate-docstring doc))
+      cand)))
+
+(defvar consult--annotate-command nil
+  "Last command symbol saved in order to allow annotations.")
+
+(defvar consult--original-highlight-function nil
+  "Original highlighting function stored by `consult-annotate-mode'.")
+
+(defvar consult-annotate-category-alist
+  '((command . consult-annotate-symbol)
+    (symbol . consult-annotate-symbol))
+  "List of categories which should be enriched by `consult-annotate-candidates'.")
+
+(defvar consult-annotate-command-alist
+  '((describe-function . consult-annotate-symbol)
+    (describe-variable . consult-annotate-symbol)
+    (describe-face . consult-annotate-face)
+    (describe-symbol . consult-annotate-symbol))
+  "List of functions which should be enriched by `consult-annotate-candidates'.")
+
+(defun consult--annotate-candidates (input candidates)
+  "Annotate CANDIDATES with richer information, e.g., faces and documentation string.
+INPUT is the input string."
+  (funcall
+   consult--original-highlight-function
+   input
+   (let ((category (consult--category)))
+     (if-let (annotate
+              (or (and category (alist-get category consult-annotate-category-alist))
+                  (and consult--annotate-command (alist-get consult--annotate-command consult-annotate-command-alist))))
+         (mapcar annotate candidates)
+       candidates))))
+
+(defun consult--annotate-remember-command ()
+  "Remember `this-command' for annotation."
+  (setq consult--annotate-command this-command))
+
+;;;###autoload
+(define-minor-mode consult-annotate-mode
+  "Annotate candidates with richer information."
+  :global t
+  (if consult-annotate-mode
+      (progn
+        (setq consult--original-highlight-function selectrum-highlight-candidates-function
+              selectrum-highlight-candidates-function #'consult--annotate-candidates)
+        (add-hook 'minibuffer-setup-hook #'consult--annotate-remember-command))
+    (setq selectrum-highlight-candidates-function consult--original-highlight-function)
+    (remove-hook 'minibuffer-setup-hook #'consult--annotate-remember-command)))
 
 (provide 'consult)
 ;;; consult.el ends here

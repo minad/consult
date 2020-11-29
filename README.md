@@ -25,13 +25,10 @@ consult-outline
 
 ![consult-outline](https://github.com/minad/consult/blob/master/images/consult-outline.gif?raw=true)
 
-consult-face
-
-![consult-face](https://github.com/minad/consult/blob/master/images/consult-face.gif?raw=true)
-
 ## Available commands
 
-Most provided commands follow the naming scheme `consult-thing`.
+Most provided commands follow the naming scheme `consult-thing`. Furthermore there is `consult-annotate-mode` which enriches
+the completion display with documentation strings.
 
 ### Virtual Buffers
 
@@ -50,10 +47,10 @@ Most provided commands follow the naming scheme `consult-thing`.
   * `consult-register`: Select from list of registers.
   * `consult-yank`, `consult-yank-pop`: Enhanced version of `yank` and `yank-pop` which allows selecting from the kill-ring.
 
-### Help
+### Help/Discoverability
 
   * `consult-apropos`: Replacement for `apropos` with completion.
-  * `consult-face`: Describe face with preview during selection.
+  * `consult-annotate-mode`: Enable this mode to annotates completions with richer information (e.g. `M-x`, `describe-face`, `describe-symbol`).
 
 ### Histories
 
@@ -105,7 +102,11 @@ use the enhanced commands, you must configure the keybindings yourself.
          ("<help> a" . consult-apropos))
   :init
   ;; Replace functions (consult-multi-occur is a drop-in replacement)
-  (fset 'multi-occur #'consult-multi-occur))
+  (fset 'multi-occur #'consult-multi-occur)
+  :config
+  ;; Enable richer annotations during completion
+  ;; Works only with selectrum as of now.
+  (consult-annotate-mode))
 ~~~
 
 ### Configuration settings
