@@ -192,17 +192,17 @@ nil shows all `custom-available-themes'."
 
 ;; HACK until selectrum provides a better api
 ;; see https://github.com/minad/consult/issues/11
-(defmacro consult--selectrum-no-sort (body)
+(defmacro consult--selectrum-no-sort (&rest body)
   "Configure selectrum in BODY: Do not sort the candidates."
   `(minibuffer-with-setup-hook
        (lambda () (setq-local selectrum-should-sort-p nil))
-     ,body))
+     ,@body))
 
-(defmacro consult--selectrum-no-move-default (body)
+(defmacro consult--selectrum-no-move-default (&rest body)
   "Configure selectrum in BODY: Do not sort the candidates."
   `(minibuffer-with-setup-hook
        (lambda () (setq-local selectrum--move-default-candidate-p nil))
-     ,body))
+     ,@body))
 
 (defun consult--truncate-first-line (str)
   "Truncate documentation string STR."
