@@ -43,11 +43,6 @@
 (require 'seq)
 (require 'subr-x)
 
-;; TODO implement preview of virtual buffers? It must be ensured that any newly opened files are closed again.
-;; TODO implement preview for consult--yank-read
-;; TODO consult-line, consult-mark, consult-outline preview should highlight the matched strings.
-;;      is there an easy way to achieve this?
-
 (defgroup consult nil
   "Consultation using `completing-read'."
   :group 'convenience
@@ -250,6 +245,8 @@ BODY is the body expression."
   "Run BODY with current live window."
   `(with-selected-window (consult--window) ,@body))
 
+;; TODO Matched strings are not highlighted as of now
+;; see https://github.com/minad/consult/issues/7
 (defun consult--preview-line (cmd &optional arg)
   "Preview function for lines.
 CMD is the preview command.
@@ -517,6 +514,8 @@ This command obeys narrowing."
   (interactive)
   (find-file-other-window (consult--recent-file-read)))
 
+;; TODO consult--yank-read should support preview
+;; see https://github.com/minad/consult/issues/8
 (defun consult--yank-read ()
   "Open kill ring menu and return selected text."
   (consult--read "Ring: "
@@ -734,6 +733,7 @@ Otherwise replace the just-yanked text with the selected text."
 ;; therefore the selectrum api is used directly.
 ;; consult-buffer with selectrum supports prefixes for narrowing b, f, m, v
 ;; see discussion https://github.com/raxod502/selectrum/issues/235#issuecomment-734835414
+;; see also https://github.com/minad/consult/issues/10
 (defun consult--buffer-selectrum (open-buffer hidden-bufs visible-bufs files views bookmarks)
   "Select virtual buffer using `selectrum-read'.
 HIDDEN-BUFS, VISIBLE-BUFS, FILES, VIEWS and BOOKMARKS are the candidate lists.
@@ -760,6 +760,8 @@ OPEN-BUFFER is used for preview."
              (t
               (list (cons 'input input)
                     (cons 'candidates all-cands)))))))
+    ;; TODO preview of virtual buffers is not implemented yet
+    ;; see https://github.com/minad/consult/issues/9
     (consult--preview consult-preview-buffer
         (current-window-configuration)
         (state (set-window-configuration state))
