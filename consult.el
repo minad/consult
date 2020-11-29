@@ -891,12 +891,15 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
 
 (defcustom consult-annotate-commands
   '((describe-function . consult-annotate-symbol)
-    (describe-variable . consult-annotate-symbol)
+    (describe-variable . consult-annotate-variable)
     (describe-face . consult-annotate-face)
     (describe-symbol . consult-annotate-symbol)
     (helpful-callable . consult-annotate-symbol)
-    (helpful-variable . consult-annotate-symbol)
     (helpful-command . consult-annotate-symbol)
+    (helpful-function . consult-annotate-symbol)
+    (helpful-macro . consult-annotate-symbol)
+    (helpful-symbol . consult-annotate-symbol)
+    (helpful-variable . consult-annotate-variable)
     (describe-package . consult-annotate-package)
     (package-install . consult-annotate-package)
     (package-delete . consult-annotate-package)
@@ -915,15 +918,23 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
 ;; The approach taken here is compatible with the emacs 28 keybinding annotation.
 (defun consult-annotate-symbol (cand)
   "Annotate symbol CAND with documentation string."
-  (let ((sym (intern cand)))
-    (when-let (doc (cond
+  (when-let (doc (let ((sym (intern cand)))
+                   (cond
                     ((fboundp sym) (ignore-errors (documentation sym)))
                     ((facep sym) (documentation-property sym 'face-documentation))
-                    (t (documentation-property sym 'variable-documentation))))
-        ;; TODO selectrum specific!
-        (propertize cand
-                    'selectrum-candidate-display-right-margin
-                    (concat " " (consult--truncate-first-line doc))))))
+                    (t (documentation-property sym 'variable-documentation)))))
+    ;; TODO selectrum specific!
+    (propertize cand
+                'selectrum-candidate-display-right-margin
+                (concat " " (consult--truncate-first-line doc)))))
+
+(defun consult-annotate-variable (cand)
+  "Annotate variable CAND with documentation string."
+  (when-let (doc (documentation-property (intern cand) 'variable-documentation))
+    ;; TODO selectrum specific!
+    (propertize cand
+                'selectrum-candidate-display-right-margin
+                (concat " " (consult--truncate-first-line doc)))))
 
 (defun consult-annotate-face (cand)
   "Annotate face CAND with documentation string and face example."
