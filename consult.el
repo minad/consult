@@ -55,14 +55,9 @@
   "Face used to for line previews."
   :group 'consult)
 
-(defface consult-preview-cursor
-  '((t :inherit cursor))
-  "Face used to for cursor previews."
-  :group 'consult)
-
-(defface consult-mark
-  '((t :inherit error :weight normal))
-  "Face used to highlight marks in `consult-mark'."
+(defface consult-cursor
+  '((t :inherit match))
+  "Face used to for cursor previews and marks in `cursor-mark'."
   :group 'consult)
 
 (defface consult-lighter
@@ -305,8 +300,9 @@ ARG is the command argument."
       (let ((ov (make-overlay (line-beginning-position) (line-end-position))))
         (overlay-put ov 'face 'consult-preview-line)
         (overlay-put ov 'consult-overlay t))
-      (let ((ov (make-overlay (point) (1+ (point)))))
-        (overlay-put ov 'face 'consult-preview-cursor)
+      (let* ((pos (point))
+             (ov (make-overlay pos (1+ pos))))
+        (overlay-put ov 'face 'consult-cursor)
         (overlay-put ov 'consult-overlay t))))))
 
 (cl-defun consult--read (prompt candidates &key
@@ -464,16 +460,20 @@ The alist contains (string . position) pairs."
                    ;; TODO line-number-at-pos is a very slow function, can this be replaced?
                    (line (line-number-at-pos pos consult-line-numbers-widen))
                    (lstr (buffer-substring (- pos col) (line-end-position)))
-                   (cand (concat (substring lstr 0 col)
-                                 #("┃" 0 1 (face consult-mark))
-                                 (substring lstr col))))
+                   (end (1+ col))
+                   (cand (if (> end (length lstr))
+                             (concat (substring lstr 0 col)
+                                     (propertize " " 'face 'consult-cursor))
+                           (concat (substring lstr 0 col)
+                                   (propertize (substring lstr col end) 'face 'consult-cursor)
+                                   (substring lstr end)))))
               (setq max-line (max line max-line))
               (push (cons (cons line cand) marker) unformatted-candidates))))))
     (consult--add-line-number max-line unformatted-candidates)))
 
 ;;;###autoload
 (defun consult-mark ()
-  "Jump to a marker in `mark-ring', signified by a highlighted vertical bar."
+  "Jump to a marker in `mark-ring'."
   (interactive)
   (consult--goto
    (save-excursion
