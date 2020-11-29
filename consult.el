@@ -865,7 +865,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
   (interactive)
   (consult--buffer #'switch-to-buffer #'find-file #'bookmark-jump))
 
-(defun consult--category ()
+(defun consult--annotate-category ()
   "Return category of current completion."
   (completion-metadata-get
    (completion-metadata
@@ -924,7 +924,7 @@ INPUT is the input string."
   (funcall
    consult--original-highlight-function
    input
-   (let ((category (consult--category)))
+   (let ((category (consult--annotate-category)))
      (if-let (annotate
               (or (and category (alist-get category consult-annotate-category-alist))
                   (and consult--annotate-command (alist-get consult--annotate-command consult-annotate-command-alist))))
