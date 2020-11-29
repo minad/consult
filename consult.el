@@ -892,21 +892,29 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
               (propertize "abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ" 'face sym)
               (consult--truncate-docstring doc)))))
 
-;; taken from embark.el, originally `describe-package-1`
+(defvar package--builtins)
+(defvar package-alist)
+(defvar package-archive-contents)
+(declare-function package-desc-summary "package")
+(declare-function package--from-builtin "package")
+
 (defun consult--package-desc (pkg)
-  "Return the description structure for package PKG."
-  (or (car (alist-get pkg package-alist))
-      (if-let ((built-in (assq pkg package--builtins)))
-          (package--from-builtin built-in)
-        (car (alist-get pkg package-archive-contents)))))
+  "Return the package description string for package PKG."
+  (require 'package)
+  ;; taken from embark.el, originally `describe-package-1`
+  (when-let (desc (or (car (alist-get pkg package-alist))
+                     (if-let ((built-in (assq pkg package--builtins)))
+                         (package--from-builtin built-in)
+                       (car (alist-get pkg package-archive-contents)))))
+      (package-desc-summary desc)))
 
 (defun consult-annotate-package (cand)
   "Annotate package CAND with documentation."
-  (when-let ((desc (consult--package-desc (intern (replace-regexp-in-string "-[[:digit:]\\.-]+$" "" cand)))))
+  (when-let (desc (consult--package-desc (intern (replace-regexp-in-string "-[[:digit:]\\.-]+$" "" cand))))
     ;; TODO selectrum specific!
     (propertize cand
                 'selectrum-candidate-display-right-margin
-                (concat " " (consult--truncate-docstring (package-desc-summary desc))))))
+                (concat " " (consult--truncate-docstring desc)))))
 
 (defvar consult--annotate-command nil
   "Last command symbol saved in order to allow annotations.")
