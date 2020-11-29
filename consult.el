@@ -5,7 +5,7 @@
 ;; Created: 2020
 ;; License: GPL-3.0-or-later
 ;; Version: 0.1
-;; Package-Requires: ((emacs "26"))
+;; Package-Requires: ((emacs "26.1"))
 ;; Homepage: https://github.com/minad/consult
 
 ;; This file is not part of GNU Emacs.
@@ -47,6 +47,8 @@
   "Consultation using `completing-read'."
   :group 'convenience
   :prefix "consult-")
+
+;;;; Faces
 
 (defface consult-preview-line
   '((t :inherit region))
@@ -98,6 +100,8 @@
   "Face used to signal disabled modes."
   :group 'consult)
 
+;;;; Customization
+
 (defcustom consult-preview-buffer t
   "Enable buffer preview during selection."
   :type 'boolean
@@ -134,6 +138,8 @@ nil shows all `custom-available-themes'."
   :type 'boolean
   :group 'consult)
 
+;;;; History variables
+
 (defvar consult-buffer-history nil
   "History for the command `consult-buffer'.")
 
@@ -164,12 +170,7 @@ nil shows all `custom-available-themes'."
 (defvar consult-minor-mode-history nil
   "History for the command `consult-minor-mode'.")
 
-(defun consult--status-prefix (enabled)
-  "Status prefix for given boolean ENABLED."
-  (propertize " " 'display
-              (if enabled
-                  (propertize "+ " 'face 'consult-on)
-                (propertize "- " 'face 'consult-off))))
+;;;; Pre-declarations for external packages
 
 (defvar icomplete-mode)
 (declare-function icomplete-post-command-hook "icomplete")
@@ -180,6 +181,25 @@ nil shows all `custom-available-themes'."
 (declare-function selectrum-read "selectrum")
 (declare-function selectrum-get-current-candidate "selectrum")
 (declare-function selectrum--minibuffer-post-command-hook "selectrum")
+
+(defvar package--builtins)
+(defvar package-alist)
+(defvar package-archive-contents)
+(declare-function package-desc-summary "package")
+(declare-function package--from-builtin "package")
+
+;;;; Helper functions
+
+(defun consult--truncate-first-line (str)
+  "Truncate documentation string STR."
+  (truncate-string-to-width (car (split-string str "\n")) 80 0 32 "…"))
+
+(defun consult--status-prefix (enabled)
+  "Status prefix for given boolean ENABLED."
+  (propertize " " 'display
+              (if enabled
+                  (propertize "+ " 'face 'consult-on)
+                (propertize "- " 'face 'consult-off))))
 
 ;; TODO this function contains completion-system specifics
 ;; is there a more general mechanism which works everywhere or can this be cleaned up?
@@ -236,6 +256,12 @@ BODY is the body expression."
              (funcall ,finalize)
              ,@(cdr restore)))
        ,body)))
+
+(defmacro consult--gc-increase (&rest body)
+  "Temporarily increase the gc limit in BODY to optimize for throughput."
+  `(let ((gc-cons-threshold (max gc-cons-threshold 67108864))
+         (gc-cons-percentage 0.5))
+         ,@body))
 
 (defun consult--window ()
   "Return live window."
@@ -310,18 +336,6 @@ PREVIEW is a preview function."
                     (complete-with-action action candidates str pred))))
               predicate require-match nil history default))))
 
-;; see https://github.com/raxod502/selectrum/issues/226
-;;;###autoload
-(defun consult-multi-occur (bufs regexp &optional nlines)
-  "Improved version of `multi-occur' based on `completing-read-multiple'.
-See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
-  (interactive (cons
-                (mapcar #'get-buffer
-                        (completing-read-multiple "Buffer: "
-                                                  #'internal-complete-buffer))
-                (occur-read-primary-args)))
-  (occur-1 regexp nlines bufs))
-
 (defsubst consult--pad-line-number (width line)
   "Optimized formatting for LINE number with padding. WIDTH is the line number width."
   (setq line (number-to-string line))
@@ -330,12 +344,6 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                line
                " ")
               'face 'consult-line-number))
-
-(defmacro consult--gc-increase (&rest body)
-  "Temporarily increase the gc limit in BODY to optimize for throughput."
-  `(let ((gc-cons-threshold (max gc-cons-threshold 67108864))
-         (gc-cons-percentage 0.5))
-         ,@body))
 
 (defun consult--add-line-number (max-line candidates)
   "Add line numbers to unformatted CANDIDATES. The MAX-LINE is needed to determine the width."
@@ -349,6 +357,27 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                " "
                (cdar cand))))
     candidates))
+
+(defun consult--goto (pos)
+  "Push current position to mark ring, go to POS and recenter."
+  (when pos
+    (push-mark (point) t)
+    (goto-char pos)
+    (recenter)))
+
+;;;; Commands
+
+;; see https://github.com/raxod502/selectrum/issues/226
+;;;###autoload
+(defun consult-multi-occur (bufs regexp &optional nlines)
+  "Improved version of `multi-occur' based on `completing-read-multiple'.
+See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
+  (interactive (cons
+                (mapcar #'get-buffer
+                        (completing-read-multiple "Buffer: "
+                                                  #'internal-complete-buffer))
+                (occur-read-primary-args)))
+  (occur-1 regexp nlines bufs))
 
 (defun consult--outline-candidates ()
   "Return alist of outline headings and positions."
@@ -427,13 +456,6 @@ The alist contains (string . position) pairs."
               (setq max-line (max line max-line))
               (push (cons (cons line cand) marker) unformatted-candidates))))))
     (consult--add-line-number max-line unformatted-candidates)))
-
-(defun consult--goto (pos)
-  "Push current position to mark ring, go to POS and recenter."
-  (when pos
-    (push-mark (point) t)
-    (goto-char pos)
-    (recenter)))
 
 ;;;###autoload
 (defun consult-mark ()
@@ -865,62 +887,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
   (interactive)
   (consult--buffer #'switch-to-buffer #'find-file #'bookmark-jump))
 
-(defun consult--truncate-docstring (str)
-  "Truncate documentation string STR."
-  (truncate-string-to-width (car (split-string str "\n")) 80 0 32 "…"))
-
-;; TODO we could also annotate commands with the keybinding, but emacs 28 already does that for us.
-;; The approach taken here is compatible with the emacs 28 keybinding annotation.
-(defun consult-annotate-symbol (cand)
-  "Annotate symbol CAND with documentation string."
-  (let ((sym (intern cand)))
-    (when-let (doc (cond
-                    ((fboundp sym) (ignore-errors (documentation sym)))
-                    ((facep sym) (documentation-property sym 'face-documentation))
-                    (t (documentation-property sym 'variable-documentation))))
-        ;; TODO selectrum specific!
-        (propertize cand
-                    'selectrum-candidate-display-right-margin
-                    (concat " " (consult--truncate-docstring doc))))))
-
-(defun consult-annotate-face (cand)
-  "Annotate face CAND with documentation string and face example."
-  (let ((sym (intern cand)))
-    (when-let (doc (documentation-property sym 'face-documentation))
-      (format "%-40s    %s    %s"
-              cand
-              (propertize "abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ" 'face sym)
-              (consult--truncate-docstring doc)))))
-
-(defvar package--builtins)
-(defvar package-alist)
-(defvar package-archive-contents)
-(declare-function package-desc-summary "package")
-(declare-function package--from-builtin "package")
-
-(defun consult--package-desc (pkg)
-  "Return the package description string for package PKG."
-  (require 'package)
-  ;; taken from embark.el, originally `describe-package-1`
-  (when-let (desc (or (car (alist-get pkg package-alist))
-                     (if-let ((built-in (assq pkg package--builtins)))
-                         (package--from-builtin built-in)
-                       (car (alist-get pkg package-archive-contents)))))
-      (package-desc-summary desc)))
-
-(defun consult-annotate-package (cand)
-  "Annotate package CAND with documentation."
-  (when-let (desc (consult--package-desc (intern (replace-regexp-in-string "-[[:digit:]\\.-]+$" "" cand))))
-    ;; TODO selectrum specific!
-    (propertize cand
-                'selectrum-candidate-display-right-margin
-                (concat " " (consult--truncate-docstring desc)))))
-
-(defvar consult--annotate-command nil
-  "Last command symbol saved in order to allow annotations.")
-
-(defvar consult--annotate-candidates-orig nil
-  "Original highlighting function stored by `consult-annotate-mode'.")
+;;;; consult-annotate-mode - Enhancing existing commands with annotations
 
 (defcustom consult-annotate-commands
   '((describe-function . consult-annotate-symbol)
@@ -937,6 +904,48 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
   "Functions which should a richer completion display, if `consult-annotate-mode' is enabled."
   :type '(alist :key-type symbol :value-type function)
   :group 'consult)
+
+(defvar consult--annotate-command nil
+  "Last command symbol saved in order to allow annotations.")
+
+(defvar consult--annotate-candidates-orig nil
+  "Original highlighting function stored by `consult-annotate-mode'.")
+
+;; TODO we could also annotate commands with the keybinding, but emacs 28 already does that for us.
+;; The approach taken here is compatible with the emacs 28 keybinding annotation.
+(defun consult-annotate-symbol (cand)
+  "Annotate symbol CAND with documentation string."
+  (let ((sym (intern cand)))
+    (when-let (doc (cond
+                    ((fboundp sym) (ignore-errors (documentation sym)))
+                    ((facep sym) (documentation-property sym 'face-documentation))
+                    (t (documentation-property sym 'variable-documentation))))
+        ;; TODO selectrum specific!
+        (propertize cand
+                    'selectrum-candidate-display-right-margin
+                    (concat " " (consult--truncate-first-line doc))))))
+
+(defun consult-annotate-face (cand)
+  "Annotate face CAND with documentation string and face example."
+  (let ((sym (intern cand)))
+    (when-let (doc (documentation-property sym 'face-documentation))
+      (format "%-40s    %s    %s"
+              cand
+              (propertize "abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ" 'face sym)
+              (consult--truncate-first-line doc)))))
+
+(defun consult-annotate-package (cand)
+  "Annotate package CAND with documentation."
+  (when-let* ((pkg (intern (replace-regexp-in-string "-[[:digit:]\\.-]+$" "" cand)))
+              ;; taken from embark.el, originally `describe-package-1`
+              (desc (or (car (alist-get pkg package-alist))
+                     (if-let ((built-in (assq pkg package--builtins)))
+                         (package--from-builtin built-in)
+                       (car (alist-get pkg package-archive-contents))))))
+    ;; TODO selectrum specific!
+    (propertize cand
+                'selectrum-candidate-display-right-margin
+                (concat " " (consult--truncate-first-line (package-desc-summary desc))))))
 
 (defun consult--annotate-candidates (input candidates)
   "Annotate CANDIDATES with richer information.
