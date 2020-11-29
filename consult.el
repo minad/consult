@@ -319,24 +319,42 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                 (occur-read-primary-args)))
   (occur-1 regexp nlines bufs))
 
+(defsubst consult--pad-line-number (width line)
+  "Optimized formatting for LINE number with padding. WIDTH is the line number width."
+  (setq line (number-to-string line))
+  (propertize (concat
+               (make-string (- width (length line)) 32)
+               line
+               " ")
+              'face 'consult-line-number))
+
+(defmacro consult--gc-increase (&rest body)
+  "Temporarily increase the gc limit in BODY to optimize for throughput."
+  `(let ((gc-cons-threshold (max gc-cons-threshold 67108864))
+         (gc-cons-percentage 0.5))
+         ,@body))
+
 (defun consult--add-line-number (max-line candidates)
   "Add line numbers to unformatted CANDIDATES. The MAX-LINE is needed to determine the width."
-  (let ((form (format "%%%dd" (length (number-to-string max-line)))))
-    (mapc (lambda (cand)
-            ;; TODO use prefix here or keep the line number as part of string?
-            ;; If we would use a prefix, the alist approach would not work for duplicate lines!
-            (setcar cand (concat (propertize (format form (caar cand))
-                                             'face 'consult-line-number)
-                                 " " (cdar cand))))
-          candidates)))
+  (let ((width (length (number-to-string max-line))))
+    (dolist (cand candidates)
+      ;; TODO use prefix here or keep the line number as part of string?
+      ;; If we would use a prefix, the alist approach would not work for duplicate lines!
+      (setcar cand
+              (concat
+               (consult--pad-line-number width (caar cand))
+               " "
+               (cdar cand))))
+    candidates))
 
 (defun consult--outline-candidates ()
   "Return alist of outline headings and positions."
+  (when (minibufferp)
+    (user-error "Consult called inside the minibuffer"))
   ;; Font-locking is lazy, i.e., if a line has not been looked at yet, the line is not font-locked.
   ;; We would observe this if consulting an unfontified line.
   ;; Therefore we have to enforce font-locking now.
-  (when (minibufferp)
-    (user-error "Consult called inside the minibuffer"))
+  ;; TODO can this be optimized, at least add some progress message?
   (jit-lock-fontify-now)
   (let* ((max-line 0)
          (heading-regexp (concat "^\\(?:" outline-regexp "\\)"))
@@ -345,6 +363,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
       (goto-char (point-min))
       (while (re-search-forward heading-regexp nil 'move)
         (goto-char (match-beginning 0))
+        ;; TODO optimize line number at pos! it leads to horrible quadratic behavior here!
         (let ((line (line-number-at-pos (point) t)))
           (setq max-line (max line max-line))
           (push (cons
@@ -363,7 +382,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
   (interactive)
   (consult--goto
    (save-excursion
-     (consult--read "Go to heading: " (consult--outline-candidates)
+     (consult--read "Go to heading: " (consult--gc-increase (consult--outline-candidates))
                     :sort nil
                     :require-match t
                     :lookup (lambda (candidates x) (cdr (assoc x candidates)))
@@ -380,6 +399,7 @@ The alist contains (string . position) pairs."
   ;; Font-locking is lazy, i.e., if a line has not been looked at yet, the line is not font-locked.
   ;; We would observe this if consulting an unfontified line.
   ;; Therefore we have to enforce font-locking now.
+  ;; TODO can this be optimized, at least add some progress message?
   (jit-lock-fontify-now)
   (let* ((all-markers (delete-dups (cons (mark-marker) (reverse mark-ring))))
          (max-line 0)
@@ -415,7 +435,7 @@ The alist contains (string . position) pairs."
   (interactive)
   (consult--goto
    (save-excursion
-     (consult--read "Go to mark: " (consult--mark-candidates)
+     (consult--read "Go to mark: " (consult--gc-increase (consult--mark-candidates))
                     :sort nil
                     :require-match t
                     :lookup (lambda (candidates x) (cdr (assoc x candidates)))
@@ -425,17 +445,14 @@ The alist contains (string . position) pairs."
 ;; HACK: Disambiguate the line by prepending it with unicode
 ;; characters in the supplementary private use plane b.
 ;; This will certainly have many ugly consequences.
-(defun consult--line-prefix (fmt line)
+(defsubst consult--line-prefix (width line)
   "Generate unique line number prefix string for LINE.
-FMT is the line number format string."
-  (let ((str) (n line))
-    (while (> n 0)
-      (push (+ #x100000 (% n #xFFFE)) str)
-      (setq n (/ n #xFFFE)))
-    (propertize (concat str)
-                'display
-                (propertize (format fmt line)
-                            'face 'consult-line-number))))
+WIDTH is the line number width."
+  (let ((unique-prefix "") (n line))
+    (while (progn
+             (setq unique-prefix (concat (string (+ #x100000 (% n #xFFFE))) unique-prefix))
+             (and (>= n #xFFFE) (setq n (/ n #xFFFE)))))
+    (propertize unique-prefix 'display (consult--pad-line-number width line))))
 
 (defun consult--line-candidates ()
   "Return alist of lines and positions."
@@ -444,28 +461,31 @@ FMT is the line number format string."
   ;; Font-locking is lazy, i.e., if a line has not been looked at yet, the line is not font-locked.
   ;; We would observe this if consulting an unfontified line.
   ;; Therefore we have to enforce font-locking now.
+  ;; TODO can this be optimized, at least add some progress message?
   (jit-lock-fontify-now)
   (let* ((default-cand)
          (candidates)
-         (min (point-min))
+         (pos (point-min))
          (max (point-max))
-         (line (line-number-at-pos min t))
+         (line (line-number-at-pos pos t))
          (curr-line (line-number-at-pos (point) t))
-         (line-format (format "%%%dd " (length (number-to-string (line-number-at-pos max)))))
+         (line-width (length (number-to-string (line-number-at-pos max))))
          (default-cand-dist most-positive-fixnum))
     (save-excursion
-      (goto-char min)
-      (while (< (point) max)
-        (let ((str (buffer-substring (line-beginning-position) (line-end-position)))
-              (dist (abs (- curr-line line))))
+      (goto-char pos)
+      (while (< pos max)
+        (let* ((end (line-end-position))
+               (str (buffer-substring (line-beginning-position) end))
+               (dist (abs (- curr-line line))))
           (unless (string-blank-p str)
-            (let ((cand (concat (consult--line-prefix line-format line) str)))
+            (let ((cand (concat (consult--line-prefix line-width line) str)))
               (when (or (not default-cand) (< dist default-cand-dist))
                 (setq default-cand cand
                       default-cand-dist dist))
               (push (cons cand (point-marker)) candidates)))
-          (forward-line 1)
-          (setq line (1+ line)))))
+          (setq line (1+ line)
+                pos (1+ end))
+          (goto-char pos))))
     (unless candidates
       (user-error "No lines"))
     (cons default-cand (nreverse candidates))))
@@ -477,7 +497,7 @@ The default candidate is a non-empty line closest to point.
 This command obeys narrowing."
   (interactive)
   (consult--goto
-   (let ((candidates (consult--line-candidates)))
+   (let ((candidates (consult--gc-increase (consult--line-candidates))))
      (save-excursion
        (consult--read "Go to line: " (cdr candidates)
                       :sort nil
