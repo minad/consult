@@ -357,22 +357,25 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
   ;; TODO can this be optimized, at least add some progress message?
   (jit-lock-fontify-now)
   (let* ((max-line 0)
+         (line (line-number-at-pos (point-min) t))
          (heading-regexp (concat "^\\(?:" outline-regexp "\\)"))
          (unformatted-candidates))
     (save-excursion
       (goto-char (point-min))
-      (while (re-search-forward heading-regexp nil 'move)
-        (goto-char (match-beginning 0))
-        ;; TODO optimize line number at pos! it leads to horrible quadratic behavior here!
-        (let ((line (line-number-at-pos (point) t)))
-          (setq max-line (max line max-line))
-          (push (cons
-                 (cons
-                  line
-                  (buffer-substring (line-beginning-position) (line-end-position)))
-                 (point-marker))
-                unformatted-candidates)
-          (if (and (bolp) (not (eobp))) (forward-char 1)))))
+      (while (save-excursion (re-search-forward heading-regexp nil 'move))
+        (let ((match-pos (match-beginning 0)))
+          (while (< (point) match-pos)
+            (setq line (1+ line))
+            (forward-line 1))
+          (goto-char match-pos))
+        (setq max-line (max line max-line))
+        (push (cons
+               (cons
+                line
+                (buffer-substring (line-beginning-position) (line-end-position)))
+               (point-marker))
+              unformatted-candidates)
+        (if (and (bolp) (not (eobp))) (forward-char 1))))
     (or (consult--add-line-number max-line (nreverse unformatted-candidates))
         (user-error "No headings"))))
 
@@ -469,7 +472,7 @@ WIDTH is the line number width."
          (max (point-max))
          (line (line-number-at-pos pos t))
          (curr-line (line-number-at-pos (point) t))
-         (line-width (length (number-to-string (line-number-at-pos max))))
+         (line-width (length (number-to-string (line-number-at-pos max t))))
          (default-cand-dist most-positive-fixnum))
     (save-excursion
       (goto-char pos)
