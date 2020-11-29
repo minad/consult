@@ -942,45 +942,49 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
 ;; The approach taken here is compatible with the emacs 28 keybinding annotation.
 (defun consult-annotate-symbol (cand)
   "Annotate symbol CAND with documentation string."
-  (when-let (doc (let ((sym (intern cand)))
-                   (cond
-                    ((fboundp sym) (ignore-errors (documentation sym)))
-                    ((facep sym) (documentation-property sym 'face-documentation))
-                    (t (documentation-property sym 'variable-documentation)))))
-    ;; TODO selectrum specific!
-    (propertize cand
-                'selectrum-candidate-display-right-margin
-                (concat " " (consult--truncate-first-line doc)))))
+  (if-let (doc (let ((sym (intern cand)))
+                 (cond
+                  ((fboundp sym) (ignore-errors (documentation sym)))
+                  ((facep sym) (documentation-property sym 'face-documentation))
+                  (t (documentation-property sym 'variable-documentation)))))
+      ;; TODO selectrum specific!
+      (propertize cand
+                  'selectrum-candidate-display-right-margin
+                  (concat " " (consult--truncate-first-line doc)))
+    cand))
 
 (defun consult-annotate-variable (cand)
   "Annotate variable CAND with documentation string."
-  (when-let (doc (documentation-property (intern cand) 'variable-documentation))
-    ;; TODO selectrum specific!
-    (propertize cand
-                'selectrum-candidate-display-right-margin
-                (concat " " (consult--truncate-first-line doc)))))
+  (if-let (doc (documentation-property (intern cand) 'variable-documentation))
+      ;; TODO selectrum specific!
+      (propertize cand
+                  'selectrum-candidate-display-right-margin
+                  (concat " " (consult--truncate-first-line doc)))
+    cand))
 
 (defun consult-annotate-face (cand)
   "Annotate face CAND with documentation string and face example."
   (let ((sym (intern cand)))
-    (when-let (doc (documentation-property sym 'face-documentation))
-      (format "%-40s    %s    %s"
-              cand
-              (propertize "abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ" 'face sym)
-              (consult--truncate-first-line doc)))))
+    (if-let (doc (documentation-property sym 'face-documentation))
+        (format "%-40s    %s    %s"
+                cand
+                (propertize "abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ" 'face sym)
+                (consult--truncate-first-line doc))
+      cand)))
 
 (defun consult-annotate-package (cand)
   "Annotate package CAND with documentation."
-  (when-let* ((pkg (intern (replace-regexp-in-string "-[[:digit:]\\.-]+$" "" cand)))
-              ;; taken from embark.el, originally `describe-package-1`
-              (desc (or (car (alist-get pkg package-alist))
-                        (if-let ((built-in (assq pkg package--builtins)))
-                            (package--from-builtin built-in)
-                          (car (alist-get pkg package-archive-contents))))))
-    ;; TODO selectrum specific!
-    (propertize cand
-                'selectrum-candidate-display-right-margin
-                (concat " " (consult--truncate-first-line (package-desc-summary desc))))))
+  (if-let* ((pkg (intern (replace-regexp-in-string "-[[:digit:]\\.-]+$" "" cand)))
+            ;; taken from embark.el, originally `describe-package-1`
+            (desc (or (car (alist-get pkg package-alist))
+                      (if-let ((built-in (assq pkg package--builtins)))
+                          (package--from-builtin built-in)
+                        (car (alist-get pkg package-archive-contents))))))
+      ;; TODO selectrum specific!
+      (propertize cand
+                  'selectrum-candidate-display-right-margin
+                  (concat " " (consult--truncate-first-line (package-desc-summary desc))))
+    cand))
 
 (defun consult--annotate-candidates (input candidates)
   "Annotate CANDIDATES with richer information.
@@ -991,7 +995,7 @@ INPUT is the input string."
    (if-let (annotate
             (and consult--annotate-this-command
                  (alist-get consult--annotate-this-command consult-annotate-alist)))
-       (mapcar (lambda (cand) (or (funcall annotate cand) cand)) candidates)
+       (mapcar annotate candidates)
      candidates)))
 
 (defun consult--annotate-remember-command ()
