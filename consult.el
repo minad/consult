@@ -192,14 +192,14 @@ nil shows all `custom-available-themes'."
 
 ;; HACK until selectrum provides a better api
 ;; see https://github.com/minad/consult/issues/11
-(defmacro consult--selectrum-disable-sort (body)
+(defmacro consult--selectrum-no-sort (body)
   `(minibuffer-with-setup-hook
        (lambda () (setq-local selectrum-should-sort-p nil))
      ,body))
 
 ;; HACK until selectrum provides a better api
 ;; see https://github.com/minad/consult/issues/11
-(defmacro consult--selectrum-disable-move-default (body)
+(defmacro consult--selectrum-no-move-default (body)
   (let ((advice (make-symbol "advice")))
     `(if (bound-and-true-p selectrum-mode)
          (letrec ((advice (lambda (args)
@@ -548,7 +548,7 @@ This command obeys narrowing."
   (consult--goto
    (let ((candidates (consult--gc-increase (consult--line-candidates))))
      (save-excursion
-       (consult--selectrum-disable-move-default
+       (consult--selectrum-no-move-default
         (consult--read "Go to line: " (cdr candidates)
                        :sort nil
                        :require-match t
@@ -818,7 +818,7 @@ OPEN-BUFFER is used for preview."
         (buf (when (get-buffer buf)
                (consult--with-window
                 (funcall open-buffer buf))))
-      (consult--selectrum-disable-sort
+      (consult--selectrum-no-sort
        (selectrum-read "Switch to: " generate
                        :history 'consult-buffer-history)))))
 
