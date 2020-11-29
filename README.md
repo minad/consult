@@ -129,6 +129,7 @@ use the enhanced commands, you must configure the keybindings yourself.
 
 | Variable                   | Def | Description                                             |
 |----------------------------|-----|---------------------------------------------------------|
+| consult-annotate-commands  | …   | Functions which should get a richer completion display. |
 | consult-line-numbers-widen | t   | Show absolute line numbers when narrowing is active.    |
 | consult-preview-buffer     | t   | Enable buffer preview during selection                  |
 | consult-preview-theme      | t   | Enable theme preview during selection                   |
@@ -136,7 +137,6 @@ use the enhanced commands, you must configure the keybindings yourself.
 | consult-preview-line       | t   | Enable line preview during selection                    |
 | consult-preview-outline    | t   | Enable outline preview during selection                 |
 | consult-themes             | nil | List of themes to be presented for selection            |
-| consult-annotate-commands  | …   | Functions which should get a richer completion display. |
 
 ## Acknowledgments
 
