@@ -966,17 +966,13 @@ INPUT is the input string."
    input
    (if-let (annotate
             (and consult--annotate-command
-                 (alist-get (car consult--annotate-command) consult-annotate-commands)))
+                 (alist-get consult--annotate-command consult-annotate-commands)))
        (mapcar (lambda (cand) (or (funcall annotate cand) cand)) candidates)
      candidates)))
 
-(defun consult--annotate-minibuffer-setup ()
+(defun consult--annotate-remember-command ()
   "Remember `this-command' for annotation."
-  (push this-command consult--annotate-command))
-
-(defun consult--annotate-minibuffer-exit ()
-  "Remember `this-command' for annotation."
-  (pop consult--annotate-command))
+  (setq-local consult--annotate-command this-command))
 
 ;;;###autoload
 (define-minor-mode consult-annotate-mode
@@ -990,11 +986,9 @@ INPUT is the input string."
       (progn
         (setq consult--annotate-candidates-orig selectrum-highlight-candidates-function
               selectrum-highlight-candidates-function #'consult--annotate-candidates)
-        (add-hook 'minibuffer-setup-hook #'consult--annotate-minibuffer-setup)
-        (add-hook 'minibuffer-exit-hook #'consult--annotate-minibuffer-exit))
+        (add-hook 'minibuffer-setup-hook #'consult--annotate-remember-command))
     (setq selectrum-highlight-candidates-function consult--annotate-candidates-orig)
-    (remove-hook 'minibuffer-setup-hook #'consult--annotate-minibuffer-setup)
-    (remove-hook 'minibuffer-exit-hook #'consult--annotate-minibuffer-exit)))
+    (remove-hook 'minibuffer-setup-hook #'consult--annotate-remember-command)))
 
 (provide 'consult)
 ;;; consult.el ends here
