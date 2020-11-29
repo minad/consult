@@ -101,10 +101,14 @@ use the enhanced commands, you must configure the keybindings yourself.
          ("M-s m" . consult-multi-occur)
          ("M-y" . consult-yank-pop)
          ("<help> a" . consult-apropos))
+
   :init
+
   ;; Replace functions (consult-multi-occur is a drop-in replacement)
   (fset 'multi-occur #'consult-multi-occur)
+
   :config
+
   ;; Enable richer annotations during completion
   ;; Works only with selectrum as of now.
   (consult-annotate-mode)
@@ -119,15 +123,16 @@ use the enhanced commands, you must configure the keybindings yourself.
 
 ### Configuration settings
 
-| Variable                   | Def | Description                                          |
-|----------------------------|-----|------------------------------------------------------|
-| consult-line-numbers-widen | t   | Show absolute line numbers when narrowing is active. |
-| consult-preview-buffer     | t   | Enable buffer preview during selection               |
-| consult-preview-theme      | t   | Enable theme preview during selection                |
-| consult-preview-mark       | t   | Enable mark preview during selection                 |
-| consult-preview-line       | t   | Enable line preview during selection                 |
-| consult-preview-outline    | t   | Enable outline preview during selection              |
-| consult-themes             | nil | List of themes to be presented for selection         |
+| Variable                   | Def | Description                                             |
+|----------------------------|-----|---------------------------------------------------------|
+| consult-line-numbers-widen | t   | Show absolute line numbers when narrowing is active.    |
+| consult-preview-buffer     | t   | Enable buffer preview during selection                  |
+| consult-preview-theme      | t   | Enable theme preview during selection                   |
+| consult-preview-mark       | t   | Enable mark preview during selection                    |
+| consult-preview-line       | t   | Enable line preview during selection                    |
+| consult-preview-outline    | t   | Enable outline preview during selection                 |
+| consult-themes             | nil | List of themes to be presented for selection            |
+| consult-annotate-commands  | …   | Functions which should get a richer completion display. |
 
 ## Acknowledgments
 

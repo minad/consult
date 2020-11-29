@@ -897,7 +897,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
 (defvar consult--annotate-candidates-orig nil
   "Original highlighting function stored by `consult-annotate-mode'.")
 
-(defvar consult-annotate-command-alist
+(defcustom consult-annotate-commands
   '((describe-function . consult-annotate-symbol)
     (describe-variable . consult-annotate-symbol)
     (describe-face . consult-annotate-face)
@@ -905,7 +905,9 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
     (helpful-callable . consult-annotate-symbol)
     (helpful-variable . consult-annotate-symbol)
     (helpful-command . consult-annotate-symbol))
-  "List of functions which should be enriched by `consult-annotate-candidates'.")
+  "Functions which should a richer completion display, if `consult-annotate-mode' is enabled."
+  :type 'alist
+  :group 'consult)
 
 (defun consult--annotate-candidates (input candidates)
   "Annotate CANDIDATES with richer information.
@@ -915,7 +917,7 @@ INPUT is the input string."
    input
    (if-let (annotate
             (and consult--annotate-command
-                 (alist-get consult--annotate-command consult-annotate-command-alist)))
+                 (alist-get consult--annotate-command consult-annotate-commands)))
        (mapcar annotate candidates)
      candidates)))
 
