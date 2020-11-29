@@ -190,6 +190,27 @@ nil shows all `custom-available-themes'."
 
 ;;;; Helper functions
 
+;; HACK until selectrum provides a better api
+;; see https://github.com/minad/consult/issues/11
+(defmacro consult--selectrum-disable-sort (body)
+  `(minibuffer-with-setup-hook
+       (lambda () (setq-local selectrum-should-sort-p nil))
+     ,body))
+
+;; HACK until selectrum provides a better api
+;; see https://github.com/minad/consult/issues/11
+(defmacro consult--selectrum-disable-move-default (body)
+  (let ((advice (make-symbol "advice")))
+    `(if (bound-and-true-p selectrum-mode)
+         (letrec ((advice (lambda (args)
+                            (advice-remove #'selectrum-read advice)
+                            (append args '(:no-move-default-candidate t)))))
+           (advice-add #'selectrum-read :filter-args advice)
+           (unwind-protect
+               ,body
+             (advice-remove #'selectrum-read advice)))
+       ,body)))
+
 (defun consult--truncate-first-line (str)
   "Truncate documentation string STR."
   (truncate-string-to-width (car (split-string str "\n")) 80 0 32 "…"))
@@ -527,13 +548,14 @@ This command obeys narrowing."
   (consult--goto
    (let ((candidates (consult--gc-increase (consult--line-candidates))))
      (save-excursion
-       (consult--read "Go to line: " (cdr candidates)
-                      :sort nil
-                      :require-match t
-                      :history 'consult-line-history
-                      :lookup (lambda (candidates x) (cdr (assoc x candidates)))
-                      :default (car candidates)
-                      :preview (and consult-preview-line #'consult--preview-line))))))
+       (consult--selectrum-disable-move-default
+        (consult--read "Go to line: " (cdr candidates)
+                       :sort nil
+                       :require-match t
+                       :history 'consult-line-history
+                       :lookup (lambda (candidates x) (cdr (assoc x candidates)))
+                       :default (car candidates)
+                       :preview (and consult-preview-line #'consult--preview-line)))))))
 
 (defun consult--recent-file-read ()
   "Read recent file via `completing-read'."
@@ -795,10 +817,10 @@ OPEN-BUFFER is used for preview."
         (state (set-window-configuration state))
         (buf (when (get-buffer buf)
                (consult--with-window
-                 (funcall open-buffer buf))))
-      (let ((selectrum-should-sort-p))
-        (selectrum-read "Switch to: " generate
-                        :history 'consult-buffer-history)))))
+                (funcall open-buffer buf))))
+      (consult--selectrum-disable-sort
+       (selectrum-read "Switch to: " generate
+                       :history 'consult-buffer-history)))))
 
 ;; TODO consult--buffer-default does not support prefixes
 ;; for narrowing like the Selectrum variant!
