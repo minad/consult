@@ -202,13 +202,13 @@ nil shows all `custom-available-themes'."
 (defmacro consult--selectrum-no-move-default (body)
   (let ((advice (make-symbol "advice")))
     `(if (bound-and-true-p selectrum-mode)
-         (letrec ((advice (lambda (args)
-                            (advice-remove #'selectrum-read advice)
+         (letrec ((,advice (lambda (args)
+                            (advice-remove #'selectrum-read ,advice)
                             (append args '(:no-move-default-candidate t)))))
-           (advice-add #'selectrum-read :filter-args advice)
+           (advice-add #'selectrum-read :filter-args ,advice)
            (unwind-protect
                ,body
-             (advice-remove #'selectrum-read advice)))
+             (advice-remove #'selectrum-read ,advice)))
        ,body)))
 
 (defun consult--truncate-first-line (str)
@@ -282,7 +282,7 @@ BODY is the body expression."
   "Temporarily increase the gc limit in BODY to optimize for throughput."
   `(let ((gc-cons-threshold (max gc-cons-threshold 67108864))
          (gc-cons-percentage 0.5))
-         ,@body))
+     ,@body))
 
 (defun consult--window ()
   "Return live window."
@@ -306,15 +306,15 @@ ARG is the command argument."
      (remove-overlays nil nil 'consult-overlay t))
     ('preview
      (consult--with-window
-       (goto-char arg)
-       (recenter)
-       (remove-overlays nil nil 'consult-overlay t)
-       (let ((ov (make-overlay (line-beginning-position) (line-end-position))))
-         (overlay-put ov 'face 'consult-preview-line)
-         (overlay-put ov 'consult-overlay t))
-       (let ((ov (make-overlay (point) (1+ (point)))))
-         (overlay-put ov 'face 'consult-preview-cursor)
-         (overlay-put ov 'consult-overlay t))))))
+      (goto-char arg)
+      (recenter)
+      (remove-overlays nil nil 'consult-overlay t)
+      (let ((ov (make-overlay (line-beginning-position) (line-end-position))))
+        (overlay-put ov 'face 'consult-preview-line)
+        (overlay-put ov 'consult-overlay t))
+      (let ((ov (make-overlay (point) (1+ (point)))))
+        (overlay-put ov 'face 'consult-preview-cursor)
+        (overlay-put ov 'consult-overlay t))))))
 
 (cl-defun consult--read (prompt candidates &key
                                 predicate require-match history default
@@ -836,7 +836,7 @@ OPEN-BUFFER is used for preview."
                               ('preview
                                (when (get-buffer arg)
                                  (consult--with-window
-                                   (funcall open-buffer arg))))))))
+                                  (funcall open-buffer arg))))))))
 
 (defun consult--buffer (open-buffer open-file open-bookmark)
   "Backend implementation of `consult-buffer'.
@@ -972,9 +972,9 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
   (when-let* ((pkg (intern (replace-regexp-in-string "-[[:digit:]\\.-]+$" "" cand)))
               ;; taken from embark.el, originally `describe-package-1`
               (desc (or (car (alist-get pkg package-alist))
-                     (if-let ((built-in (assq pkg package--builtins)))
-                         (package--from-builtin built-in)
-                       (car (alist-get pkg package-archive-contents))))))
+                        (if-let ((built-in (assq pkg package--builtins)))
+                            (package--from-builtin built-in)
+                          (car (alist-get pkg package-archive-contents))))))
     ;; TODO selectrum specific!
     (propertize cand
                 'selectrum-candidate-display-right-margin
