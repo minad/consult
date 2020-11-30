@@ -1013,21 +1013,36 @@ INPUT is the input string."
   "Remember `this-command' for annotation."
   (setq-local consult--annotate-this-command this-command))
 
+(defun consult--replace-annotation-function (fun metadata prop)
+  "Advice for `completion-metadata-get'.
+Replaces the annotation function.
+FUN is the original function.
+METADATA is the metadata.
+PROP is the property which is looked up."
+  (or
+   (and (eq prop 'annotation-function)
+        consult--annotate-this-command
+        (alist-get consult--annotate-this-command consult-annotate-alist))
+   (funcall fun metadata prop)))
+
 ;;;###autoload
 (define-minor-mode consult-annotate-mode
   "Annotate candidates with richer information."
   :global t
-  ;; TODO is there a possibility to hook into the other completion systems,
-  ;; in order to allow similar annotations?
-  ;; Probably there is some possibility to hook into the Emacs completion metadata access
-  ;; and overwriting it there.
   (if consult-annotate-mode
-      (progn
-        (setq consult--selectrum-highlight-candidates selectrum-highlight-candidates-function
-              selectrum-highlight-candidates-function #'consult--selectrum-annotate-candidates)
-        (add-hook 'minibuffer-setup-hook #'consult--annotate-remember-command))
-    (setq selectrum-highlight-candidates-function consult--selectrum-highlight-candidates)
-    (remove-hook 'minibuffer-setup-hook #'consult--annotate-remember-command)))
+      (add-hook 'minibuffer-setup-hook #'consult--annotate-remember-command)
+    (remove-hook 'minibuffer-setup-hook #'consult--annotate-remember-command))
+  (if (bound-and-true-p selectrum-mode)
+      (if consult-annotate-mode
+          (setq consult--selectrum-highlight-candidates selectrum-highlight-candidates-function
+                selectrum-highlight-candidates-function #'consult--selectrum-annotate-candidates)
+        (setq selectrum-highlight-candidates-function consult--selectrum-highlight-candidates))
+    ;; TODO is there a better way to replace the annotation function?
+    ;; TODO unfortunately annotations are not shown in the icomplete-vertical minibuffer it seem
+    ;; https://github.com/oantolin/icomplete-vertical/issues/16
+    (if consult-annotate-mode
+        (advice-add #'completion-metadata-get :around #'consult--replace-annotation-function)
+      (advice-remove #'completion-metadata-get #'consult--replace-annotation-function))))
 
 (provide 'consult)
 ;;; consult.el ends here

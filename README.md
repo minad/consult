@@ -114,8 +114,7 @@ use the enhanced commands, you must configure the keybindings yourself.
 
   :config
 
-  ;; Enable richer annotations during completion
-  ;; Works only with selectrum as of now.
+  ;; Enable richer annotations during completion.
   (consult-annotate-mode)
 
   ;; Enable richer annotations for M-x.
