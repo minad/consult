@@ -353,12 +353,12 @@ PREVIEW is a preview function."
                  (consp (car candidates)))) ;; alist
   ;; alists can only be used if require-match=t
   (cl-assert (or (not (and (consp candidates) (consp (car candidates)))) require-match))
-  (consult--preview preview
-      (funcall preview 'save)
-      (state (funcall preview 'restore state))
-      (cand (when-let (cand (funcall lookup candidates cand))
-              (funcall preview 'preview cand)))
-    (funcall lookup candidates
+  (funcall lookup candidates
+           (consult--preview preview
+               (funcall preview 'save)
+               (state (funcall preview 'restore state))
+               (cand (when-let (cand (funcall lookup candidates cand))
+                       (funcall preview 'preview cand)))
              (completing-read
               prompt
               (if (and sort (not category))
