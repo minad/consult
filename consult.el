@@ -301,6 +301,12 @@ BODY are the body expressions."
   "Run BODY with current live window."
   `(with-selected-window (consult--window) ,@body))
 
+(defun consult--overlay (beg end face)
+  "Make consult overlay between BEG and END with FACE."
+  (let ((ov (make-overlay beg end)))
+    (overlay-put ov 'face face)
+    (overlay-put ov 'consult--overlay t)))
+
 ;; TODO Matched strings are not highlighted as of now
 ;; see https://github.com/minad/consult/issues/7
 (defun consult--preview-line (cmd &optional arg)
@@ -309,19 +315,16 @@ CMD is the preview command.
 ARG is the command argument."
   (pcase cmd
     ('restore
-     (remove-overlays nil nil 'consult-overlay t))
+     (consult--with-window
+      (remove-overlays nil nil 'consult--overlay t)))
     ('preview
      (consult--with-window
       (goto-char arg)
       (recenter)
-      (remove-overlays nil nil 'consult-overlay t)
-      (let ((ov (make-overlay (line-beginning-position) (line-end-position))))
-        (overlay-put ov 'face 'consult-preview-line)
-        (overlay-put ov 'consult-overlay t))
-      (let* ((pos (point))
-             (ov (make-overlay pos (1+ pos))))
-        (overlay-put ov 'face 'consult-preview-cursor)
-        (overlay-put ov 'consult-overlay t))))))
+      (remove-overlays nil nil 'consult--overlay t)
+      (consult--overlay (line-beginning-position) (line-end-position) 'consult-preview-line)
+      (let ((pos (point)))
+        (consult--overlay pos (1+ pos) 'consult-preview-cursor))))))
 
 (cl-defun consult--read (prompt candidates &key
                                 predicate require-match history default
