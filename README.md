@@ -124,9 +124,9 @@ use the enhanced commands, you must configure the keybindings yourself.
   ;; Enable richer annotations for M-x.
   ;; Only keybindings are shown by default, in order to reduce noise for this very common command.
   ;; * consult-annotate-symbol: Annotate with the documentation string
-  ;; * consult-annotate-command-only-binding (default): Annotate only with the keybinding
-  ;; * consult-annotate-command: Annotate with the keybinding and the documentation string
-  ;; (setf (alist-get 'execute-extended-command consult-annotate-alist) #'consult-annotate-command)
+  ;; * consult-annotate-command-binding (default): Annotate only with the keybinding
+  ;; * consult-annotate-command-full: Annotate with the keybinding and the documentation string
+  ;; (setf (alist-get 'execute-extended-command consult-annotate-alist) #'consult-annotate-command-full)
 
   ;; Enable richer annotations for other functions.
   ;; (push '(my-fancy-command . consult-annotate-symbol) consult-annotate-alist)

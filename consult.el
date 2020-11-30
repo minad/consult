@@ -923,7 +923,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
 ;;;; consult-annotate-mode - Enhancing existing commands with annotations
 
 (defcustom consult-annotate-alist
-  '((execute-extended-command . consult-annotate-command-only-binding)
+  '((execute-extended-command . consult-annotate-command-binding)
     (consult-apropos . consult-annotate-symbol)
     (describe-function . consult-annotate-symbol)
     (describe-variable . consult-annotate-variable)
@@ -951,21 +951,17 @@ Annotations are only shown if `consult-annotate-mode' is enabled."
 (defvar consult--selectrum-highlight-candidates nil
   "Original highlighting function stored by `consult-annotate-mode'.")
 
-;; Taken from Emacs 28, read-extended-command--annotation
-(defun consult--command-binding (cmd)
-  "Get keybinding for command CMD."
-  (let ((binding (where-is-internal cmd overriding-local-map t)))
-    (and binding (not (stringp binding)) (key-description binding))))
-
-(defun consult-annotate-command-only-binding (cand)
+(defun consult-annotate-command-binding (cand)
   "Annotate command CAND with keybinding."
-  (when-let (binding (consult--command-binding (intern cand)))
-    (propertize (format " (%s)" binding) 'face 'consult-key)))
+  ;; Taken from Emacs 28, read-extended-command--annotation
+  (when-let* ((binding (where-is-internal (intern cand) overriding-local-map t))
+              (desc (and (not (stringp binding)) (key-description binding))))
+    (propertize (format " (%s)" desc) 'face 'consult-key)))
 
-(defun consult-annotate-command (cand)
+(defun consult-annotate-command-full (cand)
   "Annotate command CAND with binding and documentation string."
   (concat
-   (consult-annotate-command-only-binding cand)
+   (consult-annotate-command-binding cand)
    (consult-annotate-symbol cand)))
 
 (defun consult--annotation (ann)
