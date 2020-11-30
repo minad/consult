@@ -922,7 +922,9 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
     (package-install . consult-annotate-package)
     (package-delete . consult-annotate-package)
     (package-reinstall . consult-annotate-package))
-  "Functions which should a richer completion display, if `consult-annotate-mode' is enabled."
+  "List of commands which should be enriched during completion.
+The annotation function must return a string which is appended to the completion candidate.
+Annotations are only shown if `consult-annotate-mode' is enabled."
   :type '(alist :key-type symbol :value-type function)
   :group 'consult)
 
