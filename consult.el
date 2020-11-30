@@ -133,6 +133,11 @@ nil shows all `custom-available-themes'."
   :type 'boolean
   :group 'consult)
 
+(defcustom consult-annotation-width 80
+  "Width of annotation string."
+  :type 'integer
+  :group 'consult)
+
 ;;;; History variables
 
 (defvar consult-buffer-history nil
@@ -172,6 +177,7 @@ nil shows all `custom-available-themes'."
 
 (defvar selectrum-mode)
 (defvar selectrum-should-sort-p)
+(defvar selectrum--move-default-candidate-p)
 (defvar selectrum-highlight-candidates-function)
 (declare-function selectrum-read "selectrum")
 (declare-function selectrum-get-current-candidate "selectrum")
@@ -194,9 +200,9 @@ nil shows all `custom-available-themes'."
        (lambda () (setq-local ,@config))
      ,@body))
 
-(defun consult--truncate-first-line (str)
-  "Truncate documentation string STR."
-  (truncate-string-to-width (car (split-string str "\n")) 80 0 32 "…"))
+(defun consult--truncate (str width)
+  "Truncate string STR to WIDTH."
+  (truncate-string-to-width (car (split-string str "\n")) width 0 32 "…"))
 
 (defun consult--status-prefix (enabled)
   "Status prefix for given boolean ENABLED."
@@ -935,15 +941,22 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
 (defun consult-annotate-command-only-binding (cand)
   "Annotate command CAND with keybinding."
   (if-let (binding (consult--command-binding (intern cand)))
-      ;; TODO selectrum specific!
-      (propertize cand
-                  'selectrum-candidate-display-suffix
-                  (propertize (format " (%s)" binding) 'face 'completions-annotations))
+      (concat cand (propertize (format " (%s)" binding) 'face 'completions-annotations))
     cand))
 
 (defun consult-annotate-command (cand)
   "Annotate command CAND with binding and documentation string."
   (consult-annotate-symbol (consult-annotate-command-only-binding cand)))
+
+(defun consult--annotate-candidate (cand ann)
+  "Annotate candidate CAND with ANN."
+  (concat cand " "
+          (propertize
+           " "
+           'display
+           '(space :align-to (- right-fringe consult-annotation-width)))
+          (propertize (consult--truncate ann consult-annotation-width)
+                      'face 'completions-annotations)))
 
 (defun consult-annotate-symbol (cand)
   "Annotate symbol CAND with documentation string."
@@ -952,29 +965,28 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                   ((fboundp sym) (ignore-errors (documentation sym)))
                   ((facep sym) (documentation-property sym 'face-documentation))
                   (t (documentation-property sym 'variable-documentation)))))
-      ;; TODO selectrum specific!
-      (propertize cand
-                  'selectrum-candidate-display-right-margin
-                  (concat " " (consult--truncate-first-line doc)))
+      (consult--annotate-candidate cand doc)
     cand))
 
 (defun consult-annotate-variable (cand)
   "Annotate variable CAND with documentation string."
   (if-let (doc (documentation-property (intern cand) 'variable-documentation))
-      ;; TODO selectrum specific!
-      (propertize cand
-                  'selectrum-candidate-display-right-margin
-                  (concat " " (consult--truncate-first-line doc)))
+      (consult--annotate-candidate cand doc)
     cand))
 
 (defun consult-annotate-face (cand)
   "Annotate face CAND with documentation string and face example."
   (let ((sym (intern cand)))
     (if-let (doc (documentation-property sym 'face-documentation))
-        (format "%-40s    %s    %s"
-                cand
-                (propertize "abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ" 'face sym)
-                (consult--truncate-first-line doc))
+        (concat cand " "
+                (propertize
+                 " "
+                 'display
+                 '(space :align-to (- right-fringe consult-annotation-width 30)))
+                (propertize "abcdefghijklmNOPQRSTUVWXYZ" 'face sym)
+                "    "
+                (propertize (consult--truncate doc consult-annotation-width)
+                            'face 'completions-annotations))
       cand)))
 
 (defun consult-annotate-package (cand)
@@ -985,10 +997,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                       (if-let ((built-in (assq pkg package--builtins)))
                           (package--from-builtin built-in)
                         (car (alist-get pkg package-archive-contents))))))
-      ;; TODO selectrum specific!
-      (propertize cand
-                  'selectrum-candidate-display-right-margin
-                  (concat " " (consult--truncate-first-line (package-desc-summary desc))))
+      (consult--annotate-candidate cand (package-desc-summary desc))
     cand))
 
 (defun consult--annotate-candidates (input candidates)
