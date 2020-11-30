@@ -81,7 +81,7 @@
   :group 'consult)
 
 (defface consult-line-number
-  '((t :inherit completions-annotations :weight normal))
+  '((t :inherit line-number :weight normal))
   "Face used to highlight line numbers in selections."
   :group 'consult)
 
