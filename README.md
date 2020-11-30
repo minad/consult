@@ -93,7 +93,7 @@ use the enhanced commands, you must configure the keybindings yourself.
 ~~~ elisp
 ;; Example configuration
 (use-package consult
-  ;; Replace bindings
+  ;; Replace bindings. Lazily loaded due to use-package.
   :bind (("C-c o" . consult-outline)
          ("C-x b" . consult-buffer)
          ("C-x 4 b" . consult-buffer-other-window)
@@ -107,15 +107,19 @@ use the enhanced commands, you must configure the keybindings yourself.
          ("M-y" . consult-yank-pop)
          ("<help> a" . consult-apropos))
 
+  ;; The :init configuration is always executed (Not lazy!)
   :init
 
   ;; Replace functions (consult-multi-occur is a drop-in replacement)
   (fset 'multi-occur #'consult-multi-occur)
 
-  :config
-
-  ;; Enable richer annotations during completion.
+  ;; Optionally enable richer annotations during completion.
+  ;; Must be in the :init section of use-package such that the mode gets
+  ;; enabled right away. Note that this forces loading the package.
   (consult-annotate-mode)
+
+  ;; Configure other variables in the :config section, after lazily loading the package
+  :config
 
   ;; Enable richer annotations for M-x.
   ;; I have this disabled by default, since I don't want to be flooded with information.
