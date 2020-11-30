@@ -325,7 +325,8 @@ ARG is the command argument."
 
 (cl-defun consult--read (prompt candidates &key
                                 predicate require-match history default
-                                category (sort t) (lookup (lambda (_ x) x)) preview)
+                                category initial preview
+                                (sort t) (default-top t) (lookup (lambda (_ x) x)))
   "Simplified completing read function.
 
 PROMPT is the string to prompt with.
@@ -337,6 +338,8 @@ DEFAULT is the default input.
 CATEGORY is the completion category.
 SORT should be set to nil if the candidates are already sorted.
 LOOKUP is a function which is applied to the result.
+INITIAL is initial input.
+DEFAULT-TOP must be nil if the default candidate should not be moved to the top.
 PREVIEW is a preview function."
   ;; supported types
   (cl-assert (or (not candidates) ;; nil
@@ -352,7 +355,19 @@ PREVIEW is a preview function."
                (cand (when-let (cand (funcall lookup candidates cand))
                        (funcall preview 'preview cand)))
              (minibuffer-with-setup-hook
-                 (lambda () nil)
+                 (lambda ()
+                   (unless default-top
+                     (setq-local selectrum--move-default-candidate-p nil))
+                   ;; HACK: We are explicitly injecting the default input, since default inputs are
+                   ;; deprecated in the completing-read API. Selectrum consequently does not support
+                   ;; them. Maybe Selectrum should add support for initial inputs, even if this is
+                   ;; deprecated since the argument does not seem to go away any time soon.
+                   ;; There are a few special cases where one wants to use an initial input,
+                   ;; even though it should not be overused and the use of initial inputs
+                   ;; is discouraged by the Emacs documentation.
+                   (when initial
+                     (delete-minibuffer-contents)
+                     (insert initial)))
                (completing-read
                 prompt
                 (if (and sort (not category))
@@ -561,15 +576,14 @@ This command obeys narrowing."
   (consult--goto
    (let ((candidates (consult--gc-increase (consult--line-candidates))))
      (save-excursion
-       (minibuffer-with-setup-hook
-           (lambda () (setq-local selectrum--move-default-candidate-p nil))
-         (consult--read "Go to line: " (cdr candidates)
-                        :sort nil
-                        :require-match t
-                        :history 'consult-line-history
-                        :lookup (lambda (candidates x) (cdr (assoc x candidates)))
-                        :default (car candidates)
-                        :preview (and consult-preview-line #'consult--preview-line)))))))
+       (consult--read "Go to line: " (cdr candidates)
+                      :sort nil
+                      :default-top nil
+                      :require-match t
+                      :history 'consult-line-history
+                      :lookup (lambda (candidates x) (cdr (assoc x candidates)))
+                      :default (car candidates)
+                      :preview (and consult-preview-line #'consult--preview-line))))))
 
 (defun consult--recent-file-read ()
   "Read recent file via `completing-read'."
