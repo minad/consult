@@ -1044,20 +1044,33 @@ PROP is the property which is looked up."
 (define-minor-mode consult-annotate-mode
   "Annotate candidates with richer information."
   :global t
-  (if consult-annotate-mode
-      (add-hook 'minibuffer-setup-hook #'consult--annotate-remember-command)
-    (remove-hook 'minibuffer-setup-hook #'consult--annotate-remember-command))
-  (if (bound-and-true-p selectrum-mode)
-      (if consult-annotate-mode
-          (setq consult--selectrum-highlight-candidates selectrum-highlight-candidates-function
-                selectrum-highlight-candidates-function #'consult--selectrum-annotate-candidates)
-        (setq selectrum-highlight-candidates-function consult--selectrum-highlight-candidates))
-    ;; TODO is there a better way to replace the annotation function?
+
+  ;; Reset first to get a clean slate.
+  (advice-remove #'completion-metadata-get #'consult--replace-annotation-function)
+  (remove-hook 'minibuffer-setup-hook #'consult--annotate-remember-command)
+  (when (boundp 'selectrum-highlight-candidates-function)
+    (setq selectrum-highlight-candidates-function (or consult--selectrum-highlight-candidates
+                                                      selectrum-highlight-candidates-function)))
+
+  ;; Now add our tweaks.
+  (when consult-annotate-mode
+    ;; Ensure that we remember this-command in order to select the annotation function.
+    (add-hook 'minibuffer-setup-hook #'consult--annotate-remember-command)
+
+    ;; Replace Selectrum highlighter.
+    (when (boundp 'selectrum-highlight-candidates-function)
+      (setq consult--selectrum-highlight-candidates selectrum-highlight-candidates-function
+            selectrum-highlight-candidates-function #'consult--selectrum-annotate-candidates)
+      (when (eq consult--selectrum-highlight-candidates #'consult--selectrum-annotate-candidates)
+        (message "Invalid consult-annotate-mode state. Defaulting to selectrum-default-candidate-highlight-function.")
+        (setq consult--selectrum-highlight-candidates #'selectrum-default-candidate-highlight-function)))
+
+    ;; Replace the default annotation function if not using Selectrum.
+    ;; TODO is there a better way?
     ;; TODO unfortunately annotations are not shown in the icomplete-vertical minibuffer it seem
     ;; https://github.com/oantolin/icomplete-vertical/issues/16
-    (if consult-annotate-mode
-        (advice-add #'completion-metadata-get :around #'consult--replace-annotation-function)
-      (advice-remove #'completion-metadata-get #'consult--replace-annotation-function))))
+    (unless (bound-and-true-p selectrum-mode)
+      (advice-add #'completion-metadata-get :around #'consult--replace-annotation-function))))
 
 (provide 'consult)
 ;;; consult.el ends here
