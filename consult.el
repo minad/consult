@@ -929,7 +929,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
 (defvar consult--annotate-this-command nil
   "Last command symbol saved in order to allow annotations.")
 
-(defvar consult--annotate-candidates-orig nil
+(defvar consult--selectrum-highlight-candidates nil
   "Original highlighting function stored by `consult-annotate-mode'.")
 
 ;; Taken from Emacs 28, read-extended-command--annotation
@@ -940,17 +940,18 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
 
 (defun consult-annotate-command-only-binding (cand)
   "Annotate command CAND with keybinding."
-  (if-let (binding (consult--command-binding (intern cand)))
-      (concat cand (propertize (format " (%s)" binding) 'face 'completions-annotations))
-    cand))
+  (when-let (binding (consult--command-binding (intern cand)))
+    (propertize (format " (%s)" binding) 'face 'completions-annotations)))
 
 (defun consult-annotate-command (cand)
   "Annotate command CAND with binding and documentation string."
-  (consult-annotate-symbol (consult-annotate-command-only-binding cand)))
+  (concat
+   (consult-annotate-command-only-binding cand)
+   (consult-annotate-symbol cand)))
 
-(defun consult--annotate-candidate (cand ann)
-  "Annotate candidate CAND with ANN."
-  (concat cand " "
+(defun consult--annotation (ann)
+  "Format annotation string ANN."
+  (concat " "
           (propertize
            " "
            'display
@@ -960,56 +961,52 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
 
 (defun consult-annotate-symbol (cand)
   "Annotate symbol CAND with documentation string."
-  (if-let (doc (let ((sym (intern cand)))
-                 (cond
-                  ((fboundp sym) (ignore-errors (documentation sym)))
-                  ((facep sym) (documentation-property sym 'face-documentation))
-                  (t (documentation-property sym 'variable-documentation)))))
-      (consult--annotate-candidate cand doc)
-    cand))
+  (when-let (doc (let ((sym (intern cand)))
+                   (cond
+                    ((fboundp sym) (ignore-errors (documentation sym)))
+                    ((facep sym) (documentation-property sym 'face-documentation))
+                    (t (documentation-property sym 'variable-documentation)))))
+    (consult--annotation doc)))
 
 (defun consult-annotate-variable (cand)
   "Annotate variable CAND with documentation string."
-  (if-let (doc (documentation-property (intern cand) 'variable-documentation))
-      (consult--annotate-candidate cand doc)
-    cand))
+  (when-let (doc (documentation-property (intern cand) 'variable-documentation))
+    (consult--annotation doc)))
 
 (defun consult-annotate-face (cand)
   "Annotate face CAND with documentation string and face example."
   (let ((sym (intern cand)))
-    (if-let (doc (documentation-property sym 'face-documentation))
-        (concat cand " "
-                (propertize
-                 " "
-                 'display
-                 '(space :align-to (- right-fringe consult-annotation-width 30)))
-                (propertize "abcdefghijklmNOPQRSTUVWXYZ" 'face sym)
-                "    "
-                (propertize (consult--truncate doc consult-annotation-width)
-                            'face 'completions-annotations))
-      cand)))
+    (when-let (doc (documentation-property sym 'face-documentation))
+      (concat " "
+              (propertize
+               " "
+               'display
+               '(space :align-to (- right-fringe consult-annotation-width 30)))
+              (propertize "abcdefghijklmNOPQRSTUVWXYZ" 'face sym)
+              "    "
+              (propertize (consult--truncate doc consult-annotation-width)
+                          'face 'completions-annotations)))))
 
 (defun consult-annotate-package (cand)
   "Annotate package CAND with documentation."
-  (if-let* ((pkg (intern (replace-regexp-in-string "-[[:digit:]\\.-]+$" "" cand)))
-            ;; taken from embark.el, originally `describe-package-1`
-            (desc (or (car (alist-get pkg package-alist))
-                      (if-let ((built-in (assq pkg package--builtins)))
-                          (package--from-builtin built-in)
-                        (car (alist-get pkg package-archive-contents))))))
-      (consult--annotate-candidate cand (package-desc-summary desc))
-    cand))
+  (when-let* ((pkg (intern (replace-regexp-in-string "-[[:digit:]\\.-]+$" "" cand)))
+              ;; taken from embark.el, originally `describe-package-1`
+              (desc (or (car (alist-get pkg package-alist))
+                        (if-let ((built-in (assq pkg package--builtins)))
+                            (package--from-builtin built-in)
+                          (car (alist-get pkg package-archive-contents))))))
+    (consult--annotation (package-desc-summary desc))))
 
-(defun consult--annotate-candidates (input candidates)
+(defun consult--selectrum-annotate-candidates (input candidates)
   "Annotate CANDIDATES with richer information.
 INPUT is the input string."
   (funcall
-   consult--annotate-candidates-orig
+   consult--selectrum-highlight-candidates
    input
    (if-let (annotate
             (and consult--annotate-this-command
                  (alist-get consult--annotate-this-command consult-annotate-alist)))
-       (mapcar annotate candidates)
+       (mapcar (lambda (cand) (concat cand (funcall annotate cand))) candidates)
      candidates)))
 
 (defun consult--annotate-remember-command ()
@@ -1026,10 +1023,10 @@ INPUT is the input string."
   ;; and overwriting it there.
   (if consult-annotate-mode
       (progn
-        (setq consult--annotate-candidates-orig selectrum-highlight-candidates-function
-              selectrum-highlight-candidates-function #'consult--annotate-candidates)
+        (setq consult--selectrum-highlight-candidates selectrum-highlight-candidates-function
+              selectrum-highlight-candidates-function #'consult--selectrum-annotate-candidates)
         (add-hook 'minibuffer-setup-hook #'consult--annotate-remember-command))
-    (setq selectrum-highlight-candidates-function consult--annotate-candidates-orig)
+    (setq selectrum-highlight-candidates-function consult--selectrum-highlight-candidates)
     (remove-hook 'minibuffer-setup-hook #'consult--annotate-remember-command)))
 
 (provide 'consult)
