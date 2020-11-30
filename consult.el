@@ -1049,6 +1049,7 @@ METADATA is the metadata.
 PROP is the property which is looked up."
   (or
    (and (eq prop 'annotation-function)
+        (not (bound-and-true-p selectrum-mode))
         consult--annotate-this-command
         (alist-get consult--annotate-this-command consult-annotate-alist))
    (funcall fun metadata prop)))
