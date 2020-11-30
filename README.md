@@ -16,19 +16,19 @@ since both packages already bring their own rich set of additional commands.
 
 consult-annotate-mode
 
-![consult-annotate-mode](https://github.com/minad/consult/blob/master/images/consult-annotate-mode.gif?raw=true|height)
+![consult-annotate-mode](https://github.com/minad/consult/blob/master/images/consult-annotate-mode.png?raw=true|height)
 
 consult-mark
 
-![consult-mark](https://github.com/minad/consult/blob/master/images/consult-mark.gif?raw=true|height)
+![consult-mark](https://github.com/minad/consult/blob/master/images/consult-mark.png?raw=true|height)
 
 consult-line
 
-![consult-line](https://github.com/minad/consult/blob/master/images/consult-line.gif?raw=true)
+![consult-line](https://github.com/minad/consult/blob/master/images/consult-line.png?raw=true)
 
 consult-outline
 
-![consult-outline](https://github.com/minad/consult/blob/master/images/consult-outline.gif?raw=true)
+![consult-outline](https://github.com/minad/consult/blob/master/images/consult-outline.png?raw=true)
 
 ## Available commands
 
