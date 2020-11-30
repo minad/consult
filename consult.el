@@ -185,6 +185,14 @@ nil shows all `custom-available-themes'."
 (defvar consult-minor-mode-history nil
   "History for the command `consult-minor-mode'.")
 
+;;;; Internal variables
+
+(defvar consult--gc-threshold 67108864
+  "Large gc threshold for temporary increase.")
+
+(defvar consult--gc-percentage 0.5
+  "Large gc percentage for temporary increase.")
+
 ;;;; Pre-declarations for external packages
 
 (defvar icomplete-mode)
@@ -197,6 +205,7 @@ nil shows all `custom-available-themes'."
 (declare-function selectrum-read "selectrum")
 (declare-function selectrum-get-current-candidate "selectrum")
 (declare-function selectrum--minibuffer-post-command-hook "selectrum")
+(declare-function selectrum-default-candidate-highlight-function "selectrum")
 
 (defvar package--builtins)
 (defvar package-alist)
@@ -284,8 +293,9 @@ BODY is the body expression."
 
 (defmacro consult--gc-increase (&rest body)
   "Temporarily increase the gc limit in BODY to optimize for throughput."
-  `(let ((gc-cons-threshold (max gc-cons-threshold 67108864))
-         (gc-cons-percentage 0.5))
+  `(let* ((overwrite (> consult--gc-threshold gc-cons-threshold))
+          (gc-cons-threshold (if overwrite consult--gc-threshold gc-cons-threshold))
+          (gc-cons-percentage (if overwrite consult--gc-percentage gc-cons-percentage)))
      ,@body))
 
 (defun consult--window ()
@@ -940,7 +950,8 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
     (package-delete . consult-annotate-package)
     (package-reinstall . consult-annotate-package))
   "List of commands which should be enriched during completion.
-The annotation function must return a string which is appended to the completion candidate.
+The annotation function must return a string,
+which is appended to the completion candidate.
 Annotations are only shown if `consult-annotate-mode' is enabled."
   :type '(alist :key-type symbol :value-type function)
   :group 'consult)
