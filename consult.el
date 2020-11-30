@@ -273,23 +273,23 @@ CALLBACK is called with the current candidate."
         (advice-remove #'minibuffer-complete-word advice)
         (advice-remove #'minibuffer-completion-help advice))))))
 
-(defmacro consult--preview (enabled save restore preview body)
+(defmacro consult--preview (enabled save restore preview &rest body)
   "Preview support for completion.
 ENABLED must be t to enable preview.
 SAVE is an expression which returns some state to save before preview.
 RESTORE is a pair (variable . expression) which restores the state.
 PREVIEW is a pair (variable . expression) which previews the given candidate.
-BODY is the body expression."
+BODY are the body expressions."
   (declare (indent 4))
   (let ((finalize (make-symbol "finalize")))
     `(if ,enabled
          (let ((,(car restore) ,save)
                (,finalize (consult--preview-setup (lambda (,(car preview)) ,@(cdr preview)))))
            (unwind-protect
-               ,body
+               ,(if (cdr body) `(progn ,@body) (car body))
              (funcall ,finalize)
              ,@(cdr restore)))
-       ,body)))
+       ,@body)))
 
 (defmacro consult--gc-increase (&rest body)
   "Temporarily increase the gc limit in BODY to optimize for throughput."
