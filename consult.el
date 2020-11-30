@@ -215,15 +215,6 @@ nil shows all `custom-available-themes'."
 
 ;;;; Helper functions
 
-;; HACK until selectrum provides a better api
-;; see https://github.com/minad/consult/issues/11
-(defmacro consult--configure-minibuffer (config &rest body)
-  "Set CONFIG in minibuffer opened by BODY."
-  (declare (indent 1))
-  `(minibuffer-with-setup-hook
-       (lambda () (setq-local ,@config))
-     ,@body))
-
 (defun consult--truncate (str width)
   "Truncate string STR to WIDTH."
   (truncate-string-to-width (car (split-string str "\n")) width 0 32 "…"))
@@ -273,6 +264,7 @@ CALLBACK is called with the current candidate."
         (advice-remove #'minibuffer-complete-word advice)
         (advice-remove #'minibuffer-completion-help advice))))))
 
+;; TODO find a solution which is guaranteed to work with recursive minibuffers
 (defmacro consult--preview (enabled save restore preview &rest body)
   "Preview support for completion.
 ENABLED must be t to enable preview.
@@ -359,18 +351,20 @@ PREVIEW is a preview function."
                (state (funcall preview 'restore state))
                (cand (when-let (cand (funcall lookup candidates cand))
                        (funcall preview 'preview cand)))
-             (completing-read
-              prompt
-              (if (and sort (not category))
-                  candidates
-                (lambda (str pred action)
-                  (if (eq action 'metadata)
-                      `(metadata
-                        ,@(if category `((category . ,category)))
-                        ,@(if (not sort) '((cycle-sort-function . identity)
-                                           (display-sort-function . identity))))
-                    (complete-with-action action candidates str pred))))
-              predicate require-match nil history default))))
+             (minibuffer-with-setup-hook
+                 (lambda () nil)
+               (completing-read
+                prompt
+                (if (and sort (not category))
+                    candidates
+                  (lambda (str pred action)
+                    (if (eq action 'metadata)
+                        `(metadata
+                          ,@(if category `((category . ,category)))
+                          ,@(if (not sort) '((cycle-sort-function . identity)
+                                             (display-sort-function . identity))))
+                      (complete-with-action action candidates str pred))))
+                predicate require-match nil history default)))))
 
 (defsubst consult--pad-line-number (width line)
   "Optimized formatting for LINE number with padding. WIDTH is the line number width."
@@ -567,8 +561,8 @@ This command obeys narrowing."
   (consult--goto
    (let ((candidates (consult--gc-increase (consult--line-candidates))))
      (save-excursion
-       (consult--configure-minibuffer
-           (selectrum--move-default-candidate-p nil)
+       (minibuffer-with-setup-hook
+           (lambda () (setq-local selectrum--move-default-candidate-p nil))
          (consult--read "Go to line: " (cdr candidates)
                         :sort nil
                         :require-match t
@@ -838,8 +832,8 @@ OPEN-BUFFER is used for preview."
         (buf (when (get-buffer buf)
                (consult--with-window
                 (funcall open-buffer buf))))
-      (consult--configure-minibuffer
-          (selectrum-should-sort-p nil)
+      (minibuffer-with-setup-hook
+          (lambda () (setq-local selectrum-should-sort-p nil))
         (selectrum-read "Switch to: " generate
                         :history 'consult-buffer-history)))))
 
