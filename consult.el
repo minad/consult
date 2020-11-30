@@ -65,6 +65,21 @@
   "Face used to highlight lighters in `consult-minor-mode'."
   :group 'consult)
 
+(defface consult-key
+  '((t :inherit font-lock-keyword-face :weight normal))
+  "Face used to highlight keys in `consult-annotate-mode'."
+  :group 'consult)
+
+(defface consult-variable
+  '((t :inherit font-lock-keyword-face :weight normal))
+  "Face used to highlight variable values in `consult-annotate-mode'."
+  :group 'consult)
+
+(defface consult-annotation
+  '((t :inherit completions-annotations :weight normal))
+  "Face used to highlight documentation string in `consult-annotate-mode'."
+  :group 'consult)
+
 (defface consult-file
   '((t :inherit font-lock-function-name-face :weight normal))
   "Face used to highlight files in `consult-buffer'."
@@ -852,27 +867,27 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                                           'face 'consult-view
                                           ;; TODO remove selectrum specifics if possible?
                                           'selectrum-candidate-display-right-margin
-                                          ;; TODO the completions-annotations face is ignored by selectrum?
+                                          ;; TODO the consult-annotation face is ignored by selectrum?
                                           ;; see https://github.com/raxod502/selectrum/issues/236
-                                          (propertize " View" 'face 'completions-annotations)))
+                                          (propertize " View" 'face 'consult-annotation)))
                             (bookmark-view-names))))
          (bookmarks (mapcar (lambda (x)
                               (propertize (car x)
                                           'face 'consult-bookmark
                                           ;; TODO remove selectrum specifics if possible?
                                           'selectrum-candidate-display-right-margin
-                                          ;; TODO the completions-annotations face is ignored by selectrum?
+                                          ;; TODO the consult-annotation face is ignored by selectrum?
                                           ;; see https://github.com/raxod502/selectrum/issues/236
-                                          (propertize " Bookmark" 'face 'completions-annotations)))
+                                          (propertize " Bookmark" 'face 'consult-annotation)))
                             bookmark-alist))
          (all-files (mapcar (lambda (x)
                               (propertize (abbreviate-file-name x)
                                           'face 'consult-file
                                           ;; TODO remove selectrum specifics if possible?
                                           'selectrum-candidate-display-right-margin
-                                          ;; TODO the completions-annotations face is ignored by selectrum?
+                                          ;; TODO the consult-annotation face is ignored by selectrum?
                                           ;; see https://github.com/raxod502/selectrum/issues/236
-                                          (propertize " File" 'face 'completions-annotations)))
+                                          (propertize " File" 'face 'consult-annotation)))
                             recentf-list))
          (files (remove curr-file all-files))
          (selected (if (bound-and-true-p selectrum-mode)
@@ -943,7 +958,7 @@ Annotations are only shown if `consult-annotate-mode' is enabled."
 (defun consult-annotate-command-only-binding (cand)
   "Annotate command CAND with keybinding."
   (when-let (binding (consult--command-binding (intern cand)))
-    (propertize (format " (%s)" binding) 'face 'completions-annotations)))
+    (propertize (format " (%s)" binding) 'face 'consult-key)))
 
 (defun consult-annotate-command (cand)
   "Annotate command CAND with binding and documentation string."
@@ -959,7 +974,7 @@ Annotations are only shown if `consult-annotate-mode' is enabled."
            'display
            '(space :align-to (- right-fringe consult-annotation-width)))
           (propertize (consult--truncate ann consult-annotation-width)
-                      'face 'completions-annotations)))
+                      'face 'consult-annotation)))
 
 (defun consult-annotate-symbol (cand)
   "Annotate symbol CAND with documentation string."
@@ -983,10 +998,10 @@ Annotations are only shown if `consult-annotate-mode' is enabled."
                                                               (symbol-value sym)
                                                             'unbound))
                                              40)
-                          'face 'completions-annotations)
+                          'face 'consult-variable)
               "    "
               (propertize (consult--truncate doc consult-annotation-width)
-                          'face 'completions-annotations)))))
+                          'face 'consult-annotation)))))
 
 (defun consult-annotate-face (cand)
   "Annotate face CAND with documentation string and face example."
@@ -1000,7 +1015,7 @@ Annotations are only shown if `consult-annotate-mode' is enabled."
               (propertize "abcdefghijklmNOPQRSTUVWXYZ" 'face sym)
               "    "
               (propertize (consult--truncate doc consult-annotation-width)
-                          'face 'completions-annotations)))))
+                          'face 'consult-annotation)))))
 
 (defun consult-annotate-package (cand)
   "Annotate package CAND with documentation."
