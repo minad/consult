@@ -187,16 +187,11 @@ nil shows all `custom-available-themes'."
 
 ;; HACK until selectrum provides a better api
 ;; see https://github.com/minad/consult/issues/11
-(defmacro consult--selectrum-no-sort (&rest body)
-  "Configure selectrum in BODY: Do not sort the candidates."
+(defmacro consult--configure-minibuffer (config &rest body)
+  "Set CONFIG in minibuffer opened by BODY."
+  (declare (indent 1))
   `(minibuffer-with-setup-hook
-       (lambda () (setq-local selectrum-should-sort-p nil))
-     ,@body))
-
-(defmacro consult--selectrum-no-move-default (&rest body)
-  "Configure selectrum in BODY: Do not sort the candidates."
-  `(minibuffer-with-setup-hook
-       (lambda () (setq-local selectrum--move-default-candidate-p nil))
+       (lambda () (setq-local ,@config))
      ,@body))
 
 (defun consult--truncate-first-line (str)
@@ -541,14 +536,15 @@ This command obeys narrowing."
   (consult--goto
    (let ((candidates (consult--gc-increase (consult--line-candidates))))
      (save-excursion
-       (consult--selectrum-no-move-default
-        (consult--read "Go to line: " (cdr candidates)
-                       :sort nil
-                       :require-match t
-                       :history 'consult-line-history
-                       :lookup (lambda (candidates x) (cdr (assoc x candidates)))
-                       :default (car candidates)
-                       :preview (and consult-preview-line #'consult--preview-line)))))))
+       (consult--configure-minibuffer
+           (selectrum--move-default-candidate-p nil)
+         (consult--read "Go to line: " (cdr candidates)
+                        :sort nil
+                        :require-match t
+                        :history 'consult-line-history
+                        :lookup (lambda (candidates x) (cdr (assoc x candidates)))
+                        :default (car candidates)
+                        :preview (and consult-preview-line #'consult--preview-line)))))))
 
 (defun consult--recent-file-read ()
   "Read recent file via `completing-read'."
@@ -811,9 +807,10 @@ OPEN-BUFFER is used for preview."
         (buf (when (get-buffer buf)
                (consult--with-window
                 (funcall open-buffer buf))))
-      (consult--selectrum-no-sort
-       (selectrum-read "Switch to: " generate
-                       :history 'consult-buffer-history)))))
+      (consult--configure-minibuffer
+          (selectrum-should-sort-p nil)
+        (selectrum-read "Switch to: " generate
+                        :history 'consult-buffer-history)))))
 
 ;; TODO consult--buffer-default does not support prefixes
 ;; for narrowing like the Selectrum variant!
