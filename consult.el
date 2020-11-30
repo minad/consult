@@ -923,7 +923,8 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
 ;;;; consult-annotate-mode - Enhancing existing commands with annotations
 
 (defcustom consult-annotate-alist
-  '((consult-apropos . consult-annotate-symbol)
+  '((execute-extended-command . consult-annotate-command-only-binding)
+    (consult-apropos . consult-annotate-symbol)
     (describe-function . consult-annotate-symbol)
     (describe-variable . consult-annotate-variable)
     (describe-face . consult-annotate-face)
