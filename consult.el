@@ -970,8 +970,21 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
 
 (defun consult-annotate-variable (cand)
   "Annotate variable CAND with documentation string."
-  (when-let (doc (documentation-property (intern cand) 'variable-documentation))
-    (consult--annotation doc)))
+  (let ((sym (intern cand)))
+    (when-let (doc (documentation-property sym 'variable-documentation))
+      (concat " "
+              (propertize
+               " "
+               'display
+               '(space :align-to (- right-fringe consult-annotation-width 30)))
+              (propertize (consult--truncate (format "%S" (if (boundp sym)
+                                                              (symbol-value sym)
+                                                            'unbound))
+                                             40)
+                          'face 'completions-annotations)
+              "    "
+              (propertize (consult--truncate doc consult-annotation-width)
+                          'face 'completions-annotations)))))
 
 (defun consult-annotate-face (cand)
   "Annotate face CAND with documentation string and face example."
