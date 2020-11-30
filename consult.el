@@ -55,7 +55,7 @@
   "Face used to for line previews."
   :group 'consult)
 
-(defface consult-cursor
+(defface consult-preview-cursor
   '((t :inherit match))
   "Face used to for cursor previews and marks in `cursor-mark'."
   :group 'consult)
@@ -302,7 +302,7 @@ ARG is the command argument."
         (overlay-put ov 'consult-overlay t))
       (let* ((pos (point))
              (ov (make-overlay pos (1+ pos))))
-        (overlay-put ov 'face 'consult-cursor)
+        (overlay-put ov 'face 'consult-preview-cursor)
         (overlay-put ov 'consult-overlay t))))))
 
 (cl-defun consult--read (prompt candidates &key
@@ -463,9 +463,9 @@ The alist contains (string . position) pairs."
                    (end (1+ col))
                    (cand (if (> end (length lstr))
                              (concat (substring lstr 0 col)
-                                     (propertize " " 'face 'consult-cursor))
+                                     (propertize " " 'face 'consult-preview-cursor))
                            (concat (substring lstr 0 col)
-                                   (propertize (substring lstr col end) 'face 'consult-cursor)
+                                   (propertize (substring lstr col end) 'face 'consult-preview-cursor)
                                    (substring lstr end)))))
               (setq max-line (max line max-line))
               (push (cons (cons line cand) marker) unformatted-candidates))))))
