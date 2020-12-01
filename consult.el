@@ -60,18 +60,18 @@
   "Face used to for cursor previews and marks in `cursor-mark'."
   :group 'consult)
 
-(defface consult-lighter
-  '((t :inherit font-lock-keyword-face :weight normal))
-  "Face used to highlight lighters in `consult-minor-mode'."
-  :group 'consult)
-
 (defface consult-key
   '((t :inherit font-lock-keyword-face :weight normal))
   "Face used to highlight keys in `consult-annotate-mode'."
   :group 'consult)
 
+(defface consult-lighter
+  '((t :inherit consult-key))
+  "Face used to highlight lighters in `consult-minor-mode'."
+  :group 'consult)
+
 (defface consult-variable
-  '((t :inherit font-lock-keyword-face :weight normal))
+  '((t :inherit consult-key))
   "Face used to highlight variable values in `consult-annotate-mode'."
   :group 'consult)
 
