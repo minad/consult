@@ -354,34 +354,34 @@ PREVIEW is a preview function."
                  (consp (car candidates)))) ;; alist
   ;; alists can only be used if require-match=t
   (cl-assert (or (not (and (consp candidates) (consp (car candidates)))) require-match))
-  (funcall
-   lookup candidates
-   (consult--preview preview
-       (funcall preview 'save)
-       (state (funcall preview 'restore state))
-       (cand (when-let (cand (funcall lookup candidates cand))
-               (funcall preview 'preview cand)))
-     ;; HACK: We are explicitly injecting the default input, since default inputs are deprecated
-     ;; in the completing-read API. Selectrum's completing-read consequently does not support
-     ;; them. Maybe Selectrum should add support for initial inputs, even if this is deprecated
-     ;; since the argument does not seem to go away any time soon. There are a few special cases
-     ;; where one wants to use an initial input, even though it should not be overused and the use
-     ;; of initial inputs is discouraged by the Emacs documentation.
-     (setq consult--selectrum-options
-           (append (unless default-top '(:no-move-default-candidate t))
-                   (when initial `(:initial-input ,initial))))
-     (completing-read
-      prompt
-      (if (and sort (not category))
-          candidates
-        (lambda (str pred action)
-          (if (eq action 'metadata)
-              `(metadata
-                ,@(if category `((category . ,category)))
-                ,@(if (not sort) '((cycle-sort-function . identity)
-                                   (display-sort-function . identity))))
-            (complete-with-action action candidates str pred))))
-      predicate require-match initial history default))))
+  ;; HACK: We are explicitly injecting the default input, since default inputs are deprecated
+  ;; in the completing-read API. Selectrum's completing-read consequently does not support
+  ;; them. Maybe Selectrum should add support for initial inputs, even if this is deprecated
+  ;; since the argument does not seem to go away any time soon. There are a few special cases
+  ;; where one wants to use an initial input, even though it should not be overused and the use
+  ;; of initial inputs is discouraged by the Emacs documentation.
+  (setq consult--selectrum-options
+        `(,@(unless default-top '(:no-move-default-candidate t))
+          ,@(when initial `(:initial-input ,initial))))
+  (let ((candidates-fun
+         (if (and sort (not category))
+             candidates
+           (lambda (str pred action)
+             (if (eq action 'metadata)
+                 `(metadata
+                   ,@(if category `((category . ,category)))
+                   ,@(if (not sort) '((cycle-sort-function . identity)
+                                      (display-sort-function . identity))))
+               (complete-with-action action candidates str pred))))))
+    (funcall
+     lookup candidates
+     (consult--preview preview
+         (funcall preview 'save)
+         (state (funcall preview 'restore state))
+         (cand (when-let (cand (funcall lookup candidates cand))
+                 (funcall preview 'preview cand)))
+       (completing-read prompt candidates-fun
+                        predicate require-match initial history default)))))
 
 (defsubst consult--pad-line-number (width line)
   "Optimized formatting for LINE number with padding. WIDTH is the line number width."
