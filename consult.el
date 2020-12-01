@@ -971,9 +971,6 @@ Annotations are only shown if `consult-annotate-mode' is enabled."
 (defvar consult--annotate-this-command nil
   "Last command symbol saved in order to allow annotations.")
 
-(defvar consult--selectrum-highlight-candidates nil
-  "Original highlighting function stored by `consult-annotate-mode'.")
-
 (defun consult-annotate-command-binding (cand)
   "Annotate command CAND with keybinding."
   ;; Taken from Emacs 28, read-extended-command--annotation
@@ -1048,21 +1045,13 @@ Annotations are only shown if `consult-annotate-mode' is enabled."
                           (car (alist-get pkg package-archive-contents))))))
     (consult--annotation (package-desc-summary desc))))
 
-(defun consult--selectrum-annotate-candidates (input candidates)
-  "Annotate CANDIDATES with richer information.
-INPUT is the input string."
-  (funcall
-   consult--selectrum-highlight-candidates
-   input
-   (if-let (annotate
-            (and consult--annotate-this-command
-                 (alist-get consult--annotate-this-command consult-annotate-alist)))
-       (mapcar (lambda (cand) (concat cand (funcall annotate cand))) candidates)
-     candidates)))
-
-(defun consult--annotate-remember-command ()
-  "Remember `this-command' for annotation."
-  (setq-local consult--annotate-this-command this-command))
+(defun consult--annotate-candidates (candidates)
+  "Annotate CANDIDATES with richer information."
+  (if-let (annotate
+           (and consult--annotate-this-command
+                (alist-get consult--annotate-this-command consult-annotate-alist)))
+      (mapcar (lambda (cand) (concat cand (funcall annotate cand))) candidates)
+    candidates))
 
 (defun consult--replace-annotation-function (fun metadata prop)
   "Advice for `completion-metadata-get'.
@@ -1077,6 +1066,17 @@ PROP is the property which is looked up."
         (alist-get consult--annotate-this-command consult-annotate-alist))
    (funcall fun metadata prop)))
 
+
+(defun consult--annotate-minibuffer-setup ()
+  "Setup minibuffer for `consult-annotate-mode'.
+Remember `this-command' for annotation and replace highlighting function."
+  (let ((orig selectrum-highlight-candidates-function))
+    (setq-local
+     consult--annotate-this-command this-command
+     selectrum-highlight-candidates-function
+     (lambda (input candidates)
+       (consult--annotate-candidates (funcall orig input candidates))))))
+
 ;;;###autoload
 (define-minor-mode consult-annotate-mode
   "Annotate candidates with richer information."
@@ -1084,23 +1084,12 @@ PROP is the property which is looked up."
 
   ;; Reset first to get a clean slate.
   (advice-remove #'completion-metadata-get #'consult--replace-annotation-function)
-  (remove-hook 'minibuffer-setup-hook #'consult--annotate-remember-command)
-  (when (boundp 'selectrum-highlight-candidates-function)
-    (setq selectrum-highlight-candidates-function (or consult--selectrum-highlight-candidates
-                                                      selectrum-highlight-candidates-function)))
+  (remove-hook 'minibuffer-setup-hook #'consult--annotate-minibuffer-setup)
 
   ;; Now add our tweaks.
   (when consult-annotate-mode
     ;; Ensure that we remember this-command in order to select the annotation function.
-    (add-hook 'minibuffer-setup-hook #'consult--annotate-remember-command)
-
-    ;; Replace Selectrum highlighter.
-    (when (boundp 'selectrum-highlight-candidates-function)
-      (setq consult--selectrum-highlight-candidates selectrum-highlight-candidates-function
-            selectrum-highlight-candidates-function #'consult--selectrum-annotate-candidates)
-      (when (eq consult--selectrum-highlight-candidates #'consult--selectrum-annotate-candidates)
-        (message "Invalid consult-annotate-mode state. Defaulting to selectrum-default-candidate-highlight-function.")
-        (setq consult--selectrum-highlight-candidates #'selectrum-default-candidate-highlight-function)))
+    (add-hook 'minibuffer-setup-hook #'consult--annotate-minibuffer-setup)
 
     ;; Replace the default annotation function if not using Selectrum.
     ;; TODO is there a better way?
