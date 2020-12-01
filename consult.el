@@ -193,10 +193,6 @@ nil shows all `custom-available-themes'."
 (defvar consult--gc-percentage 0.5
   "Large gc percentage for temporary increase.")
 
-;; used by `consult--selectrum-read-with-options'
-(defvar consult--selectrum-options nil
-  "Additional options passed to the next `selectrum-read' call.")
-
 (defvar consult--preview-stack nil
   "Stack of active preview functions.")
 
@@ -299,6 +295,17 @@ ARG is the command argument."
       (let ((pos (point)))
         (consult--overlay-add pos (1+ pos) 'consult-preview-cursor))))))
 
+;; HACK: Hopefully selectrum adds something like this to the official API.
+;; https://github.com/raxod502/selectrum/issues/243
+;; https://github.com/raxod502/selectrum/pull/244
+(defun consult--selectrum-config (options)
+  "Add OPTIONS to the next `selectrum-read' call."
+  (when (and options (bound-and-true-p selectrum-mode))
+    (letrec ((advice (lambda (orig prompt candidates &rest args)
+                       (advice-remove #'selectrum-read advice)
+                       (apply orig prompt candidates (append options args)))))
+      (advice-add #'selectrum-read :around advice))))
+
 (cl-defun consult--read (prompt candidates &key
                                 predicate require-match history default
                                 category initial preview
@@ -330,9 +337,9 @@ PREVIEW is a preview function."
   ;; since the argument does not seem to go away any time soon. There are a few special cases
   ;; where one wants to use an initial input, even though it should not be overused and the use
   ;; of initial inputs is discouraged by the Emacs documentation.
-  (setq consult--selectrum-options
-        `(,@(unless default-top '(:no-move-default-candidate t))
-          ,@(when initial `(:initial-input ,initial))))
+  (consult--selectrum-config
+   `(,@(unless default-top '(:no-move-default-candidate t))
+     ,@(when initial `(:initial-input ,initial))))
   (let ((candidates-fun
          (if (and sort (not category))
              candidates
@@ -1136,20 +1143,6 @@ Remember `this-command' for annotation and replace highlighting function."
     ;; https://github.com/oantolin/icomplete-vertical/issues/16
     (unless (bound-and-true-p selectrum-mode)
       (advice-add #'completion-metadata-get :around #'consult--replace-annotation-function))))
-
-;; HACK: Hopefully selectrum adds something like this to the official API.
-;; https://github.com/raxod502/selectrum/issues/243
-;; https://github.com/raxod502/selectrum/pull/244
-(defun consult--selectrum-read-with-options (orig prompt candidates &rest options)
-  "Prompt user with PROMPT to select one of CANDIDATES.
-OPTIONS and `consult--selectrum-options' are passed to `selectrum-read'.
-ORIG is the original function."
-  (setq options (append consult--selectrum-options options)
-        consult--selectrum-options nil)
-  (apply orig prompt candidates options))
-
-(eval-after-load 'selectrum
-  (advice-add #'selectrum-read :around #'consult--selectrum-read-with-options))
 
 (provide 'consult)
 ;;; consult.el ends here
