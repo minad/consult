@@ -665,20 +665,20 @@ Otherwise replace the just-yanked text with the selected text."
 
 (defun consult--register-candidates ()
   "Return alist of register descriptions and register names."
-  (cl-remove-if
-   #'null
-   (mapcar
-    (lambda (r)
-      ;; Sometimes, registers are made without a `cdr'.  They don't do anything,
-      ;; and should be ignored.
-      (when (cdr r)
-        (setq r (car r))
-        (cons (format "%s: %s"
-                      (single-key-description r)
-                      (register-describe-oneline r))
-              r)))
-    (or (sort (copy-sequence register-alist) #'car-less-than-car)
-        (user-error "All registers are empty")))))
+  (mapcar
+   (lambda (r)
+     (setq r (car r))
+     (cons (format "%s: %s"
+                   (single-key-description r)
+                   (register-describe-oneline r))
+           r))
+   (or
+    ;; Sometimes, registers are made without a `cdr'.
+    ;; Such registers don't do anything, and can be ignored.
+    (sort (seq-filter (lambda (r) (cdr r))
+                      (copy-sequence register-alist))
+          #'car-less-than-car)
+    (user-error "All registers are empty"))))
 
 ;;;###autoload
 (defun consult-register (reg)
