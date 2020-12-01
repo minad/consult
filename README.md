@@ -1,16 +1,19 @@
 # consult.el - Consulting completing-read
 
-This package provides various commands based on the Emacs completion function `completing-read`, in particular
-a more advanced buffer switching command and a variant of [Swiper](https://github.com/abo-abo/swiper#swiper).
-The commands are compatible with completion-systems based on the standard Emacs API,
-e.g., the Emacs builtin [Icomplete](https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html) and
-[Selectrum](https://github.com/raxod502/selectrum). If Icomplete is used, it is recommended
-to install [Icomplete-vertical](https://github.com/oantolin/icomplete-vertical).
-The goal is to keep the completion-system specifics in this package to a minimum.
+This package provides various commands based on the Emacs completion function
+`completing-read`, in particular a more advanced buffer switching command and a
+variant of [Swiper](https://github.com/abo-abo/swiper#swiper). The commands are
+compatible with completion-systems based on the standard Emacs API, e.g., the
+Emacs builtin
+[Icomplete](https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html)
+and [Selectrum](https://github.com/raxod502/selectrum). If Icomplete is used, it
+is recommended to install
+[Icomplete-vertical](https://github.com/oantolin/icomplete-vertical). The goal
+is to keep the completion-system specifics in this package to a minimum.
 
-Note that if you use [Ivy](https://github.com/abo-abo/swiper#ivy)
-or [Helm](https://github.com/emacs-helm/helm), you don't need Consult,
-since both packages already bring their own rich set of additional commands.
+Note that if you use [Ivy](https://github.com/abo-abo/swiper#ivy) or
+[Helm](https://github.com/emacs-helm/helm), you don't need Consult, since both
+packages already bring their own rich set of additional commands.
 
 ## Screenshots
 
@@ -32,31 +35,37 @@ consult-outline
 
 ## Available commands
 
-Most provided commands follow the naming scheme `consult-thing`. Furthermore there is `consult-annotate-mode` which enriches
-the completion display with documentation strings.
+Most provided commands follow the naming scheme `consult-thing`. Furthermore
+there is `consult-annotate-mode` which enriches the completion display with
+documentation strings.
 
 ### Virtual Buffers
 
-  * `consult-buffer` (`-other-window`, `-other-frame`): Enhanced version of `switch-to-buffer` with support for virtual buffers.
-     Supports live preview and recursive editing while previewing.
-     If Selectrum is used `consult-buffer` supports prefixes for narrowing.
-     You can type `b SPC`, `f SPC`, `m SPC` and `v SPC` in order to narrow
-     to buffers, files, bookmarks and views respectively.
-     Unfortunately this is (not yet?) supported by the generic `completing-read` implementation.
-  * `consult-bookmark`: Select or create bookmark. You might prefer the more powerful `consult-buffer` instead, which includes bookmarks.
-  * `consult-recent-file` (`-other-window`, `-other-frame`): Select a recent files.
-     You might prefer the more powerful `consult-buffer` instead, which includes recent files.
+  * `consult-buffer` (`-other-window`, `-other-frame`): Enhanced version of
+     `switch-to-buffer` with support for virtual buffers. Supports live preview
+     and recursive editing while previewing. If Selectrum is used
+     `consult-buffer` supports prefixes for narrowing. You can type `b SPC`, `f
+     SPC`, `m SPC` and `v SPC` in order to narrow to buffers, files, bookmarks
+     and views respectively. Unfortunately this is (not yet?) supported by the
+     generic `completing-read` implementation.
+  * `consult-bookmark`: Select or create bookmark. You might prefer the more
+    powerful `consult-buffer` instead, which includes bookmarks.
+  * `consult-recent-file` (`-other-window`, `-other-frame`): Select a recent
+     files. You might prefer the more powerful `consult-buffer` instead, which
+     includes recent files.
 
 ### Editing
 
   * `consult-register`: Select from list of registers.
-  * `consult-yank`, `consult-yank-pop`: Enhanced version of `yank` and `yank-pop` which allows selecting from the kill-ring.
+  * `consult-yank`, `consult-yank-pop`: Enhanced version of `yank` and
+    `yank-pop` which allows selecting from the kill-ring.
 
 ### Help/Discoverability
 
   * `consult-apropos`: Replacement for `apropos` with completion.
-  * `consult-annotate-mode`: Enable this mode to annotates completions with richer information
-    (e.g. `M-x`, `describe-face`, `describe-symbol`, `helpful-function`, etc).
+  * `consult-annotate-mode`: Enable this mode to annotates completions with
+    richer information (e.g. `M-x`, `describe-face`, `describe-symbol`,
+    `helpful-function`, etc).
 
 ### Histories
 
@@ -65,33 +74,37 @@ the completion display with documentation strings.
 
 ### Jumping and Search
 
-  * `consult-line`: Jump to a line matching the selected text. Supports live preview and recursive editing of the preview.
-  * `consult-line-symbol-at-point`: Search by `consult-line` for symbol at point.
-  * `consult-line-from-isearch`: Fast switch searching from `isearch` to `consult-line`.
-  * `consult-mark`: Jump to a marker in the `mark-ring`. Supports live preview and recursive editing of the preview.
-  * `consult-outline`: Jump to a heading of the outline. Supports live preview and recursive editing of the preview.
+  * `consult-line` (`-symbol-at-point`, `-from-isearch`): Select from matching
+    lines. Supports live preview and recursive editing of the preview. There are
+    two variants, which search for the symbol at point and for the most
+    recent isearch string respectively.
+  * `consult-mark`: Jump to a marker in the `mark-ring`. Supports live preview
+    and recursive editing of the preview.
+  * `consult-outline`: Jump to a heading of the outline. Supports live preview
+    and recursive editing of the preview.
   * `consult-multi-occur`: Replacement for `multi-occur`.
 
 ### Miscellaneous
 
   * `consult-minor-mode`: Enable/disable minor mode.
-  * `consult-theme`: Select a theme and disable all currently enabled themes. Supports live preview of the theme while
-    scrolling through the candidates.
+  * `consult-theme`: Select a theme and disable all currently enabled themes.
+    Supports live preview of the theme while scrolling through the candidates.
 
 ## Live previews
 
-Some of the commands support live previews. For example when you scroll through the items of `consult-line`,
-the buffer will jump to the corresponding position. It is possible to jump back and forth between
-the minibuffer and the buffer to perform recursive editing while a search is ongoing. In case
-you do not like live previews or find them distracting, for each of the commands supporting preview, there
-is a customizable variable which allows disabling the preview.
-In order for live previews to work you must enable `consult-preview-mode`.
+Some of the commands support live previews. For example when you scroll through
+the items of `consult-line`, the buffer will jump to the corresponding position.
+It is possible to jump back and forth between the minibuffer and the buffer to
+perform recursive editing while a search is ongoing. In case you do not like
+live previews or find them distracting, for each of the commands supporting
+preview, there is a customizable variable which allows disabling the preview. In
+order for live previews to work you must enable `consult-preview-mode`.
 
 ## Package configuration
 
-It is recommended to manage package configurations with `use-package`.
-The Consult package only provides commands and does not add any keybindings. In order to
-use the enhanced commands, you must configure the keybindings yourself.
+It is recommended to manage package configurations with `use-package`. The
+Consult package only provides commands and does not add any keybindings. In
+order to use the enhanced commands, you must configure the keybindings yourself.
 
 ~~~ elisp
 ;; Example configuration
@@ -155,8 +168,9 @@ use the enhanced commands, you must configure the keybindings yourself.
 
 ## Acknowledgments
 
-You probably guessed from the name that this package is inspired by and partially derived from
-[Counsel](https://github.com/abo-abo/swiper#counsel) (Author Oleh Krehel, Copyright Free Software Foundation, Inc.).
-Note that we are far from counsel in terms of covered functionality.
-Furthermore some of the commands found in this package were taken from the
-[Selectrum wiki](https://github.com/raxod502/selectrum/wiki/Useful-Commands).
+You probably guessed from the name that this package is inspired by and
+partially derived from [Counsel](https://github.com/abo-abo/swiper#counsel)
+(Author Oleh Krehel, Copyright Free Software Foundation, Inc.). Note that we are
+far from counsel in terms of covered functionality. Furthermore some of the
+commands found in this package were taken from the [Selectrum
+wiki](https://github.com/raxod502/selectrum/wiki/Useful-Commands).
