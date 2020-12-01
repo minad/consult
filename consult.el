@@ -550,7 +550,7 @@ WIDTH is the line number width."
 (defun consult-line (&optional initial)
   "Search for a matching line and jump to the line beginning.
 The default candidate is a non-empty line closest to point.
-This command obeys narrowing. Optionaly you can provide INITIAL input."
+This command obeys narrowing. Optionally you can provide INITIAL input."
   (interactive)
   (consult--goto
    (let ((candidates (consult--gc-increase (consult--line-candidates))))
@@ -562,7 +562,7 @@ This command obeys narrowing. Optionaly you can provide INITIAL input."
                       :history 'consult-line-history
                       :lookup (lambda (candidates x) (cdr (assoc x candidates)))
                       :default (car candidates)
-		      :initial initial
+                      :initial initial
                       :preview (and consult-preview-line #'consult--preview-line))))))
 
 ;;;###autoload
@@ -575,7 +575,9 @@ This command obeys narrowing. Optionaly you can provide INITIAL input."
 (defun consult-line-from-isearch ()
   "Search by lines from isearch string."
   (interactive)
-  (consult-line isearch-string))
+  (consult-line (if isearch-regexp
+		    isearch-string
+		  (regexp-quote isearch-string))))
 
 (defun consult--recent-file-read ()
   "Read recent file via `completing-read'."
