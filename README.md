@@ -66,6 +66,8 @@ the completion display with documentation strings.
 ### Jumping and Search
 
   * `consult-line`: Jump to a line matching the selected text. Supports live preview and recursive editing of the preview.
+  * `consult-line-symbol-at-point`: Search by `consult-line` for symbol at point.
+  * `consult-line-from-isearch`: Fast switch searching from `isearch` to `consult-line`.
   * `consult-mark`: Jump to a marker in the `mark-ring`. Supports live preview and recursive editing of the preview.
   * `consult-outline`: Jump to a heading of the outline. Supports live preview and recursive editing of the preview.
   * `consult-multi-occur`: Replacement for `multi-occur`.
