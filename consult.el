@@ -1070,12 +1070,11 @@ PROP is the property which is looked up."
 (defun consult--annotate-minibuffer-setup ()
   "Setup minibuffer for `consult-annotate-mode'.
 Remember `this-command' for annotation and replace highlighting function."
+  (setq-local consult--annotate-this-command this-command)
   (let ((orig selectrum-highlight-candidates-function))
-    (setq-local
-     consult--annotate-this-command this-command
-     selectrum-highlight-candidates-function
-     (lambda (input candidates)
-       (consult--annotate-candidates (funcall orig input candidates))))))
+    (setq-local selectrum-highlight-candidates-function
+                (lambda (input candidates)
+                  (consult--annotate-candidates (funcall orig input candidates))))))
 
 ;;;###autoload
 (define-minor-mode consult-annotate-mode
