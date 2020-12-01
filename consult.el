@@ -1013,7 +1013,7 @@ Annotations are only shown if `consult-annotate-mode' is enabled."
     (propertize (format " (%s)" desc) 'face 'consult-key)))
 
 (defun consult-annotate-command-full (cand)
-  "Annotate command CAND with binding and documentation string."
+  "Annotate command CAND with the keybinding and its documentation string."
   (concat
    (consult-annotate-command-binding cand)
    (consult-annotate-symbol cand)))
@@ -1029,7 +1029,7 @@ Annotations are only shown if `consult-annotate-mode' is enabled."
                       'face 'consult-annotation)))
 
 (defun consult-annotate-symbol (cand)
-  "Annotate symbol CAND with documentation string."
+  "Annotate symbol CAND with its documentation string."
   (when-let (doc (let ((sym (intern cand)))
                    (cond
                     ((fboundp sym) (ignore-errors (documentation sym)))
@@ -1038,7 +1038,7 @@ Annotations are only shown if `consult-annotate-mode' is enabled."
     (consult--annotation doc)))
 
 (defun consult-annotate-variable (cand)
-  "Annotate variable CAND with documentation string."
+  "Annotate variable CAND with its documentation string."
   (let ((sym (intern cand)))
     (when-let (doc (documentation-property sym 'variable-documentation))
       (concat " "
@@ -1070,7 +1070,7 @@ Annotations are only shown if `consult-annotate-mode' is enabled."
                           'face 'consult-annotation)))))
 
 (defun consult-annotate-package (cand)
-  "Annotate package CAND with documentation."
+  "Annotate package CAND with its description summary."
   (when-let* ((pkg (intern (replace-regexp-in-string "-[[:digit:]\\.-]+$" "" cand)))
               ;; taken from embark.el, originally `describe-package-1`
               (desc (or (car (alist-get pkg package-alist))
@@ -1080,7 +1080,7 @@ Annotations are only shown if `consult-annotate-mode' is enabled."
     (consult--annotation (package-desc-summary desc))))
 
 (defun consult-annotate-customization-group (cand)
-  "Annotate customization group CAND with documentation string."
+  "Annotate customization group CAND with its documentation string."
   (when-let (doc (documentation-property (intern cand) 'group-documentation))
     (consult--annotation doc)))
 
@@ -1118,7 +1118,7 @@ Remember `this-command' for annotation and replace highlighting function."
 
 ;;;###autoload
 (define-minor-mode consult-annotate-mode
-  "Annotate candidates with richer information."
+  "Annotate completion candidates with richer information."
   :global t
 
   ;; Reset first to get a clean slate.
