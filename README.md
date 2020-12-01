@@ -83,6 +83,7 @@ the buffer will jump to the corresponding position. It is possible to jump back 
 the minibuffer and the buffer to perform recursive editing while a search is ongoing. In case
 you do not like live previews or find them distracting, for each of the commands supporting preview, there
 is a customizable variable which allows disabling the preview.
+In order for live previews to work you must enable `consult-preview-mode`.
 
 ## Package configuration
 
