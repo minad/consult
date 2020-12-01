@@ -947,6 +947,15 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
 (defcustom consult-annotate-alist
   '((execute-extended-command . consult-annotate-command-binding)
     (consult-apropos . consult-annotate-symbol)
+    (customize-face . consult-annotate-face)
+    (customize-face-other-window . consult-annotate-face)
+    (customize-group . consult-annotate-customization-group)
+    (customize-group-other-window . consult-annotate-customization-group)
+    (customize-option . consult-annotate-variable)
+    (customize-option-other-window . consult-annotate-variable)
+    (customize-set-variable . consult-annotate-variable)
+    (customize-variable . consult-annotate-variable)
+    (customize-variable-other-window . consult-annotate-variable)
     (describe-function . consult-annotate-symbol)
     (describe-variable . consult-annotate-variable)
     (describe-face . consult-annotate-face)
@@ -1047,6 +1056,11 @@ Annotations are only shown if `consult-annotate-mode' is enabled."
                             (package--from-builtin built-in)
                           (car (alist-get pkg package-archive-contents))))))
     (consult--annotation (package-desc-summary desc))))
+
+(defun consult-annotate-customization-group (cand)
+  "Annotate customization group CAND with documentation string."
+  (when-let (doc (documentation-property (intern cand) 'group-documentation))
+    (consult--annotation doc)))
 
 (defun consult--selectrum-annotate-candidates (input candidates)
   "Annotate CANDIDATES with richer information.
