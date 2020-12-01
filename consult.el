@@ -550,7 +550,7 @@ WIDTH is the line number width."
 (defun consult-line (&optional initial)
   "Search for a matching line and jump to the line beginning.
 The default candidate is a non-empty line closest to point.
-This command obeys narrowing. Optionally you can provide INITIAL input."
+This command obeys narrowing. Optionally INITIAL input can be provided."
   (interactive)
   (consult--goto
    (let ((candidates (consult--gc-increase (consult--line-candidates))))
