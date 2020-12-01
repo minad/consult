@@ -672,7 +672,9 @@ Otherwise replace the just-yanked text with the selected text."
                    (single-key-description r)
                    (register-describe-oneline r))
            r))
-   (or (sort (copy-sequence register-alist) #'car-less-than-car)
+   ;; Sometimes, registers are made without a `cdr'.
+   ;; Such registers don't do anything, and can be ignored.
+   (or (sort (seq-filter #'cdr register-alist) #'car-less-than-car)
        (user-error "All registers are empty"))))
 
 ;;;###autoload
