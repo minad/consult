@@ -113,6 +113,10 @@ use the enhanced commands, you must configure the keybindings yourself.
   ;; Replace functions (consult-multi-occur is a drop-in replacement)
   (fset 'multi-occur #'consult-multi-occur)
 
+  ;; Optionally enable previews. Note that individual previews can be disabled
+  ;; via customization variables.
+  (consult-preview-mode)
+
   ;; Optionally enable richer annotations during completion.
   ;; Must be in the :init section of use-package such that the mode gets
   ;; enabled right away. Note that this forces loading the package.

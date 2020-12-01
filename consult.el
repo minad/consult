@@ -197,6 +197,9 @@ nil shows all `custom-available-themes'."
 (defvar consult--selectrum-options nil
   "Additional options passed to the next `selectrum-read' call.")
 
+(defvar consult--preview-stack nil
+  "Stack of active preview functions.")
+
 ;;;; Pre-declarations for external packages
 
 (defvar icomplete-mode)
@@ -229,45 +232,6 @@ nil shows all `custom-available-themes'."
                   (propertize "+ " 'face 'consult-on)
                 (propertize "- " 'face 'consult-off))))
 
-;; TODO this function contains completion-system specifics
-;; is there a more general mechanism which works everywhere or can this be cleaned up?
-(defun consult--preview-setup (callback)
-  "Begin preview by hooking into the completion system.
-Returns a function which must be called at the end of the preview.
-CALLBACK is called with the current candidate."
-  (cond
-   ;; TODO is there a better selectrum api to achieve this?
-   ;; see https://github.com/raxod502/selectrum/issues/239
-   ((bound-and-true-p selectrum-mode)
-    (let ((advice (lambda ()
-                    (when-let (cand (selectrum-get-current-candidate))
-                      (funcall callback cand)))))
-      (advice-add #'selectrum--minibuffer-post-command-hook :after advice)
-      (lambda () (advice-remove #'selectrum--minibuffer-post-command-hook advice))))
-   ;; TODO is icomplete-post-command-hook the right function to add the advice?
-   ((bound-and-true-p icomplete-mode)
-    (let ((advice (lambda ()
-                    (when-let (cand (car completion-all-sorted-completions))
-                      (funcall callback cand)))))
-      (advice-add #'icomplete-post-command-hook :after advice)
-      (lambda () (advice-remove #'icomplete-post-command-hook advice))))
-   ;; TODO for default Emacs completion, I advise three functions. Is there a better way?
-   (t
-    (let ((advice (lambda (&rest _)
-                    (let ((cand (minibuffer-contents)))
-                      (when (test-completion cand
-                                             minibuffer-completion-table
-                                             minibuffer-completion-predicate)
-                        (funcall callback cand))))))
-      (advice-add #'minibuffer-complete-word  :after advice)
-      (advice-add #'minibuffer-complete :after advice)
-      (advice-add #'minibuffer-completion-help  :after advice)
-      (lambda ()
-        (advice-remove #'minibuffer-complete advice)
-        (advice-remove #'minibuffer-complete-word advice)
-        (advice-remove #'minibuffer-completion-help advice))))))
-
-;; TODO find a solution which is guaranteed to work with recursive minibuffers
 (defmacro consult--preview (enabled save restore preview &rest body)
   "Preview support for completion.
 ENABLED must be t to enable preview.
@@ -276,15 +240,14 @@ RESTORE is a pair (variable . expression) which restores the state.
 PREVIEW is a pair (variable . expression) which previews the given candidate.
 BODY are the body expressions."
   (declare (indent 4))
-  (let ((finalize (make-symbol "finalize")))
-    `(if ,enabled
-         (let ((,(car restore) ,save)
-               (,finalize (consult--preview-setup (lambda (,(car preview)) ,@(cdr preview)))))
-           (unwind-protect
-               ,(if (cdr body) `(progn ,@body) (car body))
-             (funcall ,finalize)
-             ,@(cdr restore)))
-       ,@body)))
+  `(if ,enabled
+       (let ((,(car restore) ,save))
+         (push (lambda (,(car preview)) ,@(cdr preview)) consult--preview-stack)
+         (unwind-protect
+             ,(if (cdr body) `(progn ,@body) (car body))
+           (pop consult--preview-stack)
+           ,@(cdr restore)))
+     ,@body))
 
 (defmacro consult--gc-increase (&rest body)
   "Temporarily increase the gc limit in BODY to optimize for throughput."
@@ -939,6 +902,63 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
   "Enhanced `switch-to-buffer-other-window' command with support for virtual buffers."
   (interactive)
   (consult--buffer #'switch-to-buffer #'find-file #'bookmark-jump))
+
+;;;; consult-preview-mode - Enabling preview for consult commands
+
+(defun consult--preview-selectrum ()
+  "Preview function used for Selectrum."
+  (when-let* ((fun (car consult--preview-stack))
+              (cand (selectrum-get-current-candidate)))
+    (funcall fun cand)))
+
+(defun consult--preview-icomplete ()
+  "Preview function used for Icomplete."
+  (when-let* ((fun (car consult--preview-stack))
+              (cand (car completion-all-sorted-completions)))
+    (funcall fun cand)))
+
+(defun consult--preview-default (&rest _)
+  "Preview function used for the default completion system."
+  (unless (or (bound-and-true-p selectrum-mode)
+              (bound-and-true-p icomplete-mode))
+    (when-let (fun (car consult--preview-stack))
+      (let ((cand (minibuffer-contents)))
+        (when (test-completion cand
+                               minibuffer-completion-table
+                               minibuffer-completion-predicate)
+          (funcall fun cand))))))
+
+;; TODO this function contains completion-system specifics
+;; is there a more general mechanism which works everywhere or can this be cleaned up?
+;; TODO is there a better selectrum api to achieve this?
+;; see https://github.com/raxod502/selectrum/issues/239
+;; TODO is icomplete-post-command-hook the right function to add the advice?
+;; TODO for default Emacs completion, I advise three functions. Is there a better way?
+;;;###autoload
+(define-minor-mode consult-preview-mode
+  "Enable preview for consult commands."
+  :global t
+
+  ;; Reset first to get a clean slate.
+  (when (fboundp 'selectrum--minibuffer-post-command-hook)
+    (advice-remove #'selectrum--minibuffer-post-command-hook #'consult--preview-selectrum))
+  (when (fboundp 'icomplete-post-command-hook)
+    (advice-remove #'icomplete-post-command-hook #'consult--preview-icomplete))
+  (advice-remove #'minibuffer-complete #'consult--preview-default)
+  (advice-remove #'minibuffer-complete-word #'consult--preview-default)
+  (advice-remove #'minibuffer-completion-help #'consult--preview-default)
+
+  ;; Now add our advices.
+  (when consult-preview-mode
+    (when (fboundp 'selectrum--minibuffer-post-command-hook)
+      (advice-add #'selectrum--minibuffer-post-command-hook :after #'consult--preview-selectrum))
+    (when (fboundp 'icomplete-post-command-hook)
+      (advice-add #'icomplete-post-command-hook :after #'consult--preview-icomplete))
+    (unless (or (bound-and-true-p selectrum-mode)
+                (bound-and-true-p icomplete-mode))
+      (advice-add #'minibuffer-complete-word  :after #'consult--preview-default)
+      (advice-add #'minibuffer-complete :after #'consult--preview-default)
+      (advice-add #'minibuffer-completion-help  :after #'consult--preview-default))))
 
 ;;;; consult-annotate-mode - Enhancing existing commands with annotations
 
