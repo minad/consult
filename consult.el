@@ -773,6 +773,29 @@ Otherwise replace the just-yanked text with the selected text."
           (enable-theme theme)
         (load-theme theme :no-confirm)))))
 
+;;;###autoload
+(defun consult-org-capture ()
+  "Choose a capture template."
+  (let (prefixes)
+    (alet (mapcan (lambda (x)
+                    (let ((x-keys (car x)))
+                      ;; Remove prefixed keys until we get one that matches the current item.
+                      (while (and prefixes
+                                  (let ((p1-keys (caar prefixes)))
+                                    (or
+                                     (<= (length x-keys) (length p1-keys))
+                                     (not (string-prefix-p p1-keys x-keys)))))
+                        (pop prefixes))
+                      (if (> (length x) 2)
+                          (let ((desc (mapconcat #'cadr (reverse (cons x prefixes)) " | ")))
+                            (list (format "%-5s %s" x-keys desc)))
+                        (push x prefixes)
+                        nil)))
+                  (-> org-capture-templates
+                      (org-capture-upgrade-templates)
+                      (org-contextualize-keys org-capture-templates-contexts)))
+      (funcall #'org-capture nil (car (split-string (completing-read "Capture template: " it nil t)))) )))
+
 ;; TODO consult--buffer-selectrum performs dynamic computation of the candidate set.
 ;; this is currently not supported by completing-read+selectrum.
 ;; therefore the selectrum api is used directly.
