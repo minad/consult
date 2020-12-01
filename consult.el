@@ -193,6 +193,10 @@ nil shows all `custom-available-themes'."
 (defvar consult--gc-percentage 0.5
   "Large gc percentage for temporary increase.")
 
+;; used by `consult--selectrum-read-with-options'
+(defvar consult--selectrum-options nil
+  "Additional options passed to the next `selectrum-read' call.")
+
 ;;;; Pre-declarations for external packages
 
 (defvar icomplete-mode)
@@ -200,7 +204,6 @@ nil shows all `custom-available-themes'."
 
 (defvar selectrum-mode)
 (defvar selectrum-should-sort-p)
-(defvar selectrum--move-default-candidate-p)
 (defvar selectrum-highlight-candidates-function)
 (declare-function selectrum-read "selectrum")
 (declare-function selectrum-get-current-candidate "selectrum")
@@ -358,32 +361,27 @@ PREVIEW is a preview function."
        (state (funcall preview 'restore state))
        (cand (when-let (cand (funcall lookup candidates cand))
                (funcall preview 'preview cand)))
-     (minibuffer-with-setup-hook
-         (lambda ()
-           (unless default-top
-             (setq-local selectrum--move-default-candidate-p nil))
-           ;; HACK: We are explicitly injecting the default input, since default inputs are
-           ;; deprecated in the completing-read API. Selectrum consequently does not support
-           ;; them. Maybe Selectrum should add support for initial inputs, even if this is
-           ;; deprecated since the argument does not seem to go away any time soon.
-           ;; There are a few special cases where one wants to use an initial input,
-           ;; even though it should not be overused and the use of initial inputs
-           ;; is discouraged by the Emacs documentation.
-           (when initial
-             (delete-minibuffer-contents)
-             (insert initial)))
-       (completing-read
-        prompt
-        (if (and sort (not category))
-            candidates
-          (lambda (str pred action)
-            (if (eq action 'metadata)
-                `(metadata
-                  ,@(if category `((category . ,category)))
-                  ,@(if (not sort) '((cycle-sort-function . identity)
-                                     (display-sort-function . identity))))
-              (complete-with-action action candidates str pred))))
-        predicate require-match nil history default)))))
+     ;; HACK: We are explicitly injecting the default input, since default inputs are deprecated
+     ;; in the completing-read API. Selectrum's completing-read consequently does not support
+     ;; them. Maybe Selectrum should add support for initial inputs, even if this is deprecated
+     ;; since the argument does not seem to go away any time soon. There are a few special cases
+     ;; where one wants to use an initial input, even though it should not be overused and the use
+     ;; of initial inputs is discouraged by the Emacs documentation.
+     (setq consult--selectrum-options
+           (append (unless default-top '(:no-move-default-candidate t))
+                   (when initial `(:initial-input ,initial))))
+     (completing-read
+      prompt
+      (if (and sort (not category))
+          candidates
+        (lambda (str pred action)
+          (if (eq action 'metadata)
+              `(metadata
+                ,@(if category `((category . ,category)))
+                ,@(if (not sort) '((cycle-sort-function . identity)
+                                   (display-sort-function . identity))))
+            (complete-with-action action candidates str pred))))
+      predicate require-match initial history default))))
 
 (defsubst consult--pad-line-number (width line)
   "Optimized formatting for LINE number with padding. WIDTH is the line number width."
@@ -1097,6 +1095,20 @@ Remember `this-command' for annotation and replace highlighting function."
     ;; https://github.com/oantolin/icomplete-vertical/issues/16
     (unless (bound-and-true-p selectrum-mode)
       (advice-add #'completion-metadata-get :around #'consult--replace-annotation-function))))
+
+;; HACK: Hopefully selectrum adds something like this to the official API.
+;; https://github.com/raxod502/selectrum/issues/243
+;; https://github.com/raxod502/selectrum/pull/244
+(defun consult--selectrum-read-with-options (orig prompt candidates &rest options)
+  "Prompt user with PROMPT to select one of CANDIDATES.
+OPTIONS and `consult--selectrum-options' are passed to `selectrum-read'.
+ORIG is the original function."
+  (setq options (append consult--selectrum-options options)
+        consult--selectrum-options nil)
+  (apply orig prompt candidates options))
+
+(eval-after-load 'selectrum
+  (advice-add #'selectrum-read :around #'consult--selectrum-read-with-options))
 
 (provide 'consult)
 ;;; consult.el ends here
