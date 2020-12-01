@@ -576,8 +576,8 @@ This command obeys narrowing. Optionally you can provide INITIAL input."
   "Search by lines from isearch string."
   (interactive)
   (consult-line (if isearch-regexp
-		    isearch-string
-		  (regexp-quote isearch-string))))
+                    isearch-string
+                  (regexp-quote isearch-string))))
 
 (defun consult--recent-file-read ()
   "Read recent file via `completing-read'."
@@ -649,18 +649,18 @@ Otherwise replace the just-yanked text with the selected text."
       (consult-yank)
     (let ((text (consult--yank-read))
           (inhibit-read-only t)
-	  (before (< (point) (mark t))))
+          (before (< (point) (mark t))))
       (setq this-command 'yank)
       (if before
-	  (funcall (or yank-undo-function 'delete-region) (point) (mark t))
+          (funcall (or yank-undo-function 'delete-region) (point) (mark t))
         (funcall (or yank-undo-function 'delete-region) (mark t) (point)))
       (setq yank-undo-function nil)
       (set-marker (mark-marker) (point) (current-buffer))
       (insert-for-yank text)
       (set-window-start (selected-window) yank-window-start t)
       (if before
-	  (goto-char (prog1 (mark t)
-		       (set-marker (mark-marker) (point) (current-buffer)))))))
+          (goto-char (prog1 (mark t)
+                       (set-marker (mark-marker) (point) (current-buffer)))))))
   nil)
 
 (defun consult--register-candidates ()
