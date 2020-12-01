@@ -200,6 +200,9 @@ nil shows all `custom-available-themes'."
 (defvar consult--preview-stack nil
   "Stack of active preview functions.")
 
+(defvar-local consult--overlays nil
+  "List of overlays used by consult.")
+
 ;;;; Pre-declarations for external packages
 
 (defvar icomplete-mode)
@@ -267,11 +270,16 @@ BODY are the body expressions."
   "Run BODY with current live window."
   `(with-selected-window (consult--window) ,@body))
 
-(defun consult--overlay (beg end face)
+(defun consult--overlay-add (beg end face)
   "Make consult overlay between BEG and END with FACE."
   (let ((ov (make-overlay beg end)))
     (overlay-put ov 'face face)
-    (overlay-put ov 'consult--overlay t)))
+    (push ov consult--overlays)))
+
+(defun consult--overlay-cleanup ()
+  "Remove all consult overlays."
+  (mapc #'delete-overlay consult--overlays)
+  (setq consult--overlays nil))
 
 ;; TODO Matched strings are not highlighted as of now
 ;; see https://github.com/minad/consult/issues/7
@@ -281,16 +289,15 @@ CMD is the preview command.
 ARG is the command argument."
   (pcase cmd
     ('restore
-     (consult--with-window
-      (remove-overlays nil nil 'consult--overlay t)))
+     (consult--with-window (consult--overlay-cleanup)))
     ('preview
      (consult--with-window
       (goto-char arg)
       (recenter)
-      (remove-overlays nil nil 'consult--overlay t)
-      (consult--overlay (line-beginning-position) (line-end-position) 'consult-preview-line)
+      (consult--overlay-cleanup)
+      (consult--overlay-add (line-beginning-position) (line-end-position) 'consult-preview-line)
       (let ((pos (point)))
-        (consult--overlay pos (1+ pos) 'consult-preview-cursor))))))
+        (consult--overlay-add pos (1+ pos) 'consult-preview-cursor))))))
 
 (cl-defun consult--read (prompt candidates &key
                                 predicate require-match history default
