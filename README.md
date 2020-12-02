@@ -153,13 +153,15 @@ order to use the enhanced commands, you must configure the keybindings yourself.
   )
 ~~~
 
-If you're using [Straight.el](https://github.com/raxod502/straight.el), you can get similiar behavior like so:
+If you're using [Straight.el](https://github.com/raxod502/straight.el), install like so:
 
 ~~~elisp
 (straight-use-package '(consult :type git :host github :repo "minad/consult"))
 (consult-annotate-mode)
 (setf (alist-get 'execute-extended-command consult-annotate-alist) #'consult-annotate-command-full)
 ~~~
+
+You will need to add the key bindings yourself.
 
 
 ### Configuration settings
