@@ -231,8 +231,8 @@ nil shows all `custom-available-themes'."
   ;; We would observe this if consulting an unfontified line.
   ;; Therefore we have to enforce font-locking now, which is slow.
   ;; TODO can this be optimized, at least add some progress message?
-  (when (and jit-lock-mode (< (buffer-size) consult-fontify-limit))
-    (jit-lock-fontify-now)))
+  (when (and font-lock-mode (< (buffer-size) consult-fontify-limit))
+    (font-lock-ensure)))
 
 (defun consult--truncate (str width)
   "Truncate string STR to WIDTH."
