@@ -153,10 +153,10 @@ nil shows all `custom-available-themes'."
   :type 'integer
   :group 'consult)
 
-;; TODO consult-mark-history, consult-line-history and consult-outline-history
-;; are not useful as of now since they also record the line number prefix.
-;; Therefore the histories will get "corrupted" if lines are edited and moved.
-;; Furthermore consult-mark, consult-line and consult-outline histories should be local?
+(defcustom consult-fontify-limit 1048576
+  "Buffers larger than this limit are not fontified."
+  :type 'integer
+  :group 'consult)
 
 ;;;; History variables
 
@@ -231,7 +231,7 @@ nil shows all `custom-available-themes'."
   ;; We would observe this if consulting an unfontified line.
   ;; Therefore we have to enforce font-locking now, which is slow.
   ;; TODO can this be optimized, at least add some progress message?
-  (when jit-lock-mode
+  (when (and jit-lock-mode (< (buffer-size) consult-fontify-limit))
     (jit-lock-fontify-now)))
 
 (defun consult--truncate (str width)
