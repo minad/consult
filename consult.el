@@ -220,6 +220,15 @@ nil shows all `custom-available-themes'."
 
 ;;;; Helper functions
 
+(defsubst consult--fontify ()
+  "Ensure that the whole buffer is fontified."
+  ;; Font-locking is lazy, i.e., if a line has not been looked at yet, the line is not font-locked.
+  ;; We would observe this if consulting an unfontified line.
+  ;; Therefore we have to enforce font-locking now, which is slow.
+  ;; TODO can this be optimized, at least add some progress message?
+  (when jit-lock-mode
+    (jit-lock-fontify-now)))
+
 (defun consult--truncate (str width)
   "Truncate string STR to WIDTH."
   (truncate-string-to-width (car (split-string str "\n")) width 0 32 "…"))
@@ -407,11 +416,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
   "Return alist of outline headings and positions."
   (when (minibufferp)
     (user-error "Consult called inside the minibuffer"))
-  ;; Font-locking is lazy, i.e., if a line has not been looked at yet, the line is not font-locked.
-  ;; We would observe this if consulting an unfontified line.
-  ;; Therefore we have to enforce font-locking now.
-  ;; TODO can this be optimized, at least add some progress message?
-  (jit-lock-fontify-now)
+  (consult--fontify)
   (let* ((max-line 0)
          (line (line-number-at-pos (point-min) consult-line-numbers-widen))
          (heading-regexp (concat "^\\(?:" outline-regexp "\\)"))
@@ -455,11 +460,7 @@ The alist contains (string . position) pairs."
     (user-error "Consult called inside the minibuffer"))
   (unless (marker-position (mark-marker))
     (user-error "No marks"))
-  ;; Font-locking is lazy, i.e., if a line has not been looked at yet, the line is not font-locked.
-  ;; We would observe this if consulting an unfontified line.
-  ;; Therefore we have to enforce font-locking now.
-  ;; TODO can this be optimized, at least add some progress message?
-  (jit-lock-fontify-now)
+  (consult--fontify)
   (let* ((all-markers (delete-dups (cons (mark-marker) (reverse mark-ring))))
          (max-line 0)
          (min (point-min))
@@ -514,11 +515,7 @@ WIDTH is the line number width."
   "Return alist of lines and positions."
   (when (minibufferp)
     (user-error "Consult called inside the minibuffer"))
-  ;; Font-locking is lazy, i.e., if a line has not been looked at yet, the line is not font-locked.
-  ;; We would observe this if consulting an unfontified line.
-  ;; Therefore we have to enforce font-locking now.
-  ;; TODO can this be optimized, at least add some progress message?
-  (jit-lock-fontify-now)
+  (consult--fontify)
   (let* ((default-cand)
          (candidates)
          (pos (point-min))
