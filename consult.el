@@ -668,10 +668,12 @@ Otherwise replace the just-yanked text with the selected text."
   (mapcar
    (lambda (r)
      (setq r (car r))
-     (cons (format "%s: %s"
-                   (single-key-description r)
-                   (register-describe-oneline r))
-           r))
+     (cons
+      (concat
+       (propertize (single-key-description r) 'face 'consult-key)
+       " "
+       (register-describe-oneline r))
+      r))
    ;; Sometimes, registers are made without a `cdr'.
    ;; Such registers don't do anything, and can be ignored.
    (or (sort (seq-filter #'cdr register-alist) #'car-less-than-car)
