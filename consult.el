@@ -155,17 +155,17 @@ nil shows all `custom-available-themes'."
 
 ;;;; History variables
 
+(defvar-local consult-outline-history nil
+  "Buffer-local history for the command `consult-outline'.")
+
+(defvar-local consult-mark-history nil
+  "Buffer-local history for the command `consult-mark'.")
+
+(defvar-local consult-line-history nil
+  "Buffer-local history for the command `consult-line'.")
+
 (defvar consult-buffer-history nil
   "History for the command `consult-buffer'.")
-
-(defvar consult-outline-history nil
-  "History for the command `consult-outline'.")
-
-(defvar consult-mark-history nil
-  "History for the command `consult-mark'.")
-
-(defvar consult-line-history nil
-  "History for the command `consult-line'.")
 
 (defvar consult-apropos-history nil
   "History for the command `consult-apropos'.")
