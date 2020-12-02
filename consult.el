@@ -299,7 +299,7 @@ CMD is the preview command.
 ARG is the command argument."
   (pcase cmd
     ('restore
-     (consult--with-window (consult--overlay-cleanup)))
+     (consult--overlay-cleanup))
     ('preview
      (consult--with-window
       (goto-char arg)
