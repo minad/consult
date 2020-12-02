@@ -153,6 +153,11 @@ nil shows all `custom-available-themes'."
   :type 'integer
   :group 'consult)
 
+;; TODO consult-mark-history, consult-line-history and consult-outline-history
+;; are not useful as of now since they also record the line number prefix.
+;; Therefore the histories will get "corrupted" if lines are edited and moved.
+;; Furthermore consult-mark, consult-line and consult-outline histories should be local?
+
 ;;;; History variables
 
 (defvar-local consult-outline-history nil
