@@ -997,19 +997,20 @@ ones made entirely of mouse clicks) are not shown."
         ;;
         ;; Get actual index, since we prepended ‘kmacro-ring’
         ;; with ‘last-kbd-macro’ in selection.
-        (let ((actual-index (1- chosen-kmacro-index)))
-          ;; Temporarily change the variables to retrieve the correct
-          ;; settings.  Mainly, we want the macro counter to persist, which
-          ;; automatically happens when cycling the ring.
-          (cl-destructuring-bind
-              (last-kbd-macro kmacro-counter kmacro-counter-format-start)
-              (nth actual-index kmacro-ring)
-            (kmacro-call-macro (or arg 1) t)
-            ;; Once done, put updated variables back into the ring.
-            (setf (nth actual-index kmacro-ring)
-                  (list last-kbd-macro
-                        kmacro-counter
-                        kmacro-counter-format))))))))
+        (let* ((actual-index (1- chosen-kmacro-index))
+               (actual-kmacro (nth actual-index kmacro-ring))
+               ;; Temporarily change the variables to retrieve the correct
+               ;; settings.  Mainly, we want the macro counter to persist, which
+               ;; automatically happens when cycling the ring.
+               (last-kbd-macro (car actual-kmacro))
+               (kmacro-counter (cadr actual-kmacro))
+               (kmacro-counter-format (caddr actual-kmacro)))
+          (kmacro-call-macro (or arg 1) t)
+          ;; Once done, put updated variables back into the ring.
+          (setf (nth actual-index kmacro-ring)
+                (list last-kbd-macro
+                      kmacro-counter
+                      kmacro-counter-format)))))))
 
 ;;;; consult-preview-mode - Enabling preview for consult commands
 
