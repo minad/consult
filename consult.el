@@ -62,7 +62,7 @@
 
 (defface consult-key
   '((t :inherit font-lock-keyword-face :weight normal))
-  "Face used to highlight keys in `consult-annotate-mode'."
+  "Face used to highlight keys, e.g., in `consult-register'."
   :group 'consult)
 
 (defface consult-lighter
@@ -70,14 +70,9 @@
   "Face used to highlight lighters in `consult-minor-mode'."
   :group 'consult)
 
-(defface consult-variable
-  '((t :inherit consult-key))
-  "Face used to highlight variable values in `consult-annotate-mode'."
-  :group 'consult)
-
 (defface consult-annotation
   '((t :inherit completions-annotations :weight normal))
-  "Face used to highlight documentation string in `consult-annotate-mode'."
+  "Face used to highlight annotation in `consult-buffer'."
   :group 'consult)
 
 (defface consult-file
@@ -148,11 +143,6 @@ nil shows all `custom-available-themes'."
   :type 'boolean
   :group 'consult)
 
-(defcustom consult-annotation-width 80
-  "Width of annotation string."
-  :type 'integer
-  :group 'consult)
-
 (defcustom consult-fontify-limit 1048576
   "Buffers larger than this limit are not fontified."
   :type 'integer
@@ -211,17 +201,9 @@ nil shows all `custom-available-themes'."
 
 (defvar selectrum-mode)
 (defvar selectrum-should-sort-p)
-(defvar selectrum-highlight-candidates-function)
 (declare-function selectrum-read "selectrum")
 (declare-function selectrum-get-current-candidate "selectrum")
 (declare-function selectrum--minibuffer-post-command-hook "selectrum")
-(declare-function selectrum-default-candidate-highlight-function "selectrum")
-
-(defvar package--builtins)
-(defvar package-alist)
-(defvar package-archive-contents)
-(declare-function package-desc-summary "package")
-(declare-function package--from-builtin "package")
 
 ;;;; Helper functions
 
@@ -233,10 +215,6 @@ nil shows all `custom-available-themes'."
   ;; TODO can this be optimized, at least add some progress message?
   (when (and font-lock-mode (< (buffer-size) consult-fontify-limit))
     (font-lock-ensure)))
-
-(defun consult--truncate (str width)
-  "Truncate string STR to WIDTH."
-  (truncate-string-to-width (car (split-string str "\n")) width 0 32 "…"))
 
 (defun consult--status-prefix (enabled)
   "Status prefix for given boolean ENABLED."
@@ -983,176 +961,6 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
       (advice-add #'minibuffer-complete-word  :after #'consult--preview-default)
       (advice-add #'minibuffer-complete :after #'consult--preview-default)
       (advice-add #'minibuffer-completion-help  :after #'consult--preview-default))))
-
-;;;; consult-annotate-mode - Enhancing existing commands with annotations
-
-(defcustom consult-annotate-alist
-  '((execute-extended-command . consult-annotate-command-binding)
-    (consult-apropos . consult-annotate-symbol)
-    (customize-face . consult-annotate-face)
-    (customize-face-other-window . consult-annotate-face)
-    (customize-group . consult-annotate-customization-group)
-    (customize-group-other-window . consult-annotate-customization-group)
-    (customize-option . consult-annotate-variable)
-    (customize-option-other-window . consult-annotate-variable)
-    (customize-set-variable . consult-annotate-variable)
-    (customize-variable . consult-annotate-variable)
-    (customize-variable-other-window . consult-annotate-variable)
-    (describe-function . consult-annotate-symbol)
-    (describe-variable . consult-annotate-variable)
-    (describe-face . consult-annotate-face)
-    (describe-symbol . consult-annotate-symbol)
-    (helpful-callable . consult-annotate-symbol)
-    (helpful-command . consult-annotate-symbol)
-    (helpful-function . consult-annotate-symbol)
-    (helpful-macro . consult-annotate-symbol)
-    (helpful-symbol . consult-annotate-symbol)
-    (helpful-variable . consult-annotate-variable)
-    (describe-package . consult-annotate-package)
-    (package-install . consult-annotate-package)
-    (package-delete . consult-annotate-package)
-    (package-reinstall . consult-annotate-package))
-  "List of commands which should be enriched during completion.
-The annotation function must return a string,
-which is appended to the completion candidate.
-Annotations are only shown if `consult-annotate-mode' is enabled."
-  :type '(alist :key-type symbol :value-type function)
-  :group 'consult)
-
-(defvar consult--annotate-this-command nil
-  "Last command symbol saved in order to allow annotations.")
-
-(defun consult-annotate-command-binding (cand)
-  "Annotate command CAND with keybinding."
-  ;; Taken from Emacs 28, read-extended-command--annotation
-  (when-let* ((binding (where-is-internal (intern cand) overriding-local-map t))
-              (desc (and (not (stringp binding)) (key-description binding))))
-    (propertize (format " (%s)" desc) 'face 'consult-key)))
-
-(defun consult-annotate-command-full (cand)
-  "Annotate command CAND with the keybinding and its documentation string."
-  (concat
-   (consult-annotate-command-binding cand)
-   (consult-annotate-symbol cand)))
-
-(defun consult--annotation (ann)
-  "Format annotation string ANN."
-  (concat " "
-          (propertize
-           " "
-           'display
-           '(space :align-to (- right-fringe consult-annotation-width)))
-          (propertize (consult--truncate ann consult-annotation-width)
-                      'face 'consult-annotation)))
-
-(defun consult-annotate-symbol (cand)
-  "Annotate symbol CAND with its documentation string."
-  (when-let (doc (let ((sym (intern cand)))
-                   (cond
-                    ((fboundp sym) (ignore-errors (documentation sym)))
-                    ((facep sym) (documentation-property sym 'face-documentation))
-                    (t (documentation-property sym 'variable-documentation)))))
-    (consult--annotation doc)))
-
-(defun consult-annotate-variable (cand)
-  "Annotate variable CAND with its documentation string."
-  (let ((sym (intern cand)))
-    (when-let (doc (documentation-property sym 'variable-documentation))
-      (concat " "
-              (propertize
-               " "
-               'display
-               '(space :align-to (- right-fringe consult-annotation-width 30)))
-              (propertize (consult--truncate (format "%S" (if (boundp sym)
-                                                              (symbol-value sym)
-                                                            'unbound))
-                                             40)
-                          'face 'consult-variable)
-              "    "
-              (propertize (consult--truncate doc consult-annotation-width)
-                          'face 'consult-annotation)))))
-
-(defun consult-annotate-face (cand)
-  "Annotate face CAND with documentation string and face example."
-  (let ((sym (intern cand)))
-    (when-let (doc (documentation-property sym 'face-documentation))
-      (concat " "
-              (propertize
-               " "
-               'display
-               '(space :align-to (- right-fringe consult-annotation-width 30)))
-              (propertize "abcdefghijklmNOPQRSTUVWXYZ" 'face sym)
-              "    "
-              (propertize (consult--truncate doc consult-annotation-width)
-                          'face 'consult-annotation)))))
-
-(defun consult-annotate-package (cand)
-  "Annotate package CAND with its description summary."
-  (when-let* ((pkg (intern (replace-regexp-in-string "-[[:digit:]\\.-]+$" "" cand)))
-              ;; taken from embark.el, originally `describe-package-1`
-              (desc (or (car (alist-get pkg package-alist))
-                        (if-let ((built-in (assq pkg package--builtins)))
-                            (package--from-builtin built-in)
-                          (car (alist-get pkg package-archive-contents))))))
-    (consult--annotation (package-desc-summary desc))))
-
-(defun consult-annotate-customization-group (cand)
-  "Annotate customization group CAND with its documentation string."
-  (when-let (doc (documentation-property (intern cand) 'group-documentation))
-    (consult--annotation doc)))
-
-(defun consult--annotate-candidates (candidates)
-  "Annotate CANDIDATES with richer information."
-  (if-let (annotate
-           (and consult--annotate-this-command
-                (alist-get consult--annotate-this-command consult-annotate-alist)))
-      (mapcar (lambda (cand) (concat cand (funcall annotate cand))) candidates)
-    candidates))
-
-(defun consult--replace-annotation-function (fun metadata prop)
-  "Advice for `completion-metadata-get'.
-Replaces the annotation function.
-FUN is the original function.
-METADATA is the metadata.
-PROP is the property which is looked up."
-  (or
-   (and (eq prop 'annotation-function)
-        (not (bound-and-true-p selectrum-mode))
-        consult--annotate-this-command
-        (alist-get consult--annotate-this-command consult-annotate-alist))
-   (funcall fun metadata prop)))
-
-
-(defun consult--annotate-minibuffer-setup ()
-  "Setup minibuffer for `consult-annotate-mode'.
-Remember `this-command' for annotation and replace highlighting function."
-  (setq-local consult--annotate-this-command this-command)
-  (when (boundp 'selectrum-highlight-candidates-function)
-    (let ((orig selectrum-highlight-candidates-function))
-      (setq-local selectrum-highlight-candidates-function
-                  (lambda (input candidates)
-                    (consult--annotate-candidates (funcall orig input candidates)))))))
-
-;;;###autoload
-(define-minor-mode consult-annotate-mode
-  "Annotate completion candidates with richer information."
-  :global t
-
-  ;; Reset first to get a clean slate.
-  (advice-remove #'completion-metadata-get #'consult--replace-annotation-function)
-  (remove-hook 'minibuffer-setup-hook #'consult--annotate-minibuffer-setup)
-
-  ;; Now add our tweaks.
-  (when consult-annotate-mode
-    ;; Ensure that we remember this-command in order to select the annotation function.
-    (add-hook 'minibuffer-setup-hook #'consult--annotate-minibuffer-setup)
-
-    ;; Replace the default annotation function if not using Selectrum.
-    ;; TODO is there a better way?
-    ;; TODO unfortunately annotations are not shown in the icomplete-vertical minibuffer it seem
-    ;; https://github.com/oantolin/icomplete-vertical/issues/16
-    (unless (bound-and-true-p selectrum-mode)
-      (advice-add #'completion-metadata-get :around #'consult--replace-annotation-function))))
 
 (provide 'consult)
 ;;; consult.el ends here
