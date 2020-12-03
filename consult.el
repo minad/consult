@@ -947,10 +947,16 @@ ones made entirely of mouse clicks) are not shown."
   (if (not (or last-kbd-macro kmacro-ring))
       (user-error "No keyboard macros defined")
     (let* ((numbered-kmacros
-            (seq-remove
-             (lambda (x) (equal " " (car x)))
-             (seq-map-indexed
-              (lambda (kmacro index)
+            (let (cands
+                  (index 0))
+              (dolist (kmacro
+                       (cons (if (listp last-kbd-macro)
+                                 last-kbd-macro
+                               (list last-kbd-macro
+                                     kmacro-counter
+                                     kmacro-counter-format))
+                             kmacro-ring)
+                       cands)
                 (let ((formatted-kmacro
                        (condition-case nil
                            (format-kbd-macro (if (listp kmacro)
@@ -962,22 +968,10 @@ ones made entirely of mouse clicks) are not shown."
                          ;; looks like mouse events are silently skipped over.
                          (error
                           "Warning: Cannot display macros containing mouse clicks"))))
-                  (cons (concat (when (consp kmacro)
-                                  (propertize " "
-                                              'display
-                                              (format "%d,%s: "
-                                                      (cl-second kmacro)
-                                                      (cl-third kmacro))))
-                                formatted-kmacro)
-                        index)))
-              ;; The most recent macro is not on the ring, so it must be
-              ;;  explicitly included.
-              (cons (if (listp last-kbd-macro)
-                        last-kbd-macro
-                      (list last-kbd-macro
-                            kmacro-counter
-                            kmacro-counter-format))
-                    kmacro-ring))))
+                  (unless (string-empty-p formatted-kmacro)
+                    (push (cons formatted-kmacro
+                                index)
+                          cands))))))
            ;; The index corresponding to the chosen kmacro.
            (chosen-kmacro-index
             (consult--read "Keyboard macro: "
