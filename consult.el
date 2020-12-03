@@ -948,68 +948,68 @@ Macros containing mouse clicks can't be displayed properly.  To
 keep things simple, macros with an empty display string (e.g.,
 ones made entirely of mouse clicks) are not shown."
   (interactive "p")
-  (if (or last-kbd-macro kmacro-ring)
-      (let* ((numbered-kmacros
-              (delete
-               nil
-               (seq-map-indexed
-                (lambda (kmacro index)
-                  (let ((formatted-kmacro
-                         (condition-case nil
-                             (format-kbd-macro (if (listp kmacro)
-                                                   (cl-first kmacro)
-                                                 kmacro)
-                                               1)
-                           ;; Recover from error from
-                           ;; ‘edmacro-fix-menu-commands’.  In Emacs 27, it
-                           ;; looks like mouse events are silently skipped over.
-                           (error
-                            "Warning: Cannot display macros containing mouse clicks"))))
-                    (unless (string-empty-p formatted-kmacro)
-                      (cons (concat (when (consp kmacro)
-                                      (format "%d,%s: "
-                                              (cl-second kmacro)
-                                              (cl-third kmacro)))
-                                    formatted-kmacro)
-                            index))))
-                ;; The most recent macro is not on the ring, so it must be
-                ;;  explicitly included.
-                (cons (if (listp last-kbd-macro)
-                          last-kbd-macro
-                        (list last-kbd-macro
-                              kmacro-counter
-                              kmacro-counter-format))
-                      kmacro-ring))))
-             ;; The index corresponding to the chosen kmacro.
-             (chosen-kmacro-index
-              (consult--read "Keyboard macro: "
-                             numbered-kmacros
-                             :require-match t
-                             :sort nil
-                             :history 'consult-kmacro-history
-                             :lookup (lambda (candidates x)
-                                       (cdr (assoc x candidates))))))
-        (if (= chosen-kmacro-index 0)
-            ;; If 0, just run the current (last) macro.
-            (kmacro-call-macro (or arg 1) t nil)
-          ;; Otherwise, run a kmacro from the ring.
-          ;;
-          ;; Get actual index, since we prepended ‘kmacro-ring’
-          ;; with ‘last-kbd-macro’ in selection.
-          (let ((actual-index (1- chosen-kmacro-index)))
-            ;; Temporarily change the variables to retrieve the correct
-            ;; settings.  Mainly, we want the macro counter to persist, which
-            ;; automatically happens when cycling the ring.
-            (cl-destructuring-bind
-                (last-kbd-macro kmacro-counter kmacro-counter-format-start)
-                (nth actual-index kmacro-ring)
-              (kmacro-call-macro (or arg 1) t)
-              ;; Once done, put updated variables back into the ring.
-              (setf (nth actual-index kmacro-ring)
-                    (list last-kbd-macro
-                          kmacro-counter
-                          kmacro-counter-format))))))
-    (user-error "No keyboard macros defined")))
+  (if (not (or last-kbd-macro kmacro-ring))
+      (user-error "No keyboard macros defined")
+    (let* ((numbered-kmacros
+            (delete
+             nil
+             (seq-map-indexed
+              (lambda (kmacro index)
+                (let ((formatted-kmacro
+                       (condition-case nil
+                           (format-kbd-macro (if (listp kmacro)
+                                                 (cl-first kmacro)
+                                               kmacro)
+                                             1)
+                         ;; Recover from error from
+                         ;; ‘edmacro-fix-menu-commands’.  In Emacs 27, it
+                         ;; looks like mouse events are silently skipped over.
+                         (error
+                          "Warning: Cannot display macros containing mouse clicks"))))
+                  (unless (string-empty-p formatted-kmacro)
+                    (cons (concat (when (consp kmacro)
+                                    (format "%d,%s: "
+                                            (cl-second kmacro)
+                                            (cl-third kmacro)))
+                                  formatted-kmacro)
+                          index))))
+              ;; The most recent macro is not on the ring, so it must be
+              ;;  explicitly included.
+              (cons (if (listp last-kbd-macro)
+                        last-kbd-macro
+                      (list last-kbd-macro
+                            kmacro-counter
+                            kmacro-counter-format))
+                    kmacro-ring))))
+           ;; The index corresponding to the chosen kmacro.
+           (chosen-kmacro-index
+            (consult--read "Keyboard macro: "
+                           numbered-kmacros
+                           :require-match t
+                           :sort nil
+                           :history 'consult-kmacro-history
+                           :lookup (lambda (candidates x)
+                                     (cdr (assoc x candidates))))))
+      (if (= chosen-kmacro-index 0)
+          ;; If 0, just run the current (last) macro.
+          (kmacro-call-macro (or arg 1) t nil)
+        ;; Otherwise, run a kmacro from the ring.
+        ;;
+        ;; Get actual index, since we prepended ‘kmacro-ring’
+        ;; with ‘last-kbd-macro’ in selection.
+        (let ((actual-index (1- chosen-kmacro-index)))
+          ;; Temporarily change the variables to retrieve the correct
+          ;; settings.  Mainly, we want the macro counter to persist, which
+          ;; automatically happens when cycling the ring.
+          (cl-destructuring-bind
+              (last-kbd-macro kmacro-counter kmacro-counter-format-start)
+              (nth actual-index kmacro-ring)
+            (kmacro-call-macro (or arg 1) t)
+            ;; Once done, put updated variables back into the ring.
+            (setf (nth actual-index kmacro-ring)
+                  (list last-kbd-macro
+                        kmacro-counter
+                        kmacro-counter-format))))))))
 
 ;;;; consult-preview-mode - Enabling preview for consult commands
 
