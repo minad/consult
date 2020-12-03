@@ -950,40 +950,36 @@ ones made entirely of mouse clicks) are not shown."
   (interactive "p")
   (if (or last-kbd-macro kmacro-ring)
       (let* ((numbered-kmacros
-              (cl-loop
-               ;; The most recent macro is not on the ring, so it must be
-               ;;  explicitly included.
-               for kmacro in (cons (if (listp last-kbd-macro)
-                                       last-kbd-macro
-                                     (list last-kbd-macro
-                                           kmacro-counter
-                                           kmacro-counter-format))
-                                   kmacro-ring)
-               ;; 1. Format the macros.  Mouse clicks are removed
-               ;;    by the format function.
-               ;;
-               ;; 2. Give the macros with non-empty strings a number, which
-               ;;    we use for rotating the ring.
-               for index = 0 then (1+ index)
-               for formatted-kmacro
-               = (condition-case nil
-                     (format-kbd-macro (if (listp kmacro)
-                                           (cl-first kmacro)
-                                         kmacro)
-                                       1)
-                   ;; Recover from error from ‘edmacro-fix-menu-commands’.
-                   ;; In Emacs 27, it looks like mouse events are
-                   ;; silently skipped over.
-                   (error
-                    "Warning: Cannot display macros containing mouse clicks"))
-
-               unless (string-empty-p formatted-kmacro)
-               collect (cons (concat (when (consp kmacro)
-                                       (format "%d,%s: "
-                                               (cl-second kmacro)
-                                               (cl-third kmacro)))
-                                     formatted-kmacro)
-                             index)))
+              (delete
+               nil
+               (seq-map-indexed
+                (lambda (kmacro index)
+                  (let ((formatted-kmacro
+                         (condition-case nil
+                             (format-kbd-macro (if (listp kmacro)
+                                                   (cl-first kmacro)
+                                                 kmacro)
+                                               1)
+                           ;; Recover from error from
+                           ;; ‘edmacro-fix-menu-commands’.  In Emacs 27, it
+                           ;; looks like mouse events are silently skipped over.
+                           (error
+                            "Warning: Cannot display macros containing mouse clicks"))))
+                    (unless (string-empty-p formatted-kmacro)
+                      (cons (concat (when (consp kmacro)
+                                      (format "%d,%s: "
+                                              (cl-second kmacro)
+                                              (cl-third kmacro)))
+                                    formatted-kmacro)
+                            index))))
+                ;; The most recent macro is not on the ring, so it must be
+                ;;  explicitly included.
+                (cons (if (listp last-kbd-macro)
+                          last-kbd-macro
+                        (list last-kbd-macro
+                              kmacro-counter
+                              kmacro-counter-format))
+                      kmacro-ring))))
              ;; The index corresponding to the chosen kmacro.
              (chosen-kmacro-index
               (consult--read "Keyboard macro: "
