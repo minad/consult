@@ -885,8 +885,6 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                                           'face 'consult-view
                                           ;; TODO remove selectrum specifics if possible?
                                           'selectrum-candidate-display-right-margin
-                                          ;; TODO the consult-annotation face is ignored by selectrum?
-                                          ;; see https://github.com/raxod502/selectrum/issues/236
                                           (propertize " View" 'face 'consult-annotation)))
                             (bookmark-view-names))))
          (bookmarks (mapcar (lambda (x)
@@ -894,8 +892,6 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                                           'face 'consult-bookmark
                                           ;; TODO remove selectrum specifics if possible?
                                           'selectrum-candidate-display-right-margin
-                                          ;; TODO the consult-annotation face is ignored by selectrum?
-                                          ;; see https://github.com/raxod502/selectrum/issues/236
                                           (propertize " Bookmark" 'face 'consult-annotation)))
                             bookmark-alist))
          (all-files (mapcar (lambda (x)
@@ -903,8 +899,6 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                                           'face 'consult-file
                                           ;; TODO remove selectrum specifics if possible?
                                           'selectrum-candidate-display-right-margin
-                                          ;; TODO the consult-annotation face is ignored by selectrum?
-                                          ;; see https://github.com/raxod502/selectrum/issues/236
                                           (propertize " File" 'face 'consult-annotation)))
                             recentf-list))
          (files (remove curr-file all-files))
