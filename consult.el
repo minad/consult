@@ -990,7 +990,7 @@ ones made entirely of mouse clicks) are not shown."
                            :history 'consult-kmacro-history
                            :lookup (lambda (candidates x)
                                      (cdr (assoc x candidates))))))
-      (if (= chosen-kmacro-index 0)
+      (if (zerop chosen-kmacro-index)
           ;; If 0, just run the current (last) macro.
           (kmacro-call-macro (or arg 1) t nil)
         ;; Otherwise, run a kmacro from the ring.
