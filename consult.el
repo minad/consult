@@ -38,6 +38,7 @@
 
 (require 'bookmark)
 (require 'cl-lib)
+(require 'kmacro)
 (require 'outline)
 (require 'recentf)
 (require 'seq)
@@ -220,11 +221,6 @@ nil shows all `custom-available-themes'."
 (defvar package-archive-contents)
 (declare-function package-desc-summary "package")
 (declare-function package--from-builtin "package")
-
-(defvar kmacro-ring)
-(defvar kmacro-counter)
-(defvar kmacro-counter-format)
-(defvar kmacro-counter-format-start)
 
 ;;;; Helper functions
 
