@@ -908,29 +908,28 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
 (defun consult--kmacro-candidates ()
   "Return alist of kmacros and indices."
   (seq-uniq
-   (seq-map-indexed
-    (lambda (kmacro index)
-      (cons (concat
-             (when (consp kmacro)
-               (propertize " "
-                           'display
-                           (format "%d(%s) " (cadr kmacro) (caddr kmacro))))
-             (format-kbd-macro (if (listp kmacro)
-                                   (car kmacro)
-                                 kmacro)
-                               1))
-           (- index 1)))
-    (seq-remove
+   (thread-last
+       ;; List of macros
+       (cons (if (listp last-kbd-macro)
+                last-kbd-macro
+               (list last-kbd-macro
+                     kmacro-counter
+                     kmacro-counter-format))
+             kmacro-ring)
      ;; Filter mouse clicks
-     (lambda (x) (seq-some #'mouse-event-p (car x)))
-     (cons (if (listp last-kbd-macro)
-               last-kbd-macro
-             (list last-kbd-macro
-                   kmacro-counter
-                   kmacro-counter-format))
-           kmacro-ring)))
-    ;; Remove duplicate macros based on description.
-    (lambda (x y) (equal (car x) (car y)))))
+     (seq-remove (lambda (x) (seq-some #'mouse-event-p (car x))))
+     ;; Format macros
+     (mapcar (lambda (kmacro)
+               (concat
+                (when (consp kmacro)
+                  (propertize " "
+                              'display
+                             (format "%d(%s) " (cadr kmacro) (caddr kmacro))))
+                (format-kbd-macro (if (listp kmacro) (car kmacro) kmacro) 1))))
+     ;; Add indices
+     (seq-map-indexed #'cons))
+   ;; Remove duplicate macros based on description.
+   (lambda (x y) (equal (car x) (car y)))))
 
 ;;;###autoload
 (defun consult-kmacro (arg)
@@ -945,11 +944,12 @@ Macros containing mouse clicks aren't displayed."
                    :sort nil
                    :history 'consult-kmacro-history
                    :lookup (lambda (candidates x) (cdr (assoc x candidates))))))
-    (if (= -1 selected)
+    (if (zerop selected)
         ;; If the first element has been selected, just run the last macro.
         (kmacro-call-macro (or arg 1) t nil)
       ;; Otherwise, run a kmacro from the ring.
-      (let* ((kmacro (nth selected kmacro-ring))
+      (let* ((selected (- selected 1))
+             (kmacro (nth selected kmacro-ring))
              ;; Temporarily change the variables to retrieve the correct
              ;; settings.  Mainly, we want the macro counter to persist, which
              ;; automatically happens when cycling the ring.
