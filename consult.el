@@ -910,25 +910,24 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
   (seq-uniq
    (thread-last
        ;; List of macros
-       (cons (if (listp last-kbd-macro)
-                last-kbd-macro
-               (list last-kbd-macro
-                     kmacro-counter
-                     kmacro-counter-format))
+       (cons (list last-kbd-macro
+                   kmacro-counter
+                   kmacro-counter-format)
              kmacro-ring)
-     ;; Filter mouse clicks
-     (seq-remove (lambda (x) (seq-some #'mouse-event-p (car x))))
-     ;; Format macros
-     (mapcar (lambda (kmacro)
-               (concat
-                (when (consp kmacro)
-                  (propertize " "
-                              'display
-                             (format "%d(%s) " (cadr kmacro) (caddr kmacro))))
-                (format-kbd-macro (if (listp kmacro) (car kmacro) kmacro) 1))))
      ;; Add indices
-     (seq-map-indexed #'cons))
-   ;; Remove duplicate macros based on description.
+     (seq-map-indexed #'cons)
+     ;; Filter mouse clicks
+     (seq-remove (lambda (x) (seq-some #'mouse-event-p (caar x))))
+     ;; Format macros
+     (mapcar (pcase-lambda (`((,keys ,counter ,format) . ,index))
+               (cons
+                (concat
+                 (propertize " "
+                             'display
+                             (format "%d(%s) " counter format))
+                 (format-kbd-macro keys 1))
+                index))))
+   ;; Remove duplicates
    (lambda (x y) (equal (car x) (car y)))))
 
 ;;;###autoload
