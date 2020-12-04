@@ -376,6 +376,34 @@ PREVIEW is a preview function."
     (goto-char pos)
     (recenter)))
 
+;; For viewing branch of headlines.
+;; This only works for org mode for now. I added this via after advice. One
+;; thing I was planning on doing to further improve this is changing the window
+;; position after the unfolding to maximize the contents of the headline (if I
+;; jumpt to a headline, it's a safe bet I want to see what's in it).
+
+;; Sample from my config.
+;; (defadvice! show-current-branch-in-org-mode (:after void/goto-line org/goto-headline)
+;;   "Properly unfold nearby headlines and reveal current headline."
+;;   (when (eq major-mode 'org-mode)
+;;     (org:show-branch)))
+
+(defun org:show-branch ()
+  "Reveal the current org branch.
+Show all of the current headine's parents and their children. This includes this
+headline."
+  (let (points)
+    (save-excursion
+      (org-back-to-heading t)
+      (push (point) points)
+      (while (org-up-heading-safe)
+        (push (point) points))
+      (--each points
+        (goto-char it)
+        (outline-show-children)
+        (outline-show-entry)))))
+
+
 ;;;; Commands
 
 ;; see https://github.com/raxod502/selectrum/issues/226
