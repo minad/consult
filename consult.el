@@ -352,11 +352,11 @@ PREVIEW is a preview function."
               'face 'consult-line-number))
 
 (defun consult--add-line-number (max-line candidates)
-  "Add line numbers to unformatted CANDIDATES. The MAX-LINE is needed to determine the width."
+  "Add line numbers to unformatted CANDIDATES as prefix.
+The MAX-LINE is needed to determine the width.
+Since the line number is part of the candidate it will be matched-on during completion."
   (let ((width (length (number-to-string max-line))))
     (dolist (cand candidates)
-      ;; TODO use prefix here or keep the line number as part of string?
-      ;; If we would use a prefix, the alist approach would not work for duplicate lines!
       (setcar cand
               (concat
                (consult--pad-line-number width (caar cand))
@@ -445,7 +445,9 @@ The alist contains (string . position) pairs."
           (when (and (>= pos min) (<= pos max))
             (goto-char pos)
             (let* ((col  (current-column))
-                   ;; TODO line-number-at-pos is a very slow function, can this be replaced?
+                   ;; `line-number-at-pos' is a very slow function, which should be replaced everywhere.
+                   ;; However in this case the slow line-number-at-pos does not hurt much, since
+                   ;; the mark ring is usually small since it is limited by `mark-ring-max'.
                    (line (line-number-at-pos pos consult-line-numbers-widen))
                    (lstr (buffer-substring (- pos col) (line-end-position)))
                    (end (1+ col))
@@ -697,7 +699,7 @@ Otherwise replace the just-yanked text with the selected text."
    (read
     (consult--read "Command: "
                    (delete-dups (mapcar #'prin1-to-string command-history))
-                   ;; :category 'command ;; TODO command category is wrong here? category "sexp"?
+                   :category 'expression
                    :history 'consult-command-history))))
 
 ;;;###autoload
@@ -883,9 +885,8 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
 (defun consult-buffer-other-frame ()
   "Enhanced `switch-to-buffer-other-frame' command with support for virtual buffers."
   (interactive)
+  ;; bookmark-jump-other-frame is supported on Emacs >= 27.1, we want to support at least 26
   (consult--buffer #'switch-to-buffer-other-frame #'find-file-other-frame
-                   ;; bookmark-jump-other-frame is supported on Emacs >= 27.1
-                   ;; TODO which Emacs versions do we want to support?
                    (if (fboundp 'bookmark-jump-other-frame) #'bookmark-jump-other-frame #'bookmark-jump)))
 
 ;;;###autoload
@@ -927,7 +928,6 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
 
 ;; this function contains completion-system specifics, since there is no general mechanism of
 ;; completion systems to get the current candidate.
-;; TODO for default Emacs completion, I advise three functions. Is there a better way?
 ;;;###autoload
 (define-minor-mode consult-preview-mode
   "Enable preview for consult commands."
@@ -945,6 +945,8 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
     ;; It is possible to advice functions which do not yet exist
     (advice-add 'selectrum--minibuffer-post-command-hook :after #'consult--preview-selectrum)
     (advice-add 'icomplete-post-command-hook :after #'consult--preview-icomplete)
+
+    ;; TODO for default Emacs completion, I advise three functions. Is there a better way?
     (advice-add #'minibuffer-complete-word  :after #'consult--preview-default)
     (advice-add #'minibuffer-complete :after #'consult--preview-default)
     (advice-add #'minibuffer-completion-help  :after #'consult--preview-default)))
