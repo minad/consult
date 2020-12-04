@@ -182,7 +182,7 @@ nil shows all `custom-available-themes'."
   "History for the command `consult-minor-mode'.")
 
 (defvar consult-kmacro-history nil
-  "History for the command `consult-kmacro.'")
+  "History for the command `consult-kmacro'.")
 
 ;;;; Internal variables
 
@@ -905,69 +905,63 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
   (interactive)
   (consult--buffer #'switch-to-buffer #'find-file #'bookmark-jump))
 
+(defun consult--kmacro-candidates ()
+  "Return alist of kmacros and indices."
+  (seq-uniq
+   (seq-map-indexed
+    (lambda (kmacro index)
+      (cons (concat
+             (when (consp kmacro)
+               (propertize " "
+                           'display
+                           (format "%d(%s) " (cadr kmacro) (caddr kmacro))))
+             (format-kbd-macro (if (listp kmacro)
+                                   (car kmacro)
+                                 kmacro)
+                               1))
+           (- index 1)))
+    (seq-remove
+     ;; Filter mouse clicks
+     (lambda (x) (seq-some #'mouse-event-p (car x)))
+     (cons (if (listp last-kbd-macro)
+               last-kbd-macro
+             (list last-kbd-macro
+                   kmacro-counter
+                   kmacro-counter-format))
+           kmacro-ring)))
+    ;; Remove duplicate macros based on description.
+    (lambda (x y) (equal (car x) (car y)))))
+
 ;;;###autoload
 (defun consult-kmacro (arg)
   "Run a chosen keyboard macro.  With prefix ARG, run the macro that many times.
 
 Macros containing mouse clicks aren't displayed."
   (interactive "p")
-  (if (not (or last-kbd-macro kmacro-ring))
-      (user-error "No keyboard macros defined")
-    (let* ((numbered-kmacros
-            (seq-uniq (let (result (index -1))
-                        (dolist ( kmacro (cons (if (listp last-kbd-macro)
-                                                   last-kbd-macro
-                                                 (list last-kbd-macro
-                                                       kmacro-counter
-                                                       kmacro-counter-format))
-                                               kmacro-ring)
-                                  (nreverse result))
-                          (cl-incf index)
-                          (unless (seq-some #'mouse-event-p (car kmacro))
-                            (push (cons (concat (when (consp kmacro)
-                                                  (propertize
-                                                   " " 'display
-                                                   (format "%d,%s: "
-                                                           (cadr  kmacro)
-                                                           (caddr kmacro))))
-                                                (format-kbd-macro
-                                                 (if (listp kmacro)
-                                                     (car kmacro)
-                                                   kmacro)
-                                                 1))
-                                        index)
-                                  result))))
-                      ;; Remove duplicate macros based on description.
-                      (lambda (cand1 cand2) (equal (car cand1) (car cand2)))))
-           (chosen-kmacro-index
-            (consult--read "Keyboard macro: "
-                           numbered-kmacros
-                           :require-match t
-                           :sort nil
-                           :history 'consult-kmacro-history
-                           :lookup (lambda (candidates x)
-                                     (cdr (assoc x candidates))))))
-      (if (zerop chosen-kmacro-index)
-          ;; If 0, just run the current (last) macro.
-          (kmacro-call-macro (or arg 1) t nil)
-        ;; Otherwise, run a kmacro from the ring.
-        ;;
-        ;; Get actual index, since we prepended ‘kmacro-ring’
-        ;; with ‘last-kbd-macro’ in selection.
-        (let* ((actual-index (1- chosen-kmacro-index))
-               (actual-kmacro (nth actual-index kmacro-ring))
-               ;; Temporarily change the variables to retrieve the correct
-               ;; settings.  Mainly, we want the macro counter to persist, which
-               ;; automatically happens when cycling the ring.
-               (last-kbd-macro (car actual-kmacro))
-               (kmacro-counter (cadr actual-kmacro))
-               (kmacro-counter-format (caddr actual-kmacro)))
-          (kmacro-call-macro (or arg 1) t)
-          ;; Once done, put updated variables back into the ring.
-          (setf (nth actual-index kmacro-ring)
-                (list last-kbd-macro
-                      kmacro-counter
-                      kmacro-counter-format)))))))
+  (let ((selected (consult--read
+                   "Keyboard macro: "
+                   (or (consult--kmacro-candidates) (user-error "No keyboard macros defined"))
+                   :require-match t
+                   :sort nil
+                   :history 'consult-kmacro-history
+                   :lookup (lambda (candidates x) (cdr (assoc x candidates))))))
+    (if (= -1 selected)
+        ;; If the first element has been selected, just run the last macro.
+        (kmacro-call-macro (or arg 1) t nil)
+      ;; Otherwise, run a kmacro from the ring.
+      (let* ((kmacro (nth selected kmacro-ring))
+             ;; Temporarily change the variables to retrieve the correct
+             ;; settings.  Mainly, we want the macro counter to persist, which
+             ;; automatically happens when cycling the ring.
+             (last-kbd-macro (car kmacro))
+             (kmacro-counter (cadr kmacro))
+             (kmacro-counter-format (caddr kmacro)))
+        (kmacro-call-macro (or arg 1) t)
+        ;; Once done, put updated variables back into the ring.
+        (setf (nth selected kmacro-ring)
+              (list last-kbd-macro
+                    kmacro-counter
+                    kmacro-counter-format))))))
 
 ;;;; consult-preview-mode - Enabling preview for consult commands
 
