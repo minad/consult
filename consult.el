@@ -378,6 +378,18 @@ PREVIEW is a preview function."
 
 ;;;; Commands
 
+;; This command uses the dash library.
+(defun org/choose-tags ()
+  "Select tags to add to headline."
+  (interactive)
+  (let* ((current (org-get-tags (point)))
+         (selected (thread-last (org-get-buffer-tags)
+                     (completing-read-multiple "Select org tag(s): "))))
+    (thread-last (seq-uniq (append (seq-difference current selected)
+                                   (seq-difference selected current)))
+      (message "%S")
+      (org-set-tags))))
+
 ;; see https://github.com/raxod502/selectrum/issues/226
 ;;;###autoload
 (defun consult-multi-occur (bufs regexp &optional nlines)
