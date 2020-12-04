@@ -603,6 +603,28 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
   (interactive)
   (find-file-other-window (consult--recent-file-read)))
 
+;; Use minibuffer completion as the UI for completion-at-point
+(defun consult-completion-in-region (start end collection &optional predicate)
+  "Prompt for completion of region in the minibuffer if non-unique.
+Use as a value for `completion-in-region-function'."
+  (if (and (minibufferp) (not (string= (minibuffer-prompt) "Eval: ")))
+      (completion--in-region start end collection predicate)
+    (let* ((initial (buffer-substring-no-properties start end))
+           (limit (car (completion-boundaries initial collection predicate "")))
+           (all (completion-all-completions initial collection predicate
+                                            (length initial)))
+           (completion (cond
+                        ((atom all) nil)
+                        ((and (consp all) (atom (cdr all)))
+                         (concat (substring initial 0 limit) (car all)))
+                        (t (completing-read
+                            "Completion: " collection predicate t initial)))))
+      (if (null completion)
+          (progn (message "No completion") nil)
+        (delete-region start end)
+        (insert completion)
+        t))))
+
 ;; TODO consult--yank-read should support preview
 ;; see https://github.com/minad/consult/issues/8
 (defun consult--yank-read ()
