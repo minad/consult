@@ -940,39 +940,36 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
 (defun consult-kmacro (arg)
   "Run a chosen keyboard macro.  With prefix ARG, run the macro that many times.
 
-Macros containing mouse clicks can't be displayed properly.  To
-keep things simple, macros with an empty display string (e.g.,
-ones made entirely of mouse clicks) are not shown."
+Macros containing mouse clicks aren't displayed."
   (interactive "p")
   (if (not (or last-kbd-macro kmacro-ring))
       (user-error "No keyboard macros defined")
     (let* ((numbered-kmacros
-            (let (cands
-                  (index 0))
-              (dolist (kmacro
-                       (cons (if (listp last-kbd-macro)
-                                 last-kbd-macro
-                               (list last-kbd-macro
-                                     kmacro-counter
-                                     kmacro-counter-format))
-                             kmacro-ring)
-                       cands)
-                (let ((formatted-kmacro
-                       (condition-case nil
-                           (format-kbd-macro (if (listp kmacro)
-                                                 (cl-first kmacro)
-                                               kmacro)
-                                             1)
-                         ;; Recover from error from
-                         ;; ‘edmacro-fix-menu-commands’.  In Emacs 27, it
-                         ;; looks like mouse events are silently skipped over.
-                         (error
-                          "Warning: Cannot display macros containing mouse clicks"))))
-                  (unless (string-empty-p formatted-kmacro)
-                    (push (cons formatted-kmacro
-                                index)
-                          cands))))))
-           ;; The index corresponding to the chosen kmacro.
+            (seq-uniq (let (result (index -1))
+                        (dolist ( kmacro (cons (if (listp last-kbd-macro)
+                                                   last-kbd-macro
+                                                 (list last-kbd-macro
+                                                       kmacro-counter
+                                                       kmacro-counter-format))
+                                               kmacro-ring)
+                                  (nreverse result))
+                          (cl-incf index)
+                          (unless (seq-some #'mouse-event-p (car kmacro))
+                            (push (cons (concat (when (consp kmacro)
+                                                  (propertize
+                                                   " " 'display
+                                                   (format "%d,%s: "
+                                                           (cadr  kmacro)
+                                                           (caddr kmacro))))
+                                                (format-kbd-macro
+                                                 (if (listp kmacro)
+                                                     (car kmacro)
+                                                   kmacro)
+                                                 1))
+                                        index)
+                                  result))))
+                      ;; Remove duplicate macros based on description.
+                      (lambda (cand1 cand2) (equal (car cand1) (car cand2)))))
            (chosen-kmacro-index
             (consult--read "Keyboard macro: "
                            numbered-kmacros
