@@ -611,6 +611,7 @@ Use as a value for `completion-in-region-function'."
          (limit (car (completion-boundaries initial collection predicate "")))
          (all (completion-all-completions initial collection predicate
                                           (length initial)))
+         (result nil)
          (completion (cond
                       ((atom all) nil)
                       ((and (consp all) (atom (cdr all)))
@@ -619,10 +620,13 @@ Use as a value for `completion-in-region-function'."
                            (completing-read
                             "Completion: " collection predicate t initial))))))
     (if (null completion)
-        (progn (message "No completion") nil)
+        (message "No completion")
       (delete-region start end)
       (insert (substring-no-properties completion))
-      t)))
+      (setq result t))
+    (when-let ((exit (plist-get completion-extra-properties :exit-function)))
+      (funcall exit (or completion initial) (if completion 'finished 'sole)))
+    result))
 
 ;; TODO consult--yank-read should support preview
 ;; see https://github.com/minad/consult/issues/8
