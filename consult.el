@@ -269,16 +269,11 @@ BODY are the body expressions."
           (gc-cons-percentage (if overwrite consult--gc-percentage gc-cons-percentage)))
      ,@body))
 
-(defun consult--window ()
-  "Return live window."
-  (let ((win (minibuffer-selected-window)))
-    (while (not (window-live-p win))
-      (setq win (next-window)))
-    win))
-
 (defmacro consult--with-window (&rest body)
   "Run BODY with current live window."
-  `(with-selected-window (consult--window) ,@body))
+  `(with-selected-window
+       (or (minibuffer-selected-window) (selected-window))
+     ,@body))
 
 (defun consult--overlay-add (beg end face)
   "Make consult overlay between BEG and END with FACE."
