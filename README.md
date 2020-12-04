@@ -15,15 +15,18 @@ Note that if you use [Ivy](https://github.com/abo-abo/swiper#ivy) or
 [Helm](https://github.com/emacs-helm/helm), you don't need Consult, since both
 packages already bring their own rich set of additional commands.
 
+Note that there is the [Marginalia
+package](https://github.com/minad/marginalia/), which can be combined
+with Consult. The `marginalia-mode` enriches the completion display
+with documentation strings. The Marginalia package has been
+extracted from [Embark](https://github.com/oantolin/embark/) and Consult since
+both packages provided minibuffer annotations.
+
 ## Screenshots
-
-consult-annotate-mode
-
-![consult-annotate-mode](https://github.com/minad/consult/blob/master/images/consult-annotate-mode.png?raw=true|height)
 
 consult-mark
 
-![consult-mark](https://github.com/minad/consult/blob/master/images/consult-mark.png?raw=true|height)
+![consult-mark](https://github.com/minad/consult/blob/master/images/consult-mark.png?raw=true)
 
 consult-line
 
@@ -33,11 +36,13 @@ consult-outline
 
 ![consult-outline](https://github.com/minad/consult/blob/master/images/consult-outline.png?raw=true)
 
+marginalia-mode (formerly consult-annotate-mode)
+
+![marginalia-mode](https://github.com/minad/marginalia/blob/main/marginalia-mode.png?raw=true)
+
 ## Available commands
 
-Most provided commands follow the naming scheme `consult-thing`. Furthermore
-there is `consult-annotate-mode` which enriches the completion display with
-documentation strings.
+Most provided commands follow the naming scheme `consult-thing`.
 
 ### Virtual Buffers
 
@@ -63,9 +68,11 @@ documentation strings.
 ### Help/Discoverability
 
   * `consult-apropos`: Replacement for `apropos` with completion.
-  * `consult-annotate-mode`: Enable this mode to annotates completions with
-    richer information (e.g. `M-x`, `describe-face`, `describe-symbol`,
-    `helpful-function`, etc).
+
+Note that there is the [Marginalia
+package](https://github.com/minad/marginalia/), which provides
+`marginalia-mode`. Enabling this mode annotates completions with richer
+information (e.g. `M-x`, `describe-face`, `describe-symbol`, `helpful-function`, …).
 
 ### Histories
 
@@ -107,7 +114,7 @@ Consult package only provides commands and does not add any keybindings. In
 order to use the enhanced commands, you must configure the keybindings yourself.
 
 ~~~ elisp
-;; Example configuration
+;; Example configuration for Consult
 (use-package consult
   ;; Replace bindings. Lazily loaded due to use-package.
   :bind (("C-c o" . consult-outline)
@@ -129,28 +136,21 @@ order to use the enhanced commands, you must configure the keybindings yourself.
   ;; Replace functions (consult-multi-occur is a drop-in replacement)
   (fset 'multi-occur #'consult-multi-occur)
 
-  ;; Optionally enable previews. Note that individual previews can be disabled
-  ;; via customization variables.
-  (consult-preview-mode)
-
-  ;; Optionally enable richer annotations during completion.
-  ;; Must be in the :init section of use-package such that the mode gets
-  ;; enabled right away. Note that this forces loading the package.
-  (consult-annotate-mode)
-
-  ;; Configure other variables in the :config section, after lazily loading the package
+  ;; Configure other variables and modes in the :config section, after lazily loading the package
   :config
 
-  ;; Enable richer annotations for M-x.
-  ;; Only keybindings are shown by default, in order to reduce noise for this very common command.
-  ;; * consult-annotate-symbol: Annotate with the documentation string
-  ;; * consult-annotate-command-binding (default): Annotate only with the keybinding
-  ;; * consult-annotate-command-full: Annotate with the keybinding and the documentation string
-  ;; (setf (alist-get 'execute-extended-command consult-annotate-alist) #'consult-annotate-command-full)
+  ;; Optionally enable previews. Note that individual previews can be disabled
+  ;; via customization variables.
+  (consult-preview-mode))
 
-  ;; Enable richer annotations for other functions.
-  ;; (push '(my-fancy-command . consult-annotate-symbol) consult-annotate-alist)
-  )
+;; Optionally enable richer annotations using the Marginalia package
+(use-package marginalia
+  ;; The :init configuration is always executed (Not lazy!)
+  :init t
+
+  ;; Must be in the :init section of use-package such that the mode gets
+  ;; enabled right away. Note that this forces loading the package.
+  (marginalia-mode))
 ~~~
 
 ### Configuration settings
