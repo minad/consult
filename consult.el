@@ -394,15 +394,14 @@ Show all of the current headine's parents and their children. This includes this
 headline."
   (let (points)
     (save-excursion
-      (org-back-to-heading t)
+      (outline-back-to-heading)
       (push (point) points)
-      (while (org-up-heading-safe)
+      (while (outline-up-heading)
         (push (point) points))
       (--each points
         (goto-char it)
         (outline-show-children)
         (outline-show-entry)))))
-
 
 ;;;; Commands
 
