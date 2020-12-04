@@ -196,14 +196,9 @@ nil shows all `custom-available-themes'."
 
 ;;;; Pre-declarations for external packages
 
-(defvar icomplete-mode)
-(declare-function icomplete-post-command-hook "icomplete")
-
-(defvar selectrum-mode)
 (defvar selectrum-should-sort-p)
 (declare-function selectrum-read "selectrum")
 (declare-function selectrum-get-current-candidate "selectrum")
-(declare-function selectrum--minibuffer-post-command-hook "selectrum")
 
 ;;;; Helper functions
 
@@ -930,11 +925,8 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                                minibuffer-completion-predicate)
           (funcall fun cand))))))
 
-;; TODO this function contains completion-system specifics
-;; is there a more general mechanism which works everywhere or can this be cleaned up?
-;; TODO is there a better selectrum api to achieve this?
-;; see https://github.com/raxod502/selectrum/issues/239
-;; TODO is icomplete-post-command-hook the right function to add the advice?
+;; this function contains completion-system specifics, since there is no general mechanism of
+;; completion systems to get the current candidate.
 ;; TODO for default Emacs completion, I advise three functions. Is there a better way?
 ;;;###autoload
 (define-minor-mode consult-preview-mode
@@ -942,25 +934,20 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
   :global t
 
   ;; Reset first to get a clean slate.
-  (when (fboundp 'selectrum--minibuffer-post-command-hook)
-    (advice-remove #'selectrum--minibuffer-post-command-hook #'consult--preview-selectrum))
-  (when (fboundp 'icomplete-post-command-hook)
-    (advice-remove #'icomplete-post-command-hook #'consult--preview-icomplete))
+  (advice-remove 'selectrum--minibuffer-post-command-hook #'consult--preview-selectrum)
+  (advice-remove 'icomplete-post-command-hook #'consult--preview-icomplete)
   (advice-remove #'minibuffer-complete #'consult--preview-default)
   (advice-remove #'minibuffer-complete-word #'consult--preview-default)
   (advice-remove #'minibuffer-completion-help #'consult--preview-default)
 
   ;; Now add our advices.
   (when consult-preview-mode
-    (when (fboundp 'selectrum--minibuffer-post-command-hook)
-      (advice-add #'selectrum--minibuffer-post-command-hook :after #'consult--preview-selectrum))
-    (when (fboundp 'icomplete-post-command-hook)
-      (advice-add #'icomplete-post-command-hook :after #'consult--preview-icomplete))
-    (unless (or (bound-and-true-p selectrum-mode)
-                (bound-and-true-p icomplete-mode))
-      (advice-add #'minibuffer-complete-word  :after #'consult--preview-default)
-      (advice-add #'minibuffer-complete :after #'consult--preview-default)
-      (advice-add #'minibuffer-completion-help  :after #'consult--preview-default))))
+    ;; It is possible to advice functions which do not yet exist
+    (advice-add 'selectrum--minibuffer-post-command-hook :after #'consult--preview-selectrum)
+    (advice-add 'icomplete-post-command-hook :after #'consult--preview-icomplete)
+    (advice-add #'minibuffer-complete-word  :after #'consult--preview-default)
+    (advice-add #'minibuffer-complete :after #'consult--preview-default)
+    (advice-add #'minibuffer-completion-help  :after #'consult--preview-default)))
 
 (provide 'consult)
 ;;; consult.el ends here
