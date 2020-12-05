@@ -38,6 +38,7 @@
 
 (require 'bookmark)
 (require 'cl-lib)
+(require 'kmacro)
 (require 'outline)
 (require 'recentf)
 (require 'seq)
@@ -179,6 +180,9 @@ nil shows all `custom-available-themes'."
 
 (defvar consult-minor-mode-history nil
   "History for the command `consult-minor-mode'.")
+
+(defvar consult-kmacro-history nil
+  "History for the command `consult-kmacro'.")
 
 ;;;; Internal variables
 
@@ -925,6 +929,63 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
   "Enhanced `switch-to-buffer-other-window' command with support for virtual buffers."
   (interactive)
   (consult--buffer #'switch-to-buffer #'find-file #'bookmark-jump))
+
+(defun consult--kmacro-candidates ()
+  "Return alist of kmacros and indices."
+  (seq-uniq
+   (thread-last
+       ;; List of macros
+       (cons (list last-kbd-macro
+                   kmacro-counter
+                   kmacro-counter-format)
+             kmacro-ring)
+     ;; Add indices
+     (seq-map-indexed #'cons)
+     ;; Filter mouse clicks
+     (seq-remove (lambda (x) (seq-some #'mouse-event-p (caar x))))
+     ;; Format macros
+     (mapcar (pcase-lambda (`((,keys ,counter ,format) . ,index))
+               (cons
+                (concat
+                 (propertize " "
+                             'display
+                             (format "%d(%s) " counter format))
+                 (format-kbd-macro keys 1))
+                index))))
+   ;; Remove duplicates
+   (lambda (x y) (equal (car x) (car y)))))
+
+;;;###autoload
+(defun consult-kmacro (arg)
+  "Run a chosen keyboard macro.  With prefix ARG, run the macro that many times.
+
+Macros containing mouse clicks aren't displayed."
+  (interactive "p")
+  (let ((selected (consult--read
+                   "Keyboard macro: "
+                   (or (consult--kmacro-candidates) (user-error "No keyboard macros defined"))
+                   :require-match t
+                   :sort nil
+                   :history 'consult-kmacro-history
+                   :lookup (lambda (candidates x) (cdr (assoc x candidates))))))
+    (if (zerop selected)
+        ;; If the first element has been selected, just run the last macro.
+        (kmacro-call-macro (or arg 1) t nil)
+      ;; Otherwise, run a kmacro from the ring.
+      (let* ((selected (- selected 1))
+             (kmacro (nth selected kmacro-ring))
+             ;; Temporarily change the variables to retrieve the correct
+             ;; settings.  Mainly, we want the macro counter to persist, which
+             ;; automatically happens when cycling the ring.
+             (last-kbd-macro (car kmacro))
+             (kmacro-counter (cadr kmacro))
+             (kmacro-counter-format (caddr kmacro)))
+        (kmacro-call-macro (or arg 1) t)
+        ;; Once done, put updated variables back into the ring.
+        (setf (nth selected kmacro-ring)
+              (list last-kbd-macro
+                    kmacro-counter
+                    kmacro-counter-format))))))
 
 ;;;; consult-preview-mode - Enabling preview for consult commands
 
