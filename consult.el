@@ -201,8 +201,9 @@ nil shows all `custom-available-themes'."
 ;;;; Pre-declarations for external packages
 
 (defvar selectrum-should-sort-p)
-(declare-function selectrum-read "selectrum")
-(declare-function selectrum-get-current-candidate "selectrum")
+(declare-function selectrum-read "ext:selectrum")
+(declare-function selectrum-get-current-candidate "ext:selectrum")
+(declare-function evil-set-command-property "ext:evil-common")
 
 ;;;; Helper functions
 
@@ -439,6 +440,9 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                     :history 'consult-outline-history
                     :preview (and consult-preview-outline #'consult--preview-line)))))
 
+(with-eval-after-load 'evil
+  (evil-set-command-property 'consult-outline :jump t))
+
 (defun consult--mark-candidates ()
   "Return alist of lines containing markers.
 The alist contains (string . position) pairs."
@@ -486,6 +490,9 @@ The alist contains (string . position) pairs."
                     :lookup (lambda (candidates x) (cdr (assoc x candidates)))
                     :history 'consult-mark-history
                     :preview (and consult-preview-mark #'consult--preview-line)))))
+
+(with-eval-after-load 'evil
+  (evil-set-command-property 'consult-mark :jump t))
 
 ;; HACK: Disambiguate the line by prepending it with unicode
 ;; characters in the supplementary private use plane b.
@@ -563,6 +570,11 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
   (consult-line (if isearch-regexp
                     isearch-string
                   (regexp-quote isearch-string))))
+
+(with-eval-after-load 'evil
+  (evil-set-command-property 'consult-line :jump t)
+  (evil-set-command-property 'consult-line-symbol-at-point :jump t)
+  (evil-set-command-property 'consult-line-from-isearch :jump t))
 
 (defun consult--recent-file-read ()
   "Read recent file via `completing-read'."
