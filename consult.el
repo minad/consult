@@ -781,7 +781,10 @@ preview if `consult-preview-mode' is enabled."
                      (symbol-name (car custom-enabled-themes)))))))
   (unless (equal theme (car custom-enabled-themes))
     (mapc #'disable-theme custom-enabled-themes)
-    (when theme (load-theme theme :no-confirm))))
+    (when theme
+      (if (custom-theme-p theme)
+          (enable-theme theme)
+        (load-theme theme :no-confirm)))))
 
 ;; TODO consult--buffer-selectrum performs dynamic computation of the candidate set.
 ;; this is currently not supported by completing-read+selectrum.
