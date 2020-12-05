@@ -209,9 +209,9 @@ nil shows all `custom-available-themes'."
 (defsubst consult--fontify ()
   "Ensure that the whole buffer is fontified."
   ;; Font-locking is lazy, i.e., if a line has not been looked at yet, the line is not font-locked.
-  ;; We would observe this if consulting an unfontified line.
-  ;; Therefore we have to enforce font-locking now, which is slow.
-  ;; TODO can this be optimized, at least add some progress message?
+  ;; We would observe this if consulting an unfontified line. Therefore we have to enforce
+  ;; font-locking now, which is slow. In order to prevent is hang-up we check the buffer size
+  ;; against `consult-fontify-limit'.
   (when (and font-lock-mode (< (buffer-size) consult-fontify-limit))
     (font-lock-ensure)))
 
@@ -223,7 +223,10 @@ nil shows all `custom-available-themes'."
                 (propertize "- " 'face 'consult-off))))
 
 (defmacro consult--preview (enabled save restore preview &rest body)
-  "Preview support for completion.
+  "Add preview support to minibuffer completion.
+
+The preview will only be enabled if `consult-preview-mode' is active.
+This function should not be used directly, use `consult--read' instead.
 ENABLED must be t to enable preview.
 SAVE is an expression which returns some state to save before preview.
 RESTORE is a pair (variable . expression) which restores the state.
@@ -239,7 +242,7 @@ BODY are the body expressions."
            ,@(cdr restore)))
      ,@body))
 
-(defmacro consult--gc-increase (&rest body)
+(defmacro consult--with-increased-gc (&rest body)
   "Temporarily increase the gc limit in BODY to optimize for throughput."
   `(let* ((overwrite (> consult--gc-threshold gc-cons-threshold))
           (gc-cons-threshold (if overwrite consult--gc-threshold gc-cons-threshold))
@@ -266,7 +269,9 @@ BODY are the body expressions."
 ;; TODO Matched strings are not highlighted as of now
 ;; see https://github.com/minad/consult/issues/7
 (defun consult--preview-line (cmd &optional arg)
-  "Preview function for lines.
+  "The preview function used if selected from a list of candidate lines.
+
+The function can be used as the `:preview' argument of `consult--read'.
 CMD is the preview command.
 ARG is the command argument."
   (pcase cmd
@@ -423,7 +428,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
   (interactive)
   (consult--goto
    (save-excursion
-     (consult--read "Go to heading: " (consult--gc-increase (consult--outline-candidates))
+     (consult--read "Go to heading: " (consult--with-increased-gc (consult--outline-candidates))
                     :sort nil
                     :require-match t
                     :lookup (lambda (candidates x) (cdr (assoc x candidates)))
@@ -471,7 +476,7 @@ The alist contains (string . position) pairs."
   (interactive)
   (consult--goto
    (save-excursion
-     (consult--read "Go to mark: " (consult--gc-increase (consult--mark-candidates))
+     (consult--read "Go to mark: " (consult--with-increased-gc (consult--mark-candidates))
                     :sort nil
                     :require-match t
                     :lookup (lambda (candidates x) (cdr (assoc x candidates)))
@@ -529,7 +534,7 @@ The default candidate is a non-empty line closest to point.
 This command obeys narrowing. Optionally INITIAL input can be provided."
   (interactive)
   (consult--goto
-   (let ((candidates (consult--gc-increase (consult--line-candidates))))
+   (let ((candidates (consult--with-increased-gc (consult--line-candidates))))
      (save-excursion
        (consult--read "Go to line: " (cdr candidates)
                       :sort nil
@@ -641,19 +646,17 @@ Otherwise replace the just-yanked text with the selected text."
 
 (defun consult--register-candidates ()
   "Return alist of register descriptions and register names."
-  (mapcar
-   (lambda (r)
-     (setq r (car r))
-     (cons
-      (concat
-       (propertize (single-key-description r) 'face 'consult-key)
-       " "
-       (register-describe-oneline r))
-      r))
-   ;; Sometimes, registers are made without a `cdr'.
-   ;; Such registers don't do anything, and can be ignored.
-   (or (sort (seq-filter #'cdr register-alist) #'car-less-than-car)
-       (user-error "All registers are empty"))))
+  (mapcar (lambda (r)
+            (setq r (car r))
+            (cons (concat
+                   (propertize (single-key-description r) 'face 'consult-key)
+                   " "
+                   (register-describe-oneline r))
+                  r))
+          ;; Sometimes, registers are made without a `cdr'.
+          ;; Such registers don't do anything, and can be ignored.
+          (or (sort (seq-filter #'cdr register-alist) #'car-less-than-car)
+              (user-error "All registers are empty"))))
 
 ;;;###autoload
 (defun consult-register (reg)
@@ -749,7 +752,10 @@ Otherwise replace the just-yanked text with the selected text."
 
 ;;;###autoload
 (defun consult-theme (theme)
-  "Enable THEME from `consult-themes'."
+  "Disable current themes and enable THEME from `consult-themes'.
+
+During theme selection the theme is shown as
+preview if `consult-preview-mode' is enabled."
   (interactive
    (list
     (let ((avail-themes (custom-available-themes)))
