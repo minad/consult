@@ -1127,9 +1127,16 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
      (mapcar (pcase-lambda (`((,keys ,counter ,format) . ,index))
                (cons
                 (concat
-                 (propertize " "
-                             'display
-                             (format "%d(%s) " counter format))
+                 ;; If the counter is 0 and the counter format is its default,
+                 ;; then there is a good chance that the counter isn't actually
+                 ;; being used.  This can only be wrong when a user
+                 ;; intentionally starts the counter with a negative value and
+                 ;; then increments it to 0.
+                 (unless (and (eql counter 0)
+                              (string= format "%d"))
+                   (propertize " "
+                               'display
+                               (format "%d(%s) " counter format)))
                  (format-kbd-macro keys 1))
                 index))))
    ;; Remove duplicates
