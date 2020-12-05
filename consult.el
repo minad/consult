@@ -222,7 +222,7 @@ nil shows all `custom-available-themes'."
                   (propertize "+ " 'face 'consult-on)
                 (propertize "- " 'face 'consult-off))))
 
-(defmacro consult--preview (enabled save restore preview &rest body)
+(defmacro consult--with-preview (enabled save restore preview &rest body)
   "Add preview support to minibuffer completion.
 
 The preview will only be enabled if `consult-preview-mode' is active.
@@ -343,7 +343,7 @@ PREVIEW is a preview function."
                (complete-with-action action candidates str pred))))))
     (funcall
      lookup candidates
-     (consult--preview preview
+     (consult--with-preview preview
          (funcall preview 'save)
          (state (funcall preview 'restore state))
          (cand (when-let (cand (funcall lookup candidates cand))
@@ -820,7 +820,7 @@ OPEN-BUFFER is used for preview."
                     (cons 'candidates all-cands)))))))
     ;; TODO preview of virtual buffers is not implemented yet
     ;; see https://github.com/minad/consult/issues/9
-    (consult--preview consult-preview-buffer
+    (consult--with-preview consult-preview-buffer
         (current-window-configuration)
         (state (set-window-configuration state))
         (buf (when (get-buffer buf)
@@ -970,19 +970,19 @@ Macros containing mouse clicks aren't displayed."
 
 ;;;; consult-preview-mode - Enabling preview for consult commands
 
-(defun consult--preview-selectrum ()
+(defun consult--preview-update-selectrum ()
   "Preview function used for Selectrum."
   (when-let* ((fun (car consult--preview-stack))
               (cand (selectrum-get-current-candidate)))
     (funcall fun cand)))
 
-(defun consult--preview-icomplete ()
+(defun consult--preview-update-icomplete ()
   "Preview function used for Icomplete."
   (when-let* ((fun (car consult--preview-stack))
               (cand (car completion-all-sorted-completions)))
     (funcall fun cand)))
 
-(defun consult--preview-default (&rest _)
+(defun consult--preview-update-default (&rest _)
   "Preview function used for the default completion system."
   (unless (or (bound-and-true-p selectrum-mode)
               (bound-and-true-p icomplete-mode))
@@ -1001,22 +1001,22 @@ Macros containing mouse clicks aren't displayed."
   :global t
 
   ;; Reset first to get a clean slate.
-  (advice-remove 'selectrum--minibuffer-post-command-hook #'consult--preview-selectrum)
-  (advice-remove 'icomplete-post-command-hook #'consult--preview-icomplete)
-  (advice-remove #'minibuffer-complete #'consult--preview-default)
-  (advice-remove #'minibuffer-complete-word #'consult--preview-default)
-  (advice-remove #'minibuffer-completion-help #'consult--preview-default)
+  (advice-remove 'selectrum--minibuffer-post-command-hook #'consult--preview-update-selectrum)
+  (advice-remove 'icomplete-post-command-hook #'consult--preview-update-icomplete)
+  (advice-remove #'minibuffer-complete #'consult--preview-update-default)
+  (advice-remove #'minibuffer-complete-word #'consult--preview-update-default)
+  (advice-remove #'minibuffer-completion-help #'consult--preview-update-default)
 
   ;; Now add our advices.
   (when consult-preview-mode
     ;; It is possible to advice functions which do not yet exist
-    (advice-add 'selectrum--minibuffer-post-command-hook :after #'consult--preview-selectrum)
-    (advice-add 'icomplete-post-command-hook :after #'consult--preview-icomplete)
+    (advice-add 'selectrum--minibuffer-post-command-hook :after #'consult--preview-update-selectrum)
+    (advice-add 'icomplete-post-command-hook :after #'consult--preview-update-icomplete)
 
     ;; TODO for default Emacs completion, I advise three functions. Is there a better way?
-    (advice-add #'minibuffer-complete-word  :after #'consult--preview-default)
-    (advice-add #'minibuffer-complete :after #'consult--preview-default)
-    (advice-add #'minibuffer-completion-help  :after #'consult--preview-default)))
+    (advice-add #'minibuffer-complete-word  :after #'consult--preview-update-default)
+    (advice-add #'minibuffer-complete :after #'consult--preview-update-default)
+    (advice-add #'minibuffer-completion-help  :after #'consult--preview-update-default)))
 
 (provide 'consult)
 ;;; consult.el ends here
