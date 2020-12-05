@@ -222,24 +222,26 @@ nil shows all `custom-available-themes'."
                   (propertize "+ " 'face 'consult-on)
                 (propertize "- " 'face 'consult-off))))
 
-(defmacro consult--with-preview (enabled save restore preview &rest body)
+(defmacro consult--with-preview (enabled args save restore preview &rest body)
   "Add preview support to minibuffer completion.
 
 The preview will only be enabled if `consult-preview-mode' is active.
 This function should not be used directly, use `consult--read' instead.
 ENABLED must be t to enable preview.
-SAVE is an expression which returns some state to save before preview.
-RESTORE is a pair (variable . expression) which restores the state.
-PREVIEW is a pair (variable . expression) which previews the given candidate.
+ARGS are the argument variables (cand state).
+SAVE is an expression which returns state to save before preview.
+RESTORE is an expression which restores the state.
+PREVIEW is an expresion which previews the candidate.
 BODY are the body expressions."
-  (declare (indent 4))
+  (declare (indent 5))
   `(if ,enabled
-       (let ((,(car restore) ,save))
-         (push (lambda (,(car preview)) ,@(cdr preview)) consult--preview-stack)
+       (let ((,(car args))
+             (,@(cdr args) ,save))
+         (push (lambda (,(car args)) ,preview) consult--preview-stack)
          (unwind-protect
-             ,(if (cdr body) `(progn ,@body) (car body))
+             (setq ,(car args) ,(if (cdr body) `(progn ,@body) (car body)))
            (pop consult--preview-stack)
-           ,@(cdr restore)))
+           ,restore))
      ,@body))
 
 (defmacro consult--with-increased-gc (&rest body)
@@ -268,18 +270,19 @@ BODY are the body expressions."
 
 ;; TODO Matched strings are not highlighted as of now
 ;; see https://github.com/minad/consult/issues/7
-(defun consult--preview-line (cmd &optional arg)
+(defun consult--preview-line (cmd &optional cand _state)
   "The preview function used if selected from a list of candidate lines.
 
 The function can be used as the `:preview' argument of `consult--read'.
 CMD is the preview command.
-ARG is the command argument."
+CAND is the selected candidate.
+_STATE is the saved state."
   (pcase cmd
     ('restore
      (consult--overlay-cleanup))
     ('preview
      (consult--with-window
-      (goto-char arg)
+      (goto-char cand)
       (recenter)
       (consult--overlay-cleanup)
       (consult--overlay-add (line-beginning-position) (line-end-position) 'consult-preview-line)
@@ -341,13 +344,14 @@ PREVIEW is a preview function."
                    ,@(if (not sort) '((cycle-sort-function . identity)
                                       (display-sort-function . identity))))
                (complete-with-action action candidates str pred))))))
-    (funcall
-     lookup candidates
-     (consult--with-preview preview
-         (funcall preview 'save)
-         (state (funcall preview 'restore state))
-         (cand (when-let (cand (funcall lookup candidates cand))
-                 (funcall preview 'preview cand)))
+    (consult--with-preview preview
+        (cand state)
+        (funcall preview 'save)
+        (funcall preview 'restore cand state)
+        (when-let (cand (funcall lookup candidates cand))
+          (funcall preview 'preview cand))
+      (funcall
+       lookup candidates
        (completing-read prompt candidates-fun
                         predicate require-match initial history default)))))
 
@@ -770,13 +774,15 @@ preview if `consult-preview-mode' is enabled."
        :history 'consult-theme-history
        :lookup (lambda (_ x) (and x (intern x)))
        :preview (and consult-preview-theme
-                     (lambda (cmd &optional arg)
+                     (lambda (cmd &optional cand state)
                        (pcase cmd
                          ('save (car custom-enabled-themes))
-                         ('restore (consult-theme arg))
+                         ('restore
+                          (unless cand
+                            (consult-theme state)))
                          ('preview
-                          (when (memq arg avail-themes)
-                            (consult-theme arg))))))
+                          (when (memq cand avail-themes)
+                            (consult-theme cand))))))
        :default (and (car custom-enabled-themes)
                      (symbol-name (car custom-enabled-themes)))))))
   (unless (equal theme (car custom-enabled-themes))
@@ -821,11 +827,12 @@ OPEN-BUFFER is used for preview."
     ;; TODO preview of virtual buffers is not implemented yet
     ;; see https://github.com/minad/consult/issues/9
     (consult--with-preview consult-preview-buffer
+        (buf state)
         (current-window-configuration)
-        (state (set-window-configuration state))
-        (buf (when (get-buffer buf)
-               (consult--with-window
-                (funcall open-buffer buf))))
+        (set-window-configuration state)
+        (when (get-buffer buf)
+          (consult--with-window
+           (funcall open-buffer buf)))
       (minibuffer-with-setup-hook
           (lambda () (setq-local selectrum-should-sort-p nil))
         (selectrum-read "Switch to: " generate
@@ -840,12 +847,12 @@ OPEN-BUFFER is used for preview."
   (consult--read "Switch to: " candidates
                  :history 'consult-buffer-history
                  :sort nil
-                 :preview (lambda (cmd &optional arg)
+                 :preview (lambda (cmd &optional cand _state)
                             (pcase cmd
                               ('preview
-                               (when (get-buffer arg)
+                               (when (get-buffer cand)
                                  (consult--with-window
-                                  (funcall open-buffer arg))))))))
+                                  (funcall open-buffer cand))))))))
 
 (defun consult--buffer (open-buffer open-file open-bookmark)
   "Backend implementation of `consult-buffer'.
