@@ -147,7 +147,7 @@ order to use the enhanced commands, you must configure the keybindings yourself.
 ;; Optionally enable richer annotations using the Marginalia package
 (use-package marginalia
   ;; The :init configuration is always executed (Not lazy!)
-  :init t
+  :init
 
   ;; Must be in the :init section of use-package such that the mode gets
   ;; enabled right away. Note that this forces loading the package.

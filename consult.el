@@ -209,9 +209,9 @@ nil shows all `custom-available-themes'."
 (defsubst consult--fontify ()
   "Ensure that the whole buffer is fontified."
   ;; Font-locking is lazy, i.e., if a line has not been looked at yet, the line is not font-locked.
-  ;; We would observe this if consulting an unfontified line.
-  ;; Therefore we have to enforce font-locking now, which is slow.
-  ;; TODO can this be optimized, at least add some progress message?
+  ;; We would observe this if consulting an unfontified line. Therefore we have to enforce
+  ;; font-locking now, which is slow. In order to prevent is hang-up we check the buffer size
+  ;; against `consult-fontify-limit'.
   (when (and font-lock-mode (< (buffer-size) consult-fontify-limit))
     (font-lock-ensure)))
 
@@ -222,24 +222,29 @@ nil shows all `custom-available-themes'."
                   (propertize "+ " 'face 'consult-on)
                 (propertize "- " 'face 'consult-off))))
 
-(defmacro consult--preview (enabled save restore preview &rest body)
-  "Preview support for completion.
+(defmacro consult--with-preview (enabled args save restore preview &rest body)
+  "Add preview support to minibuffer completion.
+
+The preview will only be enabled if `consult-preview-mode' is active.
+This function should not be used directly, use `consult--read' instead.
 ENABLED must be t to enable preview.
-SAVE is an expression which returns some state to save before preview.
-RESTORE is a pair (variable . expression) which restores the state.
-PREVIEW is a pair (variable . expression) which previews the given candidate.
+ARGS are the argument variables (cand state).
+SAVE is an expression which returns state to save before preview.
+RESTORE is an expression which restores the state.
+PREVIEW is an expresion which previews the candidate.
 BODY are the body expressions."
-  (declare (indent 4))
+  (declare (indent 5))
   `(if ,enabled
-       (let ((,(car restore) ,save))
-         (push (lambda (,(car preview)) ,@(cdr preview)) consult--preview-stack)
+       (let ((,(car args))
+             (,@(cdr args) ,save))
+         (push (lambda (,(car args)) ,preview) consult--preview-stack)
          (unwind-protect
-             ,(if (cdr body) `(progn ,@body) (car body))
+             (setq ,(car args) ,(if (cdr body) `(progn ,@body) (car body)))
            (pop consult--preview-stack)
-           ,@(cdr restore)))
+           ,restore))
      ,@body))
 
-(defmacro consult--gc-increase (&rest body)
+(defmacro consult--with-increased-gc (&rest body)
   "Temporarily increase the gc limit in BODY to optimize for throughput."
   `(let* ((overwrite (> consult--gc-threshold gc-cons-threshold))
           (gc-cons-threshold (if overwrite consult--gc-threshold gc-cons-threshold))
@@ -265,16 +270,19 @@ BODY are the body expressions."
 
 ;; TODO Matched strings are not highlighted as of now
 ;; see https://github.com/minad/consult/issues/7
-(defun consult--preview-line (cmd &optional arg)
-  "Preview function for lines.
+(defun consult--preview-line (cmd &optional cand _state)
+  "The preview function used if selected from a list of candidate lines.
+
+The function can be used as the `:preview' argument of `consult--read'.
 CMD is the preview command.
-ARG is the command argument."
+CAND is the selected candidate.
+_STATE is the saved state."
   (pcase cmd
     ('restore
      (consult--overlay-cleanup))
     ('preview
      (consult--with-window
-      (goto-char arg)
+      (goto-char cand)
       (recenter)
       (consult--overlay-cleanup)
       (consult--overlay-add (line-beginning-position) (line-end-position) 'consult-preview-line)
@@ -336,13 +344,14 @@ PREVIEW is a preview function."
                    ,@(if (not sort) '((cycle-sort-function . identity)
                                       (display-sort-function . identity))))
                (complete-with-action action candidates str pred))))))
-    (funcall
-     lookup candidates
-     (consult--preview preview
-         (funcall preview 'save)
-         (state (funcall preview 'restore state))
-         (cand (when-let (cand (funcall lookup candidates cand))
-                 (funcall preview 'preview cand)))
+    (consult--with-preview preview
+        (cand state)
+        (funcall preview 'save)
+        (funcall preview 'restore cand state)
+        (when-let (cand (funcall lookup candidates cand))
+          (funcall preview 'preview cand))
+      (funcall
+       lookup candidates
        (completing-read prompt candidates-fun
                         predicate require-match initial history default)))))
 
@@ -423,7 +432,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
   (interactive)
   (consult--goto
    (save-excursion
-     (consult--read "Go to heading: " (consult--gc-increase (consult--outline-candidates))
+     (consult--read "Go to heading: " (consult--with-increased-gc (consult--outline-candidates))
                     :sort nil
                     :require-match t
                     :lookup (lambda (candidates x) (cdr (assoc x candidates)))
@@ -471,7 +480,7 @@ The alist contains (string . position) pairs."
   (interactive)
   (consult--goto
    (save-excursion
-     (consult--read "Go to mark: " (consult--gc-increase (consult--mark-candidates))
+     (consult--read "Go to mark: " (consult--with-increased-gc (consult--mark-candidates))
                     :sort nil
                     :require-match t
                     :lookup (lambda (candidates x) (cdr (assoc x candidates)))
@@ -529,7 +538,7 @@ The default candidate is a non-empty line closest to point.
 This command obeys narrowing. Optionally INITIAL input can be provided."
   (interactive)
   (consult--goto
-   (let ((candidates (consult--gc-increase (consult--line-candidates))))
+   (let ((candidates (consult--with-increased-gc (consult--line-candidates))))
      (save-excursion
        (consult--read "Go to line: " (cdr candidates)
                       :sort nil
@@ -666,19 +675,17 @@ Otherwise replace the just-yanked text with the selected text."
 
 (defun consult--register-candidates ()
   "Return alist of register descriptions and register names."
-  (mapcar
-   (lambda (r)
-     (setq r (car r))
-     (cons
-      (concat
-       (propertize (single-key-description r) 'face 'consult-key)
-       " "
-       (register-describe-oneline r))
-      r))
-   ;; Sometimes, registers are made without a `cdr'.
-   ;; Such registers don't do anything, and can be ignored.
-   (or (sort (seq-filter #'cdr register-alist) #'car-less-than-car)
-       (user-error "All registers are empty"))))
+  (mapcar (lambda (r)
+            (setq r (car r))
+            (cons (concat
+                   (propertize (single-key-description r) 'face 'consult-key)
+                   " "
+                   (register-describe-oneline r))
+                  r))
+          ;; Sometimes, registers are made without a `cdr'.
+          ;; Such registers don't do anything, and can be ignored.
+          (or (sort (seq-filter #'cdr register-alist) #'car-less-than-car)
+              (user-error "All registers are empty"))))
 
 ;;;###autoload
 (defun consult-register (reg)
@@ -774,7 +781,10 @@ Otherwise replace the just-yanked text with the selected text."
 
 ;;;###autoload
 (defun consult-theme (theme)
-  "Enable THEME from `consult-themes'."
+  "Disable current themes and enable THEME from `consult-themes'.
+
+During theme selection the theme is shown as
+preview if `consult-preview-mode' is enabled."
   (interactive
    (list
     (let ((avail-themes (custom-available-themes)))
@@ -789,13 +799,15 @@ Otherwise replace the just-yanked text with the selected text."
        :history 'consult-theme-history
        :lookup (lambda (_ x) (and x (intern x)))
        :preview (and consult-preview-theme
-                     (lambda (cmd &optional arg)
+                     (lambda (cmd &optional cand state)
                        (pcase cmd
                          ('save (car custom-enabled-themes))
-                         ('restore (consult-theme arg))
+                         ('restore
+                          (unless cand
+                            (consult-theme state)))
                          ('preview
-                          (when (memq arg avail-themes)
-                            (consult-theme arg))))))
+                          (when (memq cand avail-themes)
+                            (consult-theme cand))))))
        :default (and (car custom-enabled-themes)
                      (symbol-name (car custom-enabled-themes)))))))
   (unless (equal theme (car custom-enabled-themes))
@@ -839,12 +851,13 @@ OPEN-BUFFER is used for preview."
                     (cons 'candidates all-cands)))))))
     ;; TODO preview of virtual buffers is not implemented yet
     ;; see https://github.com/minad/consult/issues/9
-    (consult--preview consult-preview-buffer
+    (consult--with-preview consult-preview-buffer
+        (buf state)
         (current-window-configuration)
-        (state (set-window-configuration state))
-        (buf (when (get-buffer buf)
-               (consult--with-window
-                (funcall open-buffer buf))))
+        (set-window-configuration state)
+        (when (get-buffer buf)
+          (consult--with-window
+           (funcall open-buffer buf)))
       (minibuffer-with-setup-hook
           (lambda () (setq-local selectrum-should-sort-p nil))
         (selectrum-read "Switch to: " generate
@@ -859,12 +872,12 @@ OPEN-BUFFER is used for preview."
   (consult--read "Switch to: " candidates
                  :history 'consult-buffer-history
                  :sort nil
-                 :preview (lambda (cmd &optional arg)
+                 :preview (lambda (cmd &optional cand _state)
                             (pcase cmd
                               ('preview
-                               (when (get-buffer arg)
+                               (when (get-buffer cand)
                                  (consult--with-window
-                                  (funcall open-buffer arg))))))))
+                                  (funcall open-buffer cand))))))))
 
 (defun consult--buffer (open-buffer open-file open-bookmark)
   "Backend implementation of `consult-buffer'.
@@ -989,19 +1002,19 @@ Macros containing mouse clicks aren't displayed."
 
 ;;;; consult-preview-mode - Enabling preview for consult commands
 
-(defun consult--preview-selectrum ()
+(defun consult--preview-update-selectrum ()
   "Preview function used for Selectrum."
   (when-let* ((fun (car consult--preview-stack))
               (cand (selectrum-get-current-candidate)))
     (funcall fun cand)))
 
-(defun consult--preview-icomplete ()
+(defun consult--preview-update-icomplete ()
   "Preview function used for Icomplete."
   (when-let* ((fun (car consult--preview-stack))
               (cand (car completion-all-sorted-completions)))
     (funcall fun cand)))
 
-(defun consult--preview-default (&rest _)
+(defun consult--preview-update-default (&rest _)
   "Preview function used for the default completion system."
   (unless (or (bound-and-true-p selectrum-mode)
               (bound-and-true-p icomplete-mode))
@@ -1020,22 +1033,22 @@ Macros containing mouse clicks aren't displayed."
   :global t
 
   ;; Reset first to get a clean slate.
-  (advice-remove 'selectrum--minibuffer-post-command-hook #'consult--preview-selectrum)
-  (advice-remove 'icomplete-post-command-hook #'consult--preview-icomplete)
-  (advice-remove #'minibuffer-complete #'consult--preview-default)
-  (advice-remove #'minibuffer-complete-word #'consult--preview-default)
-  (advice-remove #'minibuffer-completion-help #'consult--preview-default)
+  (advice-remove 'selectrum--minibuffer-post-command-hook #'consult--preview-update-selectrum)
+  (advice-remove 'icomplete-post-command-hook #'consult--preview-update-icomplete)
+  (advice-remove #'minibuffer-complete #'consult--preview-update-default)
+  (advice-remove #'minibuffer-complete-word #'consult--preview-update-default)
+  (advice-remove #'minibuffer-completion-help #'consult--preview-update-default)
 
   ;; Now add our advices.
   (when consult-preview-mode
     ;; It is possible to advice functions which do not yet exist
-    (advice-add 'selectrum--minibuffer-post-command-hook :after #'consult--preview-selectrum)
-    (advice-add 'icomplete-post-command-hook :after #'consult--preview-icomplete)
+    (advice-add 'selectrum--minibuffer-post-command-hook :after #'consult--preview-update-selectrum)
+    (advice-add 'icomplete-post-command-hook :after #'consult--preview-update-icomplete)
 
     ;; TODO for default Emacs completion, I advise three functions. Is there a better way?
-    (advice-add #'minibuffer-complete-word  :after #'consult--preview-default)
-    (advice-add #'minibuffer-complete :after #'consult--preview-default)
-    (advice-add #'minibuffer-completion-help  :after #'consult--preview-default)))
+    (advice-add #'minibuffer-complete-word  :after #'consult--preview-update-default)
+    (advice-add #'minibuffer-complete :after #'consult--preview-update-default)
+    (advice-add #'minibuffer-completion-help  :after #'consult--preview-update-default)))
 
 (provide 'consult)
 ;;; consult.el ends here
