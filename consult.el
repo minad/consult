@@ -601,11 +601,12 @@ Use as a value for `completion-in-region-function'."
          (category (completion-metadata-get metadata 'category))
          (all (completion-all-completions initial collection predicate
                                           (length initial)))
-         (result nil)
+         (exit-status 'finished)
          (completion
           (cond
            ((atom all) nil)
            ((and (consp all) (atom (cdr all)))
+            (setq exit-status 'sole)
             (concat (substring initial 0 limit) (car all)))
            (t (let ((enable-recursive-minibuffers t))
                 (if (eq category 'file)
@@ -617,13 +618,12 @@ Use as a value for `completion-in-region-function'."
                   (completing-read
                    "Completion: " collection predicate t initial)))))))
     (if (null completion)
-        (message "No completion")
+        (progn (message "No completion") nil)
       (delete-region start end)
       (insert (substring-no-properties completion))
-      (setq result t))
-    (when-let ((exit (plist-get completion-extra-properties :exit-function)))
-      (funcall exit (or completion initial) (if completion 'finished 'sole)))
-    result))
+      (when-let ((exit (plist-get completion-extra-properties :exit-function)))
+        (funcall exit completion exit-status))
+      t)))
 
 ;; TODO consult--yank-read should support preview
 ;; see https://github.com/minad/consult/issues/8
