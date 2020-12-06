@@ -592,6 +592,20 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
   (interactive)
   (find-file-other-window (consult--recent-file-read)))
 
+;;;###autoload
+(defun consult-open-externally (file)
+  "Open FILE using system's default application."
+  (interactive "fOpen: ")
+  (if (and (eq system-type 'windows-nt)
+           (fboundp 'w32-shell-execute))
+      (w32-shell-execute "open" target)
+    (call-process (pcase system-type
+                    ('darwin "open")
+                    ('cygwin "cygstart")
+                    (_ "xdg-open"))
+                  nil 0 nil
+                  (expand-file-name file))))
+
 ;; Use minibuffer completion as the UI for completion-at-point
 (defun consult-completion-in-region (start end collection &optional predicate)
   "Prompt for completion of region in the minibuffer if non-unique.
