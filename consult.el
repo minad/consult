@@ -237,6 +237,7 @@ BODY are the body expressions."
   `(if ,enabled
        (let ((,(car args))
              (,@(cdr args) ,save))
+         (ignore ,@args) ;; Disable unused variable warnings
          (push (lambda (,(car args)) ,preview) consult--preview-stack)
          (unwind-protect
              (setq ,(car args) ,(if (cdr body) `(progn ,@body) (car body)))
@@ -594,7 +595,10 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
 ;; Use minibuffer completion as the UI for completion-at-point
 (defun consult-completion-in-region (start end collection &optional predicate)
   "Prompt for completion of region in the minibuffer if non-unique.
-Use as a value for `completion-in-region-function'."
+
+The function is called with 4 arguments: START END COLLECTION PREDICATE.
+The arguments and expected return value are as specified for
+`completion-in-region'. Use as a value for `completion-in-region-function'."
   (let* ((initial (buffer-substring-no-properties start end))
          (limit (car (completion-boundaries initial collection predicate "")))
          (metadata (completion-metadata initial collection predicate))

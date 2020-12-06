@@ -90,10 +90,15 @@ information (e.g. `M-x`, `describe-face`, `describe-symbol`, `helpful-function`,
     and recursive editing of the preview.
   * `consult-outline`: Jump to a heading of the outline. Supports live preview
     and recursive editing of the preview.
-  * `consult-multi-occur`: Replacement for `multi-occur`.
 
 ### Miscellaneous
 
+  * `consult-multi-occur`: Replacement for `multi-occur` which uses `completing-read-multiple`.
+  * `consult-completion-in-region`: Function which can be used as `completion-in-region-function`.
+     This way, the minibuffer completion UI will be used for `completion-at-point`.
+     This function is particularily useful in combination with Icomplete-vertical,
+     since Icomplete does not provide its own `completion-in-region-function`.
+     In contrast, Selectrum already comes with its own function.
   * `consult-minor-mode`: Enable/disable minor mode.
   * `consult-theme`: Select a theme and disable all currently enabled themes.
     Supports live preview of the theme while scrolling through the candidates.
