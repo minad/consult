@@ -597,16 +597,25 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
 Use as a value for `completion-in-region-function'."
   (let* ((initial (buffer-substring-no-properties start end))
          (limit (car (completion-boundaries initial collection predicate "")))
+         (metadata (completion-metadata initial collection predicate))
+         (category (completion-metadata-get metadata 'category))
          (all (completion-all-completions initial collection predicate
                                           (length initial)))
          (result nil)
-         (completion (cond
-                      ((atom all) nil)
-                      ((and (consp all) (atom (cdr all)))
-                       (concat (substring initial 0 limit) (car all)))
-                      (t (let ((enable-recursive-minibuffers t))
-                           (completing-read
-                            "Completion: " collection predicate t initial))))))
+         (completion
+          (cond
+           ((atom all) nil)
+           ((and (consp all) (atom (cdr all)))
+            (concat (substring initial 0 limit) (car all)))
+           (t (let ((enable-recursive-minibuffers t))
+                (if (eq category 'file)
+                    (read-file-name "Completion: "
+                                    (file-name-directory initial)
+                                    initial t
+                                    (file-name-nondirectory initial)
+                                    predicate)
+                  (completing-read
+                   "Completion: " collection predicate t initial)))))))
     (if (null completion)
         (message "No completion")
       (delete-region start end)
