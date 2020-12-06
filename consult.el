@@ -598,7 +598,7 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
   (interactive "fOpen: ")
   (if (and (eq system-type 'windows-nt)
            (fboundp 'w32-shell-execute))
-      (w32-shell-execute "open" target)
+      (w32-shell-execute "open" file)
     (call-process (pcase system-type
                     ('darwin "open")
                     ('cygwin "cygstart")
