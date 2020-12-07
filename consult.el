@@ -434,6 +434,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
   (consult--goto
    (save-excursion
      (consult--read "Go to heading: " (consult--with-increased-gc (consult--outline-candidates))
+                    :category 'line
                     :sort nil
                     :require-match t
                     :lookup (lambda (candidates x) (cdr (assoc x candidates)))
@@ -482,6 +483,7 @@ The alist contains (string . position) pairs."
   (consult--goto
    (save-excursion
      (consult--read "Go to mark: " (consult--with-increased-gc (consult--mark-candidates))
+                    :category 'mark
                     :sort nil
                     :require-match t
                     :lookup (lambda (candidates x) (cdr (assoc x candidates)))
@@ -542,6 +544,7 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
    (let ((candidates (consult--with-increased-gc (consult--line-candidates))))
      (save-excursion
        (consult--read "Go to line: " (cdr candidates)
+                      :category 'line
                       :sort nil
                       :default-top nil
                       :require-match t
@@ -721,6 +724,7 @@ Otherwise replace the just-yanked text with the selected text."
    (list
     (consult--read "Register: "
                    (consult--register-candidates)
+                   :category 'register
                    :sort nil
                    :require-match t
                    :lookup (lambda (candidates x) (cdr (assoc x candidates)))
@@ -801,6 +805,7 @@ Otherwise replace the just-yanked text with the selected text."
   (interactive)
   (call-interactively
    (consult--read "Minor modes: " (consult--minor-mode-candidates)
+                  :category 'command
                   :sort nil
                   :require-match t
                   :lookup (lambda (candidates x) (cdr (assoc x candidates)))
@@ -1004,6 +1009,7 @@ Macros containing mouse clicks aren't displayed."
   (let ((selected (consult--read
                    "Keyboard macro: "
                    (or (consult--kmacro-candidates) (user-error "No keyboard macros defined"))
+                   :category 'kmacro
                    :require-match t
                    :sort nil
                    :history 'consult-kmacro-history
