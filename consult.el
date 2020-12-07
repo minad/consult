@@ -793,6 +793,7 @@ Otherwise replace the just-yanked text with the selected text."
                        (and str (not (string-blank-p str)) (format " [%s]" str)))
                      ;; TODO it would be a bit nicer if marginalia could do this automatically based on the command
                      ;; category. but since the candidate is already prefixed with a string this is not possible.
+                     ;; See https://github.com/minad/marginalia/issues/13.
                      (when (and (bound-and-true-p marginalia-mode)
                                 (fboundp 'marginalia--documentation))
                        (marginalia--documentation (documentation mode))))
