@@ -790,7 +790,12 @@ Otherwise replace the just-yanked text with the selected text."
                      (let* ((lighter (cdr (assq mode minor-mode-alist)))
                             (str (and lighter (propertize (string-trim (format-mode-line (cons t lighter)))
                                                           'face 'consult-lighter))))
-                       (and str (not (string-blank-p str)) (format " [%s]" str))))
+                       (and str (not (string-blank-p str)) (format " [%s]" str)))
+                     ;; TODO it would be a bit nicer if marginalia could do this automatically based on the command
+                     ;; category. but since the candidate is already prefixed with a string this is not possible.
+                     (when (and (bound-and-true-p marginalia-mode)
+                                (fboundp 'marginalia--documentation))
+                       (marginalia--documentation (documentation mode))))
                     mode)
               candidates-alist)))
     (sort
