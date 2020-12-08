@@ -782,9 +782,10 @@ Otherwise replace the just-yanked text with the selected text."
 ;;;###autoload
 (defun consult-org-capture ()
   "Choose a capture template."
+  (interactive)
   ;; This is a list of org capture templates that take the form (KEYS DESC ...)
   (let* ((read-string (seq-map (lambda (it) (format "%s %s" (car it) (cadr it)))
-                               (consult--org-capture-templats)))
+                               (consult--org-capture-templates)))
          (selection (completing-read "Capture template: " read-string nil :require-match))
          (key (car (split-string selection "\s" t))))
     (org-capture nil key)))
