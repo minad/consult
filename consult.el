@@ -611,6 +611,7 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
                   (expand-file-name file))))
 
 ;; Use minibuffer completion as the UI for completion-at-point
+;;;###autoload
 (defun consult-completion-in-region (start end collection &optional predicate)
   "Prompt for completion of region in the minibuffer if non-unique.
 
