@@ -573,6 +573,7 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
   (consult--read
    "Find recent file: "
    (or (mapcar #'abbreviate-file-name recentf-list) (user-error "No recent files"))
+   :sort nil
    :require-match t
    :category 'file
    :history 'file-name-history))
