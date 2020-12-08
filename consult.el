@@ -773,28 +773,21 @@ Otherwise replace the just-yanked text with the selected text."
           (enable-theme theme)
         (load-theme theme :no-confirm)))))
 
+(defun consult--org-capture-templates ()
+  "Return a list of capture templates."
+  (thread-first org-capture-templates
+    (org-capture-upgrade-templates)
+    (org-contextualize-keys org-capture-templates-contexts)))
+
 ;;;###autoload
 (defun consult-org-capture ()
   "Choose a capture template."
-  (let (prefixes)
-    (alet (mapcan (lambda (x)
-                    (let ((x-keys (car x)))
-                      ;; Remove prefixed keys until we get one that matches the current item.
-                      (while (and prefixes
-                                  (let ((p1-keys (caar prefixes)))
-                                    (or
-                                     (<= (length x-keys) (length p1-keys))
-                                     (not (string-prefix-p p1-keys x-keys)))))
-                        (pop prefixes))
-                      (if (> (length x) 2)
-                          (let ((desc (mapconcat #'cadr (reverse (cons x prefixes)) " | ")))
-                            (list (format "%-5s %s" x-keys desc)))
-                        (push x prefixes)
-                        nil)))
-                  (-> org-capture-templates
-                      (org-capture-upgrade-templates)
-                      (org-contextualize-keys org-capture-templates-contexts)))
-      (funcall #'org-capture nil (car (split-string (completing-read "Capture template: " it nil t)))) )))
+  ;; This is a list of org capture templates that take the form (KEYS DESC ...)
+  (let* ((read-string (seq-map (lambda (it) (format "%s %s" (car it) (cadr it)))
+                               (consult--org-capture-templats)))
+         (selection (completing-read "Capture template: " read-string nil :require-match))
+         (key (car (split-string selection "\s" t))))
+    (org-capture nil key)))
 
 ;; TODO consult--buffer-selectrum performs dynamic computation of the candidate set.
 ;; this is currently not supported by completing-read+selectrum.
@@ -831,15 +824,15 @@ OPEN-BUFFER is used for preview."
     ;; TODO preview of virtual buffers is not implemented yet
     ;; see https://github.com/minad/consult/issues/9
     (consult--preview consult-preview-buffer
-        (current-window-configuration)
-        (state (set-window-configuration state))
-        (buf (when (get-buffer buf)
-               (consult--with-window
-                (funcall open-buffer buf))))
-      (consult--configure-minibuffer
-          (selectrum-should-sort-p nil)
-        (selectrum-read "Switch to: " generate
-                        :history 'consult-buffer-history)))))
+                      (current-window-configuration)
+                      (state (set-window-configuration state))
+                      (buf (when (get-buffer buf)
+                             (consult--with-window
+                              (funcall open-buffer buf))))
+                      (consult--configure-minibuffer
+                       (selectrum-should-sort-p nil)
+                       (selectrum-read "Switch to: " generate
+                                       :history 'consult-buffer-history)))))
 
 ;; TODO consult--buffer-default does not support prefixes
 ;; for narrowing like the Selectrum variant!
