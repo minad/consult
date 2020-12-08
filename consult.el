@@ -388,20 +388,22 @@ PREVIEW is a preview function."
 ;;   (when (eq major-mode 'org-mode)
 ;;     (org:show-branch)))
 
-(defun org:show-branch ()
-  "Reveal the current org branch.
+(defun consult--outline-show-branch-maybe ()
+  "Reveal the current outline branch.
+
 Show all of the current headine's parents and their children. This includes this
 headline."
-  (let (points)
-    (save-excursion
-      (outline-back-to-heading)
-      (push (point) points)
-      (while (outline-up-heading)
-        (push (point) points))
-      (--each points
-        (goto-char it)
-        (outline-show-children)
-        (outline-show-entry)))))
+  (when (outline-invisible-p (line-end-position))
+    (let (points)
+      (save-excursion
+        (outline-back-to-heading :invisible-ok)
+        (push (point) points)
+        (while (ignore-errors (outline-up-heading 1 :invisible-ok))
+          (push (point) points))
+        (dolist (point points)
+          (goto-char point)
+          (outline-show-children)
+          (outline-show-entry))))))
 
 ;;;; Commands
 
@@ -460,7 +462,8 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                     :require-match t
                     :lookup (lambda (candidates x) (cdr (assoc x candidates)))
                     :history 'consult-outline-history
-                    :preview (and consult-preview-outline #'consult--preview-line)))))
+                    :preview (and consult-preview-outline #'consult--preview-line))))
+  (consult--outline-show-branch-maybe))
 
 (defun consult--mark-candidates ()
   "Return alist of lines containing markers.
@@ -577,7 +580,8 @@ This command obeys narrowing."
                         :history 'consult-line-history
                         :lookup (lambda (candidates x) (cdr (assoc x candidates)))
                         :default (car candidates)
-                        :preview (and consult-preview-line #'consult--preview-line)))))))
+                        :preview (and consult-preview-line #'consult--preview-line))))
+     (consult--outline-show-branch-maybe))))
 
 (defun consult--recent-file-read ()
   "Read recent file via `completing-read'."
