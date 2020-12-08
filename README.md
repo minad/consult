@@ -173,11 +173,20 @@ order to use the enhanced commands, you must configure the keybindings yourself.
 | consult-preview-outline    | t   | Enable outline preview during selection                 |
 | consult-themes             | nil | List of themes to be presented for selection            |
 
-## Acknowledgments
+## Acknowledgements
 
-You probably guessed from the name that this package is inspired by and
-partially derived from [Counsel](https://github.com/abo-abo/swiper#counsel)
-(Author Oleh Krehel, Copyright Free Software Foundation, Inc.). Note that we are
-far from counsel in terms of covered functionality. Furthermore some of the
-commands found in this package were taken from the [Selectrum
-wiki](https://github.com/raxod502/selectrum/wiki/Useful-Commands).
+You probably guessed from the name that this package took inspiration
+from [Counsel](https://github.com/abo-abo/swiper#counsel) by Oleh Krehel.
+Note that we are not yet on the same level as Counsel in terms of covered functionality.
+
+Some of the commands found in this package originated in the
+[Selectrum wiki](https://github.com/raxod502/selectrum/wiki/Useful-Commands).
+
+Advice and useful discussions:
+* [Clemens Radermacher](https://github.com/clemera/)
+* [Omar Antolín Camarena](https://github.com/oantolin/)
+* [Protesilaos Stavrou](https://gitlab.com/protesilaos/)
+
+Code contributions:
+* [Omar Antolín Camarena](https://github.com/oantolin/)
+* [okamsn](https://github.com/okamsn/)

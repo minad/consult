@@ -1,6 +1,6 @@
 ;;; consult.el --- Consulting completing-read -*- lexical-binding: t -*-
 
-;; Author: Daniel Mendler, Selectrum contributors
+;; Author: Daniel Mendler, Consult and Selectrum contributors
 ;; Maintainer: Daniel Mendler
 ;; Created: 2020
 ;; License: GPL-3.0-or-later
