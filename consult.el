@@ -653,7 +653,12 @@ The arguments and expected return value are as specified for
 (defun consult--yank-read ()
   "Open kill ring menu and return selected text."
   (consult--read "Ring: "
-                 (delete-dups (seq-copy kill-ring))
+                 (let* ((sep (propertize
+                              (concat "\n" (make-string (1- (window-width)) ?—))
+                              'face 'shadow)))
+                   (mapcar (lambda (str)
+                             (propertize str 'display (concat str sep)))
+                           (delete-dups kill-ring)))
                  :require-match t))
 
 ;; Insert selected text.
