@@ -380,9 +380,12 @@ PREVIEW is a preview function."
 
 ;;;###autoload
 (defun consult-org-set-tags ()
-  "Select tags to add to headline."
+  "Select tags to add to or remove from a headline.
+Choose one or more tags. Chosen tags that are already on the current headline will
+be removed. Chosen tags which are not, will be added."
   (interactive)
   (require 'org)
+  (unless (org-at-heading-p) (user-error "Not a headline."))
   (let* ((current (org-get-tags (point)))
          (selected (thread-last (org-get-buffer-tags)
                      (completing-read-multiple "Select org tag(s): "))))
