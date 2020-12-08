@@ -654,6 +654,7 @@ The arguments and expected return value are as specified for
   "Open kill ring menu and return selected text."
   (consult--read "Ring: "
                  (delete-dups (seq-copy kill-ring))
+                 :category 'kill-ring
                  :require-match t))
 
 ;; Insert selected text.
