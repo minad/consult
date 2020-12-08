@@ -1060,7 +1060,7 @@ Macros containing mouse clicks aren't displayed."
   (unless (or (bound-and-true-p selectrum-mode)
               (bound-and-true-p icomplete-mode))
     (when-let (fun (car consult--preview-stack))
-      (let ((cand (minibuffer-contents)))
+      (let ((cand (minibuffer-contents-no-properties)))
         (when (test-completion cand
                                minibuffer-completion-table
                                minibuffer-completion-predicate)
