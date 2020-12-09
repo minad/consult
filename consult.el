@@ -257,6 +257,8 @@ BODY are the body expressions."
   (mapc #'delete-overlay consult--overlays)
   (setq consult--overlays nil))
 
+;; TODO Matched strings are not highlighted as of now
+;; see https://github.com/minad/consult/issues/7
 (defun consult--preview-line (cmd &optional cand _state)
   "The preview function used if selected from a list of candidate lines.
 
