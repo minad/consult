@@ -93,7 +93,7 @@ information (e.g. `M-x`, `describe-face`, `describe-symbol`, `helpful-function`,
 
 ### Miscellaneous
 
-  * `consult-open-externally`: Select a file and open it externally, e.g. using `xdg-open` on Linux.
+  * `consult-file-externally`: Select a file and open it externally, e.g. using `xdg-open` on Linux.
   * `consult-multi-occur`: Replacement for `multi-occur` which uses `completing-read-multiple`.
   * `consult-completion-in-region`: Function which can be used as `completion-in-region-function`.
      This way, the minibuffer completion UI will be used for `completion-at-point`.

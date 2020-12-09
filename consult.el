@@ -597,9 +597,9 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
   (find-file-other-window (consult--recent-file-read)))
 
 ;;;###autoload
-(defun consult-open-externally (file)
+(defun consult-file-externally (file)
   "Open FILE using system's default application."
-  (interactive "fOpen: ")
+  (interactive "fOpen externally: ")
   (if (and (eq system-type 'windows-nt)
            (fboundp 'w32-shell-execute))
       (w32-shell-execute "open" file)
