@@ -483,7 +483,7 @@ The alist contains (string . position) pairs."
   (consult--goto
    (save-excursion
      (consult--read "Go to mark: " (consult--with-increased-gc (consult--mark-candidates))
-                    :category 'mark
+                    :category 'line
                     :sort nil
                     :require-match t
                     :lookup (lambda (candidates x) (cdr (assoc x candidates)))
