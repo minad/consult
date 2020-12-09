@@ -1,5 +1,7 @@
 # consult.el - Consulting completing-read
 
+[![](https://melpa.org/packages/consult-badge.svg)](https://melpa.org/#/consult)
+
 This package provides various commands based on the Emacs completion function
 `completing-read`, in particular a more advanced buffer switching command and a
 variant of [Swiper](https://github.com/abo-abo/swiper#swiper). The commands are
