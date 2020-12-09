@@ -58,7 +58,12 @@
 
 (defface consult-preview-cursor
   '((t :inherit match))
-  "Face used to for cursor previews and marks in `cursor-mark'."
+  "Face used to for cursor previews and marks in `consult-mark'."
+  :group 'consult)
+
+(defface consult-preview-yank
+  '((t :inherit consult-preview-line))
+  "Face used to for yank previews in `consult-yank'."
   :group 'consult)
 
 (defface consult-key
@@ -100,6 +105,11 @@
 
 (defcustom consult-preview-theme t
   "Enable theme preview during selection."
+  :type 'boolean
+  :group 'consult)
+
+(defcustom consult-preview-yank t
+  "Enable yank preview during selection."
   :type 'boolean
   :group 'consult)
 
@@ -247,8 +257,6 @@ BODY are the body expressions."
   (mapc #'delete-overlay consult--overlays)
   (setq consult--overlays nil))
 
-;; TODO Matched strings are not highlighted as of now
-;; see https://github.com/minad/consult/issues/7
 (defun consult--preview-line (cmd &optional cand _state)
   "The preview function used if selected from a list of candidate lines.
 
@@ -626,15 +634,21 @@ The arguments and expected return value are as specified for
         (funcall exit completion exit-status))
       t)))
 
-;; TODO consult--yank-read should support preview
-;; see https://github.com/minad/consult/issues/8
 (defun consult--yank-read ()
   "Open kill ring menu and return selected text."
-  (consult--read "Ring: "
-                 (delete-dups (seq-copy kill-ring))
-                 :sort nil
-                 :category 'kill-ring
-                 :require-match t))
+  (consult--read
+   "Ring: "
+   (delete-dups (seq-copy kill-ring))
+   :sort nil
+   :category 'kill-ring
+   :require-match t
+   :preview (and consult-preview-yank
+                 (let ((ov (make-overlay (min (point) (mark t)) (max (point) (mark t)))))
+                   (overlay-put ov 'face 'consult-preview-yank)
+                   (lambda (cmd &optional cand _state)
+                     (pcase cmd
+                       ('restore (delete-overlay ov))
+                       ('preview (overlay-put ov 'display cand))))))))
 
 ;; Insert selected text.
 ;; Adapted from the Emacs yank function.
