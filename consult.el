@@ -62,7 +62,7 @@
   :group 'consult)
 
 (defface consult-key
-  '((t :inherit font-lock-keyword-face :weight normal))
+  '((t :inherit font-lock-keyword-face))
   "Face used to highlight keys, e.g., in `consult-register'."
   :group 'consult)
 
@@ -72,37 +72,37 @@
   :group 'consult)
 
 (defface consult-annotation
-  '((t :inherit completions-annotations :weight normal))
+  '((t :inherit completions-annotations))
   "Face used to highlight annotation in `consult-buffer'."
   :group 'consult)
 
 (defface consult-file
-  '((t :inherit font-lock-function-name-face :weight normal))
+  '((t :inherit font-lock-function-name-face))
   "Face used to highlight files in `consult-buffer'."
   :group 'consult)
 
 (defface consult-bookmark
-  '((t :inherit font-lock-constant-face :weight normal))
+  '((t :inherit font-lock-constant-face))
   "Face used to highlight bookmarks in `consult-buffer'."
   :group 'consult)
 
 (defface consult-view
-  '((t :inherit font-lock-keyword-face :weight normal))
+  '((t :inherit font-lock-keyword-face))
   "Face used to highlight views in `consult-buffer'."
   :group 'consult)
 
 (defface consult-line-number
-  '((t :inherit line-number :weight normal))
+  '((t :inherit line-number))
   "Face used to highlight line numbers in selections."
   :group 'consult)
 
 (defface consult-on
-  '((t :inherit success :weight bold))
+  '((t :inherit success))
   "Face used to signal enabled modes."
   :group 'consult)
 
 (defface consult-off
-  '((t :inherit error :weight bold))
+  '((t :inherit error))
   "Face used to signal disabled modes."
   :group 'consult)
 
