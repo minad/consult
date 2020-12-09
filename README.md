@@ -81,7 +81,9 @@ information (e.g. `M-x`, `describe-face`, `describe-symbol`, `helpful-function`,
 ### Histories
 
   * `consult-command-history`: Select a command from the `command-history`.
-  * `consult-minibuffer-history`: Insert a string from the `minibuffer-history`.
+  * `consult-history`: Insert a string from the current buffer history.
+    This command can be invoked from the minibuffer. In that case the history
+    stored in the minibuffer-history-variable is used.
 
 ### Jumping and Search
 
@@ -127,7 +129,8 @@ order to use the enhanced commands, you must configure the keybindings yourself.
 ;; Example configuration for Consult
 (use-package consult
   ;; Replace bindings. Lazily loaded due to use-package.
-  :bind (("C-c o" . consult-outline)
+  :bind (("C-c h" . consult-history)
+         ("C-c o" . consult-outline)
          ("C-x b" . consult-buffer)
          ("C-x 4 b" . consult-buffer-other-window)
          ("C-x 5 b" . consult-buffer-other-frame)
@@ -167,14 +170,14 @@ order to use the enhanced commands, you must configure the keybindings yourself.
 
 | Variable                   | Def | Description                                             |
 |----------------------------|-----|---------------------------------------------------------|
-| consult-annotate-alist     | …   | Functions which should get a richer completion display. |
 | consult-line-numbers-widen | t   | Show absolute line numbers when narrowing is active.    |
+| consult-mode-histories     | …   | Mode-specific history variables                         |
 | consult-preview-buffer     | t   | Enable buffer preview during selection                  |
-| consult-preview-theme      | t   | Enable theme preview during selection                   |
-| consult-preview-yank       | t   | Enable yank preview during selection                   |
-| consult-preview-mark       | t   | Enable mark preview during selection                    |
 | consult-preview-line       | t   | Enable line preview during selection                    |
+| consult-preview-mark       | t   | Enable mark preview during selection                    |
 | consult-preview-outline    | t   | Enable outline preview during selection                 |
+| consult-preview-theme      | t   | Enable theme preview during selection                   |
+| consult-preview-yank       | t   | Enable yank preview during selection                    |
 | consult-themes             | nil | List of themes to be presented for selection            |
 
 ## Acknowledgements

@@ -41,6 +41,7 @@
 (require 'kmacro)
 (require 'outline)
 (require 'recentf)
+(require 'ring)
 (require 'seq)
 (require 'subr-x)
 
@@ -97,6 +98,15 @@
   :group 'consult)
 
 ;;;; Customization
+
+(defcustom consult-mode-histories
+  '((eshell-mode . eshell-history-ring)
+    (comint-mode . comint-input-ring)
+    (term-mode   . term-input-ring))
+  "Alist of (mode . history) pairs of mode histories.
+The histories can be rings or lists."
+  :type '(list (cons symbol symbol))
+  :group 'completing-history)
 
 (defcustom consult-preview-buffer t
   "Enable buffer preview during selection."
@@ -160,12 +170,6 @@ nil shows all `custom-available-themes'."
 
 (defvar consult-apropos-history nil
   "History for the command `consult-apropos'.")
-
-(defvar consult-minibuffer-history nil
-  "History for the command `consult-minibuffer-history'.")
-
-(defvar consult-command-history nil
-  "History for the command `consult-command-history'.")
 
 (defvar consult-register-history nil
   "History for the command `consult-register'.")
@@ -759,22 +763,63 @@ Otherwise replace the just-yanked text with the selected text."
 (defun consult-command-history ()
   "Select and evaluate command from the command history."
   (interactive)
-  (eval
-   (read
-    (consult--read "Command: "
-                   (delete-dups (mapcar #'prin1-to-string command-history))
-                   :category 'expression
-                   :history 'consult-command-history))))
+  (eval (read (consult--read
+               "Command: "
+               (or (delete-dups (mapcar #'prin1-to-string command-history))
+                   (user-error "History is empty"))
+               :sort nil
+               :category 'expression))))
 
+(defun consult--current-history ()
+  "Return the history relevant to the current buffer.
+
+If the minibuffer is active, returns the minibuffer history,
+otherwise the history corresponding to the mode is returned.
+There is a special case for `repeat-complex-command',
+for which the command history is used."
+  (cond
+   ;; If pressing "C-x M-:", i.e., `repeat-complex-command',
+   ;; we are instead querying the `command-history' and get a full s-expression.
+   ((eq last-command 'repeat-complex-command)
+    (delete-dups (mapcar #'prin1-to-string command-history)))
+   ;; In the minibuffer we use the current minibuffer history,
+   ;; which can be configured by setting `minibuffer-history-variable'.
+   ((minibufferp)
+    (if (fboundp 'minibuffer-history-value)
+        (minibuffer-history-value) ;; Emacs 27 only
+      (symbol-value minibuffer-history-variable)))
+   ;; Otherwise we use a mode-specific history, see `consult-mode-histories'.
+   (t (when-let (history
+                 (or (seq-find (lambda (ring)
+                                 (and (derived-mode-p (car ring))
+                                      (boundp (cdr ring))))
+                               consult-mode-histories)
+                     (user-error
+                      "No history configured for `%s', see `consult-mode-histories'"
+                      major-mode)))
+        (symbol-value (cdr history))))))
+
+(defun consult--history-elements (history)
+  "Return elements from HISTORY.
+Can handle lists and rings."
+  (delete-dups (seq-copy (if (ring-p history)
+                             (ring-elements history)
+                           history))))
+
+;; This command has been adopted from https://github.com/oantolin/completing-history/.
 ;;;###autoload
-(defun consult-minibuffer-history ()
-  "Insert string from minibuffer history."
+(defun consult-history (&optional history)
+  "Insert string from buffer HISTORY."
   (interactive)
-  (insert
-   (substring-no-properties
-    (consult--read "Minibuffer: "
-                   (delete-dups (seq-copy minibuffer-history))
-                   :history 'consult-minibuffer-history))))
+  (let* ((enable-recursive-minibuffers t)
+         (str (consult--read "History: "
+                             (or (consult--history-elements
+                                  (or history (consult--current-history)))
+                                 (user-error "History is empty"))
+                             :sort nil)))
+      (when (minibufferp)
+        (delete-minibuffer-contents))
+      (insert (substring-no-properties str))))
 
 ;;;###autoload
 (defun consult-minor-mode-menu ()
