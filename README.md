@@ -65,7 +65,8 @@ Most provided commands follow the naming scheme `consult-thing`.
 
   * `consult-register`: Select from list of registers.
   * `consult-yank`, `consult-yank-pop`: Enhanced version of `yank` and
-    `yank-pop` which allows selecting from the kill-ring.
+    `yank-pop` which allows selecting from the kill-ring. Live preview is
+    supported when selecting from the kill-ring.
   * `consult-kmacro`: Select macro from the macro ring and execute it.
 
 ### Help/Discoverability
