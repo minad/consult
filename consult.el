@@ -66,11 +66,6 @@
   "Face used to highlight keys, e.g., in `consult-register'."
   :group 'consult)
 
-(defface consult-lighter
-  '((t :inherit consult-key))
-  "Face used to highlight lighters in `consult-minor-mode'."
-  :group 'consult)
-
 (defface consult-annotation
   '((t :inherit completions-annotations))
   "Face used to highlight annotation in `consult-buffer'."
@@ -94,16 +89,6 @@
 (defface consult-line-number
   '((t :inherit line-number))
   "Face used to highlight line numbers in selections."
-  :group 'consult)
-
-(defface consult-on
-  '((t :inherit success))
-  "Face used to signal enabled modes."
-  :group 'consult)
-
-(defface consult-off
-  '((t :inherit error))
-  "Face used to signal disabled modes."
   :group 'consult)
 
 ;;;; Customization
@@ -178,8 +163,8 @@ nil shows all `custom-available-themes'."
 (defvar consult-theme-history nil
   "History for the command `consult-theme'.")
 
-(defvar consult-minor-mode-history nil
-  "History for the command `consult-minor-mode'.")
+(defvar consult-minor-mode-menu-history nil
+  "History for the command `consult-minor-mode-menu'.")
 
 (defvar consult-kmacro-history nil
   "History for the command `consult-kmacro'.")
@@ -214,13 +199,6 @@ nil shows all `custom-available-themes'."
   ;; against `consult-fontify-limit'.
   (when (and font-lock-mode (< (buffer-size) consult-fontify-limit))
     (font-lock-ensure)))
-
-(defun consult--status-prefix (enabled)
-  "Status prefix for given boolean ENABLED."
-  (propertize " " 'display
-              (if enabled
-                  (propertize "+ " 'face 'consult-on)
-                (propertize "- " 'face 'consult-off))))
 
 (defmacro consult--with-preview (enabled args save restore preview &rest body)
   "Add preview support to minibuffer completion.
@@ -783,43 +761,20 @@ Otherwise replace the just-yanked text with the selected text."
                    (delete-dups (seq-copy minibuffer-history))
                    :history 'consult-minibuffer-history))))
 
-(defun consult--minor-mode-candidates ()
-  "Return alist of minor-mode names and symbols."
-  (let ((candidates-alist))
-    (dolist (mode minor-mode-list)
-      (when (and (boundp mode) (commandp mode))
-        (push (cons (concat
-                     (consult--status-prefix (symbol-value mode))
-                     (symbol-name mode)
-                     (let* ((lighter (cdr (assq mode minor-mode-alist)))
-                            (str (and lighter (propertize (string-trim (format-mode-line (cons t lighter)))
-                                                          'face 'consult-lighter))))
-                       (and str (not (string-blank-p str)) (format " [%s]" str)))
-                     ;; TODO it would be a bit nicer if marginalia could do this automatically based on the command
-                     ;; category. but since the candidate is already prefixed with a string this is not possible.
-                     ;; See https://github.com/minad/marginalia/issues/13.
-                     (when (and (bound-and-true-p marginalia-mode)
-                                (fboundp 'marginalia--documentation))
-                       (marginalia--documentation (documentation mode))))
-                    mode)
-              candidates-alist)))
-    (sort
-     (sort candidates-alist (lambda (x y) (string< (car x) (car y))))
-     (lambda (x y)
-       (> (if (symbol-value (cdr x)) 1 0)
-          (if (symbol-value (cdr y)) 1 0))))))
-
 ;;;###autoload
-(defun consult-minor-mode ()
-  "Enable or disable minor mode."
+(defun consult-minor-mode-menu ()
+  "Enable or disable minor mode.
+This is an alternative to `minor-mode-menu-from-indicator'."
   (interactive)
-  (call-interactively
-   (consult--read "Minor modes: " (consult--minor-mode-candidates)
-                  :category 'command
-                  :sort nil
-                  :require-match t
-                  :lookup (lambda (candidates x) (cdr (assoc x candidates)))
-                  :history 'consult-minor-mode-history)))
+  (let ((mode (consult--read "Minor mode: "
+                             ;; Taken from describe-minor-mode
+		             (nconc
+		              (describe-minor-mode-completion-table-for-symbol)
+		              (describe-minor-mode-completion-table-for-indicator))
+                             :require-match t
+                             :history 'consult-minor-mode-menu-history)))
+    (call-interactively (or (lookup-minor-mode-from-indicator mode)
+                            (intern mode)))))
 
 ;;;###autoload
 (defun consult-theme (theme)

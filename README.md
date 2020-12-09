@@ -100,7 +100,7 @@ information (e.g. `M-x`, `describe-face`, `describe-symbol`, `helpful-function`,
      This function is particularily useful in combination with Icomplete-vertical,
      since Icomplete does not provide its own `completion-in-region-function`.
      In contrast, Selectrum already comes with its own function.
-  * `consult-minor-mode`: Enable/disable minor mode.
+  * `consult-minor-mode-menu`: Enable/disable minor mode.
   * `consult-theme`: Select a theme and disable all currently enabled themes.
     Supports live preview of the theme while scrolling through the candidates.
 
