@@ -17,12 +17,15 @@ Note that if you use [Ivy](https://github.com/abo-abo/swiper#ivy) or
 [Helm](https://github.com/emacs-helm/helm), you don't need Consult, since both
 packages already bring their own rich set of additional commands.
 
-Note that there is the [Marginalia
-package](https://github.com/minad/marginalia/), which can be combined
-with Consult. The `marginalia-mode` enriches the completion display
-with documentation strings. The Marginalia package has been
-extracted from [Embark](https://github.com/oantolin/embark/) and Consult since
-both packages provided minibuffer annotations.
+Note that there is the [Marginalia](https://github.com/minad/marginalia/)
+package, which can be combined with Consult. The `marginalia-mode` enriches the
+completion display with annotations. The annotations show for example
+documentation strings or file information. Marginalia has been extracted from
+[Embark](https://github.com/oantolin/embark/) and Consult since both packages
+provided minibuffer annotations. Embark provides local actions (like a context
+menu), which can be executed while selecting a candidate during completion in
+the minibuffer. For example, when selecting a file, an action to delete the file
+is offered.
 
 ## Screenshots
 
@@ -73,10 +76,10 @@ Most provided commands follow the naming scheme `consult-thing`.
 
   * `consult-apropos`: Replacement for `apropos` with completion.
 
-Note that there is the [Marginalia
-package](https://github.com/minad/marginalia/), which provides
-`marginalia-mode`. Enabling this mode annotates completions with richer
-information (e.g. `M-x`, `describe-face`, `describe-symbol`, `helpful-function`, …).
+Note that there is the [Marginalia](https://github.com/minad/marginalia/)
+package, which provides `marginalia-mode`. Enabling this mode annotates
+completions with richer information (e.g. `M-x`, `describe-face`,
+`describe-symbol`, `helpful-function`, …).
 
 ### Histories
 
