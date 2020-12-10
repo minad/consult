@@ -113,6 +113,11 @@ The histories can be rings or lists."
   :type 'boolean
   :group 'consult)
 
+(defcustom consult-preview-flycheck t
+  "Enable flycheck preview during selection."
+  :type 'boolean
+  :group 'consult)
+
 (defcustom consult-preview-theme t
   "Enable theme preview during selection."
   :type 'boolean
@@ -202,6 +207,13 @@ nil shows all `custom-available-themes'."
 (defvar selectrum-should-sort-p)
 (declare-function selectrum-read "selectrum")
 (declare-function selectrum-get-current-candidate "selectrum")
+(defvar flycheck-current-errors)
+(declare-function flycheck-error-filename "flycheck")
+(declare-function flycheck-error-line "flycheck")
+(declare-function flycheck-error-message "flycheck")
+(declare-function flycheck-error-level "flycheck")
+(declare-function flycheck-jump-to-error "flycheck")
+(declare-function flycheck-error-level-error-list-face "flycheck")
 
 ;;;; Helper functions
 
@@ -264,7 +276,7 @@ BODY are the body expressions."
 ;; TODO Matched strings are not highlighted as of now
 ;; see https://github.com/minad/consult/issues/7
 (defun consult--preview-line (cmd &optional cand _state)
-  "The preview function used if selected from a list of candidate lines.
+  "The preview function used if selecting from a list of candidate lines.
 
 The function can be used as the `:preview' argument of `consult--read'.
 CMD is the preview command.
@@ -373,6 +385,7 @@ Since the line number is part of the candidate it will be matched-on during comp
 (defun consult--goto (pos)
   "Push current position to mark ring, go to POS and recenter."
   (when pos
+    ;; Record previous location such that the user can jump back quickly
     (push-mark (point) t)
     (goto-char pos)
     (recenter)))
@@ -432,6 +445,63 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                     :lookup (lambda (candidates x) (cdr (assoc x candidates)))
                     :history 'consult-outline-history
                     :preview (and consult-preview-outline #'consult--preview-line)))))
+
+(defun consult--flycheck-candidates ()
+  "Return flycheck errors as alist."
+  (when (boundp 'flycheck-current-errors)
+    (let* ((errors (mapcar
+                    (lambda (err)
+                      (list (file-name-nondirectory (flycheck-error-filename err))
+                            (number-to-string (flycheck-error-line err))
+                            err))
+                    flycheck-current-errors))
+           (file-width (apply #'max (mapcar (lambda (x) (length (car x))) errors)))
+           (line-width (apply #'max (mapcar (lambda (x) (length (cadr x))) errors)))
+           (fmt (format "%%-%ds %%-%ds %%-7s %%s" file-width line-width)))
+    (mapcar
+     (pcase-lambda (`(,file ,line ,err))
+       (flycheck-jump-to-error err)
+       (cons
+        (format fmt
+                (propertize file 'face 'flycheck-error-list-filename)
+                (propertize line 'face 'flycheck-error-list-line-number)
+                (let ((level (flycheck-error-level err)))
+                  (propertize (symbol-name level) 'face (flycheck-error-level-error-list-face level)))
+                (flycheck-error-message err))
+        (point-marker)))
+     errors))))
+
+(defun consult--preview-flycheck (cmd &optional err _state)
+  "The preview function used if selecting from a list of flycheck errors.
+CMD is the preview command.
+ERR is the selected error.
+_STATE is the saved state."
+  (pcase cmd
+    ('restore
+     (consult--overlay-cleanup))
+    ('preview
+     (consult--with-window
+      (consult--overlay-cleanup)
+      (goto-char err)
+      (recenter)
+      (consult--overlay-add (line-beginning-position) (line-end-position) 'consult-preview-line)
+      (let ((pos (point)))
+        (consult--overlay-add pos (1+ pos) 'consult-preview-cursor))))))
+
+;;;###autoload
+(defun consult-flycheck ()
+  "Jump to flycheck error."
+  (interactive)
+  (consult--goto
+   (save-window-excursion
+     (save-excursion
+       (consult--read "Flycheck error: "
+                      (or (consult--with-increased-gc (consult--flycheck-candidates))
+                          (user-error "No flycheck errors"))
+                      :category 'flycheck-error
+                      :require-match t
+                      :lookup (lambda (candidates x) (cdr (assoc x candidates)))
+                      :preview (and consult-preview-flycheck #'consult--preview-flycheck))))))
 
 (defun consult--mark-candidates ()
   "Return alist of lines containing markers.

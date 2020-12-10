@@ -88,13 +88,15 @@ information (e.g. `M-x`, `describe-face`, `describe-symbol`, `helpful-function`,
 ### Jumping and Search
 
   * `consult-line` (`-symbol-at-point`, `-from-isearch`): Select from matching
-    lines. Supports live preview and recursive editing of the preview. There are
+    lines. Supports live preview and recursive editing. There are
     two variants, which search for the symbol at point and for the most
     recent isearch string respectively.
   * `consult-mark`: Jump to a marker in the `mark-ring`. Supports live preview
-    and recursive editing of the preview.
+    and recursive editing.
   * `consult-outline`: Jump to a heading of the outline. Supports live preview
-    and recursive editing of the preview.
+    and recursive editing.
+  * `consult-flycheck`: Jump to flycheck error. Supports live preview
+    and recursive editing.
 
 ### Miscellaneous
 
