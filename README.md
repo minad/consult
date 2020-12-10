@@ -133,6 +133,7 @@ order to use the enhanced commands, you must configure the keybindings yourself.
   ;; Replace bindings. Lazily loaded due to use-package.
   :bind (("C-c h" . consult-history)
          ("C-c o" . consult-outline)
+         ("C-c !!" . consult-flycheck)
          ("C-x b" . consult-buffer)
          ("C-x 4 b" . consult-buffer-other-window)
          ("C-x 5 b" . consult-buffer-other-frame)
