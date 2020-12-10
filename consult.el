@@ -212,13 +212,15 @@ nil shows all `custom-available-themes'."
 (defvar selectrum-should-sort-p)
 (declare-function selectrum-read "selectrum")
 (declare-function selectrum-get-current-candidate "selectrum")
+
 (defvar flycheck-current-errors)
+(declare-function flycheck-error-buffer "flycheck")
 (declare-function flycheck-error-filename "flycheck")
+(declare-function flycheck-error-level "flycheck")
+(declare-function flycheck-error-level-error-list-face "flycheck")
 (declare-function flycheck-error-line "flycheck")
 (declare-function flycheck-error-message "flycheck")
-(declare-function flycheck-error-level "flycheck")
 (declare-function flycheck-jump-to-error "flycheck")
-(declare-function flycheck-error-level-error-list-face "flycheck")
 
 ;;;; Helper functions
 
@@ -398,6 +400,8 @@ Since the line number is part of the candidate it will be matched-on during comp
 (defun consult--preview-position (pos)
   "Go to POS and recenter."
   (when pos
+    (when (and (markerp pos) (not (eq (current-buffer) (marker-buffer pos))))
+      (switch-to-buffer (marker-buffer pos)))
     (goto-char pos)
     (when consult-recenter
       (recenter))))
@@ -405,8 +409,10 @@ Since the line number is part of the candidate it will be matched-on during comp
 (defun consult--goto-position (pos)
   "Push current position to mark ring, go to POS and recenter."
   (when pos
-    ;; Record previous location such that the user can jump back quickly
-    (push-mark (point) t)
+    ;; When the marker is in the same buffer,
+    ;; record previous location such that the user can jump back quickly.
+    (unless (and (markerp pos) (not (eq (current-buffer) (marker-buffer pos))))
+      (push-mark (point) t))
     (consult--preview-position pos)))
 
 ;;;; Commands
