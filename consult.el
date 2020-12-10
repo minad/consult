@@ -658,9 +658,9 @@ The arguments and expected return value are as specified for
                      (pcase cmd
                        ('restore (delete-overlay ov))
                        ('preview
-                        ;; Use `font-lock-append-text-property' on a copy of "cand in order to merge face properties
+                        ;; Use `add-face-text-property' on a copy of "cand in order to merge face properties
                         (setq cand (copy-sequence cand))
-                        (font-lock-append-text-property 0 (length cand) 'face 'consult-preview-yank cand)
+                        (add-face-text-property 0 (length cand) 'consult-preview-yank t cand)
                         ;; Use the `before-string' property since the overlay might be empty.
                         (overlay-put ov 'before-string cand))))))))
 
