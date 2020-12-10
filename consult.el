@@ -1170,6 +1170,59 @@ Macros containing mouse clicks aren't displayed."
                     kmacro-counter
                     kmacro-counter-format))))))
 
+(defun consult--info-top-nodes ()
+  "Return list of top-level info nodes to use for `consult-info'.
+Elements of the list are strings of Info file names without
+extensions (e.g. \"emacs\" for file \"emacs.info.gz\"). Info
+files are found by searching directories in `Info-directory-list'."
+  (info-initialize)
+  (let (files nodes)
+    (dolist (dir (or Info-directory-list Info-default-directory-list))
+      (when (file-directory-p dir)
+        (setq files (append files (directory-files dir nil "\\.info")))))
+    (save-match-data
+      (dolist (file files)
+        (string-match "\\(.+?\\)\\..+" file)
+        (push (match-string 1 file) nodes)))
+    (delete-dups (nreverse nodes))))
+
+(defvar consult--info-node-line-regexp
+  "\\* +\\([^\n]*.+[^\n]*\\):[\011 ]+\\([^\n]*\\)\\.\\(?:[\011\n ]*(line +\\([0-9]+\\))\\)?"
+  "Regexp used to find info-node lines.")
+
+(defun consult--info-child-nodes (top-node)
+  "Return a list of child nodes and their description as strings."
+  (save-selected-window
+    (with-temp-buffer
+      (info top-node (current-buffer))
+      (let (collection Info-history start end line)
+        (dolist (node (Info-index-nodes))
+          (Info-goto-node node)
+          (goto-char (point-min))
+          (while (search-forward "\n* " nil t)
+            (unless (search-forward "Menu:\n" (1+ (point-at-eol)) t)
+              (setq start (point-at-bol)
+                    end (or (save-excursion
+                              (goto-char (point-at-bol))
+                              (re-search-forward "(line +[0-9]+)" nil t))
+                            (point-at-eol))
+                    line (replace-regexp-in-string
+                          "\n" "" (buffer-substring start end)))
+              (push line collection))))
+        (nreverse collection)))))
+
+;;;###autoload
+(defun consult-info (top)
+  ;;"Prompt for node to jump to based on TOP-NODE."
+  "Search the child-nodes of a select top-level Info node.
+First prompt for the specific node to search in (ie. emacs, elisp,
+org-mode). Then search the child nodes (along with their description) of that
+node."
+  (interactive (list (consult--read "Top Node: " (consult--info-top-nodes))))
+  (let ((line (consult--read "Child Node:" (consult--info-child-nodes top))))
+    (string-match "\\*[[:space:]].+:[[:space:]]+\\(.+\\)\\." line)
+    (Info-goto-node (format "(%s)%s" top (match-string 1 line)))))
+
 ;;;; consult-preview-mode - Enabling preview for consult commands
 
 (defun consult--preview-update-selectrum ()
