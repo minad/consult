@@ -1231,7 +1231,7 @@ Prepend PREFIX in front of all items."
   (imenu
    (save-excursion
      (consult--read
-      "Item: "
+      "Go to item: "
       (or (consult--imenu-candidates) (user-error "Imenu is empty"))
       :preview (and consult-preview-imenu
                     (lambda (cmd cand state)
