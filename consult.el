@@ -658,14 +658,11 @@ The arguments and expected return value are as specified for
                      (pcase cmd
                        ('restore (delete-overlay ov))
                        ('preview
-                        ;; Use the before-string property since the overlay might be empty.
-                        ;; Unfortunately the face property overwrites the faces of the candidate.
-                        ;; TODO Is there a better way?
-                        ;; I would prefer to use the display property instead, since
-                        ;; then I can set the face of the overlay such that the candidate face is merged.
-                        ;; However the display property does not work for empty overlays.
-                        (overlay-put ov 'before-string
-                                     (propertize cand 'face 'consult-preview-yank)))))))))
+                        ;; Use `font-lock-append-text-property' on a copy of "cand in order to merge face properties
+                        (setq cand (copy-sequence cand))
+                        (font-lock-append-text-property 0 (length cand) 'face 'consult-preview-yank cand)
+                        ;; Use the `before-string' property since the overlay might be empty.
+                        (overlay-put ov 'before-string cand))))))))
 
 ;; Insert selected text.
 ;; Adapted from the Emacs yank function.
