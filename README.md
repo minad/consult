@@ -143,6 +143,7 @@ order to use the enhanced commands, you must configure the keybindings yourself.
          ("M-g o" . consult-outline) ;; "M-s o" is a good alternative
          ("M-g m" . consult-mark)    ;; "M-s m" is a good alternative
          ("M-g l" . consult-line)    ;; "M-s l" is a good alternative
+         ("M-g i" . consult-imenu)   ;; "M-s i" is a good alternative
          ("M-s m" . consult-multi-occur)
          ("M-y" . consult-yank-pop)
          ("<help> a" . consult-apropos)
