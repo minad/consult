@@ -85,7 +85,7 @@ information (e.g. `M-x`, `describe-face`, `describe-symbol`, `helpful-function`,
     This command can be invoked from the minibuffer. In that case the history
     stored in the minibuffer-history-variable is used.
 
-### Jumping and Search
+### Navigation and Search
 
   * `consult-line` (`-symbol-at-point`, `-from-isearch`): Select from matching
     lines. Supports live preview and recursive editing. There are
@@ -96,6 +96,8 @@ information (e.g. `M-x`, `describe-face`, `describe-symbol`, `helpful-function`,
   * `consult-outline`: Jump to a heading of the outline. Supports live preview
     and recursive editing.
   * `consult-flycheck`: Jump to flycheck error. Supports live preview
+    and recursive editing.
+  * `consult-imenu`: Jump to imenu item. Supports live preview
     and recursive editing.
 
 ### Miscellaneous
