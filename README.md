@@ -100,7 +100,8 @@ completions with richer information (e.g. `M-x`, `describe-face`,
   * `consult-outline`: Jump to a heading of the outline. Supports live preview
     and recursive editing.
   * `consult-flycheck`: Jump to flycheck error. Supports live preview
-    and recursive editing.
+    and recursive editing. Flycheck users should install the separate
+    `consult-flycheck` package to obtain this functionality.
   * `consult-imenu`: Jump to imenu item. Supports live preview
     and recursive editing.
 

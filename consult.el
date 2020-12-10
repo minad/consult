@@ -124,11 +124,6 @@ The histories can be rings or lists."
   :type 'boolean
   :group 'consult)
 
-(defcustom consult-preview-flycheck t
-  "Enable flycheck preview during selection."
-  :type 'boolean
-  :group 'consult)
-
 (defcustom consult-preview-imenu t
   "Enable imenu item preview during selection."
   :type 'boolean
@@ -236,17 +231,6 @@ nil shows all `custom-available-themes'."
 (defvar selectrum-should-sort-p)
 (declare-function selectrum-read "selectrum")
 (declare-function selectrum-get-current-candidate "selectrum")
-
-(defvar flycheck-current-errors)
-(declare-function flycheck-error-buffer "flycheck")
-(declare-function flycheck-error-checker "flycheck")
-(declare-function flycheck-error-filename "flycheck")
-(declare-function flycheck-error-level "flycheck")
-(declare-function flycheck-error-level-< "flycheck")
-(declare-function flycheck-error-level-error-list-face "flycheck")
-(declare-function flycheck-error-line "flycheck")
-(declare-function flycheck-error-message "flycheck")
-(declare-function flycheck-jump-to-error "flycheck")
 
 ;;;; Helper functions
 
@@ -502,53 +486,6 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                     :lookup #'consult--lookup-list
                     :history 'consult-outline-history
                     :preview (and consult-preview-outline #'consult--preview-position)))))
-
-(defun consult--flycheck-candidates ()
-  "Return flycheck errors as alist."
-  (consult--forbid-minibuffer)
-  (unless (bound-and-true-p flycheck-current-errors)
-    (user-error "No flycheck errors (Status: %s)"
-                (if (boundp 'flycheck-last-status-change)
-                    flycheck-last-status-change
-                  'not-installed)))
-  (let* ((errors (mapcar
-                  (lambda (err)
-                    (list (file-name-nondirectory (flycheck-error-filename err))
-                          (number-to-string (flycheck-error-line err))
-                          err))
-                  (seq-sort #'flycheck-error-level-< flycheck-current-errors)))
-         (file-width (apply #'max (mapcar (lambda (x) (length (car x))) errors)))
-         (line-width (apply #'max (mapcar (lambda (x) (length (cadr x))) errors)))
-         (fmt (format "%%-%ds %%-%ds %%-7s %%s (%%s)" file-width line-width)))
-    (mapcar
-     (pcase-lambda (`(,file ,line ,err))
-       (flycheck-jump-to-error err)
-       (cons
-        (format fmt
-                (propertize file 'face 'flycheck-error-list-filename)
-                (propertize line 'face 'flycheck-error-list-line-number)
-                (let ((level (flycheck-error-level err)))
-                  (propertize (symbol-name level) 'face (flycheck-error-level-error-list-face level)))
-                (propertize (flycheck-error-message err)
-                            'face 'flycheck-error-list-error-message)
-                (propertize (symbol-name (flycheck-error-checker err))
-                            'face 'flycheck-error-list-checker-name))
-        (point-marker)))
-     errors)))
-
-;;;###autoload
-(defun consult-flycheck ()
-  "Jump to flycheck error."
-  (interactive)
-  (consult--goto
-   (save-excursion
-     (consult--read "Flycheck error: "
-                    (consult--with-increased-gc (consult--flycheck-candidates))
-                    :category 'flycheck-error
-                    :require-match t
-                    :sort nil
-                    :lookup #'consult--lookup-list
-                    :preview (and consult-preview-flycheck #'consult--preview-position)))))
 
 (defun consult--mark-candidates ()
   "Return alist of lines containing markers.
