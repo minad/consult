@@ -480,7 +480,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                     (list (file-name-nondirectory (flycheck-error-filename err))
                           (number-to-string (flycheck-error-line err))
                           err))
-                  flycheck-current-errors))
+                  (seq-sort #'flycheck-error-level-< flycheck-current-errors)))
          (file-width (apply #'max (mapcar (lambda (x) (length (car x))) errors)))
          (line-width (apply #'max (mapcar (lambda (x) (length (cadr x))) errors)))
          (fmt (format "%%-%ds %%-%ds %%-7s %%s" file-width line-width)))
@@ -493,7 +493,8 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                 (propertize line 'face 'flycheck-error-list-line-number)
                 (let ((level (flycheck-error-level err)))
                   (propertize (symbol-name level) 'face (flycheck-error-level-error-list-face level)))
-                (flycheck-error-message err))
+                (propertize (flycheck-error-message err)
+                            'face 'flycheck-error-list-error-message))
         (point-marker)))
      errors)))
 
