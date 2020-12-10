@@ -226,6 +226,11 @@ nil shows all `custom-available-themes'."
   "Lookup KEY in ALIST."
   (cdr (assoc key alist)))
 
+(defun consult--forbid-minibuffer ()
+  "Raise an error if executed from the minibuffer."
+  (when (minibufferp)
+    (user-error "Consult called inside the minibuffer")))
+
 (defsubst consult--fontify ()
   "Ensure that the whole buffer is fontified."
   ;; Font-locking is lazy, i.e., if a line has not been looked at yet, the line is not font-locked.
@@ -420,8 +425,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
 
 (defun consult--outline-candidates ()
   "Return alist of outline headings and positions."
-  (when (minibufferp)
-    (user-error "Consult called inside the minibuffer"))
+  (consult--forbid-minibuffer)
   (consult--fontify)
   (let* ((max-line 0)
          (line (line-number-at-pos (point-min) consult-line-numbers-widen))
@@ -462,6 +466,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
 
 (defun consult--flycheck-candidates ()
   "Return flycheck errors as alist."
+  (consult--forbid-minibuffer)
   (when (boundp 'flycheck-current-errors)
     (let* ((errors (mapcar
                     (lambda (err)
@@ -519,8 +524,7 @@ _STATE is the saved state."
 (defun consult--mark-candidates ()
   "Return alist of lines containing markers.
 The alist contains (string . position) pairs."
-  (when (minibufferp)
-    (user-error "Consult called inside the minibuffer"))
+  (consult--forbid-minibuffer)
   (unless (marker-position (mark-marker))
     (user-error "No marks"))
   (consult--fontify)
@@ -579,8 +583,7 @@ WIDTH is the line number width."
 
 (defun consult--line-candidates ()
   "Return alist of lines and positions."
-  (when (minibufferp)
-    (user-error "Consult called inside the minibuffer"))
+  (consult--forbid-minibuffer)
   (consult--fontify)
   (let* ((default-cand)
          (candidates)
