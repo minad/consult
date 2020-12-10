@@ -649,12 +649,23 @@ The arguments and expected return value are as specified for
    :category 'kill-ring
    :require-match t
    :preview (and consult-preview-yank
-                 (let ((ov (make-overlay (min (point) (mark t)) (max (point) (mark t)))))
-                   (overlay-put ov 'face 'consult-preview-yank)
+                 (let* ((pt (point))
+                        ;; If previous command is yank, hide previously yanked text
+                        (mk (or (and (eq last-command 'yank) (mark t)) pt))
+                        (ov (make-overlay (min pt mk) (max pt mk))))
+                   (overlay-put ov 'invisible t)
                    (lambda (cmd &optional cand _state)
                      (pcase cmd
                        ('restore (delete-overlay ov))
-                       ('preview (overlay-put ov 'display cand))))))))
+                       ('preview
+                        ;; Use the before-string property since the overlay might be empty.
+                        ;; Unfortunately the face property overwrites the faces of the candidate.
+                        ;; TODO Is there a better way?
+                        ;; I would prefer to use the display property instead, since
+                        ;; then I can set the face of the overlay such that the candidate face is merged.
+                        ;; However the display property does not work for empty overlays.
+                        (overlay-put ov 'before-string
+                                     (propertize cand 'face 'consult-preview-yank)))))))))
 
 ;; Insert selected text.
 ;; Adapted from the Emacs yank function.
