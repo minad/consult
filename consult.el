@@ -229,6 +229,7 @@ nil shows all `custom-available-themes'."
 ;;;; Pre-declarations for external packages
 
 (defvar imenu-auto-rescan)
+(defvar imenu-use-markers)
 (declare-function imenu--make-index-alist "imenu")
 (declare-function imenu--subalist-p "imenu")
 
@@ -1198,16 +1199,21 @@ Prepend PREFIX in front of all items."
        (let ((key (concat
                    (and prefix (concat (propertize prefix 'face 'consult-imenu-prefix) ": "))
                    (car item)))
-             (val (cdr item)))
-         (list (cons key (cons key (if (overlayp val)
-                                       (overlay-start val)
-                                     val)))))))
+             (pos (cdr item)))
+         (list (cons key (cons key
+                               (cond
+                                ;; Semantic uses overlay for positions
+                                ((overlayp pos) (overlay-start pos))
+                                ;; Replace integer positions with markers
+                                ((integerp pos) (copy-marker pos))
+                                (t pos))))))))
    list))
 
 (defun consult--imenu-candidates ()
   "Return imenu candidates."
   (consult--forbid-minibuffer)
   (let* ((imenu-auto-rescan t)
+         (imenu-use-markers t)
          (items (imenu--make-index-alist t)))
     (setq items (delete (assoc "*Rescan*" items) items))
     ;; Functions appear at the top-level for emacs-lisp-mode. Fix this!
@@ -1232,7 +1238,7 @@ Prepend PREFIX in front of all items."
                       (if (eq cmd 'preview)
                           ;; Only handle imenu items which are markers for preview,
                           ;; in order to avoid any bad side effects.
-                          (when (and (consp cand) (or (integerp (cdr cand)) (markerp (cdr cand))))
+                          (when (and (consp cand) (markerp (cdr cand)))
                             (consult--preview-position cmd (cdr cand) state))
                         (consult--preview-position cmd cand state))))
       :require-match t
