@@ -468,6 +468,8 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
   "Return flycheck errors as alist."
   (consult--forbid-minibuffer)
   (when (boundp 'flycheck-current-errors)
+    (unless flycheck-current-errors
+      (user-error "No flycheck errors"))
     (let* ((errors (mapcar
                     (lambda (err)
                       (list (file-name-nondirectory (flycheck-error-filename err))
@@ -514,10 +516,10 @@ _STATE is the saved state."
    (save-window-excursion
      (save-excursion
        (consult--read "Flycheck error: "
-                      (or (consult--with-increased-gc (consult--flycheck-candidates))
-                          (user-error "No flycheck errors"))
+                      (consult--with-increased-gc (consult--flycheck-candidates))
                       :category 'flycheck-error
                       :require-match t
+                      :sort nil
                       :lookup #'consult--lookup-list
                       :preview (and consult-preview-flycheck #'consult--preview-flycheck))))))
 
