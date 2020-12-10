@@ -215,8 +215,10 @@ nil shows all `custom-available-themes'."
 
 (defvar flycheck-current-errors)
 (declare-function flycheck-error-buffer "flycheck")
+(declare-function flycheck-error-checker "flycheck")
 (declare-function flycheck-error-filename "flycheck")
 (declare-function flycheck-error-level "flycheck")
+(declare-function flycheck-error-level-< "flycheck")
 (declare-function flycheck-error-level-error-list-face "flycheck")
 (declare-function flycheck-error-line "flycheck")
 (declare-function flycheck-error-message "flycheck")
@@ -483,7 +485,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                   (seq-sort #'flycheck-error-level-< flycheck-current-errors)))
          (file-width (apply #'max (mapcar (lambda (x) (length (car x))) errors)))
          (line-width (apply #'max (mapcar (lambda (x) (length (cadr x))) errors)))
-         (fmt (format "%%-%ds %%-%ds %%-7s %%s" file-width line-width)))
+         (fmt (format "%%-%ds %%-%ds %%-7s %%s (%%s)" file-width line-width)))
     (mapcar
      (pcase-lambda (`(,file ,line ,err))
        (flycheck-jump-to-error err)
@@ -494,7 +496,9 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                 (let ((level (flycheck-error-level err)))
                   (propertize (symbol-name level) 'face (flycheck-error-level-error-list-face level)))
                 (propertize (flycheck-error-message err)
-                            'face 'flycheck-error-list-error-message))
+                            'face 'flycheck-error-list-error-message)
+                (propertize (symbol-name (flycheck-error-checker err))
+                            'face 'flycheck-error-list-checker-name))
         (point-marker)))
      errors)))
 
