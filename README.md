@@ -5,8 +5,10 @@
 This package provides various commands based on the Emacs completion function
 `completing-read`, in particular a more advanced buffer switching command
 `consult-buffer` and a [Swiper](https://github.com/abo-abo/swiper#swiper)-like
-search command `consult-line`. The commands are compatible with
-completion-systems based on the standard Emacs API, e.g., the Emacs builtin
+search command `consult-line`.
+
+The commands are compatible with completion-systems based on the standard Emacs
+API, e.g., the Emacs builtin
 [Icomplete](https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html)
 and [Selectrum](https://github.com/raxod502/selectrum). If Icomplete is used, it
 is recommended to install
@@ -19,9 +21,8 @@ completion display with annotations. The annotations show for example
 documentation strings or file information. Marginalia has been extracted from
 [Embark](https://github.com/oantolin/embark/) and Consult since both packages
 provided minibuffer annotations. Embark provides local actions (like a context
-menu), which can be executed while selecting a candidate during completion in
-the minibuffer. For example, when selecting a file, an action to delete the file
-is offered.
+menu), which can be executed while selecting a candidate in the minibuffer. For
+example, when selecting a file, an action to delete the file is offered.
 
 If you use [Ivy](https://github.com/abo-abo/swiper#ivy) or
 [Helm](https://github.com/emacs-helm/helm), you probably don't need Consult,
@@ -41,7 +42,7 @@ consult-outline
 
 ![consult-outline](https://github.com/minad/consult/blob/master/images/consult-outline.png?raw=true)
 
-marginalia-mode (formerly consult-annotate-mode)
+marginalia-mode
 
 ![marginalia-mode](https://github.com/minad/marginalia/blob/main/marginalia-mode.png?raw=true)
 
@@ -72,7 +73,7 @@ Most provided commands follow the naming scheme `consult-<thing>`.
     supported when selecting from the kill-ring.
   * `consult-kmacro`: Select macro from the macro ring and execute it.
 
-### Help/Discoverability
+### Help and Discoverability
 
   * `consult-apropos`: Replacement for `apropos` with completion.
 
@@ -190,6 +191,21 @@ order to use the enhanced commands, you must configure the keybindings yourself.
 | consult-preview-yank       | t   | Enable yank preview during selection                    |
 | consult-recenter           | t   | Recenter after jumping to a location                    |
 | consult-themes             | nil | List of themes to be presented for selection            |
+
+## Related packages
+
+It is recommended to install the following package combination:
+
+* selectrum or icomplete-vertical: Vertical completion systems
+* consult: This package
+* marginalia: Annotations for the completion candidates
+* embark: Action commands, which can act on the completion candidates
+* orderless or prescient: Completion style, filters the candidates, Prescient also offers sorting.
+
+Note that all packages are independent and can potentially be exchanged with
+alternative components, since there exist no hard dependencies. Furthermore it
+is possible to get started with only Selectrum and Consult and add more
+components later to the mix.
 
 ## Acknowledgements
 
