@@ -133,7 +133,6 @@ order to use the enhanced commands, you must configure the keybindings yourself.
   ;; Replace bindings. Lazily loaded due to use-package.
   :bind (("C-c h" . consult-history)
          ("C-c o" . consult-outline)
-         ("C-c !!" . consult-flycheck)
          ("C-x b" . consult-buffer)
          ("C-x 4 b" . consult-buffer-other-window)
          ("C-x 5 b" . consult-buffer-other-frame)
@@ -144,7 +143,9 @@ order to use the enhanced commands, you must configure the keybindings yourself.
          ("M-g l" . consult-line)    ;; "M-s l" is a good alternative
          ("M-s m" . consult-multi-occur)
          ("M-y" . consult-yank-pop)
-         ("<help> a" . consult-apropos))
+         ("<help> a" . consult-apropos)
+         :map flycheck-command-map
+         ("!" . consult-flycheck))
 
   ;; The :init configuration is always executed (Not lazy!)
   :init
