@@ -492,14 +492,17 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
         (point-marker)))
      errors))))
 
-(defun consult--preview-flycheck (cmd &optional err _state)
+(defun consult--preview-flycheck (cmd &optional err state)
   "The preview function used if selecting from a list of flycheck errors.
 CMD is the preview command.
 ERR is the selected error.
-_STATE is the saved state."
+STATE is the saved state."
   (pcase cmd
+    ('save (current-buffer))
     ('restore
-     (consult--overlay-cleanup))
+     (consult--overlay-cleanup)
+     (when (buffer-live-p state)
+       (set-buffer state)))
     ('preview
      (consult--with-window
       (consult--overlay-cleanup)
@@ -513,15 +516,14 @@ _STATE is the saved state."
   "Jump to flycheck error."
   (interactive)
   (consult--goto-position
-   (save-window-excursion
-     (save-excursion
-       (consult--read "Flycheck error: "
-                      (consult--with-increased-gc (consult--flycheck-candidates))
-                      :category 'flycheck-error
-                      :require-match t
-                      :sort nil
-                      :lookup #'consult--lookup-list
-                      :preview (and consult-preview-flycheck #'consult--preview-flycheck))))))
+   (save-excursion
+     (consult--read "Flycheck error: "
+                    (consult--with-increased-gc (consult--flycheck-candidates))
+                    :category 'flycheck-error
+                    :require-match t
+                    :sort nil
+                    :lookup #'consult--lookup-list
+                    :preview (and consult-preview-flycheck #'consult--preview-flycheck)))))
 
 (defun consult--mark-candidates ()
   "Return alist of lines containing markers.
@@ -1006,8 +1008,9 @@ OPEN-BUFFER is used for preview."
     ;; see https://github.com/minad/consult/issues/9
     (consult--with-preview consult-preview-buffer
         (buf state)
-        (current-window-configuration)
-        (set-window-configuration state)
+        (current-buffer)
+        (when (buffer-live-p state)
+          (set-buffer state))
         (when (get-buffer buf)
           (consult--with-window
            (funcall open-buffer buf)))
@@ -1025,8 +1028,11 @@ OPEN-BUFFER is used for preview."
   (consult--read "Switch to: " candidates
                  :history 'consult-buffer-history
                  :sort nil
-                 :preview (lambda (cmd &optional cand _state)
+                 :preview (lambda (cmd &optional cand state)
                             (pcase cmd
+                              ('save (current-buffer))
+                              ('restore (when (buffer-live-p state)
+                                          (set-buffer state)))
                               ('preview
                                (when (get-buffer cand)
                                  (consult--with-window
