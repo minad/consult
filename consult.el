@@ -1206,6 +1206,7 @@ Prepend PREFIX in front of all items."
 
 (defun consult--imenu-candidates ()
   "Return imenu candidates."
+  (consult--forbid-minibuffer)
   (let* ((imenu-auto-rescan t)
          (items (imenu--make-index-alist t)))
     (setq items (delete (assoc "*Rescan*" items) items))
