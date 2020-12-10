@@ -222,6 +222,10 @@ nil shows all `custom-available-themes'."
 
 ;;;; Helper functions
 
+(defun consult--lookup-list (alist key)
+  "Lookup KEY in ALIST."
+  (cdr (assoc key alist)))
+
 (defsubst consult--fontify ()
   "Ensure that the whole buffer is fontified."
   ;; Font-locking is lazy, i.e., if a line has not been looked at yet, the line is not font-locked.
@@ -452,7 +456,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                     :category 'line
                     :sort nil
                     :require-match t
-                    :lookup (lambda (candidates x) (cdr (assoc x candidates)))
+                    :lookup #'consult--lookup-list
                     :history 'consult-outline-history
                     :preview (and consult-preview-outline #'consult--preview-line)))))
 
@@ -509,7 +513,7 @@ _STATE is the saved state."
                           (user-error "No flycheck errors"))
                       :category 'flycheck-error
                       :require-match t
-                      :lookup (lambda (candidates x) (cdr (assoc x candidates)))
+                      :lookup #'consult--lookup-list
                       :preview (and consult-preview-flycheck #'consult--preview-flycheck))))))
 
 (defun consult--mark-candidates ()
@@ -557,7 +561,7 @@ The alist contains (string . position) pairs."
                     :category 'line
                     :sort nil
                     :require-match t
-                    :lookup (lambda (candidates x) (cdr (assoc x candidates)))
+                    :lookup #'consult--lookup-list
                     :history 'consult-mark-history
                     :preview (and consult-preview-mark #'consult--preview-line)))))
 
@@ -620,7 +624,7 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
                       :default-top nil
                       :require-match t
                       :history 'consult-line-history
-                      :lookup (lambda (candidates x) (cdr (assoc x candidates)))
+                      :lookup #'consult--lookup-list
                       :default (car candidates)
                       :initial initial
                       :preview (and consult-preview-line #'consult--preview-line))))))
@@ -815,7 +819,7 @@ Otherwise replace the just-yanked text with the selected text."
                    :category 'register
                    :sort nil
                    :require-match t
-                   :lookup (lambda (candidates x) (cdr (assoc x candidates)))
+                   :lookup #'consult--lookup-list
                    :history 'consult-register-history)))
   (condition-case nil
       (jump-to-register reg)
@@ -1125,7 +1129,7 @@ Macros containing mouse clicks aren't displayed."
                    :require-match t
                    :sort nil
                    :history 'consult-kmacro-history
-                   :lookup (lambda (candidates x) (cdr (assoc x candidates))))))
+                   :lookup #'consult--lookup-list)))
     (if (zerop selected)
         ;; If the first element has been selected, just run the last macro.
         (kmacro-call-macro (or arg 1) t nil)
