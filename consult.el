@@ -467,18 +467,17 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
 (defun consult--flycheck-candidates ()
   "Return flycheck errors as alist."
   (consult--forbid-minibuffer)
-  (when (boundp 'flycheck-current-errors)
-    (unless flycheck-current-errors
-      (user-error "No flycheck errors"))
-    (let* ((errors (mapcar
-                    (lambda (err)
-                      (list (file-name-nondirectory (flycheck-error-filename err))
-                            (number-to-string (flycheck-error-line err))
-                            err))
-                    flycheck-current-errors))
-           (file-width (apply #'max (mapcar (lambda (x) (length (car x))) errors)))
-           (line-width (apply #'max (mapcar (lambda (x) (length (cadr x))) errors)))
-           (fmt (format "%%-%ds %%-%ds %%-7s %%s" file-width line-width)))
+  (unless (bound-and-true-p flycheck-current-errors)
+    (user-error "No flycheck errors"))
+  (let* ((errors (mapcar
+                  (lambda (err)
+                    (list (file-name-nondirectory (flycheck-error-filename err))
+                          (number-to-string (flycheck-error-line err))
+                          err))
+                  flycheck-current-errors))
+         (file-width (apply #'max (mapcar (lambda (x) (length (car x))) errors)))
+         (line-width (apply #'max (mapcar (lambda (x) (length (cadr x))) errors)))
+         (fmt (format "%%-%ds %%-%ds %%-7s %%s" file-width line-width)))
     (mapcar
      (pcase-lambda (`(,file ,line ,err))
        (flycheck-jump-to-error err)
@@ -490,7 +489,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                   (propertize (symbol-name level) 'face (flycheck-error-level-error-list-face level)))
                 (flycheck-error-message err))
         (point-marker)))
-     errors))))
+     errors)))
 
 (defun consult--preview-flycheck (cmd &optional err state)
   "The preview function used if selecting from a list of flycheck errors.
