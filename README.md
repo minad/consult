@@ -3,19 +3,15 @@
 [![](https://melpa.org/packages/consult-badge.svg)](https://melpa.org/#/consult)
 
 This package provides various commands based on the Emacs completion function
-`completing-read`, in particular a more advanced buffer switching command and a
-variant of [Swiper](https://github.com/abo-abo/swiper#swiper). The commands are
-compatible with completion-systems based on the standard Emacs API, e.g., the
-Emacs builtin
+`completing-read`, in particular a more advanced buffer switching command
+`consult-buffer` and a [Swiper](https://github.com/abo-abo/swiper#swiper)-like
+search command `consult-line`. The commands are compatible with
+completion-systems based on the standard Emacs API, e.g., the Emacs builtin
 [Icomplete](https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html)
 and [Selectrum](https://github.com/raxod502/selectrum). If Icomplete is used, it
 is recommended to install
 [Icomplete-vertical](https://github.com/oantolin/icomplete-vertical). The goal
 is to keep the completion-system specifics in this package to a minimum.
-
-Note that if you use [Ivy](https://github.com/abo-abo/swiper#ivy) or
-[Helm](https://github.com/emacs-helm/helm), you don't need Consult, since both
-packages already bring their own rich set of additional commands.
 
 Note that there is the [Marginalia](https://github.com/minad/marginalia/)
 package, which can be combined with Consult. The `marginalia-mode` enriches the
@@ -26,6 +22,10 @@ provided minibuffer annotations. Embark provides local actions (like a context
 menu), which can be executed while selecting a candidate during completion in
 the minibuffer. For example, when selecting a file, an action to delete the file
 is offered.
+
+If you use [Ivy](https://github.com/abo-abo/swiper#ivy) or
+[Helm](https://github.com/emacs-helm/helm), you probably don't need Consult,
+since both packages already bring their own rich set of additional commands.
 
 ## Screenshots
 
@@ -47,7 +47,7 @@ marginalia-mode (formerly consult-annotate-mode)
 
 ## Available commands
 
-Most provided commands follow the naming scheme `consult-thing`.
+Most provided commands follow the naming scheme `consult-<thing>`.
 
 ### Virtual Buffers
 
