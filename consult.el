@@ -149,6 +149,11 @@ nil shows all `custom-available-themes'."
   :type '(repeat symbol)
   :group 'consult)
 
+(defcustom consult-recenter t
+  "Recenter after jumping."
+  :type 'boolean
+  :group 'consult)
+
 (defcustom consult-line-numbers-widen t
   "Show absolute line numbers when narrowing is active."
   :type 'boolean
@@ -287,8 +292,7 @@ _STATE is the saved state."
      (consult--overlay-cleanup))
     ('preview
      (consult--with-window
-      (goto-char cand)
-      (recenter)
+      (consult--preview-position cand)
       (consult--overlay-cleanup)
       (consult--overlay-add (line-beginning-position) (line-end-position) 'consult-preview-line)
       (let ((pos (point)))
@@ -382,13 +386,19 @@ Since the line number is part of the candidate it will be matched-on during comp
                (cdar cand))))
     candidates))
 
-(defun consult--goto (pos)
+(defun consult--preview-position (pos)
+  "Go to POS and recenter."
+  (when pos
+    (goto-char pos)
+    (when consult-recenter
+      (recenter))))
+
+(defun consult--goto-position (pos)
   "Push current position to mark ring, go to POS and recenter."
   (when pos
     ;; Record previous location such that the user can jump back quickly
     (push-mark (point) t)
-    (goto-char pos)
-    (recenter)))
+    (consult--preview-position pos)))
 
 ;;;; Commands
 
@@ -436,7 +446,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
 (defun consult-outline ()
   "Jump to an outline heading."
   (interactive)
-  (consult--goto
+  (consult--goto-position
    (save-excursion
      (consult--read "Go to heading: " (consult--with-increased-gc (consult--outline-candidates))
                     :category 'line
@@ -482,8 +492,7 @@ _STATE is the saved state."
     ('preview
      (consult--with-window
       (consult--overlay-cleanup)
-      (goto-char err)
-      (recenter)
+      (consult--preview-position err)
       (consult--overlay-add (line-beginning-position) (line-end-position) 'consult-preview-line)
       (let ((pos (point)))
         (consult--overlay-add pos (1+ pos) 'consult-preview-cursor))))))
@@ -492,7 +501,7 @@ _STATE is the saved state."
 (defun consult-flycheck ()
   "Jump to flycheck error."
   (interactive)
-  (consult--goto
+  (consult--goto-position
    (save-window-excursion
      (save-excursion
        (consult--read "Flycheck error: "
@@ -542,7 +551,7 @@ The alist contains (string . position) pairs."
 (defun consult-mark ()
   "Jump to a marker in `mark-ring'."
   (interactive)
-  (consult--goto
+  (consult--goto-position
    (save-excursion
      (consult--read "Go to mark: " (consult--with-increased-gc (consult--mark-candidates))
                     :category 'line
@@ -602,7 +611,7 @@ WIDTH is the line number width."
 The default candidate is a non-empty line closest to point.
 This command obeys narrowing. Optionally INITIAL input can be provided."
   (interactive)
-  (consult--goto
+  (consult--goto-position
    (let ((candidates (consult--with-increased-gc (consult--line-candidates))))
      (save-excursion
        (consult--read "Go to line: " (cdr candidates)

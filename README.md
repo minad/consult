@@ -180,6 +180,7 @@ order to use the enhanced commands, you must configure the keybindings yourself.
 | consult-preview-outline    | t   | Enable outline preview during selection                 |
 | consult-preview-theme      | t   | Enable theme preview during selection                   |
 | consult-preview-yank       | t   | Enable yank preview during selection                    |
+| consult-recenter           | t   | Recenter after jumping to a location                    |
 | consult-themes             | nil | List of themes to be presented for selection            |
 
 ## Acknowledgements
