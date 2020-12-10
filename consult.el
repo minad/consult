@@ -1197,7 +1197,7 @@ Prepend PREFIX in front of all items."
                     (cons e (if (integerp v) (copy-marker v) v)))
                   (cdr item)))
        (let ((key (concat
-                   (and prefix (concat (propertize prefix 'face 'consult-imenu-prefix) ": "))
+                   (and prefix (concat (propertize prefix 'face 'consult-imenu-prefix) " "))
                    (car item)))
              (pos (cdr item)))
          (list (cons key (cons key
