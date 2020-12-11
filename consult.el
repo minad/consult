@@ -181,6 +181,11 @@ nil shows all `custom-available-themes'."
   :type 'integer
   :group 'consult)
 
+(defcustom consult-narrow-separator "#"
+  "String used to separate prefix for narrowing."
+  :type 'string
+  :group 'consult)
+
 ;;;; History variables
 
 (defvar-local consult-outline-history nil
@@ -918,6 +923,10 @@ preview if `consult-preview-mode' is enabled."
           (enable-theme theme)
         (load-theme theme :no-confirm)))))
 
+(defsubst consult--narrow-prefix (prefix)
+  "Make narrowing prefix string from PREFIX."
+  (propertize (concat prefix consult-narrow-separator " ") 'display ""))
+
 (defsubst consult--buffer-candidate (prefix cand face ann fun)
   "Format virtual buffer candidate.
 
@@ -928,22 +937,15 @@ ANN is the annotation string at the right margin.
 FUN is the function used to open the candiddate."
   (list
    (concat
-    (propertize (concat prefix "# ") 'display "")
+    (consult--narrow-prefix prefix)
     (propertize cand 'face face)
     (consult--align (propertize ann 'face 'consult-annotation)))
    fun
    cand))
 
-(defun consult--buffer-space ()
-  "Replace minibuffer content by prefix in order to support narrowing."
-  (interactive)
-  (let ((str (minibuffer-contents)))
-    (if (member str '("b" "m" "v" "f"))
-        (insert "# ")
-      (call-interactively 'self-insert-command))))
-
-(defmacro consult--buffer-setup (&rest body)
-  "Setup minibuffer KEYMAP in BODY."
+(defmacro consult--with-narrow (chars &rest body)
+  "Setup narrowing KEYMAP in BODY."
+  (declare (indent 1))
   (let ((keymap (make-symbol "keymap"))
         (stack (make-symbol "stack"))
         (setup (make-symbol "setup"))
@@ -958,7 +960,13 @@ FUN is the function used to open the candiddate."
             (,setup (lambda ()
                       (push (lookup-key ,keymap " ") ,stack)
                       (unless (cdr ,stack)
-                        (define-key ,keymap " " #'consult--buffer-space))))
+                        (define-key ,keymap " "
+                          (lambda ()
+                            (interactive)
+                            (let ((str (minibuffer-contents)))
+                              (if (member str ,chars)
+                                  (insert (concat consult-narrow-separator " "))
+                                (call-interactively 'self-insert-command))))))))
             (,exit (lambda ()
                      (define-key ,keymap " " (pop ,stack)))))
        (add-hook 'minibuffer-setup-hook ,setup)
@@ -1000,7 +1008,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                           (consult--buffer-candidate "f" (abbreviate-file-name x) 'consult-file "View" open-file))
                         (remove curr-file recentf-list)))
          (selected
-          (consult--buffer-setup
+          (consult--with-narrow '("b" "m" "v" "f")
            (consult--read
             "Switch to: " (append bufs files views bookmarks)
             :history 'consult-buffer-history
