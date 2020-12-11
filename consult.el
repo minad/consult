@@ -246,9 +246,11 @@ For each completion system, a function must be added here.")
 
 ;;;; Helper functions
 
+;; Same function as marginalia--align
 (defsubst consult--align (str)
   "Align STR at the right margin."
   (concat
+   " "
    (propertize
     " "
     'display
