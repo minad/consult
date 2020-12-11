@@ -253,7 +253,7 @@ For each completion system, a function must be added here.")
     " "
     'display
     `(space :align-to (- right-fringe ,(length str))))
-   (propertize " " 'display str)))
+   str))
 
 (defun consult--lookup-list (alist key)
   "Lookup KEY in ALIST."
@@ -412,7 +412,7 @@ STATE is the saved state."
 
 (cl-defun consult--read (prompt candidates &key
                                 predicate require-match history default
-                                category initial preview narrow
+                                category initial preview narrow annotate
                                 (sort t) (default-top t) (lookup (lambda (_ x) x)))
   "Simplified completing read function.
 
@@ -424,6 +424,7 @@ HISTORY is the symbol of the history variable.
 DEFAULT is the default input.
 CATEGORY is the completion category.
 SORT should be set to nil if the candidates are already sorted.
+ANNOTATE is the annotation function.
 LOOKUP is a function which is applied to the result.
 INITIAL is initial input.
 DEFAULT-TOP must be nil if the default candidate should not be moved to the top.
@@ -436,12 +437,13 @@ NARROW is a list of narrowing prefix strings."
                  (stringp (car candidates)) ;; string list
                  (consp (car candidates)))) ;; alist
   (let ((candidates-fun
-         (if (and sort (not category))
+         (if (and sort (not category) (not annotate))
              candidates
            (lambda (str pred action)
              (if (eq action 'metadata)
                  `(metadata
                    ,@(if category `((category . ,category)))
+                   ,@(if annotate `((annotation-function . ,annotate)))
                    ,@(if (not sort) '((cycle-sort-function . identity)
                                       (display-sort-function . identity))))
                (complete-with-action action candidates str pred))))))
@@ -976,21 +978,16 @@ preview if `consult-preview-mode' is enabled."
           (enable-theme theme)
         (load-theme theme :no-confirm)))))
 
-(defsubst consult--buffer-candidate (prefix cand face ann fun)
+(defsubst consult--buffer-candidate (prefix cand face fun)
   "Format virtual buffer candidate.
 
 CAND is the candidate string.
 PREFIX is the prefix string for narrowing.
 FACE is the face for the candidate.
-ANN is the annotation string at the right margin.
 FUN is the function used to open the candiddate."
   (list
-   (consult--narrow-candidate
-    prefix
-    (propertize cand 'face face)
-    (consult--align (propertize ann 'face 'consult-annotation)))
-   fun
-   cand))
+   (consult--narrow-candidate prefix (propertize cand 'face face))
+   fun cand))
 
 (defun consult--buffer (open-buffer open-file open-bookmark)
   "Backend implementation of `consult-buffer'.
@@ -1002,7 +999,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
          ;; and a regression to the default switch-to-buffer implementation.
          (bufs (mapcar
                 (lambda (x)
-                  (consult--buffer-candidate "b" x 'consult-buffer "Buffer" open-buffer))
+                  (consult--buffer-candidate "b" x 'consult-buffer open-buffer))
                 (seq-remove
                  ;; Visible buffers only
                  (lambda (x) (= (aref x 0) 32))
@@ -1015,13 +1012,13 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
          ;; https://github.com/minad/bookmark-view/blob/master/bookmark-view.el
          (views (if (fboundp 'bookmark-view-names)
                     (mapcar (lambda (x)
-                              (consult--buffer-candidate "v" x 'consult-view "View" open-bookmark))
+                              (consult--buffer-candidate "v" x 'consult-view open-bookmark))
                             (bookmark-view-names))))
          (bookmarks (mapcar (lambda (x)
-                              (consult--buffer-candidate "m" (car x) 'consult-bookmark "Bookmark" open-bookmark))
+                              (consult--buffer-candidate "m" (car x) 'consult-bookmark open-bookmark))
                             bookmark-alist))
          (files (mapcar (lambda (x)
-                          (consult--buffer-candidate "f" (abbreviate-file-name x) 'consult-file "View" open-file))
+                          (consult--buffer-candidate "f" (abbreviate-file-name x) 'consult-file open-file))
                         (remove curr-file recentf-list)))
          (selected
           (consult--read
@@ -1029,6 +1026,16 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
            :history 'consult-buffer-history
            :sort nil
            :narrow '("b" "m" "v" "f")
+           :annotate
+           (lambda (cand)
+             (consult--align
+              (propertize
+               (pcase (elt cand 0)
+                 (?b "Buffer")
+                 (?m "Bookmark")
+                 (?v "View")
+                 (?f "File"))
+               'face 'consult-annotation)))
            :lookup
            (lambda (candidates x)
              ;; When candidate is not found in the alist,
@@ -1037,15 +1044,16 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                  (and (not (string-blank-p x)) (list open-buffer x))))
            ;; TODO preview of virtual buffers is not implemented yet
            ;; see https://github.com/minad/consult/issues/9
-           :preview (lambda (cmd cand state)
-                      (pcase cmd
-                        ('save (current-buffer))
-                        ('restore (when (buffer-live-p state)
-                                    (set-buffer state)))
-                        ('preview
-                         (when (and (eq (car cand) open-buffer) (get-buffer (cadr cand)))
-                           (consult--with-window
-                            (apply open-buffer (cdr cand))))))))))
+           :preview
+           (lambda (cmd cand state)
+             (pcase cmd
+               ('save (current-buffer))
+               ('restore (when (buffer-live-p state)
+                           (set-buffer state)))
+               ('preview
+                (when (and (eq (car cand) open-buffer) (get-buffer (cadr cand)))
+                  (consult--with-window
+                   (apply open-buffer (cdr cand))))))))))
   (when selected (apply (car selected) (cdr selected)))))
 
 ;;;###autoload
