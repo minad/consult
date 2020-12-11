@@ -181,7 +181,7 @@ nil shows all `custom-available-themes'."
   :type 'integer
   :group 'consult)
 
-(defcustom consult-narrow-separator "#"
+(defcustom consult-narrow-separator (string 8203) ;; zero width space
   "String used to separate prefix for narrowing."
   :type 'string
   :group 'consult)
