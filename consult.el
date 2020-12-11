@@ -282,14 +282,15 @@ PREVIEW is an expresion which previews the candidate.
 BODY are the body expressions."
   (declare (indent 5))
   `(if ,enabled
-       (let ((,(car args))
-             (,@(cdr args) ,save))
-         (ignore ,@args) ;; Disable unused variable warnings
-         (push (lambda (,(car args)) ,preview) consult--preview-stack)
-         (unwind-protect
-             (setq ,(car args) ,(if (cdr body) `(progn ,@body) (car body)))
-           (pop consult--preview-stack)
-           ,restore))
+       (save-excursion
+         (let ((,(car args))
+               (,@(cdr args) ,save))
+           (ignore ,@args) ;; Disable unused variable warnings
+           (push (lambda (,(car args)) ,preview) consult--preview-stack)
+           (unwind-protect
+               (setq ,(car args) ,(if (cdr body) `(progn ,@body) (car body)))
+             (pop consult--preview-stack)
+             ,restore)))
      ,@body))
 
 (defmacro consult--with-increased-gc (&rest body)
@@ -495,14 +496,13 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
   "Jump to an outline heading."
   (interactive)
   (consult--goto
-   (save-excursion
-     (consult--read "Go to heading: " (consult--with-increased-gc (consult--outline-candidates))
-                    :category 'line
-                    :sort nil
-                    :require-match t
-                    :lookup #'consult--lookup-list
-                    :history 'consult-outline-history
-                    :preview (and consult-preview-outline #'consult--preview-position)))))
+   (consult--read "Go to heading: " (consult--with-increased-gc (consult--outline-candidates))
+                  :category 'line
+                  :sort nil
+                  :require-match t
+                  :lookup #'consult--lookup-list
+                  :history 'consult-outline-history
+                  :preview (and consult-preview-outline #'consult--preview-position))))
 
 (defun consult--flycheck-candidates ()
   "Return flycheck errors as alist."
@@ -541,14 +541,13 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
   "Jump to flycheck error."
   (interactive)
   (consult--goto
-   (save-excursion
-     (consult--read "Flycheck error: "
-                    (consult--with-increased-gc (consult--flycheck-candidates))
-                    :category 'flycheck-error
-                    :require-match t
-                    :sort nil
-                    :lookup #'consult--lookup-list
-                    :preview (and consult-preview-flycheck #'consult--preview-position)))))
+   (consult--read "Flycheck error: "
+                  (consult--with-increased-gc (consult--flycheck-candidates))
+                  :category 'flycheck-error
+                  :require-match t
+                  :sort nil
+                  :lookup #'consult--lookup-list
+                  :preview (and consult-preview-flycheck #'consult--preview-position))))
 
 (defun consult--mark-candidates ()
   "Return alist of lines containing markers.
@@ -589,14 +588,13 @@ The alist contains (string . position) pairs."
   "Jump to a marker in `mark-ring'."
   (interactive)
   (consult--goto
-   (save-excursion
-     (consult--read "Go to mark: " (consult--with-increased-gc (consult--mark-candidates))
-                    :category 'line
-                    :sort nil
-                    :require-match t
-                    :lookup #'consult--lookup-list
-                    :history 'consult-mark-history
-                    :preview (and consult-preview-mark #'consult--preview-position)))))
+   (consult--read "Go to mark: " (consult--with-increased-gc (consult--mark-candidates))
+                  :category 'line
+                  :sort nil
+                  :require-match t
+                  :lookup #'consult--lookup-list
+                  :history 'consult-mark-history
+                  :preview (and consult-preview-mark #'consult--preview-position))))
 
 ;; HACK: Disambiguate the line by prepending it with unicode
 ;; characters in the supplementary private use plane b.
@@ -649,17 +647,16 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
   (interactive)
   (consult--goto
    (let ((candidates (consult--with-increased-gc (consult--line-candidates))))
-     (save-excursion
-       (consult--read "Go to line: " (cdr candidates)
-                      :category 'line
-                      :sort nil
-                      :default-top nil
-                      :require-match t
-                      :history 'consult-line-history
-                      :lookup #'consult--lookup-list
-                      :default (car candidates)
-                      :initial initial
-                      :preview (and consult-preview-line #'consult--preview-position))))))
+     (consult--read "Go to line: " (cdr candidates)
+                    :category 'line
+                    :sort nil
+                    :default-top nil
+                    :require-match t
+                    :history 'consult-line-history
+                    :lookup #'consult--lookup-list
+                    :default (car candidates)
+                    :initial initial
+                    :preview (and consult-preview-line #'consult--preview-position)))))
 
 ;;;###autoload
 (defun consult-line-symbol-at-point ()
@@ -1229,22 +1226,21 @@ Prepend PREFIX in front of all items."
   "Choose from flattened `imenu' using `completing-read'."
   (interactive)
   (imenu
-   (save-excursion
-     (consult--read
-      "Go to item: "
-      (or (consult--imenu-candidates) (user-error "Imenu is empty"))
-      :preview (and consult-preview-imenu
-                    (lambda (cmd cand state)
-                      (if (eq cmd 'preview)
-                          ;; Only handle imenu items which are markers for preview,
-                          ;; in order to avoid any bad side effects.
-                          (when (and (consp cand) (markerp (cdr cand)))
-                            (consult--preview-position cmd (cdr cand) state))
-                        (consult--preview-position cmd cand state))))
-      :require-match t
-      :lookup #'consult--lookup-list
-      :history 'consult-imenu-history
-      :sort nil)))
+   (consult--read
+    "Go to item: "
+    (or (consult--imenu-candidates) (user-error "Imenu is empty"))
+    :preview (and consult-preview-imenu
+                  (lambda (cmd cand state)
+                    (if (eq cmd 'preview)
+                        ;; Only handle imenu items which are markers for preview,
+                        ;; in order to avoid any bad side effects.
+                        (when (and (consp cand) (markerp (cdr cand)))
+                          (consult--preview-position cmd (cdr cand) state))
+                      (consult--preview-position cmd cand state))))
+    :require-match t
+    :lookup #'consult--lookup-list
+    :history 'consult-imenu-history
+    :sort nil))
   (consult--recenter))
 
 ;;;; consult-preview-mode - Enabling preview for consult commands
