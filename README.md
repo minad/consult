@@ -54,11 +54,9 @@ Most provided commands follow the naming scheme `consult-<thing>`.
 
   * `consult-buffer` (`-other-window`, `-other-frame`): Enhanced version of
      `switch-to-buffer` with support for virtual buffers. Supports live preview
-     and recursive editing while previewing. If Selectrum is used
-     `consult-buffer` supports prefixes for narrowing. You can type `b SPC`, `f
-     SPC`, `m SPC` and `v SPC` in order to narrow to buffers, files, bookmarks
-     and views respectively. Unfortunately this is (not yet?) supported by the
-     generic `completing-read` implementation.
+     and recursive editing while previewing. The command supports narrowing. You
+     can type `b SPC`, `f SPC`, `m SPC` and `v SPC` in order to narrow to
+     buffers, files, bookmarks and views respectively.
   * `consult-bookmark`: Select or create bookmark. You might prefer the more
     powerful `consult-buffer` instead, which includes bookmarks.
   * `consult-recent-file` (`-other-window`, `-other-frame`): Select a recent
@@ -101,10 +99,11 @@ completions with richer information (e.g. `M-x`, `describe-face`,
     and recursive editing.
   * `consult-imenu`: Jump to imenu item. Supports live preview
     and recursive editing.
-  * `consult-flycheck`: Jump to flycheck error. Supports live preview
-    and recursive editing. This command requires to install the additional
-    `consult-flycheck.el` package since the main `consult.el` package
-    only depends on Emacs core components.
+  * `consult-flycheck`: Jump to flycheck error. Supports live preview and
+    recursive editing. The command supports narrowing. Press `e SPC`, `w SPC`,
+    `i SPC` to only show errors, warnings and infos respectively. This command
+    requires to install the additional `consult-flycheck.el` package since the
+    main `consult.el` package only depends on Emacs core components.
 
 ### Miscellaneous
 
@@ -193,6 +192,7 @@ order to use the enhanced commands, you must configure the keybindings yourself.
 |----------------------------|-----|---------------------------------------------------------|
 | consult-line-numbers-widen | t   | Show absolute line numbers when narrowing is active.    |
 | consult-mode-histories     | …   | Mode-specific history variables                         |
+| consult-narrow-separator   | …   | Separator shown after narrowing prefix                  |
 | consult-preview-buffer     | t   | Enable buffer preview during selection                  |
 | consult-preview-flycheck   | t   | Enable flycheck error preview during selection          |
 | consult-preview-line       | t   | Enable line preview during selection                    |
