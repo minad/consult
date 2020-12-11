@@ -188,20 +188,20 @@ order to use the enhanced commands, you must configure the keybindings yourself.
 
 ### Configuration settings
 
-| Variable                   | Def | Description                                             |
-|----------------------------|-----|---------------------------------------------------------|
-| consult-line-numbers-widen | t   | Show absolute line numbers when narrowing is active.    |
-| consult-mode-histories     | …   | Mode-specific history variables                         |
-| consult-narrow-separator   | …   | Separator shown after narrowing prefix                  |
-| consult-preview-buffer     | t   | Enable buffer preview during selection                  |
-| consult-preview-flycheck   | t   | Enable flycheck error preview during selection          |
-| consult-preview-line       | t   | Enable line preview during selection                    |
-| consult-preview-mark       | t   | Enable mark preview during selection                    |
-| consult-preview-outline    | t   | Enable outline preview during selection                 |
-| consult-preview-theme      | t   | Enable theme preview during selection                   |
-| consult-preview-yank       | t   | Enable yank preview during selection                    |
-| consult-recenter           | t   | Recenter after jumping to a location                    |
-| consult-themes             | nil | List of themes to be presented for selection            |
+| Variable                    | Default   | Description                                             |
+|-----------------------------|-----------|---------------------------------------------------------|
+| consult-after-jump-function | 'recenter | Function to call after jumping to a location            |
+| consult-line-numbers-widen  | t         | Show absolute line numbers when narrowing is active.    |
+| consult-mode-histories      | …         | Mode-specific history variables                         |
+| consult-narrow-separator    | "[ZWSP]"  | Separator shown after narrowing prefix                  |
+| consult-preview-buffer      | t         | Enable buffer preview during selection                  |
+| consult-preview-flycheck    | t         | Enable flycheck error preview during selection          |
+| consult-preview-line        | t         | Enable line preview during selection                    |
+| consult-preview-mark        | t         | Enable mark preview during selection                    |
+| consult-preview-outline     | t         | Enable outline preview during selection                 |
+| consult-preview-theme       | t         | Enable theme preview during selection                   |
+| consult-preview-yank        | t         | Enable yank preview during selection                    |
+| consult-themes              | nil       | List of themes to be presented for selection            |
 
 ## Related packages
 
