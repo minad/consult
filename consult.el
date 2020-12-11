@@ -238,6 +238,7 @@ nil shows all `custom-available-themes'."
 (declare-function selectrum-get-current-candidate "selectrum")
 
 (defvar flycheck-current-errors)
+(defvar flycheck-last-status-change)
 (declare-function flycheck-error-buffer "flycheck")
 (declare-function flycheck-error-checker "flycheck")
 (declare-function flycheck-error-filename "flycheck")
@@ -506,11 +507,10 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
 (defun consult--flycheck-candidates ()
   "Return flycheck errors as alist."
   (consult--forbid-minibuffer)
-  (unless (bound-and-true-p flycheck-current-errors)
-    (user-error "No flycheck errors (Status: %s)"
-                (if (boundp 'flycheck-last-status-change)
-                    flycheck-last-status-change
-                  'not-installed)))
+  (unless (require 'flycheck nil t)
+    (error "Package `flycheck' is not installed"))
+  (unless flycheck-current-errors
+    (user-error "No flycheck errors (Status: %s)" flycheck-last-status-change))
   (let* ((errors (mapcar
                   (lambda (err)
                     (list (file-name-nondirectory (flycheck-error-filename err))
