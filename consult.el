@@ -942,10 +942,31 @@ FUN is the function used to open the candiddate."
         (insert "# ")
       (call-interactively 'self-insert-command))))
 
-(require 'selectrum)
-(define-key selectrum-minibuffer-map " " #'consult--buffer-space)
-(require 'icomplete)
-(define-key icomplete-minibuffer-map " " #'consult--buffer-space)
+(defmacro consult--buffer-setup (&rest body)
+  "Setup minibuffer KEYMAP in BODY."
+  (let ((keymap (make-symbol "keymap"))
+        (stack (make-symbol "stack"))
+        (setup (make-symbol "setup"))
+        (exit (make-symbol "exit")))
+    `(let* ((,keymap (cond
+                      ;; TODO the buffer keymap setup for narrowing
+                      ;; is only compatible with selectrum/icomplete now
+                      (selectrum-mode selectrum-minibuffer-map)
+                      (icomplete-mode icomplete-minibuffer-map)
+                      (t (make-sparse-keymap))))
+            (,stack nil)
+            (,setup (lambda ()
+                      (push (lookup-key ,keymap " ") ,stack)
+                      (unless (cdr ,stack)
+                        (define-key ,keymap " " #'consult--buffer-space))))
+            (,exit (lambda ()
+                     (define-key ,keymap " " (pop ,stack)))))
+       (add-hook 'minibuffer-setup-hook ,setup)
+       (add-hook 'minibuffer-exit-hook ,exit)
+       (unwind-protect
+           (progn ,@body)
+         (remove-hook 'minibuffer-setup-hook ,setup)
+         (remove-hook 'minibuffer-exit-hook ,exit)))))
 
 (defun consult--buffer (open-buffer open-file open-bookmark)
   "Backend implementation of `consult-buffer'.
@@ -979,27 +1000,28 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                           (consult--buffer-candidate "f" (abbreviate-file-name x) 'consult-file "View" open-file))
                         (remove curr-file recentf-list)))
          (selected
-          (consult--read
-                    "Switch to: " (append bufs files views bookmarks)
-                    :history 'consult-buffer-history
-                    :sort nil
-                    :lookup
-                    (lambda (candidates x)
-                      ;; When candidate is not found in the alist,
-                      ;; default to creating a new buffer.
-                      (or (consult--lookup-list candidates x)
-                          (and (not (string-blank-p x)) (list open-buffer x))))
-                    ;; TODO preview of virtual buffers is not implemented yet
-                    ;; see https://github.com/minad/consult/issues/9
-                    :preview (lambda (cmd cand state)
-                               (pcase cmd
-                                 ('save (current-buffer))
-                                 ('restore (when (buffer-live-p state)
-                                             (set-buffer state)))
-                                 ('preview
-                                  (when (and (eq (car cand) open-buffer) (get-buffer (cadr cand)))
-                                    (consult--with-window
-                                     (apply open-buffer (cdr cand))))))))))
+          (consult--buffer-setup
+           (consult--read
+            "Switch to: " (append bufs files views bookmarks)
+            :history 'consult-buffer-history
+            :sort nil
+            :lookup
+            (lambda (candidates x)
+              ;; When candidate is not found in the alist,
+              ;; default to creating a new buffer.
+              (or (consult--lookup-list candidates x)
+                  (and (not (string-blank-p x)) (list open-buffer x))))
+            ;; TODO preview of virtual buffers is not implemented yet
+            ;; see https://github.com/minad/consult/issues/9
+            :preview (lambda (cmd cand state)
+                       (pcase cmd
+                         ('save (current-buffer))
+                         ('restore (when (buffer-live-p state)
+                                     (set-buffer state)))
+                         ('preview
+                          (when (and (eq (car cand) open-buffer) (get-buffer (cadr cand)))
+                            (consult--with-window
+                             (apply open-buffer (cdr cand)))))))))))
     (when selected (apply (car selected) (cdr selected)))))
 
 ;;;###autoload
