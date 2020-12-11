@@ -1209,7 +1209,7 @@ It should check the consult-preview-mode flag and should be indempotent."
 
 (defun consult--icomplete-preview-setup ()
   "Setup preview support for Icomplete."
-  (advice-remove 'icomplete-post-commanda-hook #'consult--icomplete-preview-update)
+  (advice-remove 'icomplete-post-command-hook #'consult--icomplete-preview-update)
   (when consult-preview-mode
     (advice-add 'icomplete-post-command-hook :after #'consult--icomplete-preview-update)))
 
