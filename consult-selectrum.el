@@ -47,7 +47,11 @@
   (when consult-preview-mode
     (advice-add 'selectrum--minibuffer-post-command-hook :after #'consult-selectrum--preview-update)))
 
-(consult--preview-register #'consult-selectrum--preview-setup)
+(add-hook 'consult-preview-mode-hook #'consult-selectrum--preview-setup)
+(consult-selectrum--preview-setup) ;; call immediately to ensure load-order independence
+
+(add-hook 'consult--minibuffer-map-hook
+          (lambda () (when selectrum-mode selectrum-minibuffer-map)))
 
 ;; HACK: Hopefully selectrum adds something like this to the official API.
 ;; https://github.com/raxod502/selectrum/issues/243

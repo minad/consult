@@ -220,6 +220,10 @@ nil shows all `custom-available-themes'."
 
 ;;;; Internal variables
 
+(defvar consult--minibuffer-map-hook nil
+  "Get minibuffer keymap.
+For each completion system, a function must be added here.")
+
 (defvar consult--gc-threshold 67108864
   "Large gc threshold for temporary increase.")
 
@@ -294,12 +298,8 @@ PREVIEW is the preview function."
   "Install narrowing in BODY.
 
 CHARS is the list of narrowing prefix strings."
-  (let* ((keymap (cond
-                   ;; TODO the buffer keymap setup for narrowing
-                   ;; is only compatible with selectrum/icomplete now
-                   (selectrum-mode selectrum-minibuffer-map)
-                   (icomplete-mode icomplete-minibuffer-map)
-                   (t (make-sparse-keymap))))
+  (let* ((keymap (or (run-hook-with-args-until-success 'consult--minibuffer-map-hook)
+                     (make-sparse-keymap)))
          (stack nil)
          (setup (lambda ()
                    (push (lookup-key keymap " ") stack)
@@ -1177,20 +1177,10 @@ Prepend PREFIX in front of all items."
     :sort nil))
   (consult--recenter))
 
-;;;; consult-preview-mode - Enabling preview for consult commands
-
 ;;;###autoload
 (define-minor-mode consult-preview-mode
   "Enable preview for consult commands."
   :global t)
-
-(defun consult--preview-register (hook)
-  "Register completion-specific preview support.
-
-The HOOK is called every time the preview-mode is toggled.
-It should check the consult-preview-mode flag and should be indempotent."
-  (add-hook 'consult-preview-mode-hook hook)
-  (funcall hook))
 
 ;;;; default completion-system support for preview
 
@@ -1218,7 +1208,7 @@ It should check the consult-preview-mode flag and should be indempotent."
     (advice-add #'minibuffer-complete :after #'consult--default-preview-update)
     (advice-add #'minibuffer-completion-help  :after #'consult--default-preview-update)))
 
-(consult--preview-register #'consult--default-preview-setup)
+(add-hook 'consult-preview-mode-hook #'consult--default-preview-setup)
 
 ;;;; icomplete support for preview
 
@@ -1234,7 +1224,12 @@ It should check the consult-preview-mode flag and should be indempotent."
   (when consult-preview-mode
     (advice-add 'icomplete-post-command-hook :after #'consult--icomplete-preview-update)))
 
-(consult--preview-register #'consult--icomplete-preview-setup)
+(add-hook 'consult-preview-mode-hook #'consult--icomplete-preview-setup)
+
+(add-hook 'consult--minibuffer-map-hook
+          (lambda ()
+            (when (and icomplete-mode (boundp 'icomplete-minibuffer-map))
+              icomplete-minibuffer-map)))
 
 (provide 'consult)
 ;;; consult.el ends here
