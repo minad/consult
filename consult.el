@@ -290,9 +290,11 @@ PREVIEW is the preview function."
            (consult--preview-install ,preview-var (lambda () ,@body))
          ,@body))))
 
-(defsubst consult--narrow-prefix (prefix)
-  "Make narrowing prefix string from PREFIX."
-  (propertize (concat prefix consult-narrow-separator " ") 'display ""))
+(defsubst consult--narrow-candidate (prefix &rest strings)
+  "Add narrowing prefix PREFIX and concatenate with STRINGS."
+  (apply #'concat
+         (propertize (concat prefix consult-narrow-separator " ") 'display "")
+         strings))
 
 (defun consult--narrow-install (chars body)
   "Install narrowing in BODY.
@@ -975,8 +977,8 @@ FACE is the face for the candidate.
 ANN is the annotation string at the right margin.
 FUN is the function used to open the candiddate."
   (list
-   (concat
-    (consult--narrow-prefix prefix)
+   (consult--narrow-candidate
+    prefix
     (propertize cand 'face face)
     (consult--align (propertize ann 'face 'consult-annotation)))
    fun

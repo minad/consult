@@ -55,17 +55,21 @@
     (mapcar
      (pcase-lambda (`(,file ,line ,err))
        (flycheck-jump-to-error err)
-       (cons
-        (format fmt
-                (propertize file 'face 'flycheck-error-list-filename)
-                (propertize line 'face 'flycheck-error-list-line-number)
-                (let ((level (flycheck-error-level err)))
-                  (propertize (symbol-name level) 'face (flycheck-error-level-error-list-face level)))
-                (propertize (flycheck-error-message err)
-                            'face 'flycheck-error-list-error-message)
-                (propertize (symbol-name (flycheck-error-checker err))
-                            'face 'flycheck-error-list-checker-name))
-        (point-marker)))
+       (let ((level (flycheck-error-level err)))
+         (cons
+          (consult--narrow-candidate
+           (pcase level
+             ('error "e")
+             ('warning "w")
+             (_ "i"))
+           (format fmt
+                   (propertize file 'face 'flycheck-error-list-filename)
+                   (propertize line 'face 'flycheck-error-list-line-number)
+                   (propertize (symbol-name level) 'face (flycheck-error-level-error-list-face level))
+                   (propertize (flycheck-error-message err) 'face 'flycheck-error-list-error-message)
+                   (propertize (symbol-name (flycheck-error-checker err))
+                            'face 'flycheck-error-list-checker-name)))
+        (point-marker))))
      errors)))
 
 ;;;###autoload
@@ -78,6 +82,7 @@
                   :category 'flycheck-error
                   :require-match t
                   :sort nil
+                  :narrow '("e" "w" "i")
                   :lookup #'consult--lookup-list
                   :preview (and consult-preview-flycheck #'consult--preview-position))))
 
