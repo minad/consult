@@ -41,8 +41,6 @@
 (defun consult--flycheck-candidates ()
   "Return flycheck errors as alist."
   (consult--forbid-minibuffer)
-  (unless (require 'flycheck nil t)
-    (error "Package `flycheck' is not installed"))
   (unless flycheck-current-errors
     (user-error "No flycheck errors (Status: %s)" flycheck-last-status-change))
   (let* ((errors (mapcar

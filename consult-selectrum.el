@@ -54,7 +54,7 @@
 ;; https://github.com/raxod502/selectrum/pull/244
 (defsubst consult-selectrum--configure (options)
   "Add OPTIONS to the next `selectrum-read' call."
-  (when (and options (bound-and-true-p selectrum-mode))
+  (when (and options selectrum-mode)
     (letrec ((advice (lambda (orig prompt candidates &rest args)
                        (advice-remove #'selectrum-read advice)
                        (apply orig prompt candidates (append options args)))))
