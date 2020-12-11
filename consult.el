@@ -285,6 +285,50 @@ BODY are the body expressions."
              ,restore)))
      ,@body))
 
+(defsubst consult--narrow-prefix (prefix)
+  "Make narrowing prefix string from PREFIX."
+  (propertize (concat prefix consult-narrow-separator " ") 'display ""))
+
+(defun consult--narrow-setup (chars body)
+  "Setup narrowing in BODY.
+
+CHARS is the list of narrowing prefix strings."
+  (let* ((keymap (cond
+                   ;; TODO the buffer keymap setup for narrowing
+                   ;; is only compatible with selectrum/icomplete now
+                   (selectrum-mode selectrum-minibuffer-map)
+                   (icomplete-mode icomplete-minibuffer-map)
+                   (t (make-sparse-keymap))))
+         (stack nil)
+         (setup (lambda ()
+                   (push (lookup-key keymap " ") stack)
+                   (unless (cdr stack)
+                     (define-key keymap " "
+                       (lambda ()
+                         (interactive)
+                         (let ((str (minibuffer-contents)))
+                           (if (member str chars)
+                               (insert (concat consult-narrow-separator " "))
+                             (call-interactively 'self-insert-command))))))))
+         (exit (lambda ()
+                  (define-key keymap " " (pop stack)))))
+    (add-hook 'minibuffer-setup-hook setup)
+    (add-hook 'minibuffer-exit-hook exit)
+    (unwind-protect
+        (funcall body)
+      (remove-hook 'minibuffer-setup-hook setup)
+      (remove-hook 'minibuffer-exit-hook exit))))
+
+(defmacro consult--with-narrow (chars &rest body)
+  "Setup narrowing in BODY.
+
+CHARS is the list of narrowing prefix strings."
+  (let ((chars-var (make-symbol "chars")))
+    `(let ((,chars-var ,chars))
+       (if ,chars-var
+           (consult--narrow-setup ,chars-var (lambda () ,@body))
+         ,@body))))
+
 (defmacro consult--with-increased-gc (&rest body)
   "Temporarily increase the gc limit in BODY to optimize for throughput."
   `(let* ((overwrite (> consult--gc-threshold gc-cons-threshold))
@@ -356,7 +400,7 @@ STATE is the saved state."
 
 (cl-defun consult--read (prompt candidates &key
                                 predicate require-match history default
-                                category initial preview
+                                category initial preview narrow
                                 (sort t) (default-top t) (lookup (lambda (_ x) x)))
   "Simplified completing read function.
 
@@ -371,7 +415,8 @@ SORT should be set to nil if the candidates are already sorted.
 LOOKUP is a function which is applied to the result.
 INITIAL is initial input.
 DEFAULT-TOP must be nil if the default candidate should not be moved to the top.
-PREVIEW is a preview function."
+PREVIEW is a preview function.
+NARROW is a list of narrowing prefix strings."
   (ignore default-top)
   ;; supported types
   (cl-assert (or (functionp candidates) ;; function
@@ -399,8 +444,9 @@ PREVIEW is a preview function."
       (funcall
        lookup
        (funcall candidates-fun)
-       (completing-read prompt candidate-table
-                        predicate require-match initial history default)))))
+       (consult--with-narrow narrow
+         (completing-read prompt candidate-table
+                          predicate require-match initial history default))))))
 
 (defsubst consult--pad-line-number (width line)
   "Optimized formatting for LINE number with padding. WIDTH is the line number width."
@@ -923,10 +969,6 @@ preview if `consult-preview-mode' is enabled."
           (enable-theme theme)
         (load-theme theme :no-confirm)))))
 
-(defsubst consult--narrow-prefix (prefix)
-  "Make narrowing prefix string from PREFIX."
-  (propertize (concat prefix consult-narrow-separator " ") 'display ""))
-
 (defsubst consult--buffer-candidate (prefix cand face ann fun)
   "Format virtual buffer candidate.
 
@@ -942,39 +984,6 @@ FUN is the function used to open the candiddate."
     (consult--align (propertize ann 'face 'consult-annotation)))
    fun
    cand))
-
-(defmacro consult--with-narrow (chars &rest body)
-  "Setup narrowing KEYMAP in BODY."
-  (declare (indent 1))
-  (let ((keymap (make-symbol "keymap"))
-        (stack (make-symbol "stack"))
-        (setup (make-symbol "setup"))
-        (exit (make-symbol "exit")))
-    `(let* ((,keymap (cond
-                      ;; TODO the buffer keymap setup for narrowing
-                      ;; is only compatible with selectrum/icomplete now
-                      (selectrum-mode selectrum-minibuffer-map)
-                      (icomplete-mode icomplete-minibuffer-map)
-                      (t (make-sparse-keymap))))
-            (,stack nil)
-            (,setup (lambda ()
-                      (push (lookup-key ,keymap " ") ,stack)
-                      (unless (cdr ,stack)
-                        (define-key ,keymap " "
-                          (lambda ()
-                            (interactive)
-                            (let ((str (minibuffer-contents)))
-                              (if (member str ,chars)
-                                  (insert (concat consult-narrow-separator " "))
-                                (call-interactively 'self-insert-command))))))))
-            (,exit (lambda ()
-                     (define-key ,keymap " " (pop ,stack)))))
-       (add-hook 'minibuffer-setup-hook ,setup)
-       (add-hook 'minibuffer-exit-hook ,exit)
-       (unwind-protect
-           (progn ,@body)
-         (remove-hook 'minibuffer-setup-hook ,setup)
-         (remove-hook 'minibuffer-exit-hook ,exit)))))
 
 (defun consult--buffer (open-buffer open-file open-bookmark)
   "Backend implementation of `consult-buffer'.
@@ -1008,29 +1017,29 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                           (consult--buffer-candidate "f" (abbreviate-file-name x) 'consult-file "View" open-file))
                         (remove curr-file recentf-list)))
          (selected
-          (consult--with-narrow '("b" "m" "v" "f")
-           (consult--read
-            "Switch to: " (append bufs files views bookmarks)
-            :history 'consult-buffer-history
-            :sort nil
-            :lookup
-            (lambda (candidates x)
-              ;; When candidate is not found in the alist,
-              ;; default to creating a new buffer.
-              (or (consult--lookup-list candidates x)
-                  (and (not (string-blank-p x)) (list open-buffer x))))
-            ;; TODO preview of virtual buffers is not implemented yet
-            ;; see https://github.com/minad/consult/issues/9
-            :preview (lambda (cmd cand state)
-                       (pcase cmd
-                         ('save (current-buffer))
-                         ('restore (when (buffer-live-p state)
-                                     (set-buffer state)))
-                         ('preview
-                          (when (and (eq (car cand) open-buffer) (get-buffer (cadr cand)))
-                            (consult--with-window
-                             (apply open-buffer (cdr cand)))))))))))
-    (when selected (apply (car selected) (cdr selected)))))
+          (consult--read
+           "Switch to: " (append bufs files views bookmarks)
+           :history 'consult-buffer-history
+           :sort nil
+           :narrow '("b" "m" "v" "f")
+           :lookup
+           (lambda (candidates x)
+             ;; When candidate is not found in the alist,
+             ;; default to creating a new buffer.
+             (or (consult--lookup-list candidates x)
+                 (and (not (string-blank-p x)) (list open-buffer x))))
+           ;; TODO preview of virtual buffers is not implemented yet
+           ;; see https://github.com/minad/consult/issues/9
+           :preview (lambda (cmd cand state)
+                      (pcase cmd
+                        ('save (current-buffer))
+                        ('restore (when (buffer-live-p state)
+                                    (set-buffer state)))
+                        ('preview
+                         (when (and (eq (car cand) open-buffer) (get-buffer (cadr cand)))
+                           (consult--with-window
+                            (apply open-buffer (cdr cand))))))))))
+  (when selected (apply (car selected) (cdr selected)))))
 
 ;;;###autoload
 (defun consult-buffer-other-frame ()
