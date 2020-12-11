@@ -44,6 +44,7 @@
 
 (require 'bookmark)
 (require 'cl-lib)
+(require 'imenu)
 (require 'kmacro)
 (require 'outline)
 (require 'recentf)
@@ -220,13 +221,6 @@ nil shows all `custom-available-themes'."
 
 (defvar-local consult--overlays nil
   "List of overlays used by consult.")
-
-;;;; Pre-declarations for external packages
-
-(defvar imenu-auto-rescan)
-(defvar imenu-use-markers)
-(declare-function imenu--make-index-alist "imenu")
-(declare-function imenu--subalist-p "imenu")
 
 ;;;; Helper functions
 
