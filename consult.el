@@ -99,6 +99,11 @@
   "Face used to highlight bookmarks in `consult-buffer'."
   :group 'consult)
 
+(defface consult-buffer
+  '((t))
+  "Face used to highlight buffers in `consult-buffer'."
+  :group 'consult)
+
 (defface consult-view
   '((t :inherit font-lock-keyword-face))
   "Face used to highlight views in `consult-buffer'."
@@ -166,6 +171,11 @@ nil shows all `custom-available-themes'."
   :type 'boolean
   :group 'consult)
 
+(defcustom consult-prefix-separator "# "
+  "Prefix separator string used by `consult-buffer'."
+  :type 'string
+  :group 'consult)
+
 (defcustom consult-line-numbers-widen t
   "Show absolute line numbers when narrowing is active."
   :type 'boolean
@@ -223,6 +233,15 @@ nil shows all `custom-available-themes'."
   "List of overlays used by consult.")
 
 ;;;; Helper functions
+
+(defsubst consult--align (str)
+  "Align STR at the right margin."
+  (concat
+   (propertize
+    " "
+    'display
+    `(space :align-to (- right-fringe ,(length str))))
+   (propertize " " 'display str)))
 
 (defun consult--lookup-list (alist key)
   "Lookup KEY in ALIST."
@@ -359,8 +378,6 @@ PREVIEW is a preview function."
                  (obarrayp candidates) ;; obarray
                  (stringp (car candidates)) ;; string list
                  (consp (car candidates)))) ;; alist
-  ;; alists can only be used if require-match=t
-  (cl-assert (or (not (and (consp candidates) (consp (car candidates)))) require-match))
   (let ((candidates-fun
          (if (and sort (not category))
              candidates
@@ -903,119 +920,73 @@ preview if `consult-preview-mode' is enabled."
           (enable-theme theme)
         (load-theme theme :no-confirm)))))
 
-;; TODO remove this as soon as consult--buffer-selectrum is gone
-(defvar selectrum-should-sort-p)
-(declare-function selectrum-read "selectrum")
+(defsubst consult--buffer-candidate (prefix cand face ann fun)
+  "Format virtual buffer candidate.
 
-;; TODO consult--buffer-selectrum performs dynamic computation of the candidate set.
-;; this is currently not supported by completing-read+selectrum.
-;; therefore the selectrum api is used directly.
-;; consult-buffer with selectrum supports prefixes for narrowing b, f, m, v
-;; see discussion https://github.com/raxod502/selectrum/issues/235#issuecomment-734835414
-;; see also https://github.com/minad/consult/issues/10
-(defun consult--buffer-selectrum (open-buffer hidden-bufs visible-bufs files views bookmarks)
-  "Select virtual buffer using `selectrum-read'.
-HIDDEN-BUFS, VISIBLE-BUFS, FILES, VIEWS and BOOKMARKS are the candidate lists.
-OPEN-BUFFER is used for preview."
-  (let* ((all-cands (append visible-bufs files bookmarks))
-         (generate
-          (lambda (input)
-            (cond
-             ((string-prefix-p " " input)
-              (list (cons 'input (substring input 1))
-                    (cons 'candidates hidden-bufs)))
-             ((string-prefix-p "b " input)
-              (list (cons 'input (substring input 2))
-                    (cons 'candidates visible-bufs)))
-             ((string-prefix-p "f " input)
-              (list (cons 'input (substring input 2))
-                    (cons 'candidates files)))
-             ((and views (string-prefix-p "v " input)) ;; Only narrow if there are views
-              (list (cons 'input (substring input 2))
-                    (cons 'candidates views)))
-             ((and bookmarks (string-prefix-p "m " input)) ;; Only narrow if there are bookmarks
-              (list (cons 'input (substring input 2))
-                    (cons 'candidates bookmarks)))
-             (t
-              (list (cons 'input input)
-                    (cons 'candidates all-cands)))))))
-    ;; TODO preview of virtual buffers is not implemented yet
-    ;; see https://github.com/minad/consult/issues/9
-    (consult--with-preview consult-preview-buffer
-        (buf state)
-        (current-buffer)
-        (when (buffer-live-p state)
-          (set-buffer state))
-        (when (get-buffer buf)
-          (consult--with-window
-           (funcall open-buffer buf)))
-      (minibuffer-with-setup-hook
-          (lambda () (setq-local selectrum-should-sort-p nil))
-        (selectrum-read "Switch to: " generate
-                        :history 'consult-buffer-history)))))
-
-;; TODO consult--buffer-default does not support prefixes
-;; for narrowing like the Selectrum variant!
-;; see discussion https://github.com/raxod502/selectrum/issues/235#issuecomment-734835414
-(defun consult--buffer-default (open-buffer candidates)
-  "Select virtual buffer from a list of CANDIDATES using `completing-read'.
-OPEN-BUFFER is used for preview."
-  (consult--read "Switch to: " candidates
-                 :history 'consult-buffer-history
-                 :sort nil
-                 :preview (lambda (cmd cand state)
-                            (pcase cmd
-                              ('save (current-buffer))
-                              ('restore (when (buffer-live-p state)
-                                          (set-buffer state)))
-                              ('preview
-                               (when (get-buffer cand)
-                                 (consult--with-window
-                                  (funcall open-buffer cand))))))))
+PREFIX is the prefix character for narrowing.
+FACE is the face for the candidate.
+ANN is the annotation string at the right margin.
+FUN is the function used to open the candiddate."
+  (list
+   (concat
+    (propertize (concat prefix consult-prefix-separator) 'display "")
+    (propertize cand 'face face)
+    (consult--align (propertize ann 'face 'consult-annotation)))
+   fun
+   cand))
 
 (defun consult--buffer (open-buffer open-file open-bookmark)
   "Backend implementation of `consult-buffer'.
 Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be used to display the item."
   (let* ((curr-buf (window-buffer (minibuffer-selected-window)))
          (curr-file (or (buffer-file-name curr-buf) ""))
-         (all-bufs (mapcar #'buffer-name (delq curr-buf (buffer-list))))
-         (hidden-bufs (seq-filter (lambda (x) (= (aref x 0) 32)) all-bufs))
-         (visible-bufs (seq-filter (lambda (x) (/= (aref x 0) 32)) all-bufs))
-         ;; TODO implement a solution to allow registration of custom virtual buffers.
-         ;; Alternatively just hard-code other view libraries like perspective etc?
+         ;; TODO right now we only show visible buffers.
+         ;; This is a regression in contrast to the old dynamic narrowing implementation
+         ;; and a regression to the default switch-to-buffer implementation.
+         (bufs (mapcar
+                (lambda (x)
+                  (consult--buffer-candidate "b" x 'consult-buffer "Buffer" open-buffer))
+                (seq-remove
+                 ;; Visible buffers only
+                 (lambda (x) (= (aref x 0) 32))
+                 (mapcar #'buffer-name
+                         (delq curr-buf (buffer-list))))))
+         ;; TODO implement a solution to allow registration of custom view/perspective libraries.
+         ;; Probably do this using two configurable functions
+         ;; `consult-view-list-function' and `consult-view-open-function'.
          ;; Right now only bookmarks-view is supported.
          ;; https://github.com/minad/bookmark-view/blob/master/bookmark-view.el
          (views (if (fboundp 'bookmark-view-names)
                     (mapcar (lambda (x)
-                              (propertize x
-                                          'face 'consult-view
-                                          ;; TODO remove selectrum specifics if possible?
-                                          'selectrum-candidate-display-right-margin
-                                          (propertize " View" 'face 'consult-annotation)))
+                              (consult--buffer-candidate "v" x 'consult-view "View" open-bookmark))
                             (bookmark-view-names))))
          (bookmarks (mapcar (lambda (x)
-                              (propertize (car x)
-                                          'face 'consult-bookmark
-                                          ;; TODO remove selectrum specifics if possible?
-                                          'selectrum-candidate-display-right-margin
-                                          (propertize " Bookmark" 'face 'consult-annotation)))
+                              (consult--buffer-candidate "m" (car x) 'consult-bookmark "Bookmark" open-bookmark))
                             bookmark-alist))
-         (all-files (mapcar (lambda (x)
-                              (propertize (abbreviate-file-name x)
-                                          'face 'consult-file
-                                          ;; TODO remove selectrum specifics if possible?
-                                          'selectrum-candidate-display-right-margin
-                                          (propertize " File" 'face 'consult-annotation)))
-                            recentf-list))
-         (files (remove curr-file all-files))
-         (selected (if (bound-and-true-p selectrum-mode)
-                       (consult--buffer-selectrum open-buffer hidden-bufs visible-bufs files views bookmarks)
-                     (consult--buffer-default open-buffer (append visible-bufs files bookmarks)))))
-    (cond
-     ((get-buffer selected) (funcall open-buffer selected)) ;; buffers have priority
-     ((member selected all-files) (funcall open-file selected))
-     ((member selected bookmarks) (funcall open-bookmark selected))
-     ((and selected (not (string= "" selected))) (funcall open-buffer selected)))))
+         (files (mapcar (lambda (x)
+                          (consult--buffer-candidate "f" (abbreviate-file-name x) 'consult-file "View" open-file))
+                        (remove curr-file recentf-list)))
+         (selected (consult--read "Switch to: " (append bufs files views bookmarks)
+                                  :history 'consult-buffer-history
+                                  :sort nil
+                                  :lookup
+                                  (lambda (candidates x)
+                                    ;; When candidate is not found in the alist,
+                                    ;; default to creating a new buffer.
+                                    (or (consult--lookup-list candidates x)
+                                        (and (not (string-blank-p x)) (list open-buffer x))))
+                                  ;; TODO preview of virtual buffers is not implemented yet
+                                  ;; see https://github.com/minad/consult/issues/9
+                                  :preview (lambda (cmd cand state)
+                                             (pcase cmd
+                                               ('save (current-buffer))
+                                               ('restore (when (buffer-live-p state)
+                                                           (set-buffer state)))
+                                               ('preview
+                                                (when (and (eq (car cand) open-buffer) (get-buffer (cadr cand)))
+                                                  (consult--with-window
+                                                   (apply open-buffer (cdr cand))))))))))
+    (when selected (apply (car selected) (cdr selected)))))
 
 ;;;###autoload
 (defun consult-buffer-other-frame ()
