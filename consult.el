@@ -1239,15 +1239,12 @@ It should check the consult-preview-mode flag and should be indempotent."
   (add-hook 'consult-preview-mode-hook hook)
   (funcall hook))
 
-;; TODO open questions
-;; 1. consult--preview-default-update checks for icomplete/selectrum, necessary or not?
-
 ;;;; default completion-system support for preview
 
 (defun consult--preview-default-update (&rest _)
   "Preview function used for the default completion system."
-  (unless (or (bound-and-true-p selectrum-mode)
-              (bound-and-true-p icomplete-mode))
+  ;; Check if the default completion-system is active, by looking at `completing-read-function'
+  (when (eq completing-read-function #'completing-read-default)
     (when-let (fun (car consult--preview-stack))
       (let ((cand (minibuffer-contents-no-properties)))
         (when (test-completion cand
