@@ -171,11 +171,6 @@ nil shows all `custom-available-themes'."
   :type 'boolean
   :group 'consult)
 
-(defcustom consult-prefix-separator "# "
-  "Prefix separator string used by `consult-buffer'."
-  :type 'string
-  :group 'consult)
-
 (defcustom consult-line-numbers-widen t
   "Show absolute line numbers when narrowing is active."
   :type 'boolean
@@ -926,17 +921,31 @@ preview if `consult-preview-mode' is enabled."
 (defsubst consult--buffer-candidate (prefix cand face ann fun)
   "Format virtual buffer candidate.
 
-PREFIX is the prefix character for narrowing.
+CAND is the candidate string.
+PREFIX is the prefix string for narrowing.
 FACE is the face for the candidate.
 ANN is the annotation string at the right margin.
 FUN is the function used to open the candiddate."
   (list
    (concat
-    (propertize (concat prefix consult-prefix-separator) 'display "")
+    (propertize (concat prefix "# ") 'display "")
     (propertize cand 'face face)
     (consult--align (propertize ann 'face 'consult-annotation)))
    fun
    cand))
+
+(defun consult--buffer-space ()
+  "Replace minibuffer content by prefix in order to support narrowing."
+  (interactive)
+  (let ((str (minibuffer-contents)))
+    (if (member str '("b" "m" "v" "f"))
+        (insert "# ")
+      (call-interactively 'self-insert-command))))
+
+(require 'selectrum)
+(define-key selectrum-minibuffer-map " " #'consult--buffer-space)
+(require 'icomplete)
+(define-key icomplete-minibuffer-map " " #'consult--buffer-space)
 
 (defun consult--buffer (open-buffer open-file open-bookmark)
   "Backend implementation of `consult-buffer'.
@@ -969,26 +978,28 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
          (files (mapcar (lambda (x)
                           (consult--buffer-candidate "f" (abbreviate-file-name x) 'consult-file "View" open-file))
                         (remove curr-file recentf-list)))
-         (selected (consult--read "Switch to: " (append bufs files views bookmarks)
-                                  :history 'consult-buffer-history
-                                  :sort nil
-                                  :lookup
-                                  (lambda (candidates x)
-                                    ;; When candidate is not found in the alist,
-                                    ;; default to creating a new buffer.
-                                    (or (consult--lookup-list candidates x)
-                                        (and (not (string-blank-p x)) (list open-buffer x))))
-                                  ;; TODO preview of virtual buffers is not implemented yet
-                                  ;; see https://github.com/minad/consult/issues/9
-                                  :preview (lambda (cmd cand state)
-                                             (pcase cmd
-                                               ('save (current-buffer))
-                                               ('restore (when (buffer-live-p state)
-                                                           (set-buffer state)))
-                                               ('preview
-                                                (when (and (eq (car cand) open-buffer) (get-buffer (cadr cand)))
-                                                  (consult--with-window
-                                                   (apply open-buffer (cdr cand))))))))))
+         (selected
+          (consult--read
+                    "Switch to: " (append bufs files views bookmarks)
+                    :history 'consult-buffer-history
+                    :sort nil
+                    :lookup
+                    (lambda (candidates x)
+                      ;; When candidate is not found in the alist,
+                      ;; default to creating a new buffer.
+                      (or (consult--lookup-list candidates x)
+                          (and (not (string-blank-p x)) (list open-buffer x))))
+                    ;; TODO preview of virtual buffers is not implemented yet
+                    ;; see https://github.com/minad/consult/issues/9
+                    :preview (lambda (cmd cand state)
+                               (pcase cmd
+                                 ('save (current-buffer))
+                                 ('restore (when (buffer-live-p state)
+                                             (set-buffer state)))
+                                 ('preview
+                                  (when (and (eq (car cand) open-buffer) (get-buffer (cadr cand)))
+                                    (consult--with-window
+                                     (apply open-buffer (cdr cand))))))))))
     (when selected (apply (car selected) (cdr selected)))))
 
 ;;;###autoload
