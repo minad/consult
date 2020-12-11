@@ -323,6 +323,7 @@ CHARS is the list of narrowing prefix strings."
   "Setup narrowing in BODY.
 
 CHARS is the list of narrowing prefix strings."
+  (declare (indent 1))
   (let ((chars-var (make-symbol "chars")))
     `(let ((,chars-var ,chars))
        (if ,chars-var
@@ -419,33 +420,30 @@ PREVIEW is a preview function.
 NARROW is a list of narrowing prefix strings."
   (ignore default-top)
   ;; supported types
-  (cl-assert (or (functionp candidates) ;; function
-                 (not candidates) ;; nil
+  (cl-assert (or (not candidates) ;; nil
                  (obarrayp candidates) ;; obarray
                  (stringp (car candidates)) ;; string list
                  (consp (car candidates)))) ;; alist
-  (let* ((candidates-fun (if (functionp candidates) candidates (lambda () candidates)))
-         (candidate-table
-          (if (and sort (not category) (not (functionp candidates)))
-              candidates
-            (lambda (str pred action)
-              (if (eq action 'metadata)
-                  `(metadata
-                    ,@(if category `((category . ,category)))
-                    ,@(if (not sort) '((cycle-sort-function . identity)
-                                       (display-sort-function . identity))))
-                (complete-with-action action (funcall candidates-fun) str pred))))))
+  (let ((candidates-fun
+         (if (and sort (not category))
+             candidates
+           (lambda (str pred action)
+             (if (eq action 'metadata)
+                 `(metadata
+                   ,@(if category `((category . ,category)))
+                   ,@(if (not sort) '((cycle-sort-function . identity)
+                                      (display-sort-function . identity))))
+               (complete-with-action action candidates str pred))))))
     (consult--with-preview preview
         (cand state)
         (funcall preview 'save nil nil)
         (funcall preview 'restore cand state)
-        (when-let (cand (funcall lookup (funcall candidates-fun) cand))
+        (when-let (cand (funcall lookup candidates cand))
           (funcall preview 'preview cand nil))
       (funcall
-       lookup
-       (funcall candidates-fun)
+       lookup candidates
        (consult--with-narrow narrow
-         (completing-read prompt candidate-table
+         (completing-read prompt candidates-fun
                           predicate require-match initial history default))))))
 
 (defsubst consult--pad-line-number (width line)
