@@ -233,10 +233,6 @@ nil shows all `custom-available-themes'."
 (declare-function imenu--make-index-alist "imenu")
 (declare-function imenu--subalist-p "imenu")
 
-(defvar selectrum-should-sort-p)
-(declare-function selectrum-read "selectrum")
-(declare-function selectrum-get-current-candidate "selectrum")
-
 (defvar flycheck-current-errors)
 (defvar flycheck-last-status-change)
 (declare-function flycheck-error-buffer "flycheck")
@@ -362,17 +358,6 @@ STATE is the saved state."
       (let ((pos (point)))
         (consult--overlay-add pos (1+ pos) 'consult-preview-cursor))))))
 
-;; HACK: Hopefully selectrum adds something like this to the official API.
-;; https://github.com/raxod502/selectrum/issues/243
-;; https://github.com/raxod502/selectrum/pull/244
-(defun consult--selectrum-config (options)
-  "Add OPTIONS to the next `selectrum-read' call."
-  (when (and options (bound-and-true-p selectrum-mode))
-    (letrec ((advice (lambda (orig prompt candidates &rest args)
-                       (advice-remove #'selectrum-read advice)
-                       (apply orig prompt candidates (append options args)))))
-      (advice-add #'selectrum-read :around advice))))
-
 (cl-defun consult--read (prompt candidates &key
                                 predicate require-match history default
                                 category initial preview
@@ -391,6 +376,7 @@ LOOKUP is a function which is applied to the result.
 INITIAL is initial input.
 DEFAULT-TOP must be nil if the default candidate should not be moved to the top.
 PREVIEW is a preview function."
+  (ignore default-top)
   ;; supported types
   (cl-assert (or (not candidates) ;; nil
                  (obarrayp candidates) ;; obarray
@@ -398,15 +384,6 @@ PREVIEW is a preview function."
                  (consp (car candidates)))) ;; alist
   ;; alists can only be used if require-match=t
   (cl-assert (or (not (and (consp candidates) (consp (car candidates)))) require-match))
-  ;; HACK: We are explicitly injecting the default input, since default inputs are deprecated
-  ;; in the completing-read API. Selectrum's completing-read consequently does not support
-  ;; them. Maybe Selectrum should add support for initial inputs, even if this is deprecated
-  ;; since the argument does not seem to go away any time soon. There are a few special cases
-  ;; where one wants to use an initial input, even though it should not be overused and the use
-  ;; of initial inputs is discouraged by the Emacs documentation.
-  (consult--selectrum-config
-   `(,@(unless default-top '(:no-move-default-candidate t))
-     ,@(when initial `(:initial-input ,initial))))
   (let ((candidates-fun
          (if (and sort (not category))
              candidates
@@ -994,6 +971,10 @@ preview if `consult-preview-mode' is enabled."
           (enable-theme theme)
         (load-theme theme :no-confirm)))))
 
+;; TODO remove this as soon as consult--buffer-selectrum is gone
+(defvar selectrum-should-sort-p)
+(declare-function selectrum-read "selectrum")
+
 ;; TODO consult--buffer-selectrum performs dynamic computation of the candidate set.
 ;; this is currently not supported by completing-read+selectrum.
 ;; therefore the selectrum api is used directly.
@@ -1260,9 +1241,8 @@ It should check the consult-preview-mode flag and should be indempotent."
 
 ;; TODO open questions
 ;; 1. consult--preview-default-update checks for icomplete/selectrum, necessary or not?
-;; 2. consult--read does some selectrum-specific configuration
 
-;;;; consult-preview-mode - default completion-system support
+;;;; default completion-system support for preview
 
 (defun consult--preview-default-update (&rest _)
   "Preview function used for the default completion system."
@@ -1290,7 +1270,7 @@ It should check the consult-preview-mode flag and should be indempotent."
 
 (consult--preview-register #'consult--preview-default-setup)
 
-;;;; consult-preview-mode - icomplete support
+;;;; icomplete support for preview
 
 (defun consult--preview-icomplete-update ()
   "Preview function used for Icomplete."
@@ -1306,7 +1286,10 @@ It should check the consult-preview-mode flag and should be indempotent."
 
 (consult--preview-register #'consult--preview-icomplete-setup)
 
-;;;; consult-preview-mode - selectrum support
+;;;; selectrum support for preview and consult--read tweaks
+
+;; TODO remove this as soon as we require selectrum
+(declare-function selectrum-get-current-candidate "selectrum")
 
 (defun consult--preview-selectrum-update ()
   "Preview function used for Selectrum."
@@ -1321,6 +1304,34 @@ It should check the consult-preview-mode flag and should be indempotent."
     (advice-add 'selectrum--minibuffer-post-command-hook :after #'consult--preview-selectrum-update)))
 
 (consult--preview-register #'consult--preview-selectrum-setup)
+
+;; HACK: Hopefully selectrum adds something like this to the official API.
+;; https://github.com/raxod502/selectrum/issues/243
+;; https://github.com/raxod502/selectrum/pull/244
+(defsubst consult--config-selectrum (options)
+  "Add OPTIONS to the next `selectrum-read' call."
+  (when (and options (bound-and-true-p selectrum-mode))
+    (letrec ((advice (lambda (orig prompt candidates &rest args)
+                       (advice-remove #'selectrum-read advice)
+                       (apply orig prompt candidates (append options args)))))
+      (advice-add #'selectrum-read :around advice))))
+
+;; HACK: We are explicitly injecting the default input, since default inputs are deprecated
+;; in the completing-read API. Selectrum's completing-read consequently does not support
+;; them. Maybe Selectrum should add support for initial inputs, even if this is deprecated
+;; since the argument does not seem to go away any time soon. There are a few special cases
+;; where one wants to use an initial input, even though it should not be overused and the use
+;; of initial inputs is discouraged by the Emacs documentation.
+(cl-defun consult--read-selectrum (_prompt _candidates &rest rest &key default-top initial &allow-other-keys)
+  "Advice for `consult--read' performing Selectrum-specific configuration.
+
+_PROMPT, _CANDIDATES and REST are ignored.
+DEFAULT-TOP and INITIAL keyword arguments are used to configure Selectrum."
+  (consult--config-selectrum
+   `(,@(unless default-top '(:no-move-default-candidate t))
+     ,@(when initial `(:initial-input ,initial)))))
+
+(advice-add #'consult--read :before #'consult--read-selectrum)
 
 (provide 'consult)
 ;;; consult.el ends here
