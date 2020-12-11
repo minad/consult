@@ -1214,7 +1214,7 @@ Prepend PREFIX in front of all items."
          (items (imenu--make-index-alist t)))
     (setq items (delete (assoc "*Rescan*" items) items))
     ;; Functions appear at the top-level for emacs-lisp-mode. Fix this!
-    (when (eq major-mode 'emacs-lisp-mode)
+    (when (derived-mode-p 'emacs-lisp-mode)
       (let ((fns (seq-remove (lambda (x) (listp (cdr x))) items))
             (rest (seq-filter (lambda (x) (listp (cdr x))) items)))
         (setq items (append rest (list (cons "Functions" fns))))))
