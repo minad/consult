@@ -1241,7 +1241,7 @@ It should check the consult-preview-mode flag and should be indempotent."
 
 ;;;; default completion-system support for preview
 
-(defun consult--preview-default-update (&rest _)
+(defun consult--default-preview-update (&rest _)
   "Preview function used for the default completion system."
   ;; Check if the default completion-system is active, by looking at `completing-read-function'
   (when (eq completing-read-function #'completing-read-default)
@@ -1253,82 +1253,35 @@ It should check the consult-preview-mode flag and should be indempotent."
           (funcall fun cand))))))
 
 ;; TODO for default Emacs completion, I advise three functions. Is there a better way?
-(defun consult--preview-default-setup ()
+(defun consult--default-preview-setup ()
   "Setup preview support for the default completion-system."
   ;; Reset first to get a clean slate.
-  (advice-remove #'minibuffer-complete #'consult--preview-default-update)
-  (advice-remove #'minibuffer-complete-word #'consult--preview-default-update)
-  (advice-remove #'minibuffer-completion-help #'consult--preview-default-update)
+  (advice-remove #'minibuffer-complete #'consult--default-preview-update)
+  (advice-remove #'minibuffer-complete-word #'consult--default-preview-update)
+  (advice-remove #'minibuffer-completion-help #'consult--default-preview-update)
   ;; Now add our advices.
   (when consult-preview-mode
-    (advice-add #'minibuffer-complete-word  :after #'consult--preview-default-update)
-    (advice-add #'minibuffer-complete :after #'consult--preview-default-update)
-    (advice-add #'minibuffer-completion-help  :after #'consult--preview-default-update)))
+    (advice-add #'minibuffer-complete-word  :after #'consult--default-preview-update)
+    (advice-add #'minibuffer-complete :after #'consult--default-preview-update)
+    (advice-add #'minibuffer-completion-help  :after #'consult--default-preview-update)))
 
-(consult--preview-register #'consult--preview-default-setup)
+(consult--preview-register #'consult--default-preview-setup)
 
 ;;;; icomplete support for preview
 
-(defun consult--preview-icomplete-update ()
+(defun consult--icomplete-preview-update ()
   "Preview function used for Icomplete."
   (when-let* ((fun (car consult--preview-stack))
               (cand (car completion-all-sorted-completions)))
     (funcall fun cand)))
 
-(defun consult--preview-icomplete-setup ()
-  "Setup preview support for icomplete."
-  (advice-remove 'icomplete-post-commanda-hook #'consult--preview-icomplete-update)
+(defun consult--icomplete-preview-setup ()
+  "Setup preview support for Icomplete."
+  (advice-remove 'icomplete-post-commanda-hook #'consult--icomplete-preview-update)
   (when consult-preview-mode
-    (advice-add 'icomplete-post-command-hook :after #'consult--preview-icomplete-update)))
+    (advice-add 'icomplete-post-command-hook :after #'consult--icomplete-preview-update)))
 
-(consult--preview-register #'consult--preview-icomplete-setup)
-
-;;;; selectrum support for preview and consult--read tweaks
-
-;; TODO remove this as soon as we require selectrum
-(declare-function selectrum-get-current-candidate "selectrum")
-
-(defun consult--preview-selectrum-update ()
-  "Preview function used for Selectrum."
-  (when-let* ((fun (car consult--preview-stack))
-              (cand (selectrum-get-current-candidate)))
-    (funcall fun cand)))
-
-(defun consult--preview-selectrum-setup ()
-  "Setup preview support for selectrum."
-  (advice-remove 'selectrum--minibuffer-post-command-hook #'consult--preview-selectrum-update)
-  (when consult-preview-mode
-    (advice-add 'selectrum--minibuffer-post-command-hook :after #'consult--preview-selectrum-update)))
-
-(consult--preview-register #'consult--preview-selectrum-setup)
-
-;; HACK: Hopefully selectrum adds something like this to the official API.
-;; https://github.com/raxod502/selectrum/issues/243
-;; https://github.com/raxod502/selectrum/pull/244
-(defsubst consult--config-selectrum (options)
-  "Add OPTIONS to the next `selectrum-read' call."
-  (when (and options (bound-and-true-p selectrum-mode))
-    (letrec ((advice (lambda (orig prompt candidates &rest args)
-                       (advice-remove #'selectrum-read advice)
-                       (apply orig prompt candidates (append options args)))))
-      (advice-add #'selectrum-read :around advice))))
-
-;; HACK: We are explicitly injecting the default input, since default inputs are deprecated
-;; in the completing-read API. Selectrum's completing-read consequently does not support
-;; them. Maybe Selectrum should add support for initial inputs, even if this is deprecated
-;; since the argument does not seem to go away any time soon. There are a few special cases
-;; where one wants to use an initial input, even though it should not be overused and the use
-;; of initial inputs is discouraged by the Emacs documentation.
-(cl-defun consult--read-selectrum (_prompt _candidates &rest rest &key default-top initial &allow-other-keys)
-  "Advice for `consult--read' performing Selectrum-specific configuration.
-
-_PROMPT, _CANDIDATES and REST are ignored.
-DEFAULT-TOP and INITIAL keyword arguments are used to configure Selectrum."
-  (consult--config-selectrum
-   `(,@(unless default-top '(:no-move-default-candidate t))
-     ,@(when initial `(:initial-input ,initial)))))
-
-(advice-add #'consult--read :before #'consult--read-selectrum)
+(consult--preview-register #'consult--icomplete-preview-setup)
 
 (provide 'consult)
 ;;; consult.el ends here
