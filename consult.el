@@ -1245,19 +1245,26 @@ Prepend PREFIX in front of all items."
 
 ;;;; consult-preview-mode - Enabling preview for consult commands
 
-(defun consult--preview-update-selectrum ()
-  "Preview function used for Selectrum."
-  (when-let* ((fun (car consult--preview-stack))
-              (cand (selectrum-get-current-candidate)))
-    (funcall fun cand)))
+;;;###autoload
+(define-minor-mode consult-preview-mode
+  "Enable preview for consult commands."
+  :global t)
 
-(defun consult--preview-update-icomplete ()
-  "Preview function used for Icomplete."
-  (when-let* ((fun (car consult--preview-stack))
-              (cand (car completion-all-sorted-completions)))
-    (funcall fun cand)))
+(defun consult--preview-register (hook)
+  "Register completion-specific preview support.
 
-(defun consult--preview-update-default (&rest _)
+The HOOK is called every time the preview-mode is toggled.
+It should check the consult-preview-mode flag and should be indempotent."
+  (add-hook 'consult-preview-mode-hook hook)
+  (funcall hook))
+
+;; TODO open questions
+;; 1. consult--preview-default-update checks for icomplete/selectrum, necessary or not?
+;; 2. consult--read does some selectrum-specific configuration
+
+;;;; consult-preview-mode - default completion-system support
+
+(defun consult--preview-default-update (&rest _)
   "Preview function used for the default completion system."
   (unless (or (bound-and-true-p selectrum-mode)
               (bound-and-true-p icomplete-mode))
@@ -1268,30 +1275,52 @@ Prepend PREFIX in front of all items."
                                minibuffer-completion-predicate)
           (funcall fun cand))))))
 
-;; this function contains completion-system specifics, since there is no general mechanism of
-;; completion systems to get the current candidate.
-;;;###autoload
-(define-minor-mode consult-preview-mode
-  "Enable preview for consult commands."
-  :global t
-
+;; TODO for default Emacs completion, I advise three functions. Is there a better way?
+(defun consult--preview-default-setup ()
+  "Setup preview support for the default completion-system."
   ;; Reset first to get a clean slate.
-  (advice-remove 'selectrum--minibuffer-post-command-hook #'consult--preview-update-selectrum)
-  (advice-remove 'icomplete-post-command-hook #'consult--preview-update-icomplete)
-  (advice-remove #'minibuffer-complete #'consult--preview-update-default)
-  (advice-remove #'minibuffer-complete-word #'consult--preview-update-default)
-  (advice-remove #'minibuffer-completion-help #'consult--preview-update-default)
-
+  (advice-remove #'minibuffer-complete #'consult--preview-default-update)
+  (advice-remove #'minibuffer-complete-word #'consult--preview-default-update)
+  (advice-remove #'minibuffer-completion-help #'consult--preview-default-update)
   ;; Now add our advices.
   (when consult-preview-mode
-    ;; It is possible to advice functions which do not yet exist
-    (advice-add 'selectrum--minibuffer-post-command-hook :after #'consult--preview-update-selectrum)
-    (advice-add 'icomplete-post-command-hook :after #'consult--preview-update-icomplete)
+    (advice-add #'minibuffer-complete-word  :after #'consult--preview-default-update)
+    (advice-add #'minibuffer-complete :after #'consult--preview-default-update)
+    (advice-add #'minibuffer-completion-help  :after #'consult--preview-default-update)))
 
-    ;; TODO for default Emacs completion, I advise three functions. Is there a better way?
-    (advice-add #'minibuffer-complete-word  :after #'consult--preview-update-default)
-    (advice-add #'minibuffer-complete :after #'consult--preview-update-default)
-    (advice-add #'minibuffer-completion-help  :after #'consult--preview-update-default)))
+(consult--preview-register #'consult--preview-default-setup)
+
+;;;; consult-preview-mode - icomplete support
+
+(defun consult--preview-icomplete-update ()
+  "Preview function used for Icomplete."
+  (when-let* ((fun (car consult--preview-stack))
+              (cand (car completion-all-sorted-completions)))
+    (funcall fun cand)))
+
+(defun consult--preview-icomplete-setup ()
+  "Setup preview support for icomplete."
+  (advice-remove 'icomplete-post-commanda-hook #'consult--preview-icomplete-update)
+  (when consult-preview-mode
+    (advice-add 'icomplete-post-command-hook :after #'consult--preview-icomplete-update)))
+
+(consult--preview-register #'consult--preview-icomplete-setup)
+
+;;;; consult-preview-mode - selectrum support
+
+(defun consult--preview-selectrum-update ()
+  "Preview function used for Selectrum."
+  (when-let* ((fun (car consult--preview-stack))
+              (cand (selectrum-get-current-candidate)))
+    (funcall fun cand)))
+
+(defun consult--preview-selectrum-setup ()
+  "Setup preview support for selectrum."
+  (advice-remove 'selectrum--minibuffer-post-command-hook #'consult--preview-selectrum-update)
+  (when consult-preview-mode
+    (advice-add 'selectrum--minibuffer-post-command-hook :after #'consult--preview-selectrum-update)))
+
+(consult--preview-register #'consult--preview-selectrum-setup)
 
 (provide 'consult)
 ;;; consult.el ends here
