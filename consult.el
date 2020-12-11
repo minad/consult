@@ -261,36 +261,37 @@ nil shows all `custom-available-themes'."
   (when (and font-lock-mode (< (buffer-size) consult-fontify-limit))
     (font-lock-ensure)))
 
-(defmacro consult--with-preview (enabled args save restore preview &rest body)
-  "Add preview support to minibuffer completion.
+(defun consult--preview-install (preview body)
+  "Install preview support to minibuffer completion.
 
-The preview will only be enabled if `consult-preview-mode' is active.
-This function should not be used directly, use `consult--read' instead.
-ENABLED must be t to enable preview.
-ARGS are the argument variables (cand state).
-SAVE is an expression which returns state to save before preview.
-RESTORE is an expression which restores the state.
 PREVIEW is an expresion which previews the candidate.
-BODY are the body expressions."
-  (declare (indent 5))
-  `(if ,enabled
-       (save-excursion
-         (let ((,(car args))
-               (,@(cdr args) ,save))
-           (ignore ,@args) ;; Disable unused variable warnings
-           (push (lambda (,(car args)) ,preview) consult--preview-stack)
-           (unwind-protect
-               (setq ,(car args) ,(if (cdr body) `(progn ,@body) (car body)))
-             (pop consult--preview-stack)
-             ,restore)))
-     ,@body))
+BODY is the body function."
+  (save-excursion
+    (push (lambda (cand) (funcall preview 'preview cand nil)) consult--preview-stack)
+    (let ((selected)
+          (state (funcall preview 'save nil nil)))
+      (unwind-protect
+          (setq selected (funcall body))
+        (pop consult--preview-stack)
+        (funcall preview 'restore selected state)))))
+
+(defmacro consult--with-preview (preview &rest body)
+  "Install preview in BODY.
+
+PREVIEW is the preview function."
+  (declare (indent 1))
+  (let ((preview-var (make-symbol "preview")))
+    `(let ((,preview-var ,preview))
+       (if ,preview-var
+           (consult--preview-install ,preview-var (lambda () ,@body))
+         ,@body))))
 
 (defsubst consult--narrow-prefix (prefix)
   "Make narrowing prefix string from PREFIX."
   (propertize (concat prefix consult-narrow-separator " ") 'display ""))
 
-(defun consult--narrow-setup (chars body)
-  "Setup narrowing in BODY.
+(defun consult--narrow-install (chars body)
+  "Install narrowing in BODY.
 
 CHARS is the list of narrowing prefix strings."
   (let* ((keymap (cond
@@ -327,7 +328,7 @@ CHARS is the list of narrowing prefix strings."
   (let ((chars-var (make-symbol "chars")))
     `(let ((,chars-var ,chars))
        (if ,chars-var
-           (consult--narrow-setup ,chars-var (lambda () ,@body))
+           (consult--narrow-install ,chars-var (lambda () ,@body))
          ,@body))))
 
 (defmacro consult--with-increased-gc (&rest body)
@@ -434,14 +435,12 @@ NARROW is a list of narrowing prefix strings."
                    ,@(if (not sort) '((cycle-sort-function . identity)
                                       (display-sort-function . identity))))
                (complete-with-action action candidates str pred))))))
-    (consult--with-preview preview
-        (cand state)
-        (funcall preview 'save nil nil)
-        (funcall preview 'restore cand state)
-        (when-let (cand (funcall lookup candidates cand))
-          (funcall preview 'preview cand nil))
-      (funcall
-       lookup candidates
+    (funcall
+     lookup candidates
+     (consult--with-preview
+         (and preview
+              (lambda (cmd cand state)
+                (funcall preview cmd (and cand (funcall lookup candidates cand)) state)))
        (consult--with-narrow narrow
          (completing-read prompt candidates-fun
                           predicate require-match initial history default))))))
