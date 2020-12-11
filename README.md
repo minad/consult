@@ -99,10 +99,12 @@ completions with richer information (e.g. `M-x`, `describe-face`,
     and recursive editing.
   * `consult-outline`: Jump to a heading of the outline. Supports live preview
     and recursive editing.
-  * `consult-flycheck`: Jump to flycheck error. Supports live preview
-    and recursive editing.
   * `consult-imenu`: Jump to imenu item. Supports live preview
     and recursive editing.
+  * `consult-flycheck`: Jump to flycheck error. Supports live preview
+    and recursive editing. This command requires to install the additional
+    `consult-flycheck.el` package since the main `consult.el` package
+    only depends on Emacs core components.
 
 ### Miscellaneous
 
@@ -150,9 +152,7 @@ order to use the enhanced commands, you must configure the keybindings yourself.
          ("M-g i" . consult-imenu)   ;; "M-s i" is a good alternative
          ("M-s m" . consult-multi-occur)
          ("M-y" . consult-yank-pop)
-         ("<help> a" . consult-apropos)
-         :map flycheck-command-map
-         ("!" . consult-flycheck))
+         ("<help> a" . consult-apropos))
 
   ;; The :init configuration is always executed (Not lazy!)
   :init
@@ -166,6 +166,16 @@ order to use the enhanced commands, you must configure the keybindings yourself.
   ;; Optionally enable previews. Note that individual previews can be disabled
   ;; via customization variables.
   (consult-preview-mode))
+
+;; Enable Consult-Selectrum integration.
+;; This should be installed if Selectrum is used.
+(use-package consult-selectrum
+  :demand t)
+
+;; Install the consult-flycheck command.
+(use-package consult-flycheck
+  :bind (:map flycheck-command-map
+         ("!" . consult-flycheck)))
 
 ;; Optionally enable richer annotations using the Marginalia package
 (use-package marginalia
@@ -184,6 +194,7 @@ order to use the enhanced commands, you must configure the keybindings yourself.
 | consult-line-numbers-widen | t   | Show absolute line numbers when narrowing is active.    |
 | consult-mode-histories     | …   | Mode-specific history variables                         |
 | consult-preview-buffer     | t   | Enable buffer preview during selection                  |
+| consult-preview-flycheck   | t   | Enable flycheck error preview during selection          |
 | consult-preview-line       | t   | Enable line preview during selection                    |
 | consult-preview-mark       | t   | Enable mark preview during selection                    |
 | consult-preview-outline    | t   | Enable outline preview during selection                 |
@@ -196,8 +207,10 @@ order to use the enhanced commands, you must configure the keybindings yourself.
 
 It is recommended to install the following package combination:
 
-* selectrum or icomplete-vertical: Vertical completion systems
 * consult: This package
+* consult-flycheck: Provides the consult-flycheck command.
+* consult-selectrum: Provides integration with Selectrum.
+* selectrum or icomplete-vertical: Vertical completion systems
 * marginalia: Annotations for the completion candidates
 * embark: Action commands, which can act on the completion candidates
 * orderless or prescient: Completion style, filters the candidates, Prescient also offers sorting.
@@ -220,6 +233,8 @@ Advice and useful discussions:
 * [Clemens Radermacher](https://github.com/clemera/)
 * [Omar Antolín Camarena](https://github.com/oantolin/)
 * [Protesilaos Stavrou](https://gitlab.com/protesilaos/)
+* [Steve Purcell](https://gitlab.com/purcell/)
+* [Adam Porter](https://gitlab.com/alphapapa/)
 
 Code contributions:
 * [Omar Antolín Camarena](https://github.com/oantolin/)
