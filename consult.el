@@ -182,7 +182,12 @@ nil shows all `custom-available-themes'."
   :group 'consult)
 
 (defcustom consult-narrow-separator (string 8203) ;; zero width space
-  "String used to separate prefix for narrowing."
+  "String used to separate prefix for narrowing.
+
+This string should ideally be made of unique characters,
+such that no accidential matching occurs. Therefore
+the default is a zero-width-space, which generally
+does not occur in candidate strings."
   :type 'string
   :group 'consult)
 
