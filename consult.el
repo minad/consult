@@ -223,10 +223,6 @@ does not occur in candidate strings."
 
 ;;;; Internal variables
 
-(defvar consult--minibuffer-map-hook nil
-  "Get minibuffer keymap.
-For each completion system, a function must be added here.")
-
 (defvar consult--gc-threshold 67108864
   "Large gc threshold for temporary increase.")
 
@@ -290,32 +286,27 @@ PREVIEW is the preview function."
          (propertize (concat prefix consult-narrow-separator " ") 'display "")
          strings))
 
+(defun consult-insert ()
+  "Insert narrowing prefix, see `consult-narrow-separator'."
+  (interactive)
+  (insert (concat consult-narrow-separator " ")))
+
 (defun consult--narrow-install (chars body)
   "Install narrowing in BODY.
 
 CHARS is the list of narrowing prefix strings."
-  (let* ((keymap (or (run-hook-with-args-until-success 'consult--minibuffer-map-hook)
-                     ;; Use minibuffer-local-completion-map by default
-                     minibuffer-local-completion-map))
-         (stack)
-         (setup (lambda ()
-                   (push (lookup-key keymap " ") stack)
-                   (unless (cdr stack)
-                     (define-key keymap " "
-                       (lambda ()
-                         (interactive)
-                         (let ((str (minibuffer-contents)))
-                           (if (member str chars)
-                               (insert (concat consult-narrow-separator " "))
-                             (call-interactively 'self-insert-command))))))))
-         (exit (lambda ()
-                  (define-key keymap " " (pop stack)))))
-    (add-hook 'minibuffer-setup-hook setup)
-    (add-hook 'minibuffer-exit-hook exit)
-    (unwind-protect
-        (funcall body)
-      (remove-hook 'minibuffer-setup-hook setup)
-      (remove-hook 'minibuffer-exit-hook exit))))
+  (minibuffer-with-setup-hook
+      (lambda ()
+        (let ((keymap (make-composed-keymap (current-local-map) nil)))
+          (define-key keymap " "
+            `(menu-item "" nil :filter
+                        ,(lambda
+                           (&optional _)
+                           (let ((str (minibuffer-contents)))
+                             (when (member str chars)
+                               'consult-insert)))))
+          (use-local-map keymap)))
+    (funcall body)))
 
 (defmacro consult--with-narrow (chars &rest body)
   "Setup narrowing in BODY.
@@ -1226,10 +1217,6 @@ Prepend PREFIX in front of all items."
     (advice-add 'icomplete-post-command-hook :after #'consult--icomplete-preview-update)))
 
 (add-hook 'consult-preview-mode-hook #'consult--icomplete-preview-setup)
-
-(defvar icomplete-minibuffer-map)
-(add-hook 'consult--minibuffer-map-hook
-          (lambda () (when icomplete-mode icomplete-minibuffer-map)))
 
 (provide 'consult)
 ;;; consult.el ends here
