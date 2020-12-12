@@ -171,12 +171,13 @@ nil shows all `custom-available-themes'."
   :type '(repeat symbol)
   :group 'consult)
 
-(defcustom consult-after-jump-function #'recenter
+(defcustom consult-after-jump-hook '(recenter)
   "Function called after jumping to a location.
 
-This is called during preview and for the final jump. This function can be
-overwritten for example to achieve pulsing."
-  :type 'symbol
+This is called during preview and for the jump after selection.
+You may want to add a function which pulses the current line, e.g.,
+`xref-pulse-momentarily'."
+  :type 'hook
   :group 'consult)
 
 (defcustom consult-line-numbers-widen t
@@ -354,18 +355,13 @@ CHARS is the list of narrowing prefix strings."
   (mapc #'delete-overlay consult--overlays)
   (setq consult--overlays nil))
 
-(defsubst consult--after-jump ()
-  "Execute the after jump function."
-  (when consult-after-jump-function
-    (funcall consult-after-jump-function)))
-
 (defsubst consult--jump-1 (pos)
   "Go to POS and recenter."
   (when pos
     (when (and (markerp pos) (not (eq (current-buffer) (marker-buffer pos))))
       (switch-to-buffer (marker-buffer pos)))
     (goto-char pos)
-    (consult--after-jump)))
+    (run-hooks 'consult-after-jump-hook)))
 
 (defsubst consult--jump (pos)
   "Push current position to mark ring, go to POS and recenter."
@@ -1233,7 +1229,7 @@ Prepend PREFIX in front of all items."
     :lookup #'consult--lookup-list
     :history 'consult-imenu-history
     :sort nil))
-  (consult--after-jump))
+  (run-hooks 'consult-after-jump-hook))
 
 ;;;###autoload
 (define-minor-mode consult-preview-mode
