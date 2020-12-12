@@ -268,17 +268,17 @@ does not occur in candidate strings."
   (when (and font-lock-mode (< (buffer-size) consult-fontify-limit))
     (font-lock-ensure)))
 
-(defun consult--preview-install (preview body)
+(defun consult--preview-install (preview fun)
   "Install preview support to minibuffer completion.
 
 PREVIEW is an expresion which previews the candidate.
-BODY is the body function."
+FUN is the body function."
   (save-excursion
     (push (lambda (cand) (funcall preview 'preview cand nil)) consult--preview-stack)
     (let ((selected)
           (state (funcall preview 'save nil nil)))
       (unwind-protect
-          (setq selected (funcall body))
+          (setq selected (funcall fun))
         (pop consult--preview-stack)
         (funcall preview 'restore selected state)))))
 
@@ -299,13 +299,13 @@ PREVIEW is the preview function."
          (propertize (concat prefix consult-narrow-separator " ") 'display "")
          strings))
 
-(defun consult-insert-for-narrow ()
+(defun consult--narrow-insert ()
   "Insert narrowing prefix, see `consult-narrow-separator'."
   (interactive)
   (insert (concat consult-narrow-separator " ")))
 
-(defun consult--narrow-install (chars body)
-  "Install narrowing in BODY.
+(defun consult--narrow-install (chars fun)
+  "Install narrowing in FUN.
 
 CHARS is the list of narrowing prefix strings."
   (minibuffer-with-setup-hook
@@ -313,13 +313,11 @@ CHARS is the list of narrowing prefix strings."
                  (let ((keymap (make-composed-keymap nil (current-local-map))))
                    (define-key keymap " "
                      `(menu-item "" nil :filter
-                                 ,(lambda
-                                    (&optional _)
-                                    (let ((str (minibuffer-contents)))
-                                      (when (member str chars)
-                                        'consult-insert-for-narrow)))))
+                                 ,(lambda (&optional _)
+                                    (when (member (minibuffer-contents) chars)
+                                      'consult--narrow-insert))))
                    (use-local-map keymap))))
-    (funcall body)))
+    (funcall fun)))
 
 (defmacro consult--with-narrow (chars &rest body)
   "Setup narrowing in BODY.
