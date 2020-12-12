@@ -1023,8 +1023,6 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                ;; When candidate is not found in the alist,
                ;; default to creating a new buffer.
                (and (not (string-blank-p cand)) (cons open-buffer cand))))
-           ;; TODO preview of virtual buffers is not implemented yet
-           ;; see https://github.com/minad/consult/issues/9
            :preview
            (lambda (cmd cand state)
              (pcase cmd
@@ -1032,6 +1030,9 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                ('restore (when (buffer-live-p state)
                            (set-buffer state)))
                ('preview
+                ;; In order to avoid slowness and unnecessary complexity, we
+                ;; only preview buffers. Loading recent files, bookmarks or
+                ;; views can result in expensive operations.
                 (when (and (eq (car cand) open-buffer) (get-buffer (cdr cand)))
                   (consult--with-window
                    (funcall open-buffer (cdr cand))))))))))
