@@ -50,11 +50,6 @@
 (add-hook 'consult-preview-mode-hook #'consult-selectrum--preview-setup)
 (consult-selectrum--preview-setup) ;; call immediately to ensure load-order independence
 
-(add-hook 'consult--minibuffer-map-hook
-          (lambda ()
-            (when (eq completing-read-function #'selectrum-completing-read)
-              selectrum-minibuffer-map)))
-
 ;; HACK: Hopefully selectrum adds something like this to the official API.
 ;; https://github.com/raxod502/selectrum/issues/243
 ;; https://github.com/raxod502/selectrum/pull/244
