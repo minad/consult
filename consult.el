@@ -537,20 +537,22 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
 
 (defun consult--error-candidates ()
   "Return alist of errors and positions."
-  (consult--forbid-minibuffer)
-  (unless (next-error-buffer-p (current-buffer))
+  (unless next-error-function
     (user-error "Buffer does not support errors"))
+  (consult--forbid-minibuffer)
   (consult--fontify)
   (let* ((max-line 0)
          (line (line-number-at-pos (point-min) consult-line-numbers-widen))
-         (unformatted-candidates))
+         (unformatted-candidates)
+         (reset t))
     (cl-letf (((symbol-function 'message) #'format))
       (save-excursion
         (goto-char (point-min))
         (while
             (when-let (pos (condition-case nil
                                (save-excursion
-                                 (next-error)
+                                 (funcall next-error-function 1 reset)
+                                 (setq reset nil)
                                  (point))
                              (error nil)))
               (while (< (point) pos)
