@@ -84,11 +84,6 @@
   "Face used to highlight imenu prefix in `consult-imenu'."
   :group 'consult)
 
-(defface consult-annotation
-  '((t :inherit completions-annotations))
-  "Face used to highlight annotation in `consult-buffer'."
-  :group 'consult)
-
 (defface consult-file
   '((t :inherit font-lock-function-name-face))
   "Face used to highlight files in `consult-buffer'."
@@ -246,17 +241,6 @@ For each completion system, a function must be added here.")
 
 ;;;; Helper functions
 
-;; Same function as marginalia--align
-(defsubst consult--align (str)
-  "Align STR at the right margin."
-  (concat
-   " "
-   (propertize
-    " "
-    'display
-    `(space :align-to (- right-fringe ,(length str))))
-   str))
-
 (defun consult--lookup-list (alist key)
   "Lookup KEY in ALIST."
   (cdr (assoc key alist)))
@@ -313,7 +297,7 @@ CHARS is the list of narrowing prefix strings."
   (let* ((keymap (or (run-hook-with-args-until-success 'consult--minibuffer-map-hook)
                      ;; Use minibuffer-local-completion-map by default
                      minibuffer-local-completion-map))
-         (stack nil)
+         (stack)
          (setup (lambda ()
                    (push (lookup-key keymap " ") stack)
                    (unless (cdr stack)
@@ -415,7 +399,7 @@ STATE is the saved state."
 
 (cl-defun consult--read (prompt candidates &key
                                 predicate require-match history default
-                                category initial preview narrow annotate
+                                category initial preview narrow
                                 (sort t) (default-top t) (lookup (lambda (_ x) x)))
   "Simplified completing read function.
 
@@ -427,7 +411,6 @@ HISTORY is the symbol of the history variable.
 DEFAULT is the default input.
 CATEGORY is the completion category.
 SORT should be set to nil if the candidates are already sorted.
-ANNOTATE is the annotation function.
 LOOKUP is a function which is applied to the result.
 INITIAL is initial input.
 DEFAULT-TOP must be nil if the default candidate should not be moved to the top.
@@ -440,13 +423,12 @@ NARROW is a list of narrowing prefix strings."
                  (stringp (car candidates)) ;; string list
                  (consp (car candidates)))) ;; alist
   (let ((candidates-fun
-         (if (and sort (not category) (not annotate))
+         (if (and sort (not category))
              candidates
            (lambda (str pred action)
              (if (eq action 'metadata)
                  `(metadata
                    ,@(if category `((category . ,category)))
-                   ,@(if annotate `((annotation-function . ,annotate)))
                    ,@(if (not sort) '((cycle-sort-function . identity)
                                       (display-sort-function . identity))))
                (complete-with-action action candidates str pred))))))
@@ -1028,16 +1010,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
            :history 'consult-buffer-history
            :sort nil
            :narrow '("b" "m" "v" "f")
-           :annotate
-           (lambda (cand)
-             (consult--align
-              (propertize
-               (pcase (elt cand 0)
-                 (?b "Buffer")
-                 (?m "Bookmark")
-                 (?v "View")
-                 (?f "File"))
-               'face 'consult-annotation)))
+           :category 'virtual-buffer
            :lookup
            (lambda (candidates cand)
              (if-let (val (consult--lookup-list candidates cand))
