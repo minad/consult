@@ -311,7 +311,8 @@ PREVIEW is the preview function."
 
 CHARS is the list of narrowing prefix strings."
   (let* ((keymap (or (run-hook-with-args-until-success 'consult--minibuffer-map-hook)
-                     (make-sparse-keymap)))
+                     ;; Use minibuffer-local-completion-map by default
+                     minibuffer-local-completion-map))
          (stack nil)
          (setup (lambda ()
                    (push (lookup-key keymap " ") stack)
