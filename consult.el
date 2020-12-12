@@ -69,6 +69,11 @@
   "Face used to for cursor previews and marks in `consult-mark'."
   :group 'consult)
 
+(defface consult-preview-error
+  '((t :inherit isearch-fail))
+  "Face used to for cursor previews and marks in `consult-error'."
+  :group 'consult)
+
 (defface consult-preview-yank
   '((t :inherit consult-preview-line))
   "Face used to for yank previews in `consult-yank'."
@@ -150,6 +155,11 @@ The histories can be rings or lists."
   :type 'boolean
   :group 'consult)
 
+(defcustom consult-preview-error t
+  "Enable error preview during selection."
+  :type 'boolean
+  :group 'consult)
+
 (defcustom consult-preview-outline t
   "Enable outline preview during selection."
   :type 'boolean
@@ -190,6 +200,9 @@ does not occur in candidate strings."
   :group 'consult)
 
 ;;;; History variables
+
+(defvar-local consult-error-history nil
+  "Buffer-local history for the command `consult-error'.")
 
 (defvar-local consult-outline-history nil
   "Buffer-local history for the command `consult-outline'.")
@@ -376,13 +389,14 @@ CHARS is the list of narrowing prefix strings."
 
 ;; TODO Matched strings are not highlighted as of now
 ;; see https://github.com/minad/consult/issues/7
-(defun consult--preview-position (cmd cand state)
+(defun consult--preview-position (cmd cand state &optional face)
   "The preview function used if selecting from a list of candidate positions.
 
 The function can be used as the `:preview' argument of `consult--read'.
 CMD is the preview command.
 CAND is the selected candidate.
-STATE is the saved state."
+STATE is the saved state.
+FACE is the cursor face."
   (pcase cmd
     ('save (current-buffer))
     ('restore
@@ -395,7 +409,7 @@ STATE is the saved state."
       (consult--goto-1 cand)
       (consult--overlay-add (line-beginning-position) (line-end-position) 'consult-preview-line)
       (let ((pos (point)))
-        (consult--overlay-add pos (1+ pos) 'consult-preview-cursor))))))
+        (consult--overlay-add pos (1+ pos) (or face 'consult-preview-cursor)))))))
 
 (cl-defun consult--read (prompt candidates &key
                                 predicate require-match history default
@@ -464,6 +478,20 @@ Since the line number is part of the candidate it will be matched-on during comp
                (cdar cand))))
     candidates))
 
+(defun consult--line-with-cursor (&optional face)
+  "Return current line string with a marking at the current cursor position.
+FACE is the face to use for the cursor marking."
+  (let* ((col (current-column))
+         (str (buffer-substring (line-beginning-position) (line-end-position)))
+         (end (1+ col))
+         (face (or face 'consult-preview-cursor)))
+    (if (> end (length str))
+        (concat (substring str 0 col)
+                (propertize " " 'face face))
+      (concat (substring str 0 col)
+              (propertize (substring str col end) 'face face)
+              (substring str end)))))
+
 ;;;; Commands
 
 ;; see https://github.com/raxod502/selectrum/issues/226
@@ -518,6 +546,52 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                   :history 'consult-outline-history
                   :preview (and consult-preview-outline #'consult--preview-position))))
 
+(defun consult--error-candidates ()
+  "Return alist of errors and positions."
+  (consult--forbid-minibuffer)
+  (unless (next-error-buffer-p (current-buffer))
+    (user-error "Buffer does not support errors"))
+  (consult--fontify)
+  (let* ((max-line 0)
+         (line (line-number-at-pos (point-min) consult-line-numbers-widen))
+         (unformatted-candidates))
+    (cl-letf (((symbol-function 'message) #'format))
+      (save-excursion
+        (goto-char (point-min))
+        (while
+            (when-let (pos (condition-case nil
+                               (save-excursion
+                                 (next-error)
+                                 (point))
+                             (error nil)))
+              (while (< (point) pos)
+                (setq line (1+ line))
+                (forward-line 1))
+              (goto-char pos)
+              t)
+          (setq max-line (max line max-line))
+          (push (cons (cons line (consult--line-with-cursor 'consult-preview-error)) (point-marker))
+                unformatted-candidates)
+          (if (and (bolp) (not (eobp))) (forward-char 1)))))
+    (or (consult--add-line-number max-line (nreverse unformatted-candidates))
+        (user-error "No errors"))))
+
+;;;###autoload
+(defun consult-error ()
+  "Jump to an error in the current buffer."
+  (interactive)
+  (consult--goto
+   (consult--read "Go to error: " (consult--with-increased-gc (consult--error-candidates))
+                  :category 'line
+                  :sort nil
+                  :require-match t
+                  :lookup #'consult--lookup-list
+                  :history 'consult-error-history
+                  :preview
+                  (and consult-preview-error
+                       (lambda (cmd cand state)
+                         (consult--preview-position cmd cand state 'consult-preview-error))))))
+
 (defun consult--mark-candidates ()
   "Return alist of lines containing markers.
 The alist contains (string . position) pairs."
@@ -535,21 +609,13 @@ The alist contains (string . position) pairs."
         (let ((pos (marker-position marker)))
           (when (and (>= pos min) (<= pos max))
             (goto-char pos)
-            (let* ((col  (current-column))
-                   ;; `line-number-at-pos' is a very slow function, which should be replaced everywhere.
-                   ;; However in this case the slow line-number-at-pos does not hurt much, since
-                   ;; the mark ring is usually small since it is limited by `mark-ring-max'.
-                   (line (line-number-at-pos pos consult-line-numbers-widen))
-                   (lstr (buffer-substring (- pos col) (line-end-position)))
-                   (end (1+ col))
-                   (cand (if (> end (length lstr))
-                             (concat (substring lstr 0 col)
-                                     (propertize " " 'face 'consult-preview-cursor))
-                           (concat (substring lstr 0 col)
-                                   (propertize (substring lstr col end) 'face 'consult-preview-cursor)
-                                   (substring lstr end)))))
+            ;; `line-number-at-pos' is a very slow function, which should be replaced everywhere.
+            ;; However in this case the slow line-number-at-pos does not hurt much, since
+            ;; the mark ring is usually small since it is limited by `mark-ring-max'.
+            (let ((line (line-number-at-pos pos consult-line-numbers-widen)))
               (setq max-line (max line max-line))
-              (push (cons (cons line cand) marker) unformatted-candidates))))))
+              (push (cons (cons line (consult--line-with-cursor)) marker)
+                    unformatted-candidates))))))
     (consult--add-line-number max-line unformatted-candidates)))
 
 ;;;###autoload

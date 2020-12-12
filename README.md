@@ -107,6 +107,9 @@ completions with richer information (e.g. `M-x`, `describe-face`,
     and recursive editing.
   * `consult-imenu`: Jump to imenu item. Supports live preview
     and recursive editing.
+  * `consult-error`: Jump to an error. Supports live preview
+    and recursive editing. In contrast to `consult-flycheck` it shows the line
+    and is more general since it is not tied to a specific backend.
   * `consult-flycheck`: Jump to flycheck error. Supports live preview and
     recursive editing. The command supports narrowing. Press `e SPC`, `w SPC`,
     `i SPC` to only show errors, warnings and infos respectively. This command
@@ -157,6 +160,7 @@ order to use the enhanced commands, you must configure the keybindings yourself.
          ("M-g m" . consult-mark)    ;; "M-s m" is a good alternative
          ("M-g l" . consult-line)    ;; "M-s l" is a good alternative
          ("M-g i" . consult-imenu)   ;; "M-s i" is a good alternative
+         ("M-g e" . consult-error)   ;; "M-s e" is a good alternative
          ("M-s m" . consult-multi-occur)
          ("M-y" . consult-yank-pop)
          ("<help> a" . consult-apropos))
@@ -203,6 +207,7 @@ order to use the enhanced commands, you must configure the keybindings yourself.
 | consult-mode-histories      | …         | Mode-specific history variables                         |
 | consult-narrow-separator    | "[ZWSP]"  | Separator shown after narrowing prefix                  |
 | consult-preview-buffer      | t         | Enable buffer preview during selection                  |
+| consult-preview-error       | t         | Enable error preview during selection                   |
 | consult-preview-flycheck    | t         | Enable flycheck error preview during selection          |
 | consult-preview-line        | t         | Enable line preview during selection                    |
 | consult-preview-mark        | t         | Enable mark preview during selection                    |
