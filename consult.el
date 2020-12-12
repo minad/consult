@@ -1171,6 +1171,7 @@ Prepend PREFIX in front of all items."
                           (consult--preview-position cmd (cdr cand) state))
                       (consult--preview-position cmd cand state))))
     :require-match t
+    :category 'imenu
     :lookup #'consult--lookup-list
     :history 'consult-imenu-history
     :sort nil))
