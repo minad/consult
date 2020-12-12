@@ -1111,7 +1111,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
 
 ;;;###autoload
 (defun consult-buffer ()
-  "Enhanced `switch-to-buffer-other-window' command with support for virtual buffers."
+  "Enhanced `switch-to-buffer' command with support for virtual buffers."
   (interactive)
   (consult--buffer #'switch-to-buffer #'find-file #'bookmark-jump))
 
