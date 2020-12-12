@@ -286,7 +286,7 @@ PREVIEW is the preview function."
          (propertize (concat prefix consult-narrow-separator " ") 'display "")
          strings))
 
-(defun consult-insert ()
+(defun consult-insert-for-narrow ()
   "Insert narrowing prefix, see `consult-narrow-separator'."
   (interactive)
   (insert (concat consult-narrow-separator " ")))
@@ -304,7 +304,7 @@ CHARS is the list of narrowing prefix strings."
                            (&optional _)
                            (let ((str (minibuffer-contents)))
                              (when (member str chars)
-                               'consult-insert)))))
+                               'consult-insert-for-narrow)))))
           (use-local-map keymap)))
     (funcall body)))
 
