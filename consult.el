@@ -1022,9 +1022,7 @@ preview if `consult-preview-mode' is enabled."
 CAND is the candidate string.
 PREFIX is the prefix string for narrowing.
 FACE is the face for the candidate."
-  (cons
-   (consult--narrow-candidate prefix (propertize cand 'face face))
-   cand))
+   (consult--narrow-candidate prefix (propertize cand 'face face)))
 
 (defun consult--buffer (open-buffer open-file open-bookmark)
   "Backend implementation of `consult-buffer'.
@@ -1066,13 +1064,13 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
            :category 'virtual-buffer
            :lookup
            (lambda (candidates cand)
-             (if-let (val (consult--lookup-list candidates cand))
+             (if (member cand candidates)
                  (cons (pcase (elt cand 0)
                          (?b open-buffer)
                          (?m open-bookmark)
                          (?v open-bookmark)
                          (?f open-file))
-                       val)
+                       (replace-regexp-in-string "^[^ ]+ " "" cand))
                ;; When candidate is not found in the alist,
                ;; default to creating a new buffer.
                (and (not (string-blank-p cand)) (cons open-buffer cand))))
