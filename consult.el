@@ -1252,10 +1252,9 @@ Prepend PREFIX in front of all items."
 
 (add-hook 'consult-preview-mode-hook #'consult--icomplete-preview-setup)
 
+(defvar icomplete-minibuffer-map)
 (add-hook 'consult--minibuffer-map-hook
-          (lambda ()
-            (when (and icomplete-mode (boundp 'icomplete-minibuffer-map))
-              icomplete-minibuffer-map)))
+          (lambda () (when icomplete-mode icomplete-minibuffer-map)))
 
 (provide 'consult)
 ;;; consult.el ends here

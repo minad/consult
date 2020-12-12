@@ -51,14 +51,16 @@
 (consult-selectrum--preview-setup) ;; call immediately to ensure load-order independence
 
 (add-hook 'consult--minibuffer-map-hook
-          (lambda () (when selectrum-mode selectrum-minibuffer-map)))
+          (lambda ()
+            (when (eq completing-read-function #'selectrum-completing-read)
+              selectrum-minibuffer-map)))
 
 ;; HACK: Hopefully selectrum adds something like this to the official API.
 ;; https://github.com/raxod502/selectrum/issues/243
 ;; https://github.com/raxod502/selectrum/pull/244
 (defsubst consult-selectrum--configure (options)
   "Add OPTIONS to the next `selectrum-read' call."
-  (when (and options selectrum-mode)
+  (when (and options (eq completing-read-function #'selectrum-completing-read))
     (letrec ((advice (lambda (orig prompt candidates &rest args)
                        (advice-remove #'selectrum-read advice)
                        (apply orig prompt candidates (append options args)))))
