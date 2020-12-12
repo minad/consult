@@ -1075,18 +1075,19 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                ;; default to creating a new buffer.
                (and (not (string-blank-p cand)) (cons open-buffer cand))))
            :preview
-           (lambda (cmd cand state)
-             (pcase cmd
-               ('save (current-buffer))
-               ('restore (when (buffer-live-p state)
-                           (set-buffer state)))
-               ('preview
-                ;; In order to avoid slowness and unnecessary complexity, we
-                ;; only preview buffers. Loading recent files, bookmarks or
-                ;; views can result in expensive operations.
-                (when (and (eq (car cand) open-buffer) (get-buffer (cdr cand)))
-                  (consult--with-window
-                   (funcall open-buffer (cdr cand))))))))))
+           (and consult-preview-buffer
+                (lambda (cmd cand state)
+                  (pcase cmd
+                    ('save (current-buffer))
+                    ('restore (when (buffer-live-p state)
+                                (set-buffer state)))
+                    ('preview
+                     ;; In order to avoid slowness and unnecessary complexity, we
+                     ;; only preview buffers. Loading recent files, bookmarks or
+                     ;; views can result in expensive operations.
+                     (when (and (eq (car cand) open-buffer) (get-buffer (cdr cand)))
+                       (consult--with-window
+                        (funcall open-buffer (cdr cand)))))))))))
   (when selected (funcall (car selected) (cdr selected)))))
 
 ;;;###autoload
