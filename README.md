@@ -1,5 +1,11 @@
 # consult.el - Consulting completing-read
 
+```diff
+- NOTE: The consult.el package has been split into consult.el, consult-flycheck.el and consult-selectrum.el,
+-       in order to ensure that the consult.el package depends only on Emacs core components.
+-       Please make sure that you install all components you need!
+```
+
 [![](https://melpa.org/packages/consult-badge.svg)](https://melpa.org/#/consult)
 
 This package provides various commands based on the Emacs completion function
