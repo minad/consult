@@ -253,3 +253,4 @@ Code contributions:
 * [Omar Antolín Camarena](https://github.com/oantolin/)
 * [Sergey Kostyaev](https://github.com/s-kostyaev/)
 * [okamsn](https://github.com/okamsn/)
+* [Clemens Radermacher](https://github.com/clemera/)
