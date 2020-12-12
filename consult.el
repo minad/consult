@@ -359,7 +359,7 @@ CHARS is the list of narrowing prefix strings."
   (when consult-after-jump-function
     (funcall consult-after-jump-function)))
 
-(defsubst consult--goto-1 (pos)
+(defsubst consult--jump-1 (pos)
   "Go to POS and recenter."
   (when pos
     (when (and (markerp pos) (not (eq (current-buffer) (marker-buffer pos))))
@@ -367,14 +367,14 @@ CHARS is the list of narrowing prefix strings."
     (goto-char pos)
     (consult--after-jump)))
 
-(defsubst consult--goto (pos)
+(defsubst consult--jump (pos)
   "Push current position to mark ring, go to POS and recenter."
   (when pos
     ;; When the marker is in the same buffer,
     ;; record previous location such that the user can jump back quickly.
     (unless (and (markerp pos) (not (eq (current-buffer) (marker-buffer pos))))
       (push-mark (point) t))
-    (consult--goto-1 pos)))
+    (consult--jump-1 pos)))
 
 ;; TODO Matched strings are not highlighted as of now
 ;; see https://github.com/minad/consult/issues/7
@@ -395,7 +395,7 @@ FACE is the cursor face."
     ('preview
      (consult--with-window
       (consult--overlay-cleanup)
-      (consult--goto-1 cand)
+      (consult--jump-1 cand)
       (consult--overlay-add (line-beginning-position) (line-end-position) 'consult-preview-line)
       (let ((pos (point)))
         (consult--overlay-add pos (1+ pos) (or face 'consult-preview-cursor)))))))
@@ -526,7 +526,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
 (defun consult-outline ()
   "Jump to an outline heading."
   (interactive)
-  (consult--goto
+  (consult--jump
    (consult--read "Go to heading: " (consult--with-increased-gc (consult--outline-candidates))
                   :category 'line
                   :sort nil
@@ -569,7 +569,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
 (defun consult-error ()
   "Jump to an error in the current buffer."
   (interactive)
-  (consult--goto
+  (consult--jump
    (consult--read "Go to error: " (consult--with-increased-gc (consult--error-candidates))
                   :category 'line
                   :sort nil
@@ -611,7 +611,7 @@ The alist contains (string . position) pairs."
 (defun consult-mark ()
   "Jump to a marker in `mark-ring'."
   (interactive)
-  (consult--goto
+  (consult--jump
    (consult--read "Go to mark: " (consult--with-increased-gc (consult--mark-candidates))
                   :category 'line
                   :sort nil
@@ -669,7 +669,7 @@ WIDTH is the line number width."
 The default candidate is a non-empty line closest to point.
 This command obeys narrowing. Optionally INITIAL input can be provided."
   (interactive)
-  (consult--goto
+  (consult--jump
    (let ((candidates (consult--with-increased-gc (consult--line-candidates))))
      (consult--read "Go to line: " (cdr candidates)
                     :category 'line

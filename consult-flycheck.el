@@ -76,7 +76,7 @@
 (defun consult-flycheck ()
   "Jump to flycheck error."
   (interactive)
-  (consult--goto
+  (consult--jump
    (consult--read "Flycheck error: "
                   (consult--with-increased-gc (consult--flycheck-candidates))
                   :category 'flycheck-error
