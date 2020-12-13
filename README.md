@@ -1,13 +1,5 @@
 # consult.el - Consulting completing-read
 
-```diff
-- NOTE: The consult.el package has been split into consult.el,
--       consult-flycheck.el and consult-selectrum.el, in order
--       to ensure that the consult.el package depends only on
--       Emacs core components. Please make sure that you
--       install all components you need!
-```
-
 [![](https://melpa.org/packages/consult-badge.svg)](https://melpa.org/#/consult)
 
 This package provides various commands based on the Emacs completion function
@@ -132,18 +124,28 @@ completions with richer information (e.g. `M-x`, `describe-face`,
 ## Live previews
 
 Some of the commands support live previews. For example when you scroll through
-the items of `consult-line`, the buffer will jump to the corresponding position.
-It is possible to jump back and forth between the minibuffer and the buffer to
-perform recursive editing while a search is ongoing. In case you do not like
-live previews or find them distracting, for each of the commands supporting
-preview, there is a customizable variable which allows disabling the preview. In
-order for live previews to work you must enable `consult-preview-mode`.
+the items of `consult-line`, the buffer will scroll to the corresponding
+position. It is possible to jump back and forth between the minibuffer and the
+buffer to perform recursive editing while the search is ongoing. Previews must
+be explicitly enabled via `consult-preview-mode`. Furthermore for each command,
+a customizable variable is offered to selectively enable/disable preview.
+
+## Narrowing to subsets
+
+Consult has special support to narrow to candidate subsets. When you use
+the `consult-buffer` command, you can press `b SPC` and the list of candidates
+will be restricted such that only buffers are shown. If you press `DEL`
+afterwards, the full candidate list will be shown again.
 
 ## Package configuration
 
 It is recommended to manage package configurations with `use-package`. The
 Consult package only provides commands and does not add any keybindings. In
 order to use the enhanced commands, you must configure the keybindings yourself.
+
+Note that there are three packages as of now: `consult.el`,
+`consult-selectrum.el` and `consult-flycheck.el`. Consult has been split such
+that the main package `consult.el` only depends on Emacs core components.
 
 ~~~ elisp
 ;; Example configuration for Consult
@@ -179,11 +181,11 @@ order to use the enhanced commands, you must configure the keybindings yourself.
   (consult-preview-mode))
 
 ;; Enable Consult-Selectrum integration.
-;; This should be installed if Selectrum is used.
+;; This package should be installed if Selectrum is used.
 (use-package consult-selectrum
   :demand t)
 
-;; Install the consult-flycheck command.
+;; Optionally add the consult-flycheck command.
 (use-package consult-flycheck
   :bind (:map flycheck-command-map
          ("!" . consult-flycheck)))
@@ -225,7 +227,7 @@ It is recommended to install the following package combination:
 * selectrum or icomplete-vertical: Vertical completion systems
 * marginalia: Annotations for the completion candidates
 * embark: Action commands, which can act on the completion candidates
-* orderless or prescient: Completion style, filters the candidates, Prescient also offers sorting.
+* orderless or prescient: Completion styles, cndidate filtering, Prescient also offers sorting.
 
 Note that all packages are independent and can potentially be exchanged with
 alternative components, since there exist no hard dependencies. Furthermore it
