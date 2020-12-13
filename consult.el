@@ -92,8 +92,7 @@ You may want to add a function which pulses the current line, e.g.,
 
 (defgroup consult-preview nil
   "Preview settings of consult."
-  :group 'consult
-  :group 'preview)
+  :group 'consult)
 
 (defcustom consult-preview-buffer t
   "Enable buffer preview during selection."
