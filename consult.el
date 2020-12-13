@@ -531,6 +531,20 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                   :history 'consult-outline-history
                   :preview (and consult-preview-outline #'consult--preview-position))))
 
+(defun consult--error-next ()
+  "Return position of next error or nil."
+  ;; next-error prints messages
+  (cl-letf (((symbol-function 'message) #'format))
+    (condition-case nil
+        (save-excursion
+          (while (let ((last-pos (point)))
+                   (funcall next-error-function 1 (= last-pos (point-min)))
+                   ;; next-error can jump backwards
+                   (when (<= (point) last-pos)
+                     (or (end-of-line) t))))
+          (point))
+      (error nil))))
+
 (defun consult--error-candidates ()
   "Return alist of errors and positions."
   (unless next-error-function
@@ -539,27 +553,20 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
   (consult--fontify)
   (let* ((max-line 0)
          (line (line-number-at-pos (point-min) consult-line-numbers-widen))
-         (unformatted-candidates)
-         (reset t))
-    (cl-letf (((symbol-function 'message) #'format))
+         (unformatted-candidates))
       (save-excursion
         (goto-char (point-min))
         (while
-            (when-let (pos (condition-case nil
-                               (save-excursion
-                                 (funcall next-error-function 1 reset)
-                                 (setq reset nil)
-                                 (point))
-                             (error nil)))
+            (when-let (pos (consult--error-next))
               (while (< (point) pos)
-                (setq line (1+ line))
-                (forward-line 1))
+                (forward-line 1)
+                (when (<= (point) pos)
+                  (setq line (1+ line))))
               (goto-char pos)
               t)
           (setq max-line (max line max-line))
           (push (cons (cons line (consult--line-with-cursor 'consult-preview-error)) (point-marker))
-                unformatted-candidates)
-          (if (and (bolp) (not (eobp))) (forward-char 1)))))
+                unformatted-candidates)))
     (or (consult--add-line-number max-line (nreverse unformatted-candidates))
         (user-error "No errors"))))
 
