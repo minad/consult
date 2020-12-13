@@ -57,7 +57,82 @@
   :group 'convenience
   :prefix "consult-")
 
+;;;; General customization
+
+(defcustom consult-mode-histories
+  '((eshell-mode . eshell-history-ring)
+    (comint-mode . comint-input-ring)
+    (term-mode   . term-input-ring))
+  "Alist of (mode . history) pairs of mode histories.
+The histories can be rings or lists."
+  :type '(list (cons symbol symbol)))
+
+(defcustom consult-themes nil
+  "List of themes to be presented for selection.
+nil shows all `custom-available-themes'."
+  :type '(repeat symbol))
+
+(defcustom consult-after-jump-hook '(recenter)
+  "Function called after jumping to a location.
+
+This is called during preview and for the jump after selection.
+You may want to add a function which pulses the current line, e.g.,
+`xref-pulse-momentarily'."
+  :type 'hook)
+
+(defcustom consult-line-numbers-widen t
+  "Show absolute line numbers when narrowing is active."
+  :type 'boolean)
+
+(defcustom consult-fontify-limit 1048576
+  "Buffers larger than this limit are not fontified."
+  :type 'integer)
+
+;;;; Preview customization
+
+(defgroup consult-preview nil
+  "Preview settings of consult."
+  :group 'consult
+  :group 'preview)
+
+(defcustom consult-preview-buffer t
+  "Enable buffer preview during selection."
+  :type 'boolean)
+
+(defcustom consult-preview-imenu t
+  "Enable imenu item preview during selection."
+  :type 'boolean)
+
+(defcustom consult-preview-theme t
+  "Enable theme preview during selection."
+  :type 'boolean)
+
+(defcustom consult-preview-yank t
+  "Enable yank preview during selection."
+  :type 'boolean)
+
+(defcustom consult-preview-mark t
+  "Enable mark preview during selection."
+  :type 'boolean)
+
+(defcustom consult-preview-line t
+  "Enable line preview during selection."
+  :type 'boolean)
+
+(defcustom consult-preview-error t
+  "Enable error preview during selection."
+  :type 'boolean)
+
+(defcustom consult-preview-outline t
+  "Enable outline preview during selection."
+  :type 'boolean)
+
 ;;;; Faces
+
+(defgroup consult-faces nil
+  "Faces used by Consult."
+  :group 'consult
+  :group 'faces)
 
 (defface consult-preview-line
   '((t :inherit region))
@@ -106,69 +181,6 @@
 (defface consult-line-number
   '((t :inherit line-number))
   "Face used to highlight line numbers in selections.")
-
-;;;; Customization
-
-(defcustom consult-mode-histories
-  '((eshell-mode . eshell-history-ring)
-    (comint-mode . comint-input-ring)
-    (term-mode   . term-input-ring))
-  "Alist of (mode . history) pairs of mode histories.
-The histories can be rings or lists."
-  :type '(list (cons symbol symbol)))
-
-(defcustom consult-preview-buffer t
-  "Enable buffer preview during selection."
-  :type 'boolean)
-
-(defcustom consult-preview-imenu t
-  "Enable imenu item preview during selection."
-  :type 'boolean)
-
-(defcustom consult-preview-theme t
-  "Enable theme preview during selection."
-  :type 'boolean)
-
-(defcustom consult-preview-yank t
-  "Enable yank preview during selection."
-  :type 'boolean)
-
-(defcustom consult-preview-mark t
-  "Enable mark preview during selection."
-  :type 'boolean)
-
-(defcustom consult-preview-line t
-  "Enable line preview during selection."
-  :type 'boolean)
-
-(defcustom consult-preview-error t
-  "Enable error preview during selection."
-  :type 'boolean)
-
-(defcustom consult-preview-outline t
-  "Enable outline preview during selection."
-  :type 'boolean)
-
-(defcustom consult-themes nil
-  "List of themes to be presented for selection.
-nil shows all `custom-available-themes'."
-  :type '(repeat symbol))
-
-(defcustom consult-after-jump-hook '(recenter)
-  "Function called after jumping to a location.
-
-This is called during preview and for the jump after selection.
-You may want to add a function which pulses the current line, e.g.,
-`xref-pulse-momentarily'."
-  :type 'hook)
-
-(defcustom consult-line-numbers-widen t
-  "Show absolute line numbers when narrowing is active."
-  :type 'boolean)
-
-(defcustom consult-fontify-limit 1048576
-  "Buffers larger than this limit are not fontified."
-  :type 'integer)
 
 ;;;; History variables
 
@@ -1254,7 +1266,8 @@ Prepend PREFIX in front of all items."
 ;;;###autoload
 (define-minor-mode consult-preview-mode
   "Enable preview for consult commands."
-  :global t)
+  :global t
+  :group 'consult-preview)
 
 ;;;; default completion-system support for preview
 

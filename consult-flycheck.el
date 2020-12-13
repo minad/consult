@@ -36,7 +36,7 @@
 (defcustom consult-preview-flycheck t
   "Enable flycheck preview during selection."
   :type 'boolean
-  :group 'consult)
+  :group 'consult-preview)
 
 (defun consult--flycheck-candidates ()
   "Return flycheck errors as alist."
