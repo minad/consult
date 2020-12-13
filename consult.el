@@ -485,11 +485,13 @@ Since the line number is part of the candidate it will be matched-on during comp
                (cdar cand))))
     candidates))
 
-(defun consult--line-with-cursor (&optional face)
+(defsubst consult--line-with-cursor-1 (marker &optional face)
   "Return current line string with a marking at the current cursor position.
+
+MARKER is the cursor position.
 FACE is the face to use for the cursor marking."
   (let* ((begin (line-beginning-position))
-         (col (- (point) begin))
+         (col (- marker begin))
          (str (buffer-substring begin (line-end-position)))
          (end (1+ col))
          (face (or face 'consult-preview-cursor)))
@@ -499,6 +501,14 @@ FACE is the face to use for the cursor marking."
       (concat (substring str 0 col)
               (propertize (substring str col end) 'face face)
               (substring str end)))))
+
+(defun consult--line-with-cursor (line marker &optional face)
+  "Return line candidate.
+
+LINE is line number.
+MARKER is the cursor marker.
+FACE is the cursor face."
+  (cons (cons line (consult--line-with-cursor-1 marker face)) marker))
 
 ;;;; Commands
 
@@ -574,7 +584,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
         (goto-char (point-min))
         (while (when-let (pos (consult--error-next))
                  (setq line (+ line (consult--count-lines pos))))
-          (push (cons (cons line (consult--line-with-cursor 'consult-preview-error)) (point-marker))
+          (push (consult--line-with-cursor line (point-marker) 'consult-preview-error)
                 unformatted-candidates)))
     (or (consult--add-line-number line (nreverse unformatted-candidates))
         (user-error "No errors"))))
@@ -617,8 +627,7 @@ The alist contains (string . position) pairs."
             ;; the mark ring is usually small since it is limited by `mark-ring-max'.
             (let ((line (line-number-at-pos pos consult-line-numbers-widen)))
               (setq max-line (max line max-line))
-              (push (cons (cons line (consult--line-with-cursor)) marker)
-                    unformatted-candidates))))))
+              (push (consult--line-with-cursor line marker) unformatted-candidates))))))
     (consult--add-line-number max-line unformatted-candidates)))
 
 ;;;###autoload
