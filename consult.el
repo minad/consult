@@ -628,14 +628,14 @@ The alist contains (string . position) pairs."
 ;; HACK: Disambiguate the line by prepending it with unicode
 ;; characters in the supplementary private use plane b.
 ;; This will certainly have many ugly consequences.
-(defsubst consult--line-prefix (width line)
-  "Generate unique line number prefix string for LINE.
-WIDTH is the line number width."
-  (let ((unique-prefix "") (n line))
+(defsubst consult--unique (pos display)
+  "Generate unique string for POS.
+DISPLAY is the string to display instead of the unique string."
+  (let ((unique-prefix "") (n pos))
     (while (progn
              (setq unique-prefix (concat (string (+ #x100000 (% n #xFFFE))) unique-prefix))
              (and (>= n #xFFFE) (setq n (/ n #xFFFE)))))
-    (propertize unique-prefix 'display (consult--pad-line-number width line))))
+    (propertize unique-prefix 'display display)))
 
 (defun consult--line-candidates ()
   "Return alist of lines and positions."
@@ -655,7 +655,9 @@ WIDTH is the line number width."
         (let* ((end (line-end-position))
                (str (buffer-substring pos end)))
           (unless (string-blank-p str)
-            (let ((cand (concat (consult--line-prefix line-width line) str))
+            (let ((cand (concat
+                         (consult--unique line (consult--pad-line-number line-width line))
+                         str))
                   (dist (abs (- curr-line line))))
               (when (< dist default-cand-dist)
                 (setq default-cand cand
