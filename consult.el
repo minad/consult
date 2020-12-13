@@ -507,8 +507,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
   "Return alist of outline headings and positions."
   (consult--forbid-minibuffer)
   (consult--fontify)
-  (let* ((max-line 0)
-         (line (line-number-at-pos (point-min) consult-line-numbers-widen))
+  (let* ((line (line-number-at-pos (point-min) consult-line-numbers-widen))
          (heading-regexp (concat "^\\(?:" outline-regexp "\\)"))
          (unformatted-candidates))
     (save-excursion
@@ -519,7 +518,6 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
             (setq line (1+ line))
             (forward-line 1))
           (goto-char match-pos))
-        (setq max-line (max line max-line))
         (push (cons
                (cons
                 line
@@ -527,7 +525,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                (point-marker))
               unformatted-candidates)
         (if (and (bolp) (not (eobp))) (forward-char 1))))
-    (or (consult--add-line-number max-line (nreverse unformatted-candidates))
+    (or (consult--add-line-number line (nreverse unformatted-candidates))
         (user-error "No headings"))))
 
 ;;;###autoload
@@ -563,8 +561,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
     (user-error "Buffer does not support errors"))
   (consult--forbid-minibuffer)
   (consult--fontify)
-  (let* ((max-line 0)
-         (line (line-number-at-pos (point-min) consult-line-numbers-widen))
+  (let* ((line (line-number-at-pos (point-min) consult-line-numbers-widen))
          (unformatted-candidates))
       (save-excursion
         (goto-char (point-min))
@@ -576,10 +573,9 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                   (setq line (1+ line))))
               (goto-char pos)
               t)
-          (setq max-line (max line max-line))
           (push (cons (cons line (consult--line-with-cursor 'consult-preview-error)) (point-marker))
                 unformatted-candidates)))
-    (or (consult--add-line-number max-line (nreverse unformatted-candidates))
+    (or (consult--add-line-number line (nreverse unformatted-candidates))
         (user-error "No errors"))))
 
 ;;;###autoload
