@@ -1132,11 +1132,11 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                  ;; being used.  This can only be wrong when a user
                  ;; intentionally starts the counter with a negative value and
                  ;; then increments it to 0.
-                 (unless (and (eql counter 0)
-                              (string= format "%d"))
-                   (propertize " "
-                               'display
-                               (format "%d(%s) " counter format)))
+                 (cond
+                  ((not (string= format "%d")) ;; show counter for non-default format
+                   (propertize " " 'display (format "%d(%s) " counter format)))
+                  ((/= counter 0) ;; show counter if non-zero
+                   (propertize " " 'display (format "%d " counter))))
                  (format-kbd-macro keys 1))
                 index))))
    ;; Remove duplicates
