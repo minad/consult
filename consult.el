@@ -536,12 +536,10 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
       (while (save-excursion (re-search-forward heading-regexp nil t))
         (setq line (+ line (consult--count-lines (match-beginning 0))))
         (push (cons
-               (cons
-                line
-                (buffer-substring (line-beginning-position) (line-end-position)))
+               (cons line (buffer-substring (line-beginning-position) (line-end-position)))
                (point-marker))
               unformatted-candidates)
-        (if (and (bolp) (not (eobp))) (forward-char 1))))
+        (unless (eobp) (forward-char 1))))
     (or (consult--add-line-number line (nreverse unformatted-candidates))
         (user-error "No headings"))))
 
