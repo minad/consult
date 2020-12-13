@@ -772,11 +772,8 @@ The arguments and expected return value are as specified for
             (concat (substring initial 0 limit) (car all)))
            (t (let ((enable-recursive-minibuffers t))
                 (if (eq category 'file)
-                    (read-file-name "Completion: "
-                                    (file-name-directory initial)
-                                    initial t
-                                    (file-name-nondirectory initial)
-                                    predicate)
+                    (read-file-name
+                     "Completion: " initial initial t nil predicate)
                   (completing-read
                    "Completion: " collection predicate t initial)))))))
     (if (null completion)
