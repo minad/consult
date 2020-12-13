@@ -759,6 +759,12 @@ The arguments and expected return value are as specified for
             (concat (substring initial 0 limit) (car all)))
            (t (let ((enable-recursive-minibuffers t))
                 (if (eq category 'file)
+                    ;; When completing files with consult-completion-in-region, the point in the
+                    ;; minibuffer gets placed initially at the beginning of the last path component.
+                    ;; By using the filename as DIR argument (second argument of read-file-name), it
+                    ;; starts at the end of minibuffer contents, as for other types of completion.
+                    ;; However this is undefined behavior since initial does not only contain the
+                    ;; directory, but also the filename.
                     (read-file-name
                      "Completion: " initial initial t nil predicate)
                   (completing-read
