@@ -488,8 +488,9 @@ Since the line number is part of the candidate it will be matched-on during comp
 (defun consult--line-with-cursor (&optional face)
   "Return current line string with a marking at the current cursor position.
 FACE is the face to use for the cursor marking."
-  (let* ((col (current-column))
-         (str (buffer-substring (line-beginning-position) (line-end-position)))
+  (let* ((begin (line-beginning-position))
+         (col (- (point) begin))
+         (str (buffer-substring begin (line-end-position)))
          (end (1+ col))
          (face (or face 'consult-preview-cursor)))
     (if (> end (length str))
