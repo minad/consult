@@ -61,58 +61,47 @@
 
 (defface consult-preview-line
   '((t :inherit region))
-  "Face used to for line previews."
-  :group 'consult)
+  "Face used to for line previews.")
 
 (defface consult-preview-cursor
   '((t :inherit match))
-  "Face used to for cursor previews and marks in `consult-mark'."
-  :group 'consult)
+  "Face used to for cursor previews and marks in `consult-mark'.")
 
 (defface consult-preview-error
   '((t :inherit isearch-fail))
-  "Face used to for cursor previews and marks in `consult-error'."
-  :group 'consult)
+  "Face used to for cursor previews and marks in `consult-error'.")
 
 (defface consult-preview-yank
   '((t :inherit consult-preview-line))
-  "Face used to for yank previews in `consult-yank'."
-  :group 'consult)
+  "Face used to for yank previews in `consult-yank'.")
 
 (defface consult-key
   '((t :inherit font-lock-keyword-face))
-  "Face used to highlight keys, e.g., in `consult-register'."
-  :group 'consult)
+  "Face used to highlight keys, e.g., in `consult-register'.")
 
 (defface consult-imenu-prefix
   '((t :inherit consult-key))
-  "Face used to highlight imenu prefix in `consult-imenu'."
-  :group 'consult)
+  "Face used to highlight imenu prefix in `consult-imenu'.")
 
 (defface consult-file
   '((t :inherit font-lock-function-name-face))
-  "Face used to highlight files in `consult-buffer'."
-  :group 'consult)
+  "Face used to highlight files in `consult-buffer'.")
 
 (defface consult-bookmark
   '((t :inherit font-lock-constant-face))
-  "Face used to highlight bookmarks in `consult-buffer'."
-  :group 'consult)
+  "Face used to highlight bookmarks in `consult-buffer'.")
 
 (defface consult-buffer
   '((t))
-  "Face used to highlight buffers in `consult-buffer'."
-  :group 'consult)
+  "Face used to highlight buffers in `consult-buffer'.")
 
 (defface consult-view
   '((t :inherit font-lock-keyword-face))
-  "Face used to highlight views in `consult-buffer'."
-  :group 'consult)
+  "Face used to highlight views in `consult-buffer'.")
 
 (defface consult-line-number
   '((t :inherit line-number))
-  "Face used to highlight line numbers in selections."
-  :group 'consult)
+  "Face used to highlight line numbers in selections.")
 
 ;;;; Customization
 
@@ -122,54 +111,44 @@
     (term-mode   . term-input-ring))
   "Alist of (mode . history) pairs of mode histories.
 The histories can be rings or lists."
-  :type '(list (cons symbol symbol))
-  :group 'completing-history)
+  :type '(list (cons symbol symbol)))
 
 (defcustom consult-preview-buffer t
   "Enable buffer preview during selection."
-  :type 'boolean
-  :group 'consult)
+  :type 'boolean)
 
 (defcustom consult-preview-imenu t
   "Enable imenu item preview during selection."
-  :type 'boolean
-  :group 'consult)
+  :type 'boolean)
 
 (defcustom consult-preview-theme t
   "Enable theme preview during selection."
-  :type 'boolean
-  :group 'consult)
+  :type 'boolean)
 
 (defcustom consult-preview-yank t
   "Enable yank preview during selection."
-  :type 'boolean
-  :group 'consult)
+  :type 'boolean)
 
 (defcustom consult-preview-mark t
   "Enable mark preview during selection."
-  :type 'boolean
-  :group 'consult)
+  :type 'boolean)
 
 (defcustom consult-preview-line t
   "Enable line preview during selection."
-  :type 'boolean
-  :group 'consult)
+  :type 'boolean)
 
 (defcustom consult-preview-error t
   "Enable error preview during selection."
-  :type 'boolean
-  :group 'consult)
+  :type 'boolean)
 
 (defcustom consult-preview-outline t
   "Enable outline preview during selection."
-  :type 'boolean
-  :group 'consult)
+  :type 'boolean)
 
 (defcustom consult-themes nil
   "List of themes to be presented for selection.
 nil shows all `custom-available-themes'."
-  :type '(repeat symbol)
-  :group 'consult)
+  :type '(repeat symbol))
 
 (defcustom consult-after-jump-hook '(recenter)
   "Function called after jumping to a location.
@@ -177,18 +156,15 @@ nil shows all `custom-available-themes'."
 This is called during preview and for the jump after selection.
 You may want to add a function which pulses the current line, e.g.,
 `xref-pulse-momentarily'."
-  :type 'hook
-  :group 'consult)
+  :type 'hook)
 
 (defcustom consult-line-numbers-widen t
   "Show absolute line numbers when narrowing is active."
-  :type 'boolean
-  :group 'consult)
+  :type 'boolean)
 
 (defcustom consult-fontify-limit 1048576
   "Buffers larger than this limit are not fontified."
-  :type 'integer
-  :group 'consult)
+  :type 'integer)
 
 (defcustom consult-narrow-separator (string 8203) ;; zero width space
   "String used to separate prefix for narrowing.
@@ -197,8 +173,7 @@ This string should ideally be made of unique characters,
 such that no accidential matching occurs. Therefore
 the default is a zero-width-space, which generally
 does not occur in candidate strings."
-  :type 'string
-  :group 'consult)
+  :type 'string)
 
 ;;;; History variables
 
