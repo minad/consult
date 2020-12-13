@@ -269,6 +269,18 @@ does not occur in candidate strings."
   (when (and font-lock-mode (< (buffer-size) consult-fontify-limit))
     (font-lock-ensure)))
 
+;; HACK: Disambiguate the line by prepending it with unicode
+;; characters in the supplementary private use plane b.
+;; This will certainly have many ugly consequences.
+(defsubst consult--unique (pos display)
+  "Generate unique string for POS.
+DISPLAY is the string to display instead of the unique string."
+  (let ((unique-prefix "") (n pos))
+    (while (progn
+             (setq unique-prefix (concat (string (+ #x100000 (% n #xFFFE))) unique-prefix))
+             (and (>= n #xFFFE) (setq n (/ n #xFFFE)))))
+    (propertize unique-prefix 'display display)))
+
 (defun consult--preview-install (preview fun)
   "Install preview support to minibuffer completion.
 
@@ -458,7 +470,7 @@ Since the line number is part of the candidate it will be matched-on during comp
     (dolist (cand candidates)
       (setcar cand
               (concat
-               (consult--pad-line-number width (caar cand))
+               (consult--unique (cdr cand) (consult--pad-line-number width (caar cand)))
                " "
                (cdar cand))))
     candidates))
@@ -624,18 +636,6 @@ The alist contains (string . position) pairs."
                   :lookup #'consult--lookup-list
                   :history 'consult-mark-history
                   :preview (and consult-preview-mark #'consult--preview-position))))
-
-;; HACK: Disambiguate the line by prepending it with unicode
-;; characters in the supplementary private use plane b.
-;; This will certainly have many ugly consequences.
-(defsubst consult--unique (pos display)
-  "Generate unique string for POS.
-DISPLAY is the string to display instead of the unique string."
-  (let ((unique-prefix "") (n pos))
-    (while (progn
-             (setq unique-prefix (concat (string (+ #x100000 (% n #xFFFE))) unique-prefix))
-             (and (>= n #xFFFE) (setq n (/ n #xFFFE)))))
-    (propertize unique-prefix 'display display)))
 
 (defun consult--line-candidates ()
   "Return alist of lines and positions."
