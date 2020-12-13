@@ -453,6 +453,16 @@ NARROW is a list of narrowing prefix strings."
          (completing-read prompt candidates-fun
                           predicate require-match initial history default))))))
 
+(defun consult--count-lines (pos)
+  "Move to position POS and return number of lines."
+  (let ((line 0))
+    (while (< (point) pos)
+      (forward-line 1)
+      (when (<= (point) pos)
+        (setq line (1+ line))))
+    (goto-char pos)
+    line))
+
 (defsubst consult--pad-line-number (width line)
   "Optimized formatting for LINE number with padding. WIDTH is the line number width."
   (setq line (number-to-string line))
@@ -512,12 +522,8 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
          (unformatted-candidates))
     (save-excursion
       (goto-char (point-min))
-      (while (save-excursion (re-search-forward heading-regexp nil 'move))
-        (let ((match-pos (match-beginning 0)))
-          (while (< (point) match-pos)
-            (setq line (1+ line))
-            (forward-line 1))
-          (goto-char match-pos))
+      (while (save-excursion (re-search-forward heading-regexp nil t))
+        (setq line (+ line (consult--count-lines (match-beginning 0))))
         (push (cons
                (cons
                 line
@@ -565,14 +571,8 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
          (unformatted-candidates))
       (save-excursion
         (goto-char (point-min))
-        (while
-            (when-let (pos (consult--error-next))
-              (while (< (point) pos)
-                (forward-line 1)
-                (when (<= (point) pos)
-                  (setq line (1+ line))))
-              (goto-char pos)
-              t)
+        (while (when-let (pos (consult--error-next))
+                 (setq line (+ line (consult--count-lines pos))))
           (push (cons (cons line (consult--line-with-cursor 'consult-preview-error)) (point-marker))
                 unformatted-candidates)))
     (or (consult--add-line-number line (nreverse unformatted-candidates))
