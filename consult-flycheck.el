@@ -82,7 +82,9 @@
                   :category 'flycheck-error
                   :require-match t
                   :sort nil
-                  :narrow '("e" "w" "i")
+                  :narrow '(("e" . "Error")
+                            ("w" . "Warning")
+                            ("i" . "Info"))
                   :lookup #'consult--lookup-list
                   :preview (and consult-preview-flycheck #'consult--preview-position))))
 

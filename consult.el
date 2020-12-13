@@ -75,6 +75,10 @@
   '((t :inherit consult-preview-line))
   "Face used to for yank previews in `consult-yank'.")
 
+(defface consult-narrow-indicator
+  '((t :inherit warning))
+  "Face used for the narrowing indicator.")
+
 (defface consult-key
   '((t :inherit font-lock-keyword-face))
   "Face used to highlight keys, e.g., in `consult-register'.")
@@ -166,15 +170,6 @@ You may want to add a function which pulses the current line, e.g.,
   "Buffers larger than this limit are not fontified."
   :type 'integer)
 
-(defcustom consult-narrow-separator (string 8203) ;; zero width space
-  "String used to separate prefix for narrowing.
-
-This string should ideally be made of unique characters,
-such that no accidential matching occurs. Therefore
-the default is a zero-width-space, which generally
-does not occur in candidate strings."
-  :type 'string)
-
 ;;;; History variables
 
 (defvar-local consult-error-history nil
@@ -211,6 +206,13 @@ does not occur in candidate strings."
   "History for the command `consult-kmacro'.")
 
 ;;;; Internal variables
+
+(defvar consult--narrow-separator (concat (string 8203) " ") ;; zero width space
+  "String used to separate prefix for narrowing.
+This string must be made of unique characters,
+such that no accidential matching occurs. Therefore
+we use a zero-width-space, which generally
+does not occur in candidate strings.")
 
 (defvar consult--gc-threshold 67108864
   "Large gc threshold for temporary increase.")
@@ -284,38 +286,56 @@ PREVIEW is the preview function."
 (defsubst consult--narrow-candidate (prefix &rest strings)
   "Add narrowing prefix PREFIX and concatenate with STRINGS."
   (apply #'concat
-         (propertize (concat prefix consult-narrow-separator " ") 'display "")
+         (propertize (concat prefix consult--narrow-separator) 'display "")
          strings))
 
-(defun consult--narrow-insert ()
-  "Insert narrowing prefix, see `consult-narrow-separator'."
+(defun consult--narrow-space ()
+  "Handle SPC keypress, insert narrowing prefix."
   (interactive)
-  (insert (concat consult-narrow-separator " ")))
+  (let ((str (minibuffer-contents-no-properties)))
+    (delete-minibuffer-contents)
+    (insert (concat (propertize (concat str consult--narrow-separator) 'display
+                                (propertize (format "[%s] " str)
+                                            'face 'consult-narrow-indicator))))))
 
-(defun consult--narrow-install (chars fun)
+(defun consult--narrow-install (prefixes fun)
   "Install narrowing in FUN.
 
-CHARS is the list of narrowing prefix strings."
+PREFIXES is an alist of narrowing prefix strings."
   (minibuffer-with-setup-hook
       (:append (lambda ()
                  (let ((keymap (make-composed-keymap nil (current-local-map))))
                    (define-key keymap " "
-                     `(menu-item "" nil :filter
-                                 ,(lambda (&optional _)
-                                    (when (member (minibuffer-contents) chars)
-                                      'consult--narrow-insert))))
+                     `(menu-item
+                       "" nil :filter
+                       ,(lambda (&optional _)
+                          (let ((str (minibuffer-contents-no-properties)))
+                            (when-let (indicator (cdr (assoc (minibuffer-contents-no-properties) prefixes)))
+                              (delete-minibuffer-contents)
+                              (insert (concat (propertize (concat str consult--narrow-separator) 'display
+                                                          (propertize (format "[%s] " indicator)
+                                                                      'face 'consult-narrow-indicator))))
+                              #'ignore)))))
+                   (define-key keymap [127]
+                     `(menu-item
+                       "" nil :filter
+                       ,(lambda (&optional _)
+                          (let* ((str (minibuffer-contents-no-properties))
+                                 (prefix (string-remove-suffix consult--narrow-separator str)))
+                            (when (and (not (string= prefix str)) (assoc prefix prefixes))
+                              #'delete-minibuffer-contents)))))
                    (use-local-map keymap))))
     (funcall fun)))
 
-(defmacro consult--with-narrow (chars &rest body)
+(defmacro consult--with-narrow (prefixes &rest body)
   "Setup narrowing in BODY.
 
-CHARS is the list of narrowing prefix strings."
+PREFIXES is an alist of narrowing prefix strings."
   (declare (indent 1))
-  (let ((chars-var (make-symbol "chars")))
-    `(let ((,chars-var ,chars))
-       (if ,chars-var
-           (consult--narrow-install ,chars-var (lambda () ,@body))
+  (let ((prefixes-var (make-symbol "prefixes")))
+    `(let ((,prefixes-var ,prefixes))
+       (if ,prefixes-var
+           (consult--narrow-install ,prefixes-var (lambda () ,@body))
          ,@body))))
 
 (defmacro consult--with-increased-gc (&rest body)
@@ -401,7 +421,7 @@ LOOKUP is a function which is applied to the result.
 INITIAL is initial input.
 DEFAULT-TOP must be nil if the default candidate should not be moved to the top.
 PREVIEW is a preview function.
-NARROW is a list of narrowing prefix strings."
+NARROW is an alist of narrowing prefix strings and description."
   (ignore default-top)
   ;; supported types
   (cl-assert (or (not candidates) ;; nil
@@ -1051,7 +1071,10 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
            "Switch to: " (append bufs files views bookmarks)
            :history 'consult-buffer-history
            :sort nil
-           :narrow '("b" "m" "v" "f")
+           :narrow '(("b" . "Buffer")
+                     ("m" . "Bookmark")
+                     ("v" . "View")
+                     ("f" . "File"))
            :category 'virtual-buffer
            :lookup
            (lambda (candidates cand)

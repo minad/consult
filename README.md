@@ -205,7 +205,6 @@ order to use the enhanced commands, you must configure the keybindings yourself.
 | consult-after-jump-hook     | '(recenter) | Functions to call after jumping to a location           |
 | consult-line-numbers-widen  | t           | Show absolute line numbers when narrowing is active.    |
 | consult-mode-histories      | …           | Mode-specific history variables                         |
-| consult-narrow-separator    | "[ZWSP]"    | Separator shown after narrowing prefix                  |
 | consult-preview-buffer      | t           | Enable buffer preview during selection                  |
 | consult-preview-error       | t           | Enable error preview during selection                   |
 | consult-preview-flycheck    | t           | Enable flycheck error preview during selection          |
