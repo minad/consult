@@ -254,8 +254,8 @@ does not occur in candidate strings.")
   ;; We would observe this if consulting an unfontified line. Therefore we have to enforce
   ;; font-locking now, which is slow. In order to prevent is hang-up we check the buffer size
   ;; against `consult-fontify-limit'.
-  (when (and font-lock-mode (< (buffer-size) consult-fontify-limit))
-    (font-lock-ensure)))
+  (when (and jit-lock-mode (< (buffer-size) consult-fontify-limit))
+    (jit-lock-fontify-now)))
 
 ;; HACK: Disambiguate the line by prepending it with unicode
 ;; characters in the supplementary private use plane b.
