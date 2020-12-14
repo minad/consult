@@ -1332,27 +1332,24 @@ Prepend PREFIX in front of all items."
 
 (defun consult--default-preview-update (&rest _)
   "Preview function used for the default completion system."
-  ;; Check if the default completion-system is active, by looking at `completing-read-function'
-  (when (eq completing-read-function #'completing-read-default)
-    (when-let (fun (car consult--preview-stack))
-      (let ((cand (minibuffer-contents-no-properties)))
-        (when (test-completion cand
-                               minibuffer-completion-table
-                               minibuffer-completion-predicate)
-          (funcall fun cand))))))
+  (when-let (fun (car consult--preview-stack))
+    (let ((cand (minibuffer-contents-no-properties)))
+      (when (test-completion cand
+                             minibuffer-completion-table
+                             minibuffer-completion-predicate)
+        (funcall fun cand)))))
 
-;; TODO for default Emacs completion, I advise three functions. Is there a better way?
+(defun consult--default-preview-hook ()
+  ;; Check if the default completion-system is active, by looking
+  ;; at `completing-read-function' and `icomplete-mode'.
+  (when (and (not icomplete-mode) (eq completing-read-function #'completing-read-default))
+    (add-hook 'after-change-functions #'consult--default-preview-update nil t)))
+
 (defun consult--default-preview-setup ()
   "Setup preview support for the default completion-system."
-  ;; Reset first to get a clean slate.
-  (advice-remove #'minibuffer-complete #'consult--default-preview-update)
-  (advice-remove #'minibuffer-complete-word #'consult--default-preview-update)
-  (advice-remove #'minibuffer-completion-help #'consult--default-preview-update)
-  ;; Now add our advices.
+  (remove-hook 'minibuffer-setup-hook #'consult--default-preview-hook)
   (when consult-preview-mode
-    (advice-add #'minibuffer-complete-word  :after #'consult--default-preview-update)
-    (advice-add #'minibuffer-complete :after #'consult--default-preview-update)
-    (advice-add #'minibuffer-completion-help  :after #'consult--default-preview-update)))
+    (add-hook 'minibuffer-setup-hook #'consult--default-preview-hook)))
 
 (add-hook 'consult-preview-mode-hook #'consult--default-preview-setup)
 
