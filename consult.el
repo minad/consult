@@ -824,24 +824,37 @@ Optionally INITIAL input can be provided."
   (interactive)
   (minibuffer-with-setup-hook
       (lambda ()
+        ;; TODO move this to consult-selectrum
         (setq-local selectrum-refine-candidates-function #'selectrum-default-candidate-refine-function))
-    (consult--read "Help: "
-                 (or consult--help-cache
-                     (setq consult--help-cache (consult--with-increased-gc (consult--help-candidates))))
-                 :category 'consult-help
-                 :require-match t
-                 :initial initial
-                 :sort nil
-                 :narrow
-                 '((?f . "Function")
-                   (?c . "Command")
-                   (?b . "Binding")
-                   (?m. "Macro")
-                   (?u . "Custom Variable")
-                   (?v . "Variable")
-                   (?a . "Face")
-                   (?t . "CL Type"))
-                 :history 'consult-help-history)))
+    (when-let* ((selected (consult--read "Help: "
+                                    (or consult--help-cache
+                                        (setq consult--help-cache (consult--with-increased-gc (consult--help-candidates))))
+                                    :category 'consult-help
+                                    :require-match t
+                                    :initial initial
+                                    :sort nil
+                                    :narrow
+                                    '((?f . "Function")
+                                      (?c . "Command")
+                                      (?b . "Binding")
+                                      (?m . "Macro")
+                                      (?u . "Custom Variable")
+                                      (?v . "Variable")
+                                      (?a . "Face")
+                                      (?t . "CL Type"))
+                                    :history 'consult-help-history))
+           (name (intern-soft (replace-regexp-in-string "^[^ ]+ \\| .*" "" selected))))
+      (pcase (elt selected 0)
+        ;; lookup describe function via keybinding in order to support helpful
+        (?f (funcall (key-binding "\C-hf") name))
+        (?c (funcall (key-binding "\C-hf") name))
+        (?b (funcall (key-binding "\C-hf") name))
+        (?m (funcall (key-binding "\C-hf") name))
+        (?u (funcall (key-binding "\C-hv") name))
+        (?v (funcall (key-binding "\C-hv") name))
+        (?v (funcall (key-binding "\C-hv") name))
+        (?a (describe-face name))
+        (?t (funcall (key-binding "\C-ho") name))))))
 
 ;;;###autoload
 (defun consult-help-symbol-at-point ()
