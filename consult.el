@@ -802,6 +802,8 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
            (push (consult--narrow-candidate "t" str (marginalia-annotate-symbol str)) candidates))
          (when (fboundp sym)
            (cond
+            ((and (commandp sym) (where-is-internal sym nil t))
+             (push (consult--narrow-candidate "b" str (marginalia-annotate-symbol str)) candidates))
             ((commandp sym)
              (push (consult--narrow-candidate "c" str (marginalia-annotate-symbol str)) candidates))
             ((macrop sym)
@@ -829,6 +831,7 @@ Optionally INITIAL input can be provided."
                  :narrow
                  '(("f" . "Function")
                    ("c" . "Command")
+                   ("b" . "Binding")
                    ("m" . "Macro")
                    ("u" . "Custom Variable")
                    ("v" . "Variable")
