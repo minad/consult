@@ -38,7 +38,7 @@
   :type 'boolean
   :group 'consult-preview)
 
-(defun consult--flycheck-candidates ()
+(defun consult-flycheck--candidates ()
   "Return flycheck errors as alist."
   (consult--forbid-minibuffer)
   (unless flycheck-current-errors
@@ -54,8 +54,11 @@
          (fmt (format "%%-%ds %%-%ds %%-7s %%s (%%s)" file-width line-width)))
     (mapcar
      (pcase-lambda (`(,file ,line ,err))
-       (flycheck-jump-to-error err)
-       (let ((level (flycheck-error-level err)))
+       (let* ((marker (make-marker))
+              (file (flycheck-error-filename err))
+              (buffer (if file (find-file-noselect file) (flycheck-error-buffer err)))
+              (level (flycheck-error-level err)))
+         (set-marker marker (flycheck-error-pos err) buffer)
          (cons
           (consult--narrow-candidate
            (pcase level
@@ -68,8 +71,8 @@
                    (propertize (symbol-name level) 'face (flycheck-error-level-error-list-face level))
                    (propertize (flycheck-error-message err) 'face 'flycheck-error-list-error-message)
                    (propertize (symbol-name (flycheck-error-checker err))
-                            'face 'flycheck-error-list-checker-name)))
-        (point-marker))))
+                               'face 'flycheck-error-list-checker-name)))
+          marker)))
      errors)))
 
 ;;;###autoload
@@ -78,7 +81,7 @@
   (interactive)
   (consult--jump
    (consult--read "Flycheck error: "
-                  (consult--with-increased-gc (consult--flycheck-candidates))
+                  (consult--with-increased-gc (consult-flycheck--candidates))
                   :category 'flycheck-error
                   :require-match t
                   :sort nil
