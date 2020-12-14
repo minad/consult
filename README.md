@@ -132,10 +132,12 @@ a customizable variable is offered to selectively enable/disable preview.
 
 ## Narrowing to subsets
 
-Consult has special support to narrow to candidate subsets. When you use
-the `consult-buffer` command, you can press `b SPC` and the list of candidates
-will be restricted such that only buffers are shown. If you press `DEL`
-afterwards, the full candidate list will be shown again.
+Consult has special support to narrow to candidate subsets. When you use the
+`consult-buffer` command, you can press `b SPC` and the list of candidates will
+be restricted such that only buffers are shown. If you press `DEL` afterwards,
+the full candidate list will be shown again. Furthermore the narrowing/widening
+key is available which can be pressed to achieve the same effect. The
+narrowing/widening key is bound to `C-+` by default.
 
 ## Package configuration
 
@@ -225,6 +227,8 @@ that the main package `consult.el` only depends on Emacs core components.
 | consult-themes              | nil         | List of themes to be presented for selection            |
 | consult-view-list-function  | nil         | Function which returns a list of view names as strings  |
 | consult-view-open-function  | nil         | Function to open a view by name                         |
+| consult-narrow-key          | C-+         | Narrowing prefix key during completion                  |
+| consult-widen-key           | C-+ C-+     | Widening key during completion                          |
 
 ## Related packages
 

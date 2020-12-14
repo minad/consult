@@ -58,9 +58,9 @@
          (cons
           (consult--narrow-candidate
            (pcase level
-             ('error "e")
-             ('warning "w")
-             (_ "i"))
+             ('error ?e)
+             ('warning ?w)
+             (_ ?i))
            (format fmt
                    (propertize file 'face 'flycheck-error-list-filename)
                    (propertize line 'face 'flycheck-error-list-line-number)
@@ -85,9 +85,9 @@
                   :category 'flycheck-error
                   :require-match t
                   :sort nil
-                  :narrow '(("e" . "Error")
-                            ("w" . "Warning")
-                            ("i" . "Info"))
+                  :narrow '((?e . "Error")
+                            (?w . "Warning")
+                            (?i . "Info"))
                   :lookup #'consult--lookup-list
                   :preview (and consult-preview-flycheck #'consult--preview-position))))
 

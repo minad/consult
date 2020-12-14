@@ -59,6 +59,14 @@
 
 ;;;; General customization
 
+(defcustom consult-narrow-key [?\C-+]
+  "Prefix key for narrowing during completion."
+  :type 'vector)
+
+(defcustom consult-widen-key [?\C-+ ?\C-+]
+  "Key used for widening during completion."
+  :type 'vector)
+
 (defcustom consult-view-list-function nil
   "Function which returns a list of view names as strings, used by `consult-buffer'."
   :type 'function)
@@ -226,6 +234,9 @@ You may want to add a function which pulses the current line, e.g.,
 
 ;;;; Internal variables
 
+(defvar-local consult--narrow-prefixes nil
+  "Narrowing prefixes of the current completion.")
+
 (defvar consult--narrow-separator (concat (string 8203) " ") ;; zero width space
   "String used to separate prefix for narrowing.
 This string must be made of unique characters,
@@ -302,11 +313,28 @@ PREVIEW is the preview function."
            (consult--preview-install ,preview-var (lambda () ,@body))
          ,@body))))
 
+(defsubst consult--narrowed-p (str)
+  "Return t if STR has some of the narrowing PREFIXES."
+  (string-match-p (concat "^." consult--narrow-separator) str))
+
+(defsubst consult--narrow-strip (str)
+  "Strip narrowing prefix from STR."
+  (if (consult--narrowed-p str)
+      (replace-regexp-in-string "^[^ ]+ " "" str)
+    str))
+
 (defsubst consult--narrow-candidate (prefix &rest strings)
   "Add narrowing prefix PREFIX and concatenate with STRINGS."
   (apply #'concat
-         (propertize (concat prefix consult--narrow-separator) 'display "")
+         (propertize (concat (string prefix) consult--narrow-separator) 'display "")
          strings))
+
+(defsubst consult--narrow-indicator (pair)
+  "Narrowing indicator string for PAIR."
+  (propertize (concat (string (car pair)) consult--narrow-separator)
+              'display
+              (propertize (format "[%s] " (cdr pair))
+                          'face 'consult-narrow-indicator)))
 
 (defun consult--narrow-space ()
   "Handle SPC keypress, insert narrowing prefix."
@@ -317,33 +345,57 @@ PREVIEW is the preview function."
                                 (propertize (format "[%s] " str)
                                             'face 'consult-narrow-indicator))))))
 
+(defun consult-widen ()
+  "Widen current completion."
+  (interactive)
+  (let ((str (consult--narrow-strip (minibuffer-contents))))
+    (delete-minibuffer-contents)
+    (insert str)))
+
+(defun consult-narrow ()
+  "Narrow current completion."
+  (interactive)
+  (let ((str (consult--narrow-strip (minibuffer-contents))))
+    (delete-minibuffer-contents)
+    (insert (concat (consult--narrow-indicator
+                     (assoc last-command-event consult--narrow-prefixes)))
+            str)))
+
+(defconst consult--narrow-delete
+  `(menu-item
+    "" nil :filter
+    ,(lambda (&optional _)
+       (let ((str (minibuffer-contents-no-properties)))
+         (when (and (string-suffix-p consult--narrow-separator str)
+                    (consult--narrowed-p str))
+           #'delete-minibuffer-contents)))))
+
+(defconst consult--narrow-space
+  `(menu-item
+    "" nil :filter
+    ,(lambda (&optional _)
+       (let ((str (minibuffer-contents-no-properties)))
+         (when (= 1 (length str))
+           (when-let (pair (assoc (elt str 0) consult--narrow-prefixes))
+             (delete-minibuffer-contents)
+             (insert (consult--narrow-indicator pair))
+             #'ignore))))))
+
 (defun consult--narrow-install (prefixes fun)
   "Install narrowing in FUN.
 
 PREFIXES is an alist of narrowing prefix strings."
   (minibuffer-with-setup-hook
-      (:append (lambda ()
-                 (let ((keymap (make-composed-keymap nil (current-local-map))))
-                   (define-key keymap " "
-                     `(menu-item
-                       "" nil :filter
-                       ,(lambda (&optional _)
-                          (let ((str (minibuffer-contents-no-properties)))
-                            (when-let (indicator (cdr (assoc (minibuffer-contents-no-properties) prefixes)))
-                              (delete-minibuffer-contents)
-                              (insert (concat (propertize (concat str consult--narrow-separator) 'display
-                                                          (propertize (format "[%s] " indicator)
-                                                                      'face 'consult-narrow-indicator))))
-                              #'ignore)))))
-                   (define-key keymap [127]
-                     `(menu-item
-                       "" nil :filter
-                       ,(lambda (&optional _)
-                          (let* ((str (minibuffer-contents-no-properties))
-                                 (prefix (string-remove-suffix consult--narrow-separator str)))
-                            (when (and (not (string= prefix str)) (assoc prefix prefixes))
-                              #'delete-minibuffer-contents)))))
-                   (use-local-map keymap))))
+      (:append
+       (lambda ()
+         (setq consult--narrow-prefixes prefixes)
+         (let ((map (make-composed-keymap nil (current-local-map))))
+           (dolist (pair prefixes)
+             (define-key map (vconcat consult-narrow-key (vector (car pair))) #'consult-narrow))
+           (define-key map consult-widen-key #'consult-widen)
+           (define-key map " " consult--narrow-space)
+           (define-key map [127] consult--narrow-delete)
+           (use-local-map map))))
     (funcall fun)))
 
 (defmacro consult--with-narrow (prefixes &rest body)
@@ -1067,7 +1119,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
          ;; and a regression to the default switch-to-buffer implementation.
          (bufs (mapcar
                 (lambda (x)
-                  (consult--buffer-candidate "b" x 'consult-buffer))
+                  (consult--buffer-candidate ?b x 'consult-buffer))
                 (seq-remove
                  ;; Visible buffers only
                  (lambda (x) (= (aref x 0) 32))
@@ -1075,23 +1127,23 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                          (delq curr-buf (buffer-list))))))
          (views (when consult-view-list-function
                   (mapcar (lambda (x)
-                            (consult--buffer-candidate "v" x 'consult-view))
+                            (consult--buffer-candidate ?v x 'consult-view))
                           (funcall consult-view-list-function))))
          (bookmarks (mapcar (lambda (x)
-                              (consult--buffer-candidate "m" (car x) 'consult-bookmark))
+                              (consult--buffer-candidate ?m (car x) 'consult-bookmark))
                             bookmark-alist))
          (files (mapcar (lambda (x)
-                          (consult--buffer-candidate "f" (abbreviate-file-name x) 'consult-file))
+                          (consult--buffer-candidate ?f (abbreviate-file-name x) 'consult-file))
                         (remove curr-file recentf-list)))
          (selected
           (consult--read
            "Switch to: " (append bufs files views bookmarks)
            :history 'consult-buffer-history
            :sort nil
-           :narrow `(("b" . "Buffer")
-                     ("m" . "Bookmark")
-                     ("f" . "File")
-                     ,@(when consult-view-list-function '(("v" . "View"))))
+           :narrow `((?b . "Buffer")
+                     (?m . "Bookmark")
+                     (?f . "File")
+                     ,@(when consult-view-list-function '((?v . "View"))))
            :category 'virtual-buffer
            :lookup
            (lambda (candidates cand)
@@ -1101,7 +1153,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                          (?m open-bookmark)
                          (?v consult-view-open-function)
                          (?f open-file))
-                       (replace-regexp-in-string "^[^ ]+ " "" cand))
+                       (consult--narrow-strip cand))
                ;; When candidate is not found in the alist,
                ;; default to creating a new buffer.
                (and (not (string-blank-p cand)) (cons open-buffer cand))))
