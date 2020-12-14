@@ -1340,9 +1340,13 @@ Prepend PREFIX in front of all items."
         (funcall fun cand)))))
 
 (defun consult--default-preview-hook ()
-  ;; Check if the default completion-system is active, by looking
-  ;; at `completing-read-function' and `icomplete-mode'.
-  (when (and (not icomplete-mode) (eq completing-read-function #'completing-read-default))
+  "Add preview update to `after-change-functions' if the default completion system is active."
+  ;; Check if the default completion-system is active, by looking at
+  ;; `completing-read-function' and `icomplete-mode'. Embark
+  ;; completing-read should also be treate like the default completion
+  ;; system. See https://github.com/minad/consult/issues/56.
+  (when (and (not icomplete-mode)
+             (memq completing-read-function '(completing-read-default embark-completing-read)))
     (add-hook 'after-change-functions #'consult--default-preview-update nil t)))
 
 (defun consult--default-preview-setup ()
