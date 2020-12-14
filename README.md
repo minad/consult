@@ -176,6 +176,13 @@ that the main package `consult.el` only depends on Emacs core components.
   ;; Configure other variables and modes in the :config section, after lazily loading the package
   :config
 
+  ;; Optional configure a "view" library to be used by `consult-buffer`.
+  ;; The view library must provide two functions, one to open the view by name,
+  ;; and one function which must return a list of views as strings.
+  ;; Example: https://github.com/minad/bookmark-view/
+  ;; (setq consult-view-open-function #'bookmark-jump
+  ;;       consult-view-list-function #'bookmark-view-names)
+
   ;; Optionally enable previews. Note that individual previews can be disabled
   ;; via customization variables.
   (consult-preview-mode))
@@ -216,6 +223,8 @@ that the main package `consult.el` only depends on Emacs core components.
 | consult-preview-theme       | t           | Enable theme preview during selection                   |
 | consult-preview-yank        | t           | Enable yank preview during selection                    |
 | consult-themes              | nil         | List of themes to be presented for selection            |
+| consult-view-list-function  | nil         | Function which returns a list of view names as strings  |
+| consult-view-open-function  | nil         | Function to open a view by name                         |
 
 ## Related packages
 

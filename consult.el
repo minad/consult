@@ -59,6 +59,14 @@
 
 ;;;; General customization
 
+(defcustom consult-view-list-function nil
+  "Function which returns a list of view names as strings, used by `consult-buffer'."
+  :type 'function)
+
+(defcustom consult-view-open-function nil
+  "Function which opens a view, used by `consult-buffer'."
+  :type 'function)
+
 (defcustom consult-mode-histories
   '((eshell-mode . eshell-history-ring)
     (comint-mode . comint-input-ring)
@@ -1062,15 +1070,10 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                  (lambda (x) (= (aref x 0) 32))
                  (mapcar #'buffer-name
                          (delq curr-buf (buffer-list))))))
-         ;; TODO implement a solution to allow registration of custom view/perspective libraries.
-         ;; Probably do this using two configurable functions
-         ;; `consult-view-list-function' and `consult-view-open-function'.
-         ;; Right now only bookmarks-view is supported.
-         ;; https://github.com/minad/bookmark-view/blob/master/bookmark-view.el
-         (views (if (fboundp 'bookmark-view-names)
-                    (mapcar (lambda (x)
-                              (consult--buffer-candidate "v" x 'consult-view))
-                            (bookmark-view-names))))
+         (views (when consult-view-list-function
+                  (mapcar (lambda (x)
+                            (consult--buffer-candidate "v" x 'consult-view))
+                          (funcall consult-view-list-function))))
          (bookmarks (mapcar (lambda (x)
                               (consult--buffer-candidate "m" (car x) 'consult-bookmark))
                             bookmark-alist))
@@ -1082,10 +1085,10 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
            "Switch to: " (append bufs files views bookmarks)
            :history 'consult-buffer-history
            :sort nil
-           :narrow '(("b" . "Buffer")
+           :narrow `(("b" . "Buffer")
                      ("m" . "Bookmark")
-                     ("v" . "View")
-                     ("f" . "File"))
+                     ("f" . "File")
+                     ,@(when consult-view-list-function '(("v" . "View"))))
            :category 'virtual-buffer
            :lookup
            (lambda (candidates cand)
@@ -1093,7 +1096,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                  (cons (pcase (elt cand 0)
                          (?b open-buffer)
                          (?m open-bookmark)
-                         (?v open-bookmark)
+                         (?v consult-view-open-function)
                          (?f open-file))
                        (replace-regexp-in-string "^[^ ]+ " "" cand))
                ;; When candidate is not found in the alist,
