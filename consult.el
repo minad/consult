@@ -390,9 +390,11 @@ PREFIXES is an alist of narrowing prefix strings."
        (lambda ()
          (setq consult--narrow-prefixes prefixes)
          (let ((map (make-composed-keymap nil (current-local-map))))
-           (dolist (pair prefixes)
-             (define-key map (vconcat consult-narrow-key (vector (car pair))) #'consult-narrow))
-           (define-key map consult-widen-key #'consult-widen)
+           (when consult-narrow-key
+             (dolist (pair prefixes)
+               (define-key map (vconcat consult-narrow-key (vector (car pair))) #'consult-narrow)))
+           (when consult-widen-key
+             (define-key map consult-widen-key #'consult-widen))
            (define-key map " " consult--narrow-space)
            (define-key map [127] consult--narrow-delete)
            (use-local-map map))))
