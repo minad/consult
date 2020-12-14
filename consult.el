@@ -813,6 +813,7 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
            (when (custom-variable-p sym)
              (push (consult--narrow-candidate ?u str (marginalia-annotate-symbol str)) candidates))
            (push (consult--narrow-candidate ?v str (marginalia-annotate-symbol str)) candidates)))))
+    ;; TODO better sorting, such that bindings or commands appear first?
     (sort candidates #'string<)))
 
 (defvar consult--help-cache nil)
