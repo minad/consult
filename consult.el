@@ -214,6 +214,9 @@ You may want to add a function which pulses the current line, e.g.,
 (defvar-local consult-imenu-history nil
   "Buffer-local history for the command `consult-imenu'.")
 
+(defvar consult-help-history nil
+  "History for the command `consult-help'.")
+
 (defvar consult-buffer-history nil
   "History for the command `consult-buffer'.")
 
@@ -785,6 +788,59 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
    :require-match t
    :category 'file
    :history 'file-name-history))
+
+(defun consult--help-candidates ()
+  "Return list of help candidates."
+  (message "Loading help...")
+  (let ((candidates))
+    (mapatoms
+     (lambda (sym)
+       (let ((str (symbol-name sym)))
+         (when (facep sym)
+           (push (consult--narrow-candidate "a" str (marginalia-annotate-face str)) candidates))
+         (when (and (fboundp 'cl-find-class) (cl-find-class sym))
+           (push (consult--narrow-candidate "t" str (marginalia-annotate-symbol str)) candidates))
+         (when (fboundp sym)
+           (cond
+            ((commandp sym)
+             (push (consult--narrow-candidate "c" str (marginalia-annotate-symbol str)) candidates))
+            ((macrop sym)
+             (push (consult--narrow-candidate "m" str (marginalia-annotate-symbol str)) candidates)))
+           (push (consult--narrow-candidate "f" str (marginalia-annotate-symbol str)) candidates))
+         (when (boundp sym)
+           (when (custom-variable-p sym)
+             (push (consult--narrow-candidate "u" str (marginalia-annotate-symbol str)) candidates))
+           (push (consult--narrow-candidate "v" str (marginalia-annotate-symbol str)) candidates)))))
+    (sort candidates #'string<)))
+
+(defvar consult--help-cache nil)
+
+;;;###autoload
+(defun consult-help (&optional initial)
+  "Open help.
+Optionally INITIAL input can be provided."
+  (interactive)
+  (consult--read "Help: "
+                 (or consult--help-cache
+                     (setq consult--help-cache (consult--with-increased-gc (consult--help-candidates))))
+                 :category 'consult-help
+                 :require-match t
+                 :initial initial
+                 :narrow
+                 '(("f" . "Function")
+                   ("c" . "Command")
+                   ("m" . "Macro")
+                   ("u" . "Custom Variable")
+                   ("v" . "Variable")
+                   ("a" . "Face")
+                   ("t" . "CL Type"))
+                 :history 'consult-help-history))
+
+;;;###autoload
+(defun consult-help-symbol-at-point ()
+  "Open help for a symbol at point."
+  (interactive)
+  (consult-help (thing-at-point 'symbol)))
 
 ;;;###autoload
 (defun consult-recent-file ()
