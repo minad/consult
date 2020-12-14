@@ -55,8 +55,9 @@
     (mapcar
      (pcase-lambda (`(,file ,line ,err))
        (let* ((marker (make-marker))
-              (file (flycheck-error-filename err))
-              (buffer (if file (find-file-noselect file) (flycheck-error-buffer err)))
+              (buffer (if (flycheck-error-filename err)
+                          (find-file-noselect (flycheck-error-filename err))
+                        (flycheck-error-buffer err)))
               (level (flycheck-error-level err)))
          (set-marker marker (flycheck-error-pos err) buffer)
          (cons
