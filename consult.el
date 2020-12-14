@@ -797,22 +797,22 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
      (lambda (sym)
        (let ((str (symbol-name sym)))
          (when (facep sym)
-           (push (consult--narrow-candidate "a" str (marginalia-annotate-face str)) candidates))
+           (push (consult--narrow-candidate ?a str (marginalia-annotate-face str)) candidates))
          (when (and (fboundp 'cl-find-class) (cl-find-class sym))
-           (push (consult--narrow-candidate "t" str (marginalia-annotate-symbol str)) candidates))
+           (push (consult--narrow-candidate ?t str (marginalia-annotate-symbol str)) candidates))
          (when (fboundp sym)
            (cond
             ((and (commandp sym) (where-is-internal sym nil t))
-             (push (consult--narrow-candidate "b" str (marginalia-annotate-symbol str)) candidates))
+             (push (consult--narrow-candidate ?b str (marginalia-annotate-symbol str)) candidates))
             ((commandp sym)
-             (push (consult--narrow-candidate "c" str (marginalia-annotate-symbol str)) candidates))
+             (push (consult--narrow-candidate ?c str (marginalia-annotate-symbol str)) candidates))
             ((macrop sym)
-             (push (consult--narrow-candidate "m" str (marginalia-annotate-symbol str)) candidates)))
-           (push (consult--narrow-candidate "f" str (marginalia-annotate-symbol str)) candidates))
+             (push (consult--narrow-candidate ?m str (marginalia-annotate-symbol str)) candidates)))
+           (push (consult--narrow-candidate ?f str (marginalia-annotate-symbol str)) candidates))
          (when (boundp sym)
            (when (custom-variable-p sym)
-             (push (consult--narrow-candidate "u" str (marginalia-annotate-symbol str)) candidates))
-           (push (consult--narrow-candidate "v" str (marginalia-annotate-symbol str)) candidates)))))
+             (push (consult--narrow-candidate ?u str (marginalia-annotate-symbol str)) candidates))
+           (push (consult--narrow-candidate ?v str (marginalia-annotate-symbol str)) candidates)))))
     (sort candidates #'string<)))
 
 (defvar consult--help-cache nil)
@@ -822,22 +822,26 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
   "Open help.
 Optionally INITIAL input can be provided."
   (interactive)
-  (consult--read "Help: "
+  (minibuffer-with-setup-hook
+      (lambda ()
+        (setq-local selectrum-refine-candidates-function #'selectrum-default-candidate-refine-function))
+    (consult--read "Help: "
                  (or consult--help-cache
                      (setq consult--help-cache (consult--with-increased-gc (consult--help-candidates))))
                  :category 'consult-help
                  :require-match t
                  :initial initial
+                 :sort nil
                  :narrow
-                 '(("f" . "Function")
-                   ("c" . "Command")
-                   ("b" . "Binding")
-                   ("m" . "Macro")
-                   ("u" . "Custom Variable")
-                   ("v" . "Variable")
-                   ("a" . "Face")
-                   ("t" . "CL Type"))
-                 :history 'consult-help-history))
+                 '((?f . "Function")
+                   (?c . "Command")
+                   (?b . "Binding")
+                   (?m. "Macro")
+                   (?u . "Custom Variable")
+                   (?v . "Variable")
+                   (?a . "Face")
+                   (?t . "CL Type"))
+                 :history 'consult-help-history)))
 
 ;;;###autoload
 (defun consult-help-symbol-at-point ()
