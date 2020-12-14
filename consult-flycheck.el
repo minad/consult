@@ -54,12 +54,7 @@
          (fmt (format "%%-%ds %%-%ds %%-7s %%s (%%s)" file-width line-width)))
     (mapcar
      (pcase-lambda (`(,file ,line ,err))
-       (let* ((marker (make-marker))
-              (buffer (if (flycheck-error-filename err)
-                          (find-file-noselect (flycheck-error-filename err))
-                        (flycheck-error-buffer err)))
-              (level (flycheck-error-level err)))
-         (set-marker marker (flycheck-error-pos err) buffer)
+       (let ((level (flycheck-error-level err)))
          (cons
           (consult--narrow-candidate
            (pcase level
@@ -73,7 +68,11 @@
                    (propertize (flycheck-error-message err) 'face 'flycheck-error-list-error-message)
                    (propertize (symbol-name (flycheck-error-checker err))
                                'face 'flycheck-error-list-checker-name)))
-          marker)))
+          (set-marker (make-marker)
+                      (flycheck-error-pos err)
+                      (if (flycheck-error-filename err)
+                          (find-file-noselect (flycheck-error-filename err))
+                        (flycheck-error-buffer err))))))
      errors)))
 
 ;;;###autoload
