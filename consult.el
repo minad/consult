@@ -891,7 +891,7 @@ The arguments and expected return value are as specified for
 (defun consult--yank-read ()
   "Open kill ring menu and return selected text."
   (consult--read
-   "Ring: "
+   "Yank text: "
    (delete-dups (seq-copy kill-ring))
    :sort nil
    :category 'kill-ring
