@@ -270,6 +270,7 @@ Advice and useful discussions:
 * [Protesilaos Stavrou](https://gitlab.com/protesilaos/)
 * [Steve Purcell](https://gitlab.com/purcell/)
 * [Adam Porter](https://gitlab.com/alphapapa/)
+* [Manuel Uberti](https://gitlab.com/manuel-uberti/)
 
 Code contributions:
 * [Omar Antolín Camarena](https://github.com/oantolin/)
