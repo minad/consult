@@ -180,10 +180,10 @@ that the main package `consult.el` only depends on Emacs core components.
 
   ;; Optionally configure narrowing and widening keys.
   ;; Using < or C-+ both work reasonably well.
-  ;; (setq consult-narrow-key [?<]
-  ;;       consult-widen-key [?< ?<])
-  ;; (setq consult-narrow-key [?\C-+]
-  ;;       consult-widen-key [?\C-+ ?\C-+])
+  ;; (setq consult-narrow-key "<"
+  ;;       consult-widen-key "< ")
+  ;; (setq consult-narrow-key (kbd "C-+")
+  ;;       consult-widen-key (kbd "C-+ SPC"))
 
   ;; Optional configure a "view" library to be used by `consult-buffer`.
   ;; The view library must provide two functions, one to open the view by name,
