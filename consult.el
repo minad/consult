@@ -393,10 +393,11 @@ PREVIEW is the preview function."
 (defsubst consult--define-key (map key cmd desc)
   "Bind CMD to KEY in MAP and add which-key description DESC."
   (define-key map key cmd)
-  ;; The which-key description is potentially fragile if something
-  ;; is changed on the side of which-key. Keep an eye on that.
-  ;; An alternative would be to use `menu-item', but this is unfortunately
-  ;; not yet supported by which-key and `describe-buffer-bindings'.
+  ;; The which-key description is potentially fragile if something is changed on the side
+  ;; of which-key. Keep an eye on that. An alternative more standard-compliant method
+  ;; would be to use `menu-item', but this is unfortunately not yet supported by which-key
+  ;; and `describe-buffer-bindings'.
+  ;; See https://github.com/justbur/emacs-which-key/issues/177
   (let ((idx (- (length key) 1)))
     (define-key map (vconcat
                      (seq-take key idx)
