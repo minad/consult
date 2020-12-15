@@ -59,11 +59,11 @@
 
 ;;;; General customization
 
-(defcustom consult-narrow-key [?\C-+]
+(defcustom consult-narrow-key nil
   "Prefix key for narrowing during completion."
   :type 'vector)
 
-(defcustom consult-widen-key [?\C-+ ?\C-+]
+(defcustom consult-widen-key nil
   "Key used for widening during completion."
   :type 'vector)
 
