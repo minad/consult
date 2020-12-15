@@ -276,9 +276,10 @@ does not occur in candidate strings.")
   (when (and jit-lock-mode (< (buffer-size) consult-fontify-limit))
     (jit-lock-fontify-now)))
 
-;; HACK: Disambiguate the line by prepending it with unicode
-;; characters in the supplementary private use plane b.
-;; This will certainly have many ugly consequences.
+;; We must disambiguate the lines by adding a prefix such that two lines with the same text can be
+;; distinguished. In order to avoid matching the line number, such that the user can search for
+;; numbers with `consult-line', we encode the line number as unicode characters in the supplementary
+;; private use plane b. By doing that, it is unlikely that accidential matching occurs.
 (defsubst consult--unique (pos display)
   "Generate unique string for POS.
 DISPLAY is the string to display instead of the unique string."
