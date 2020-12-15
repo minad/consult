@@ -107,6 +107,7 @@ You may want to add a function which pulses the current line, e.g.,
 (defcustom consult-imenu-narrow
   '((emacs-lisp-mode . ((?f . "Functions")
                         (?m . "Macros")
+                        (?p . "Packages")
                         (?t . "Types")
                         (?v . "Variables"))))
   "Narrowing keys used by `consult-imenu'."
