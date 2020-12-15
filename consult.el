@@ -302,14 +302,15 @@ DISPLAY is the string to display instead of the unique string."
 
 PREVIEW is an expresion which previews the candidate.
 FUN is the body function."
-  (save-excursion
-    (push (lambda (cand) (funcall preview 'preview cand nil)) consult--preview-stack)
-    (let ((selected)
-          (state (funcall preview 'save nil nil)))
-      (unwind-protect
-          (setq selected (funcall fun))
-        (pop consult--preview-stack)
-        (funcall preview 'restore selected state)))))
+  (save-restriction
+    (save-excursion
+      (push (lambda (cand) (funcall preview 'preview cand nil)) consult--preview-stack)
+      (let ((selected)
+            (state (funcall preview 'save nil nil)))
+        (unwind-protect
+            (setq selected (funcall fun))
+          (pop consult--preview-stack)
+          (funcall preview 'restore selected state))))))
 
 (defmacro consult--with-preview (preview &rest body)
   "Install preview in BODY.
