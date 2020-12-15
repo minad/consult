@@ -104,6 +104,14 @@ You may want to add a function which pulses the current line, e.g.,
   "Buffers larger than this limit are not fontified."
   :type 'integer)
 
+(defcustom consult-imenu-narrow
+  '((emacs-lisp-mode . ((?f . "Functions")
+                        (?t . "Types")
+                        (?v . "Variables")
+                        (?m . "Macros"))))
+  "Narrowing keys used by `consult-imenu'."
+  :type 'alist)
+
 ;;;; Preview customization
 
 (defgroup consult-preview nil
@@ -1290,14 +1298,25 @@ Prepend PREFIX in front of all items."
   (let* ((imenu-auto-rescan t)
          (imenu-use-markers t)
          (items (imenu--make-index-alist t)))
-    (setq items (delete (assoc "*Rescan*" items) items))
+    (setq items (remove (assoc "*Rescan*" items) items))
     ;; Functions appear at the top-level for emacs-lisp-mode. Fix this!
     (when (derived-mode-p 'emacs-lisp-mode)
       (let ((fns (seq-remove (lambda (x) (listp (cdr x))) items))
             (rest (seq-filter (lambda (x) (listp (cdr x))) items)))
         (setq items (append rest (list (cons "Functions" fns))))))
+    ;; Narrowing support
+    (when-let (narrow (consult--imenu-narrow))
+      (dolist (x items)
+        (when-let (n (seq-find (lambda (n)
+                                 (string-prefix-p (car x) (concat (cdr n) " ")))
+                               narrow))
+          (setcar x (consult--narrow-candidate (car n) (car x))))))
     (seq-sort-by #'car #'string<
                  (consult--imenu-flatten nil items))))
+
+(defun consult--imenu-narrow ()
+  "Return narrowing list for imenu."
+  (cdr (seq-find (lambda (x) (derived-mode-p (car x))) consult-imenu-narrow)))
 
 ;;;###autoload
 (defun consult-imenu ()
@@ -1316,6 +1335,7 @@ Prepend PREFIX in front of all items."
                           (consult--preview-position cmd (cdr cand) state))
                       (consult--preview-position cmd cand state))))
     :require-match t
+    :narrow (consult--imenu-narrow)
     :category 'imenu
     :lookup #'consult--lookup-list
     :history 'consult-imenu-history

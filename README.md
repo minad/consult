@@ -97,8 +97,8 @@ completions with richer information (e.g. `M-x`, `describe-face`,
     and recursive editing.
   * `consult-outline`: Jump to a heading of the outline. Supports live preview
     and recursive editing.
-  * `consult-imenu`: Jump to imenu item. Supports live preview
-    and recursive editing.
+  * `consult-imenu`: Jump to imenu item. Supports live preview, recursive
+    editing and narrowing.
   * `consult-error`: Jump to an error. Supports live preview
     and recursive editing. In contrast to `consult-flycheck` it shows the line
     and is more general since it is not tied to a specific backend.
@@ -222,8 +222,11 @@ that the main package `consult.el` only depends on Emacs core components.
 | Variable                    | Default     | Description                                             |
 |-----------------------------|-------------|---------------------------------------------------------|
 | consult-after-jump-hook     | '(recenter) | Functions to call after jumping to a location           |
+| consult-imenu-narrow        | …           | Narrowing keys for imenu                                |
 | consult-line-numbers-widen  | t           | Show absolute line numbers when narrowing is active.    |
 | consult-mode-histories      | …           | Mode-specific history variables                         |
+| consult-narrow-key          | nil         | Narrowing prefix key during completion                  |
+| consult-widen-key           | nil         | Widening key during completion                          |
 | consult-preview-buffer      | t           | Enable buffer preview during selection                  |
 | consult-preview-error       | t           | Enable error preview during selection                   |
 | consult-preview-flycheck    | t           | Enable flycheck error preview during selection          |
@@ -235,8 +238,6 @@ that the main package `consult.el` only depends on Emacs core components.
 | consult-themes              | nil         | List of themes to be presented for selection            |
 | consult-view-list-function  | nil         | Function which returns a list of view names as strings  |
 | consult-view-open-function  | nil         | Function to open a view by name                         |
-| consult-narrow-key          | nil         | Narrowing prefix key during completion                  |
-| consult-widen-key           | nil         | Widening key during completion                          |
 
 ## Related packages
 
