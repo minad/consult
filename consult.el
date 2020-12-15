@@ -354,14 +354,14 @@ PREVIEW is the preview function."
                                 (propertize (format "[%s] " str)
                                             'face 'consult-narrow-indicator))))))
 
-(defun consult--widen ()
+(defun consult-widen ()
   "Widen current completion."
   (interactive)
   (let ((str (consult--narrow-strip (minibuffer-contents))))
     (delete-minibuffer-contents)
     (insert str)))
 
-(defun consult--narrow ()
+(defun consult-narrow ()
   "Narrow current completion."
   (interactive)
   (let ((str (consult--narrow-strip (minibuffer-contents))))
@@ -420,9 +420,9 @@ PREFIXES is an alist of narrowing prefix strings."
                (consult--define-key
                 map
                 (vconcat consult-narrow-key (vector (car pair)))
-                #'consult--narrow (cdr pair))))
+                #'consult-narrow (cdr pair))))
            (when consult-widen-key
-             (consult--define-key map consult-widen-key #'consult--widen "Widen"))
+             (consult--define-key map consult-widen-key #'consult-widen "Widen"))
            (define-key map " " consult--narrow-space)
            (define-key map [127] consult--narrow-delete)
            (use-local-map map))))
