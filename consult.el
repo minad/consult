@@ -530,8 +530,20 @@ NARROW is an alist of narrowing prefix strings and description."
               (lambda (cmd cand state)
                 (funcall preview cmd (and cand (funcall lookup candidates cand)) state)))
        (consult--with-narrow narrow
-         (completing-read prompt candidates-fun
-                          predicate require-match initial history default))))))
+         ;; The flex completion style that fido-mode uses does
+         ;; additional sorting by "completion score" on top of
+         ;; whatever display-sort-funcion and cycle-sort-function the
+         ;; completion table has. If SORT is nil, we will temporarily
+         ;; cancel flex's additional sorting, by saving the
+         ;; completion--adjust-metadata property of flex, setting it
+         ;; to nil, and restoring it later.
+         (let ((flex-metadata-adjuster (get 'flex 'completion--adjust-metadata)))
+           (unwind-protect
+             (progn
+               (if (not sort) (put 'flex 'completion--adjust-metadata nil))
+               (completing-read prompt candidates-fun
+                                predicate require-match initial history default))
+             (put 'flex 'completion--adjust-metadata flex-metadata-adjuster))))))))
 
 (defun consult--count-lines (pos)
   "Move to position POS and return number of lines."
