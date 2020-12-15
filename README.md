@@ -136,9 +136,8 @@ Consult has special support to narrow to candidate subsets. When you use the
 `consult-buffer` command, you can press `b SPC` and the list of candidates will
 be restricted such that only buffers are shown. If you press `DEL` afterwards,
 the full candidate list will be shown again. Furthermore a narrowing/widening
-key can be configured which can be pressed to achieve the same effect. The
-narrowing and widening keys can be set using the variables `consult-narrow-key`
-and `consult-widen-key` respectively.
+key can be configured which can be pressed to achieve the same effect, ee the
+configuration variables `consult-narrow-key` and `consult-widen-key`.
 
 ## Package configuration
 
