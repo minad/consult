@@ -106,9 +106,9 @@ You may want to add a function which pulses the current line, e.g.,
 
 (defcustom consult-imenu-narrow
   '((emacs-lisp-mode . ((?f . "Functions")
+                        (?m . "Macros")
                         (?t . "Types")
-                        (?v . "Variables")
-                        (?m . "Macros"))))
+                        (?v . "Variables"))))
   "Narrowing keys used by `consult-imenu'."
   :type 'alist)
 
@@ -1170,8 +1170,8 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
            :history 'consult-buffer-history
            :sort nil
            :narrow `((?b . "Buffer")
-                     (?m . "Bookmark")
                      (?f . "File")
+                     (?m . "Bookmark")
                      ,@(when consult-view-list-function '((?v . "View"))))
            :category 'virtual-buffer
            :lookup
