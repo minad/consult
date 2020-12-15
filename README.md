@@ -264,6 +264,12 @@ Note that we are not yet on the same level as Counsel in terms of covered functi
 Some of the commands found in this package originated in the
 [Selectrum wiki](https://github.com/raxod502/selectrum/wiki/Useful-Commands).
 
+Code contributions:
+* [Omar Antolín Camarena](https://github.com/oantolin/)
+* [Sergey Kostyaev](https://github.com/s-kostyaev/)
+* [okamsn](https://github.com/okamsn/)
+* [Clemens Radermacher](https://github.com/clemera/)
+
 Advice and useful discussions:
 * [Clemens Radermacher](https://github.com/clemera/)
 * [Omar Antolín Camarena](https://github.com/oantolin/)
@@ -271,9 +277,5 @@ Advice and useful discussions:
 * [Steve Purcell](https://gitlab.com/purcell/)
 * [Adam Porter](https://gitlab.com/alphapapa/)
 * [Manuel Uberti](https://gitlab.com/manuel-uberti/)
-
-Code contributions:
-* [Omar Antolín Camarena](https://github.com/oantolin/)
-* [Sergey Kostyaev](https://github.com/s-kostyaev/)
-* [okamsn](https://github.com/okamsn/)
-* [Clemens Radermacher](https://github.com/clemera/)
+* [Tom Fitzhenry](https://gitlab.com/tomfitzhenry/)
+* [Howard Melman](https://gitlab.com/hmelman/)
