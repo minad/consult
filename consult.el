@@ -469,7 +469,7 @@ PREFIXES is an alist of narrowing prefix strings."
     (when (and (markerp pos) (not (eq (current-buffer) (marker-buffer pos))))
       (switch-to-buffer (marker-buffer pos)))
     ;; Widen if we cannot jump to the position (idea from flycheck-jump-to-error)
-    (unless (eq (goto-char pos) (point))
+    (unless (= (goto-char pos) (point))
       (widen)
       (goto-char pos))
     (run-hooks 'consult-after-jump-hook)))
