@@ -390,6 +390,21 @@ PREVIEW is the preview function."
              (insert (consult--narrow-indicator pair))
              #'ignore))))))
 
+(defsubst consult--define-key (map key cmd desc)
+  "Bind CMD to KEY in MAP and add which-key description DESC."
+  (define-key map key cmd)
+  ;; The which-key description is potentially fragile if something
+  ;; is changed on the side of which-key. Keep an eye on that.
+  ;; An alternative would be to use `menu-item', but this is unfortunately
+  ;; not yet supported by which-key and `describe-buffer-bindings'.
+  (let ((idx (- (length key) 1)))
+    (define-key map (vconcat
+                     (seq-take key idx)
+                     (vector (intern (format "which-key-%s"
+                                             (key-description
+                                              (seq-drop key idx))))))
+      `(which-key (,desc . ,cmd)))))
+
 (defun consult--narrow-install (prefixes fun)
   "Install narrowing in FUN.
 
@@ -401,9 +416,12 @@ PREFIXES is an alist of narrowing prefix strings."
          (let ((map (make-composed-keymap nil (current-local-map))))
            (when consult-narrow-key
              (dolist (pair prefixes)
-               (define-key map (vconcat consult-narrow-key (vector (car pair))) #'consult-narrow)))
+               (consult--define-key
+                map
+                (vconcat consult-narrow-key (vector (car pair)))
+                #'consult-narrow (cdr pair))))
            (when consult-widen-key
-             (define-key map consult-widen-key #'consult-widen))
+             (consult--define-key map consult-widen-key #'consult-widen "Widen"))
            (define-key map " " consult--narrow-space)
            (define-key map [127] consult--narrow-delete)
            (use-local-map map))))
