@@ -38,7 +38,7 @@
   :type 'boolean
   :group 'consult-preview)
 
-(defun consult-flymake--diag-type-name (diag)
+(defsubst consult-flymake--diag-type-name (diag)
   "Return the type name of DIAG."
   (let ((type (flymake-diagnostic-type diag)))
     (format "%s"
@@ -93,7 +93,7 @@
                   :lookup #'consult--lookup-list
                   :preview (and consult-preview-flymake #'consult--preview-position))))
 
-(defun consult-flymake--diag-line (diag)
+(defsubst consult-flymake--diag-line (diag)
   "Return the line number of DIAG."
   (save-excursion
     (with-current-buffer (flymake--diag-buffer diag)
