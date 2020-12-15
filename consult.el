@@ -535,7 +535,7 @@ NARROW is an alist of narrowing prefix strings and description."
     (goto-char pos)
     line))
 
-(defsubst consult--pad-line-number (width line)
+(defsubst consult--line-number-prefix (width line)
   "Optimized formatting for LINE number with padding. WIDTH is the line number width."
   (setq line (number-to-string line))
   (propertize (concat
@@ -552,8 +552,7 @@ Since the line number is part of the candidate it will be matched-on during comp
     (dolist (cand candidates)
       (setcar cand
               (concat
-               (consult--unique (cdr cand) (consult--pad-line-number width (caar cand)))
-               " "
+               (consult--unique (cdr cand) (consult--line-number-prefix width (caar cand)))
                (cdar cand))))
     candidates))
 
@@ -732,7 +731,7 @@ The alist contains (string . position) pairs."
                (str (buffer-substring pos end)))
           (unless (string-blank-p str)
             (let ((cand (concat
-                         (consult--unique line (consult--pad-line-number line-width line))
+                         (consult--unique line (consult--line-number-prefix line-width line))
                          str))
                   (dist (abs (- curr-line line))))
               (when (< dist default-cand-dist)
