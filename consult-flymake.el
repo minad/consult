@@ -52,8 +52,9 @@
     (user-error "No Flymake diagnostics"))
   (let* ((diagnostics (flymake-diagnostics))
          (buffer-width (apply #'max (mapcar (lambda (x) (length (format "%s" (flymake-diagnostic-buffer x)))) diagnostics)))
+         (line-width (apply #'max (mapcar (lambda (x) (length (format "%s" (consult-flymake--diag-line x)))) diagnostics)))
          (category-width (apply #'max (mapcar (lambda (x) (length (consult-flymake--diag-type-name x))) diagnostics)))
-         (fmt (format "%%-%ds %%-%ds %%s" buffer-width category-width)))
+         (fmt (format "%%-%ds %%-%ds %%-%ds %%s" buffer-width line-width category-width)))
     (mapcar
      (lambda (diag)
        (with-current-buffer (flymake--diag-buffer diag)
@@ -67,6 +68,7 @@
              (_ "n"))
            (format fmt
                    (flymake-diagnostic-buffer diag)
+                   (consult-flymake--diag-line diag)
                    (propertize
                     (consult-flymake--diag-type-name diag)
                     'face
@@ -90,6 +92,13 @@
                             ("n" . "Note"))
                   :lookup #'consult--lookup-list
                   :preview (and consult-preview-flymake #'consult--preview-position))))
+
+(defun consult-flymake--diag-line (diag)
+  "Return the line number of DIAG."
+  (save-excursion
+    (with-current-buffer (flymake--diag-buffer diag)
+      (goto-char (flymake--diag-beg diag))
+      (line-number-at-pos))))
 
 (provide 'consult-flymake)
 ;;; consult-flymake.el ends here
