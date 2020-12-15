@@ -57,8 +57,8 @@
          (fmt (format "%%-%ds %%-%ds %%-%ds %%s" buffer-width line-width category-width)))
     (mapcar
      (lambda (diag)
-       (with-current-buffer (flymake--diag-buffer diag)
-         (goto-char (flymake--diag-beg diag)))
+       (with-current-buffer (flymake-diagnostic-buffer diag)
+         (goto-char (flymake-diagnostic-beg diag)))
        (let ((type (flymake-diagnostic-type diag)))
          (cons
           (consult--narrow-candidate
@@ -96,8 +96,8 @@
 (defsubst consult-flymake--diag-line (diag)
   "Return the line number of DIAG."
   (save-excursion
-    (with-current-buffer (flymake--diag-buffer diag)
-      (goto-char (flymake--diag-beg diag))
+    (with-current-buffer (flymake-diagnostic-buffer diag)
+      (goto-char (flymake-diagnostic-beg diag))
       (line-number-at-pos))))
 
 (provide 'consult-flymake)
