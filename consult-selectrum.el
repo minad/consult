@@ -61,20 +61,13 @@
                        (apply orig prompt candidates (append options args)))))
       (advice-add #'selectrum-read :around advice))))
 
-;; HACK: We are explicitly injecting the default input, since default inputs are deprecated
-;; in the completing-read API. Selectrum's completing-read consequently does not support
-;; them. Maybe Selectrum should add support for initial inputs, even if this is deprecated
-;; since the argument does not seem to go away any time soon. There are a few special cases
-;; where one wants to use an initial input, even though it should not be overused and the use
-;; of initial inputs is discouraged by the Emacs documentation.
-(cl-defun consult-selectrum--read-advice (_prompt _candidates &rest rest &key default-top initial &allow-other-keys)
+(cl-defun consult-selectrum--read-advice (_prompt _candidates &rest rest &key default-top &allow-other-keys)
   "Advice for `consult--read' performing Selectrum-specific configuration.
 
 _PROMPT, _CANDIDATES and REST are ignored.
-DEFAULT-TOP and INITIAL keyword arguments are used to configure Selectrum."
+DEFAULT-TOP keyword argument is used to configure Selectrum."
   (consult-selectrum--configure
-   `(,@(unless default-top '(:no-move-default-candidate t))
-     ,@(when initial `(:initial-input ,initial)))))
+   `(,@(unless default-top '(:no-move-default-candidate t)))))
 
 (advice-add #'consult--read :before #'consult-selectrum--read-advice)
 
