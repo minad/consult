@@ -67,13 +67,14 @@
      (lambda (diag)
        (with-current-buffer (flymake-diagnostic-buffer diag)
          (goto-char (flymake-diagnostic-beg diag)))
-       (let ((type (flymake-diagnostic-type diag)))
+       (let* ((type (flymake-diagnostic-type diag))
+              (category (get type 'flymake-category)))
          (cons
           (consult--narrow-candidate
-           (pcase type
-             (:error "e")
-             (:warning "w")
-             (_ "n"))
+           (pcase category
+             ('flymake-error ?e)
+             ('flymake-warning ?w)
+             (_ ?n))
            (format fmt
                    (flymake-diagnostic-buffer diag)
                    (consult-flymake--diag-line diag)
@@ -95,9 +96,9 @@
                   :category 'flymake-error
                   :require-match t
                   :sort nil
-                  :narrow '(("e" . "Error")
-                            ("w" . "Warning")
-                            ("n" . "Note"))
+                  :narrow '((?e . "Error")
+                            (?w . "Warning")
+                            (?n . "Note"))
                   :lookup #'consult--lookup-list
                   :preview (and consult-preview-flymake #'consult--preview-position))))
 
