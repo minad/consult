@@ -276,18 +276,19 @@ does not occur in candidate strings.")
   (when (and jit-lock-mode (< (buffer-size) consult-fontify-limit))
     (jit-lock-fontify-now)))
 
-;; We must disambiguate the lines by adding a prefix such that two lines with the same text can be
-;; distinguished. In order to avoid matching the line number, such that the user can search for
-;; numbers with `consult-line', we encode the line number as unicode characters in the supplementary
-;; private use plane b. By doing that, it is unlikely that accidential matching occurs.
-(defsubst consult--unique (pos display)
+;; We must disambiguate the lines by adding a unique prefix or suffix such that two lines with the
+;; same text can be distinguished. In order to avoid matching the line number, such that the user
+;; can search for numbers with `consult-line', we encode the line number as unicode characters in
+;; the supplementary private use plane b. By doing that, it is unlikely that accidential matching
+;; occurs.
+(defsubst consult--unique (pos)
   "Generate unique string for POS.
 DISPLAY is the string to display instead of the unique string."
-  (let ((unique-prefix "") (n pos))
+  (let ((unique "") (n pos))
     (while (progn
-             (setq unique-prefix (concat (string (+ #x100000 (% n #xFFFE))) unique-prefix))
+             (setq unique (concat (string (+ #x100000 (% n #xFFFE))) unique))
              (and (>= n #xFFFE) (setq n (/ n #xFFFE)))))
-    (propertize unique-prefix 'display display)))
+    (propertize unique 'display "")))
 
 (defun consult--preview-install (preview fun)
   "Install preview support to minibuffer completion.
@@ -535,14 +536,17 @@ NARROW is an alist of narrowing prefix strings and description."
     (goto-char pos)
     line))
 
-(defsubst consult--pad-line-number (width line)
+(defsubst consult--line-number-prefix (width line)
   "Optimized formatting for LINE number with padding. WIDTH is the line number width."
   (setq line (number-to-string line))
-  (propertize (concat
-               (make-string (- width (length line)) 32)
-               line
-               " ")
-              'face 'consult-line-number))
+  (propertize
+   " "
+   'display
+   (propertize (concat
+                (make-string (- width (length line)) 32)
+                line
+                " ")
+               'face 'consult-line-number)))
 
 (defun consult--add-line-number (max-line candidates)
   "Add line numbers to unformatted CANDIDATES as prefix.
@@ -552,9 +556,9 @@ Since the line number is part of the candidate it will be matched-on during comp
     (dolist (cand candidates)
       (setcar cand
               (concat
-               (consult--unique (cdr cand) (consult--pad-line-number width (caar cand)))
-               " "
-               (cdar cand))))
+               (consult--line-number-prefix width (caar cand))
+               (cdar cand)
+               (consult--unique (cdr cand)))))
     candidates))
 
 (defsubst consult--line-with-cursor-1 (marker &optional face)
@@ -732,8 +736,9 @@ The alist contains (string . position) pairs."
                (str (buffer-substring pos end)))
           (unless (string-blank-p str)
             (let ((cand (concat
-                         (consult--unique line (consult--pad-line-number line-width line))
-                         str))
+                         (consult--line-number-prefix line-width line)
+                         str
+                         (consult--unique line)))
                   (dist (abs (- curr-line line))))
               (when (< dist default-cand-dist)
                 (setq default-cand cand
