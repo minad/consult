@@ -230,6 +230,7 @@ that the main package `consult.el` only depends on Emacs core components.
 | consult-preview-buffer      | t           | Enable buffer preview during selection                  |
 | consult-preview-error       | t           | Enable error preview during selection                   |
 | consult-preview-flycheck    | t           | Enable flycheck error preview during selection          |
+| consult-preview-flymake     | t           | Enable flymake diagnostic preview during selection      |
 | consult-preview-line        | t           | Enable line preview during selection                    |
 | consult-preview-mark        | t           | Enable mark preview during selection                    |
 | consult-preview-outline     | t           | Enable outline preview during selection                 |
