@@ -420,7 +420,7 @@ PREFIXES is an alist of narrowing prefix strings."
                 (vconcat consult-narrow-key (vector (car pair)))
                 #'consult-narrow (cdr pair))))
            (when consult-widen-key
-             (consult--define-key map consult-widen-key #'consult-widen "Widen"))
+             (consult--define-key map consult-widen-key #'consult-widen "All"))
            (define-key map " " consult--narrow-space)
            (define-key map [127] consult--narrow-delete)
            (use-local-map map))))
