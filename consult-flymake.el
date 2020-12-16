@@ -1,13 +1,5 @@
 ;;; consult-flymake.el --- Provides the command `consult-flymake'  -*- lexical-binding: t; -*-
 
-;; Author: Daniel Mendler, Consult and Selectrum contributors
-;; Maintainer: Daniel Mendler
-;; Created: 2020
-;; License: GPL-3.0-or-later
-;; Version: 0.1
-;; Package-Requires: ((consult "0.1") (emacs "26.1"))
-;; Homepage: https://github.com/minad/consult
-
 ;; This file is not part of GNU Emacs.
 
 ;; This program is free software: you can redistribute it and/or modify
@@ -38,53 +30,48 @@
   :type 'boolean
   :group 'consult-preview)
 
-(defsubst consult-flymake--diag-line (diag)
-  "Return the line number of DIAG."
-  (save-excursion
-    (with-current-buffer (flymake-diagnostic-buffer diag)
-      (goto-char (flymake-diagnostic-beg diag))
-      (line-number-at-pos))))
-
-(defsubst consult-flymake--type-property (type prop)
-  "Return the PROP of TYPE."
-  (let* ((category (get type 'flymake-category))
-         (default (get category prop))
-         (val (get type prop)))
-    (or val default)))
-
 (defun consult-flymake--candidates ()
   "Return Flymake errors as alist."
   (consult--forbid-minibuffer)
-  (unless (flymake-diagnostics)
-    (user-error "No Flymake diagnostics"))
-  (let* ((diagnostics (flymake-diagnostics))
-         (buffer-width (apply #'max (mapcar (lambda (x) (length (format "%s" (flymake-diagnostic-buffer x)))) diagnostics)))
-         (line-width (apply #'max (mapcar (lambda (x) (length (format "%s" (consult-flymake--diag-line x)))) diagnostics)))
-         (type-name-width (apply #'max (mapcar (lambda (x) (length (consult-flymake--type-property
-                                                                    (flymake-diagnostic-type x) 'flymake-type-name))) diagnostics)))
-         (fmt (format "%%-%ds %%-%ds %%-%ds %%s" buffer-width line-width type-name-width)))
+  (let* ((raw-diags (or (flymake-diagnostics)
+                        (user-error "No flymake errors (Status: %s)"
+                                    (if (flymake-is-running) 'running 'finished))))
+         (diags
+          (mapcar
+           (lambda (x)
+             (let* ((buffer (flymake-diagnostic-buffer x))
+                    (type (flymake-diagnostic-type x))
+                    (type-str (propertize (format "%s"
+                                                  (flymake--lookup-type-property
+                                                   type 'flymake-type-name type))
+                                          'face (flymake--lookup-type-property
+                                                 type 'mode-line-face 'flymake-error)))
+                    (narrow (pcase (flymake--lookup-type-property type 'flymake-category)
+                              ('flymake-error ?e)
+                              ('flymake-warning ?w)
+                              (_ ?n))))
+               (with-current-buffer buffer
+                 (save-excursion
+                   (save-restriction
+                     (widen)
+                     (goto-char (flymake-diagnostic-beg x))
+                     (list (buffer-name buffer)
+                           (line-number-at-pos)
+                           type-str
+                           (flymake-diagnostic-text x)
+                           (point-marker)
+                           narrow))))))
+           raw-diags))
+         (buffer-width (apply #'max (mapcar (lambda (x) (length (nth 0 x))) diags)))
+         (line-width (apply #'max (mapcar (lambda (x) (length (number-to-string (nth 1 x)))) diags)))
+         (type-width (apply #'max (mapcar (lambda (x) (length (nth 2 x))) diags)))
+         (fmt (format "%%-%ds %%-%dd %%-%ds %%s" buffer-width line-width type-width)))
     (mapcar
-     (lambda (diag)
-       (with-current-buffer (flymake-diagnostic-buffer diag)
-         (goto-char (flymake-diagnostic-beg diag)))
-       (let* ((type (flymake-diagnostic-type diag))
-              (category (get type 'flymake-category)))
-         (cons
-          (consult--narrow-candidate
-           (pcase category
-             ('flymake-error ?e)
-             ('flymake-warning ?w)
-             (_ ?n))
-           (format fmt
-                   (flymake-diagnostic-buffer diag)
-                   (consult-flymake--diag-line diag)
-                   (propertize
-                    (consult-flymake--type-property type 'flymake-type-name)
-                    'face
-                    (consult-flymake--type-property type 'mode-line-face))
-                   (flymake-diagnostic-text diag)))
-          (point-marker))))
-     (flymake-diagnostics))))
+     (pcase-lambda (`(,buffer ,line ,type ,text ,marker ,narrow))
+       (cons (consult--narrow-candidate narrow (format fmt buffer line type text)) marker))
+     (sort diags
+           (pcase-lambda (`(_ _ ,t1 _ ,m1 _) `(_ _ ,t2 _ ,m2 _))
+             (or (string< t1 t2) (and (string= t1 t2) (< m1 m2))))))))
 
 ;;;###autoload
 (defun consult-flymake ()

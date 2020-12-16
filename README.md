@@ -107,6 +107,7 @@ completions with richer information (e.g. `M-x`, `describe-face`,
     `i SPC` to only show errors, warnings and infos respectively. This command
     requires to install the additional `consult-flycheck.el` package since the
     main `consult.el` package only depends on Emacs core components.
+  * `consult-flymake`: Jump to Flymake diagnostic, like `consult-flycheck`.
 
 ### Miscellaneous
 
@@ -269,6 +270,7 @@ Code contributions:
 * [Sergey Kostyaev](https://github.com/s-kostyaev/)
 * [okamsn](https://github.com/okamsn/)
 * [Clemens Radermacher](https://github.com/clemera/)
+* [Tom Fitzhenry](https://github.com/tomfitzhenry/)
 
 Advice and useful discussions:
 * [Clemens Radermacher](https://github.com/clemera/)

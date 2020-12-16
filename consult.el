@@ -303,8 +303,8 @@ DISPLAY is the string to display instead of the unique string."
 
 PREVIEW is an expresion which previews the candidate.
 FUN is the body function."
-  (save-restriction
-    (save-excursion
+  (save-excursion
+    (save-restriction
       (push (lambda (cand) (funcall preview 'preview cand nil)) consult--preview-stack)
       (let ((selected)
             (state (funcall preview 'save nil nil)))
