@@ -180,7 +180,7 @@ that the main package `consult.el` only depends on Emacs core components.
   :config
 
   ;; Optionally configure narrowing and widening keys.
-  ;; Using < or C-+ both work reasonably well.
+  ;; Both < and C-+ work reasonably well.
   ;; (setq consult-narrow-key "<"
   ;;       consult-widen-key "< ")
   ;; (setq consult-narrow-key (kbd "C-+")

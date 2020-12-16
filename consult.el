@@ -401,11 +401,7 @@ PREVIEW is the preview function."
   ;; and `describe-buffer-bindings'.
   ;; See https://github.com/justbur/emacs-which-key/issues/177
   (let ((idx (- (length key) 1)))
-    (define-key map (vconcat
-                     (seq-take key idx)
-                     (vector (intern (format "which-key-%s"
-                                             (key-description
-                                              (seq-drop key idx))))))
+    (define-key map (vconcat (seq-take key idx) (vector 'which-key (elt key idx)))
       `(which-key (,desc . ,cmd)))))
 
 (defun consult--narrow-install (prefixes fun)
