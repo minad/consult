@@ -376,6 +376,13 @@ PREVIEW is the preview function."
   `(menu-item
     "" nil :filter
     ,(lambda (&optional _)
+
+       (when (string= (minibuffer-contents) "")
+         (run-at-time nil nil
+                      (lambda ()
+                        (consult--buffer #'switch-to-buffer #'find-file #'bookmark-jump t)))
+         (minibuffer-keyboard-quit))
+
        (let ((str (minibuffer-contents-no-properties)))
          (when (= 1 (length str))
            (when-let (pair (assoc (elt str 0) consult--narrow-prefixes))
@@ -1127,7 +1134,7 @@ PREFIX is the prefix string for narrowing.
 FACE is the face for the candidate."
    (consult--narrow-candidate prefix (propertize cand 'face face)))
 
-(defun consult--buffer (open-buffer open-file open-bookmark)
+(defun consult--buffer (open-buffer open-file open-bookmark &optional invisible)
   "Backend implementation of `consult-buffer'.
 Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be used to display the item."
   (let* ((buf-file-hash (let ((ht (make-hash-table)))
@@ -1145,7 +1152,12 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                 (append
                  (seq-remove
                   ;; Visible buffers only
-                  (lambda (x) (or (string= x curr-buf) (= (elt x 0) 32)))
+                  (lambda (x) (or (string= x curr-buf)
+
+                                  (if invisible
+                                      (/= (elt x 0) 32)
+                                    (= (elt x 0) 32))
+                                  ))
                   (mapcar #'buffer-name (buffer-list)))
                  (list curr-buf))))
          (views (when consult-view-list-function
