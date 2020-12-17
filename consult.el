@@ -1202,7 +1202,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                      ;; views can result in expensive operations.
                      (when (and (eq (car cand) open-buffer) (get-buffer (cdr cand)))
                        (consult--with-window
-                        (funcall open-buffer (cdr cand)))))))))))
+                        (funcall open-buffer (cdr cand) 'norecord))))))))))
   (when selected (funcall (car selected) (cdr selected)))))
 
 ;;;###autoload
