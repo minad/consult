@@ -347,15 +347,6 @@ PREVIEW is the preview function."
               (propertize (format "[%s] " (cdr pair))
                           'face 'consult-narrow-indicator)))
 
-(defun consult--narrow-space ()
-  "Handle SPC keypress, insert narrowing prefix."
-  (interactive)
-  (let ((str (minibuffer-contents-no-properties)))
-    (delete-minibuffer-contents)
-    (insert (concat (propertize (concat str consult--narrow-separator) 'display
-                                (propertize (format "[%s] " str)
-                                            'face 'consult-narrow-indicator))))))
-
 (defun consult-widen ()
   "Widen current completion."
   (interactive)
