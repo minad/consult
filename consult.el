@@ -1139,10 +1139,7 @@ FACE is the face for the candidate."
 (defun consult--buffer (open-buffer open-file open-bookmark)
   "Backend implementation of `consult-buffer'.
 Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be used to display the item."
-  (let* ((other-buf (consult--buffer-candidate
-                     ?b
-                     (buffer-name (other-buffer (current-buffer))) 'consult-buffer))
-         (buf-file-hash (let ((ht (make-hash-table)))
+  (let* ((buf-file-hash (let ((ht (make-hash-table)))
                           (dolist (buf (buffer-list))
                             (when-let (file (buffer-file-name buf))
                               (puthash file t ht)))
@@ -1150,13 +1147,16 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
          ;; TODO right now we only show visible buffers.
          ;; This is a regression in contrast to the old dynamic narrowing implementation
          ;; and a regression to the default switch-to-buffer implementation.
+         (curr-buf (buffer-name))
+         (visible-bufs (seq-remove
+                        (lambda (x) (or (string= x curr-buf) (= (elt x 0) 32)))
+                        (mapcar #'buffer-name (buffer-list))))
          (bufs (mapcar
                 (lambda (x)
                   (consult--buffer-candidate ?b x 'consult-buffer))
-                (seq-remove
-                 ;; Visible buffers only
-                 (lambda (x) (= (aref x 0) 32))
-                 (mapcar #'buffer-name (buffer-list)))))
+                (if visible-bufs
+                    (cons (car visible-bufs) (cons curr-buf (cdr visible-bufs)))
+                  (list curr-buf))))
          (views (when consult-view-list-function
                   (mapcar (lambda (x)
                             (consult--buffer-candidate ?v x 'consult-view))
@@ -1172,7 +1172,6 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
            "Switch to: " (append bufs files views bookmarks)
            :history 'consult-buffer-history
            :sort nil
-           :default other-buf
            :narrow `((?b . "Buffer")
                      (?f . "File")
                      (?m . "Bookmark")
