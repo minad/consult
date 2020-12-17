@@ -1144,19 +1144,19 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                             (when-let (file (buffer-file-name buf))
                               (puthash file t ht)))
                           ht))
+         (curr-buf (buffer-name))
          ;; TODO right now we only show visible buffers.
          ;; This is a regression in contrast to the old dynamic narrowing implementation
          ;; and a regression to the default switch-to-buffer implementation.
-         (curr-buf (buffer-name))
-         (visible-bufs (seq-remove
-                        (lambda (x) (or (string= x curr-buf) (= (elt x 0) 32)))
-                        (mapcar #'buffer-name (buffer-list))))
          (bufs (mapcar
                 (lambda (x)
                   (consult--buffer-candidate ?b x 'consult-buffer))
-                (if visible-bufs
-                    (cons (car visible-bufs) (cons curr-buf (cdr visible-bufs)))
-                  (list curr-buf))))
+                (append
+                 (seq-remove
+                  ;; Visible buffers only
+                  (lambda (x) (or (string= x curr-buf) (= (elt x 0) 32)))
+                  (mapcar #'buffer-name (buffer-list)))
+                 (list curr-buf))))
          (views (when consult-view-list-function
                   (mapcar (lambda (x)
                             (consult--buffer-candidate ?v x 'consult-view))
