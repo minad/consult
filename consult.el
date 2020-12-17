@@ -1139,8 +1139,9 @@ FACE is the face for the candidate."
 (defun consult--buffer (open-buffer open-file open-bookmark)
   "Backend implementation of `consult-buffer'.
 Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be used to display the item."
-  (let* ((curr-buf (window-buffer (minibuffer-selected-window)))
-         (curr-file (or (buffer-file-name curr-buf) ""))
+  (let* ((other-buf (consult--buffer-candidate
+                     ?b
+                     (buffer-name (other-buffer (current-buffer))) 'consult-buffer))
          ;; TODO right now we only show visible buffers.
          ;; This is a regression in contrast to the old dynamic narrowing implementation
          ;; and a regression to the default switch-to-buffer implementation.
@@ -1150,8 +1151,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                 (seq-remove
                  ;; Visible buffers only
                  (lambda (x) (= (aref x 0) 32))
-                 (mapcar #'buffer-name
-                         (delq curr-buf (buffer-list))))))
+                 (mapcar #'buffer-name (buffer-list)))))
          (views (when consult-view-list-function
                   (mapcar (lambda (x)
                             (consult--buffer-candidate ?v x 'consult-view))
@@ -1161,12 +1161,13 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                             bookmark-alist))
          (files (mapcar (lambda (x)
                           (consult--buffer-candidate ?f (abbreviate-file-name x) 'consult-file))
-                        (remove curr-file recentf-list)))
+                        recentf-list))
          (selected
           (consult--read
            "Switch to: " (append bufs files views bookmarks)
            :history 'consult-buffer-history
            :sort nil
+           :default other-buf
            :narrow `((?b . "Buffer")
                      (?f . "File")
                      (?m . "Bookmark")
