@@ -1089,30 +1089,30 @@ During theme selection the theme is shown as
 preview if `consult-preview-mode' is enabled."
   (interactive
    (list
-    (let ((avail-themes (custom-available-themes)))
+    (let ((default-name "*default*")
+          (avail-themes (seq-filter (lambda (x) (or (not consult-themes)
+                                                    (memq x consult-themes)))
+                                    (cons nil (custom-available-themes)))))
       (consult--read
        "Theme: "
-       (mapcar #'symbol-name
-               (seq-filter (lambda (x) (or (not consult-themes)
-                                           (memq x consult-themes)))
-                           avail-themes))
+       (mapcar (lambda (x) (if x (symbol-name x) default-name)) avail-themes)
        :require-match t
        :category 'theme
        :history 'consult-theme-history
-       :lookup (lambda (_ x) (and x (intern x)))
+       :lookup (lambda (_ x)
+                 (and x (not (string= x default-name)) (intern-soft x)))
        :preview (and consult-preview-theme
                      (lambda (cmd cand state)
                        (pcase cmd
                          ('save (car custom-enabled-themes))
-                         ('restore
-                          (unless cand
-                            (consult-theme state)))
+                         ('restore (consult-theme state))
                          ('preview
                           (when (memq cand avail-themes)
                             (consult-theme cand))))))
-       :default (and (car custom-enabled-themes)
-                     (symbol-name (car custom-enabled-themes)))))))
-  (unless (equal theme (car custom-enabled-themes))
+       :default (if-let (sym (car custom-enabled-themes))
+                    (symbol-name sym)
+                  default-name)))))
+  (unless (eq theme (car custom-enabled-themes))
     (mapc #'disable-theme custom-enabled-themes)
     (when theme
       (if (custom-theme-p theme)
