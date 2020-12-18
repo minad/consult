@@ -776,7 +776,7 @@ The alist contains (string . position) pairs."
 (defun consult-line (&optional initial)
   "Search for a matching line and jump to the line beginning.
 The default candidate is a non-empty line closest to point.
-Optionally INITIAL input can be provided."
+This command obeys narrowing. Optionally INITIAL input can be provided."
   (interactive)
   (consult--jump
    (let ((candidates (consult--with-increased-gc (consult--line-candidates))))
