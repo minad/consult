@@ -517,10 +517,13 @@ PREVIEW is a preview function.
 NARROW is an alist of narrowing prefix strings and description."
   (ignore default-top)
   ;; supported types
-  (cl-assert (or (not candidates) ;; nil
-                 (obarrayp candidates) ;; obarray
-                 (stringp (car candidates)) ;; string list
-                 (consp (car candidates)))) ;; alist
+  (cl-assert (and
+              (not (functionp candidates))
+              (or (not candidates) ;; nil
+                  (obarrayp candidates) ;; obarray
+                  (stringp (car candidates)) ;; string list
+                  (symbolp (car candidates)) ;; symbol list
+                  (consp (car candidates))))) ;; alist
   (let ((candidates-fun
          (if (and sort (not category))
              candidates
@@ -1089,18 +1092,17 @@ During theme selection the theme is shown as
 preview if `consult-preview-mode' is enabled."
   (interactive
    (list
-    (let ((default-name "*default*")
-          (avail-themes (seq-filter (lambda (x) (or (not consult-themes)
+    (let ((avail-themes (seq-filter (lambda (x) (or (not consult-themes)
                                                     (memq x consult-themes)))
                                     (cons nil (custom-available-themes)))))
       (consult--read
        "Theme: "
-       (mapcar (lambda (x) (if x (symbol-name x) default-name)) avail-themes)
+       (mapcar (lambda (x) (or x 'default)) avail-themes)
        :require-match t
        :category 'theme
        :history 'consult-theme-history
        :lookup (lambda (_ x)
-                 (and x (not (string= x default-name)) (intern-soft x)))
+                 (and x (not (string= x "default")) (intern-soft x)))
        :preview (and consult-preview-theme
                      (lambda (cmd cand state)
                        (pcase cmd
@@ -1109,9 +1111,7 @@ preview if `consult-preview-mode' is enabled."
                          ('preview
                           (when (memq cand avail-themes)
                             (consult-theme cand))))))
-       :default (if-let (sym (car custom-enabled-themes))
-                    (symbol-name sym)
-                  default-name)))))
+       :default (symbol-name (or (car custom-enabled-themes) 'default))))))
   (unless (eq theme (car custom-enabled-themes))
     (mapc #'disable-theme custom-enabled-themes)
     (when theme
