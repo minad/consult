@@ -303,15 +303,15 @@ DISPLAY is the string to display instead of the unique string."
 
 PREVIEW is an expresion which previews the candidate.
 FUN is the body function."
-  (save-excursion
-    (save-restriction
-      (push (lambda (cand) (funcall preview 'preview cand nil)) consult--preview-stack)
-      (let ((selected)
-            (state (funcall preview 'save nil nil)))
-        (unwind-protect
-            (setq selected (funcall fun))
-          (pop consult--preview-stack)
-          (funcall preview 'restore selected state))))))
+  (push (lambda (cand) (funcall preview 'preview cand nil)) consult--preview-stack)
+  (let ((selected)
+        (state (funcall preview 'save nil nil)))
+    (unwind-protect
+        (save-excursion
+          (save-restriction
+            (setq selected (funcall fun))))
+      (pop consult--preview-stack)
+      (funcall preview 'restore selected state))))
 
 (defmacro consult--with-preview (preview &rest body)
   "Install preview in BODY.
@@ -470,7 +470,11 @@ PREFIXES is an alist of narrowing prefix strings."
     ;; record previous location such that the user can jump back quickly.
     (unless (and (markerp pos) (not (eq (current-buffer) (marker-buffer pos))))
       (push-mark (point) t))
-    (consult--jump-1 pos)))
+    (consult--jump-1 pos)
+    (let ((search-invisible 'open))
+        (isearch-range-invisible (line-beginning-position)
+                                 (line-end-position)))
+    (isearch-clean-overlays)))
 
 ;; TODO Matched strings are not highlighted as of now
 ;; see https://github.com/minad/consult/issues/7
@@ -487,11 +491,15 @@ FACE is the cursor face."
     ('restore
      (consult--overlay-cleanup)
      (when (buffer-live-p state)
-       (set-buffer state)))
+       (set-buffer state))
+     (isearch-clean-overlays))
     ('preview
      (consult--with-window
       (consult--overlay-cleanup)
       (consult--jump-1 cand)
+      (let ((search-invisible (or search-invisible 'open)))
+        (isearch-range-invisible (line-beginning-position)
+                                 (line-end-position)))
       (consult--overlay-add (line-beginning-position) (line-end-position) 'consult-preview-line)
       (let ((pos (point)))
         (consult--overlay-add pos (1+ pos) (or face 'consult-preview-cursor)))))))
@@ -768,7 +776,7 @@ The alist contains (string . position) pairs."
 (defun consult-line (&optional initial)
   "Search for a matching line and jump to the line beginning.
 The default candidate is a non-empty line closest to point.
-This command obeys narrowing. Optionally INITIAL input can be provided."
+Optionally INITIAL input can be provided."
   (interactive)
   (consult--jump
    (let ((candidates (consult--with-increased-gc (consult--line-candidates))))
