@@ -446,6 +446,10 @@ PREFIXES is an alist of narrowing prefix strings."
     (unless (= (goto-char pos) (point))
       (widen)
       (goto-char pos))
+    ;; Show invisible regions using the isearch facilities
+    (let ((search-invisible 'open))
+      (isearch-range-invisible (line-beginning-position)
+                               (line-end-position)))
     (run-hooks 'consult-after-jump-hook)))
 
 (defsubst consult--jump (pos)
@@ -455,7 +459,9 @@ PREFIXES is an alist of narrowing prefix strings."
     ;; record previous location such that the user can jump back quickly.
     (unless (and (markerp pos) (not (eq (current-buffer) (marker-buffer pos))))
       (push-mark (point) t))
-    (consult--jump-1 pos)))
+    (consult--jump-1 pos)
+    ;; When ending the search/preview, clean all temporary isearch overlays
+    (isearch-clean-overlays)))
 
 (defsubst consult--overlay (beg end face)
   "Make consult overlay between BEG and END with FACE."
@@ -475,6 +481,8 @@ FACE is the cursor face."
       (pcase cmd
         ('save (current-buffer))
         ('restore
+         ;; When ending the search, clean all temporary isearch overlays
+         (isearch-clean-overlays)
          (mapc #'delete-overlay overlays)
          (when (buffer-live-p state)
            (set-buffer state)))
