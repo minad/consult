@@ -298,12 +298,21 @@ DISPLAY is the string to display instead of the unique string."
              (and (>= n #xFFFE) (setq n (/ n #xFFFE)))))
     (propertize unique-prefix 'display display)))
 
+(defmacro consult--with-window (&rest body)
+  "Run BODY with current live window."
+  `(with-selected-window
+       (or (minibuffer-selected-window) (selected-window))
+     ,@body))
+
 (defun consult--preview-install (preview fun)
   "Install preview support to minibuffer completion.
 
 PREVIEW is the preview function.
 FUN is the body function."
-  (push (lambda (cand) (funcall preview 'preview cand nil)) consult--preview-stack)
+  (push (lambda (cand)
+          (consult--with-window
+           (funcall preview 'preview cand nil)))
+        consult--preview-stack)
   (let ((selected)
         (state (funcall preview 'save nil nil)))
     (unwind-protect
@@ -435,12 +444,6 @@ PREFIXES is an alist of narrowing prefix strings."
           (gc-cons-percentage (if overwrite consult--gc-percentage gc-cons-percentage)))
      ,@body))
 
-(defmacro consult--with-window (&rest body)
-  "Run BODY with current live window."
-  `(with-selected-window
-       (or (minibuffer-selected-window) (selected-window))
-     ,@body))
-
 (defsubst consult--overlay-add (beg end face)
   "Make consult overlay between BEG and END with FACE."
   (let ((ov (make-overlay beg end)))
@@ -489,12 +492,11 @@ FACE is the cursor face."
      (when (buffer-live-p state)
        (set-buffer state)))
     ('preview
-     (consult--with-window
-      (consult--overlay-cleanup)
-      (consult--jump-1 cand)
-      (consult--overlay-add (line-beginning-position) (line-end-position) 'consult-preview-line)
-      (let ((pos (point)))
-        (consult--overlay-add pos (1+ pos) (or face 'consult-preview-cursor)))))))
+     (consult--overlay-cleanup)
+     (consult--jump-1 cand)
+     (consult--overlay-add (line-beginning-position) (line-end-position) 'consult-preview-line)
+     (let ((pos (point)))
+       (consult--overlay-add pos (1+ pos) (or face 'consult-preview-cursor))))))
 
 (cl-defun consult--read (prompt candidates &key
                                 predicate require-match history default
@@ -1108,9 +1110,8 @@ preview if `consult-preview-mode' is enabled."
                        (pcase cmd
                          ('save (car custom-enabled-themes))
                          ('restore (consult-theme state))
-                         ('preview
-                          (when (memq cand avail-themes)
-                            (consult-theme cand))))))
+                         ('preview (when (memq cand avail-themes)
+                                     (consult-theme cand))))))
        :default (symbol-name (or (car custom-enabled-themes) 'default))))))
   (unless (eq theme (car custom-enabled-themes))
     (mapc #'disable-theme custom-enabled-themes)
@@ -1192,8 +1193,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                      ;; only preview buffers. Loading recent files, bookmarks or
                      ;; views can result in expensive operations.
                      (when (and (eq (car cand) open-buffer) (get-buffer (cdr cand)))
-                       (consult--with-window
-                        (funcall open-buffer (cdr cand) 'norecord))))))))))
+                       (funcall open-buffer (cdr cand) 'norecord)))))))))
   (when selected (funcall (car selected) (cdr selected)))))
 
 ;;;###autoload
