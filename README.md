@@ -272,6 +272,7 @@ Code contributions:
 * [okamsn](https://github.com/okamsn/)
 * [Clemens Radermacher](https://github.com/clemera/)
 * [Tom Fitzhenry](https://github.com/tomfitzhenry/)
+* [jakanakaevangeli](https://github.com/jakanakaevangeli)
 
 Advice and useful discussions:
 * [Clemens Radermacher](https://github.com/clemera/)
