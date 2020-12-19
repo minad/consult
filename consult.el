@@ -298,20 +298,16 @@ DISPLAY is the string to display instead of the unique string."
              (and (>= n #xFFFE) (setq n (/ n #xFFFE)))))
     (propertize unique-prefix 'display display)))
 
-(defmacro consult--with-window (&rest body)
-  "Run BODY with current live window."
-  `(with-selected-window
-       (or (minibuffer-selected-window) (selected-window))
-     ,@body))
-
 (defun consult--preview-install (preview fun)
   "Install preview support to minibuffer completion.
 
 PREVIEW is the preview function.
 FUN is the body function."
   (push (lambda (cand)
-          (consult--with-window
-           (funcall preview 'preview cand nil)))
+          ;; Execute preview in original window
+          (with-selected-window
+              (or (minibuffer-selected-window) (selected-window))
+            (funcall preview 'preview cand nil)))
         consult--preview-stack)
   (let ((selected)
         (state (funcall preview 'save nil nil)))
