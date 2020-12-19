@@ -454,7 +454,7 @@ PERMANENTLY non-nil means the overlays will not be restored later."
     opened))
 
 ;; Derived from ctrlf, originally isearch
-(defun consult--invisible-reset (overlays)
+(defun consult--invisible-restore (overlays)
   "Restore any opened OVERLAYS that were previously disabled."
   (dolist (ov overlays)
     (if-let ((func (overlay-get (car ov) 'isearch-open-invisible-temporary)))
@@ -502,13 +502,13 @@ FACE is the cursor face."
       (pcase cmd
         ('save (current-buffer))
         ('restore
-         (consult--invisible-reset invisible)
+         (consult--invisible-restore invisible)
          (mapc #'delete-overlay overlays)
          (when (buffer-live-p state)
            (set-buffer state)))
         ('preview
          (consult--jump-1 cand)
-         (consult--invisible-reset invisible)
+         (consult--invisible-restore invisible)
          (setq invisible (consult--invisible-show))
          (mapc #'delete-overlay overlays)
          (let ((pos (point)))
