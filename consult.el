@@ -273,7 +273,7 @@ does not occur in candidate strings.")
   (when (minibufferp)
     (user-error "Consult called inside the minibuffer")))
 
-(defsubst consult--fontify ()
+(defun consult--fontify ()
   "Ensure that the whole buffer is fontified."
   ;; Font-locking is lazy, i.e., if a line has not been looked at yet, the line is not font-locked.
   ;; We would observe this if consulting an unfontified line. Therefore we have to enforce
@@ -326,11 +326,11 @@ PREVIEW is the preview function."
            (consult--preview-install ,preview-var (lambda () ,@body))
          ,@body))))
 
-(defsubst consult--narrowed-p (str)
+(defun consult--narrowed-p (str)
   "Return t if STR has some of the narrowing PREFIXES."
   (string-match-p (concat "^." consult--narrow-separator) str))
 
-(defsubst consult--narrow-strip (str)
+(defun consult--narrow-strip (str)
   "Strip narrowing prefix from STR."
   (if (consult--narrowed-p str)
       (replace-regexp-in-string "^[^ ]+ " "" str)
@@ -342,7 +342,7 @@ PREVIEW is the preview function."
          (propertize (concat (string prefix) consult--narrow-separator) 'display "")
          strings))
 
-(defsubst consult--narrow-indicator (pair)
+(defun consult--narrow-indicator (pair)
   "Narrowing indicator string for PAIR."
   (propertize (concat (string (car pair)) consult--narrow-separator)
               'display
@@ -385,7 +385,7 @@ PREVIEW is the preview function."
              (insert (consult--narrow-indicator pair))
              #'ignore))))))
 
-(defsubst consult--define-key (map key cmd desc)
+(defun consult--define-key (map key cmd desc)
   "Bind CMD to KEY in MAP and add which-key description DESC."
   (define-key map key cmd)
   ;; The which-key description is potentially fragile if something is changed on the side
@@ -461,7 +461,7 @@ PERMANENTLY non-nil means the overlays will not be restored later."
         (funcall func t)
       (overlay-put (car ov) 'invisible (cdr ov)))))
 
-(defsubst consult--jump-1 (pos)
+(defun consult--jump-1 (pos)
   "Go to POS and recenter."
   (when pos
     (when (and (markerp pos) (not (eq (current-buffer) (marker-buffer pos))))
@@ -472,7 +472,7 @@ PERMANENTLY non-nil means the overlays will not be restored later."
       (goto-char pos))
     (run-hooks 'consult-after-jump-hook)))
 
-(defsubst consult--jump (pos)
+(defun consult--jump (pos)
   "Push current position to mark ring, go to POS and recenter."
   (when pos
     ;; When the marker is in the same buffer,
