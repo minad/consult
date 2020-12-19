@@ -1512,6 +1512,49 @@ Prepend PREFIX in front of all items."
     :sort nil))
   (run-hooks 'consult-after-jump-hook))
 
+;; Taken from smex-extract-commands-from-keymap
+(defun consult--mode-commands (mode)
+  "Return list of MODE-specific commands."
+  (let ((mode-path (symbol-file mode))
+        (mode-name (string-remove-suffix "-mode" (symbol-name mode)))
+        (cmds))
+    (when (string= mode-name "c") (setq mode-name "cc"))
+    (setq mode-name (regexp-quote mode-name))
+    (dolist (feature load-history cmds)
+      (when-let (feature-path (car feature))
+        (when (or (string= feature-path mode-path)
+                  (string-match-p mode-name (file-name-nondirectory feature-path)))
+          (dolist (item (cdr feature))
+            (when-let (fun (and (consp item) (eq 'defun (car item)) (cdr item)))
+              (when (and (commandp fun) (not (string-match-p "--" (symbol-name fun))))
+                (push fun cmds)))))))))
+
+;; Taken from smex-extract-commands-from-keymap
+(defun consult--keymap-commands (map)
+  "Return list of commands bound in MAP."
+  (let ((cmds))
+    (map-keymap
+     (lambda (_ def)
+       (cond
+        ((keymapp def) (setq cmds (append (consult--keymap-commands def) cmds)))
+        ((and def (symbolp def)) (push def cmds))))
+     map)
+    cmds))
+
+;;;###autoload
+(defun consult-major-command ()
+  "Select and execute command related to the current major mode."
+  (interactive)
+  (command-execute
+   (intern
+    (consult--read
+     "Command: "
+     (or (delete-dups (append (consult--mode-commands major-mode)
+                              (consult--keymap-commands (current-local-map))))
+         (user-error "No major-mode related commands"))
+     :require-match t
+     :category 'command))))
+
 ;;;###autoload
 (define-minor-mode consult-preview-mode
   "Enable preview for consult commands."
