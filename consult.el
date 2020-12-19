@@ -303,12 +303,11 @@ DISPLAY is the string to display instead of the unique string."
 
 PREVIEW is the preview function.
 FUN is the body function."
-  (push (lambda (cand)
-          ;; Execute preview in original window
-          (with-selected-window
-              (or (minibuffer-selected-window) (selected-window))
-            (funcall preview 'preview cand nil)))
-        consult--preview-stack)
+  (let ((orig-window (selected-window)))
+    (push (lambda (cand)
+            (with-selected-window orig-window
+              (funcall preview 'preview cand nil)))
+          consult--preview-stack))
   (let ((selected)
         (state (funcall preview 'save nil nil)))
     (unwind-protect
