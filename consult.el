@@ -301,7 +301,7 @@ DISPLAY is the string to display instead of the unique string."
 (defun consult--preview-install (preview fun)
   "Install preview support to minibuffer completion.
 
-PREVIEW is an expresion which previews the candidate.
+PREVIEW is the preview function.
 FUN is the body function."
   (push (lambda (cand) (funcall preview 'preview cand nil)) consult--preview-stack)
   (let ((selected)
