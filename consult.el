@@ -259,8 +259,8 @@ does not occur in candidate strings.")
 (defvar consult--gc-percentage 0.5
   "Large gc percentage for temporary increase.")
 
-(defvar consult--preview-stack nil
-  "Stack of active preview functions.")
+(defvar-local consult--preview-function nil
+  "Active preview function.")
 
 (defvar-local consult--overlays nil
   "List of overlays used by consult.")
@@ -303,19 +303,20 @@ DISPLAY is the string to display instead of the unique string."
 
 PREVIEW is the preview function.
 FUN is the body function."
-  (let ((orig-window (selected-window)))
-    (push (lambda (cand)
-            (with-selected-window orig-window
-              (funcall preview 'preview cand nil)))
-          consult--preview-stack))
-  (let ((selected)
+  (let ((orig-window (selected-window))
+        (selected)
         (state (funcall preview 'save nil nil)))
-    (unwind-protect
-        (save-excursion
-          (save-restriction
-            (setq selected (funcall fun))))
-      (pop consult--preview-stack)
-      (funcall preview 'restore selected state))))
+    (minibuffer-with-setup-hook
+        (lambda ()
+          (setq consult--preview-function
+                (lambda (cand)
+                  (with-selected-window orig-window
+                    (funcall preview 'preview cand nil)))))
+      (unwind-protect
+          (save-excursion
+            (save-restriction
+              (setq selected (funcall fun))))
+        (funcall preview 'restore selected state)))))
 
 (defmacro consult--with-preview (preview &rest body)
   "Install preview in BODY.
@@ -1360,12 +1361,12 @@ Prepend PREFIX in front of all items."
 
 (defun consult--default-preview-update (&rest _)
   "Preview function used for the default completion system."
-  (when-let (fun (car consult--preview-stack))
+  (when consult--preview-function
     (let ((cand (minibuffer-contents-no-properties)))
       (when (test-completion cand
                              minibuffer-completion-table
                              minibuffer-completion-predicate)
-        (funcall fun cand)))))
+        (funcall consult--preview-function cand)))))
 
 (defun consult--default-preview-hook ()
   "Add preview update to `after-change-functions' if the default completion system is active."
@@ -1386,9 +1387,9 @@ Prepend PREFIX in front of all items."
 
 (defun consult--icomplete-preview-update ()
   "Preview function used for Icomplete."
-  (when-let* ((fun (car consult--preview-stack))
-              (cand (car completion-all-sorted-completions)))
-    (funcall fun cand)))
+  (when consult--preview-function
+    (when-let (cand (car completion-all-sorted-completions))
+      (funcall consult--preview-function cand))))
 
 (defun consult--icomplete-preview-setup ()
   "Setup preview support for Icomplete."

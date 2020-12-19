@@ -37,9 +37,9 @@
 
 (defun consult-selectrum--preview-update ()
   "Preview function used for Selectrum."
-  (when-let* ((fun (car consult--preview-stack))
-              (cand (selectrum-get-current-candidate)))
-    (funcall fun cand)))
+  (when consult--preview-function
+    (when-let (cand (selectrum-get-current-candidate))
+      (funcall consult--preview-function cand))))
 
 (defun consult-selectrum--preview-setup ()
   "Setup preview support for selectrum."
