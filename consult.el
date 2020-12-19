@@ -437,6 +437,30 @@ PREFIXES is an alist of narrowing prefix strings."
           (gc-cons-percentage (if overwrite consult--gc-percentage gc-cons-percentage)))
      ,@body))
 
+;; Derived from ctrlf, originally isearch
+(defun consult--invisible-show (&optional permanently)
+  "Disable any overlays that are currently hiding point.
+PERMANENTLY non-nil means the overlays will not be restored later."
+  (let ((opened))
+    (dolist (ov (overlays-in (line-beginning-position) (line-end-position)))
+      (when (and (invisible-p (overlay-get ov 'invisible))
+                 (overlay-get ov 'isearch-open-invisible))
+        (if permanently
+            (funcall (overlay-get ov 'isearch-open-invisible) ov)
+          (push (cons ov (overlay-get ov 'invisible)) opened)
+          (if-let ((func (overlay-get ov 'isearch-open-invisible-temporary)))
+              (funcall func nil)
+            (overlay-put ov 'invisible nil)))))
+    opened))
+
+;; Derived from ctrlf, originally isearch
+(defun consult--invisible-reset (overlays)
+  "Restore any opened OVERLAYS that were previously disabled."
+  (dolist (ov overlays)
+    (if-let ((func (overlay-get (car ov) 'isearch-open-invisible-temporary)))
+        (funcall func t)
+      (overlay-put (car ov) 'invisible (cdr ov)))))
+
 (defsubst consult--jump-1 (pos)
   "Go to POS and recenter."
   (when pos
@@ -455,7 +479,9 @@ PREFIXES is an alist of narrowing prefix strings."
     ;; record previous location such that the user can jump back quickly.
     (unless (and (markerp pos) (not (eq (current-buffer) (marker-buffer pos))))
       (push-mark (point) t))
-    (consult--jump-1 pos)))
+    (consult--jump-1 pos)
+    (consult--invisible-show t))
+  nil)
 
 (defsubst consult--overlay (beg end face)
   "Make consult overlay between BEG and END with FACE."
@@ -469,17 +495,21 @@ PREFIXES is an alist of narrowing prefix strings."
   "The preview function used if selecting from a list of candidate positions.
 The function can be used as the `:preview' argument of `consult--read'.
 FACE is the cursor face."
-  (let ((overlays nil)
+  (let ((overlays)
+        (invisible)
         (face (or face 'consult-preview-cursor)))
     (lambda (cmd cand state)
       (pcase cmd
         ('save (current-buffer))
         ('restore
+         (consult--invisible-reset invisible)
          (mapc #'delete-overlay overlays)
          (when (buffer-live-p state)
            (set-buffer state)))
         ('preview
          (consult--jump-1 cand)
+         (consult--invisible-reset invisible)
+         (setq invisible (consult--invisible-show))
          (mapc #'delete-overlay overlays)
          (let ((pos (point)))
            (setq overlays
