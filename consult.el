@@ -262,9 +262,6 @@ does not occur in candidate strings.")
 (defvar-local consult--preview-function nil
   "Active preview function.")
 
-(defvar-local consult--overlays nil
-  "List of overlays used by consult.")
-
 ;;;; Helper functions
 
 (defun consult--lookup-list (alist key)
@@ -440,17 +437,6 @@ PREFIXES is an alist of narrowing prefix strings."
           (gc-cons-percentage (if overwrite consult--gc-percentage gc-cons-percentage)))
      ,@body))
 
-(defsubst consult--overlay-add (beg end face)
-  "Make consult overlay between BEG and END with FACE."
-  (let ((ov (make-overlay beg end)))
-    (overlay-put ov 'face face)
-    (push ov consult--overlays)))
-
-(defsubst consult--overlay-cleanup ()
-  "Remove all consult overlays."
-  (mapc #'delete-overlay consult--overlays)
-  (setq consult--overlays nil))
-
 (defsubst consult--jump-1 (pos)
   "Go to POS and recenter."
   (when pos
@@ -471,28 +457,34 @@ PREFIXES is an alist of narrowing prefix strings."
       (push-mark (point) t))
     (consult--jump-1 pos)))
 
+(defsubst consult--overlay (beg end face)
+  "Make consult overlay between BEG and END with FACE."
+  (let ((ov (make-overlay beg end)))
+    (overlay-put ov 'face face)
+    ov))
+
 ;; TODO Matched strings are not highlighted as of now
 ;; see https://github.com/minad/consult/issues/7
-(defun consult--preview-position (cmd cand state &optional face)
+(defun consult--preview-position (&optional face)
   "The preview function used if selecting from a list of candidate positions.
-
 The function can be used as the `:preview' argument of `consult--read'.
-CMD is the preview command.
-CAND is the selected candidate.
-STATE is the saved state.
 FACE is the cursor face."
-  (pcase cmd
-    ('save (current-buffer))
-    ('restore
-     (consult--overlay-cleanup)
-     (when (buffer-live-p state)
-       (set-buffer state)))
-    ('preview
-     (consult--overlay-cleanup)
-     (consult--jump-1 cand)
-     (consult--overlay-add (line-beginning-position) (line-end-position) 'consult-preview-line)
-     (let ((pos (point)))
-       (consult--overlay-add pos (1+ pos) (or face 'consult-preview-cursor))))))
+  (let ((overlays nil)
+        (face (or face 'consult-preview-cursor)))
+    (lambda (cmd cand state)
+      (pcase cmd
+        ('save (current-buffer))
+        ('restore
+         (mapc #'delete-overlay overlays)
+         (when (buffer-live-p state)
+           (set-buffer state)))
+        ('preview
+         (consult--jump-1 cand)
+         (mapc #'delete-overlay overlays)
+         (let ((pos (point)))
+           (setq overlays
+                 (list (consult--overlay (line-beginning-position) (line-end-position) 'consult-preview-line)
+                       (consult--overlay pos (1+ pos) face)))))))))
 
 (cl-defun consult--read (prompt candidates &key
                                 predicate require-match history default
@@ -642,7 +634,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                   :require-match t
                   :lookup #'consult--lookup-list
                   :history 'consult-outline-history
-                  :preview (and consult-preview-outline #'consult--preview-position))))
+                  :preview (and consult-preview-outline (consult--preview-position)))))
 
 (defun consult--error-next ()
   "Return position of next error or nil."
@@ -687,9 +679,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                   :lookup #'consult--lookup-list
                   :history 'consult-error-history
                   :preview
-                  (and consult-preview-error
-                       (lambda (cmd cand state)
-                         (consult--preview-position cmd cand state 'consult-preview-error))))))
+                  (and consult-preview-error (consult--preview-position 'consult-preview-error)))))
 
 (defun consult--mark-candidates ()
   "Return alist of lines containing markers.
@@ -727,7 +717,7 @@ The alist contains (string . position) pairs."
                   :require-match t
                   :lookup #'consult--lookup-list
                   :history 'consult-mark-history
-                  :preview (and consult-preview-mark #'consult--preview-position))))
+                  :preview (and consult-preview-mark (consult--preview-position)))))
 
 (defun consult--line-candidates ()
   "Return alist of lines and positions."
@@ -779,7 +769,7 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
                     :lookup #'consult--lookup-list
                     :default (car candidates)
                     :initial initial
-                    :preview (and consult-preview-line #'consult--preview-position)))))
+                    :preview (and consult-preview-line (consult--preview-position))))))
 
 ;;;###autoload
 (defun consult-line-symbol-at-point ()
@@ -1336,13 +1326,14 @@ Prepend PREFIX in front of all items."
     "Go to item: "
     (or (consult--imenu-candidates) (user-error "Imenu is empty"))
     :preview (and consult-preview-imenu
-                  (lambda (cmd cand state)
-                    (if (eq cmd 'preview)
-                        ;; Only handle imenu items which are markers for preview,
-                        ;; in order to avoid any bad side effects.
-                        (when (and (consp cand) (markerp (cdr cand)))
-                          (consult--preview-position cmd (cdr cand) state))
-                      (consult--preview-position cmd cand state))))
+                  (let ((preview (consult--preview-position)))
+                    (lambda (cmd cand state)
+                      (if (eq cmd 'preview)
+                          ;; Only handle imenu items which are markers for preview,
+                          ;; in order to avoid any bad side effects.
+                          (when (and (consp cand) (markerp (cdr cand)))
+                            (funcall preview cmd (cdr cand) state))
+                        (funcall preview cmd cand state)))))
     :require-match t
     :narrow (consult--imenu-narrow)
     :category 'imenu

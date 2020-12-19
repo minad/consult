@@ -87,7 +87,7 @@
                             (?w . "Warning")
                             (?n . "Note"))
                   :lookup #'consult--lookup-list
-                  :preview (and consult-preview-flymake #'consult--preview-position))))
+                  :preview (and consult-preview-flymake (consult--preview-position 'consult-preview-error)))))
 
 (provide 'consult-flymake)
 ;;; consult-flymake.el ends here

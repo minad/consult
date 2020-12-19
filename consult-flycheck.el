@@ -89,7 +89,7 @@
                             (?w . "Warning")
                             (?i . "Info"))
                   :lookup #'consult--lookup-list
-                  :preview (and consult-preview-flycheck #'consult--preview-position))))
+                  :preview (and consult-preview-flycheck (consult--preview-position 'consult-preview-error)))))
 
 (provide 'consult-flycheck)
 ;;; consult-flycheck.el ends here
