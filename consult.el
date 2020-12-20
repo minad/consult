@@ -815,6 +815,45 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
                     isearch-string
                   (regexp-quote isearch-string))))
 
+(defun consult--line-position (line)
+  "Compute position from LINE number."
+  (save-excursion
+    (save-restriction
+      (widen)
+      (goto-char (point-min))
+      (forward-line (- line 1))
+      (point))))
+
+(defmacro consult--with-display-line-numbers (&rest body)
+  "Ensure that line numbers are displayed when executing BODY."
+  (let ((orig (make-symbol "orig")))
+    `(let ((,orig display-line-numbers))
+       (display-line-numbers-mode +1)
+       (unwind-protect
+           (progn ,@body)
+         (unless ,orig (display-line-numbers-mode -1))))))
+
+(defun consult--goto-hook (&rest _)
+  "Hook calling the line number preview."
+  (let* ((str (minibuffer-contents-no-properties))
+         (line (string-to-number str)))
+    (when (string= str (number-to-string line))
+      (funcall consult--preview-function line))))
+
+;;;###autoload
+(defun consult-goto ()
+  "Read line number and jump to the line with preview."
+  (interactive)
+  (consult--jump
+   (consult--with-display-line-numbers
+    (minibuffer-with-setup-hook
+        (lambda () (add-hook 'after-change-functions #'consult--goto-hook nil t))
+      (consult--with-preview
+          (let ((preview (consult--preview-position)))
+            (lambda (cmd cand state)
+              (funcall preview cmd (and cand (consult--line-position cand)) state)))
+        (consult--line-position (read-number "Go to line: ")))))))
+
 (defun consult--recent-file-read ()
   "Read recent file via `completing-read'."
   (consult--read
