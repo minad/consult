@@ -32,15 +32,15 @@ since both packages already bring their own rich set of additional commands.
 
 consult-mark
 
-![consult-mark](https://github.com/minad/consult/blob/master/images/consult-mark.png?raw=true)
+![consult-mark](https://github.com/minad/consult/blob/main/images/consult-mark.png?raw=true)
 
 consult-line
 
-![consult-line](https://github.com/minad/consult/blob/master/images/consult-line.png?raw=true)
+![consult-line](https://github.com/minad/consult/blob/main/images/consult-line.png?raw=true)
 
 consult-outline
 
-![consult-outline](https://github.com/minad/consult/blob/master/images/consult-outline.png?raw=true)
+![consult-outline](https://github.com/minad/consult/blob/main/images/consult-outline.png?raw=true)
 
 marginalia-mode
 
