@@ -272,9 +272,9 @@ does not occur in candidate strings.")
   "Return t if position POS lies in range `point-min' to `point-max'."
   (and (>= pos (point-min)) (<= pos (point-max))))
 
-(defun consult--lookup-list (alist key)
-  "Lookup KEY in ALIST."
-  (cdr (assoc key alist)))
+(defun consult--lookup-candidate (_ candidates cand)
+  "Lookup CAND in CANDIDATES."
+  (cdr (assoc cand candidates)))
 
 (defun consult--forbid-minibuffer ()
   "Raise an error if executed from the minibuffer."
@@ -557,20 +557,21 @@ NARROW is an alist of narrowing prefix strings and description."
             ,@(when category `((category . ,category)))
             ,@(unless sort '((cycle-sort-function . identity)
                              (display-sort-function . identity)))))
+         (input "")
          (table
           (lambda (str pred action)
+            (setq input (substring-no-properties str))
             (if (eq action 'metadata)
                 metadata
-              (complete-with-action action candidates str pred)))))
-    (funcall
-     lookup candidates
-     (consult--with-preview
-         (and preview
-              (lambda (cmd cand state)
-                (funcall preview cmd (and cand (funcall lookup candidates cand)) state)))
-       (consult--with-narrow narrow
-         (completing-read prompt table
-                          predicate require-match initial history default))))))
+              (complete-with-action action candidates str pred))))
+         (result (consult--with-preview
+                     (and preview
+                          (lambda (cmd cand state)
+                            (funcall preview cmd (and cand (funcall lookup input candidates cand)) state)))
+                   (consult--with-narrow narrow
+                     (completing-read prompt table
+                                      predicate require-match initial history default)))))
+    (funcall lookup input candidates result)))
 
 (defun consult--count-lines (pos)
   "Move to position POS and return number of lines."
@@ -670,7 +671,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                   :category 'line
                   :sort nil
                   :require-match t
-                  :lookup #'consult--lookup-list
+                  :lookup #'consult--lookup-candidate
                   :history 'consult-outline-history
                   :preview (and consult-preview-outline (consult--preview-position)))))
 
@@ -714,7 +715,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                   :category 'line
                   :sort nil
                   :require-match t
-                  :lookup #'consult--lookup-list
+                  :lookup #'consult--lookup-candidate
                   :history 'consult-error-history
                   :preview
                   (and consult-preview-error (consult--preview-position 'consult-preview-error)))))
@@ -751,7 +752,7 @@ The alist contains (string . position) pairs."
                   :category 'line
                   :sort nil
                   :require-match t
-                  :lookup #'consult--lookup-list
+                  :lookup #'consult--lookup-candidate
                   :history 'consult-mark-history
                   :preview (and consult-preview-mark (consult--preview-position)))))
 
@@ -802,7 +803,7 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
                     :default-top nil
                     :require-match t
                     :history 'consult-line-history
-                    :lookup #'consult--lookup-list
+                    :lookup #'consult--lookup-candidate
                     :default (car candidates)
                     :initial initial
                     :preview (and consult-preview-line (consult--preview-position))))))
@@ -1045,7 +1046,7 @@ Otherwise replace the just-yanked text with the selected text."
                    :category 'register
                    :sort nil
                    :require-match t
-                   :lookup #'consult--lookup-list
+                   :lookup #'consult--lookup-candidate
                    :history 'consult-register-history)))
   (condition-case nil
       (jump-to-register reg)
@@ -1170,7 +1171,7 @@ preview if `consult-preview-mode' is enabled."
        :require-match t
        :category 'theme
        :history 'consult-theme-history
-       :lookup (lambda (_ x)
+       :lookup (lambda (_ _ x)
                  (and x (not (string= x "default")) (intern-soft x)))
        :preview (and consult-preview-theme
                      (lambda (cmd cand state)
@@ -1237,7 +1238,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                      ,@(when consult-view-list-function '((?v . "View"))))
            :category 'virtual-buffer
            :lookup
-           (lambda (candidates cand)
+           (lambda (_ candidates cand)
              (if (member cand candidates)
                  (cons (pcase (elt cand 0)
                          (?b open-buffer)
@@ -1328,7 +1329,7 @@ Macros containing mouse clicks aren't displayed."
                    :require-match t
                    :sort nil
                    :history 'consult-kmacro-history
-                   :lookup #'consult--lookup-list)))
+                   :lookup #'consult--lookup-candidate)))
     (if (zerop selected)
         ;; If the first element has been selected, just run the last macro.
         (kmacro-call-macro (or arg 1) t nil)
@@ -1418,7 +1419,7 @@ Prepend PREFIX in front of all items."
     :require-match t
     :narrow (consult--imenu-narrow)
     :category 'imenu
-    :lookup #'consult--lookup-list
+    :lookup #'consult--lookup-candidate
     :history 'consult-imenu-history
     :sort nil))
   (run-hooks 'consult-after-jump-hook))
