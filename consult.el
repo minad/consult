@@ -789,6 +789,25 @@ The alist contains (string . position) pairs."
       (user-error "No lines"))
     (cons default-cand (nreverse candidates))))
 
+(defun consult--line-match (input candidates cand)
+  "Lookup position of match.
+
+INPUT is the input string entered by the user.
+CANDIDATES is the line candidates alist.
+CAND is the currently selected candidate."
+  (when-let (pos (cdr (assoc cand candidates)))
+    (if (string-blank-p input)
+        pos
+      (let ((i 1)
+            (len (length cand)))
+        ;; Strip unique line number prefix
+        (while (and (> (length cand) 0) (>= (elt cand 0) #x100000) (< (elt cand 0) #x10FFFE))
+          (setq cand (substring cand 1)))
+        ;; Find match position, remove characters from line until matching fails
+        (while (and (< i len) (completion-all-completions input (list (substring cand i)) nil 0))
+          (setq i (1+ i)))
+        (+ pos (- i 1))))))
+
 ;;;###autoload
 (defun consult-line (&optional initial)
   "Search for a matching line and jump to the line beginning.
@@ -803,7 +822,7 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
                     :default-top nil
                     :require-match t
                     :history 'consult-line-history
-                    :lookup #'consult--lookup-candidate
+                    :lookup #'consult--line-match
                     :default (car candidates)
                     :initial initial
                     :preview (and consult-preview-line (consult--preview-position))))))
