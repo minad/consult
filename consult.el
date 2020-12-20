@@ -862,7 +862,8 @@ Respects narrowing and the settings
                  (setq pos (consult--line-position (read-number "Go to line: ")))))
              (if (consult--in-range-p pos)
                  (consult--jump pos)
-               (minibuffer-message "Line number out of range")
+               (message "Line number out of range")
+               (sit-for 1)
                t)))))
 
 (defun consult--recent-file-read ()
