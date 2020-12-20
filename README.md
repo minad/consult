@@ -93,7 +93,8 @@ completions with richer information (e.g. `M-x`, `describe-face`,
     lines. Supports live preview and recursive editing. There are
     two variants, which search for the symbol at point and for the most
     recent isearch string respectively.
-  * `consult-goto`: Jump to line number with live preview.
+  * `consult-goto-line`: Jump to line number enhanced with live preview. This is
+    a drop-in replacement for `goto-line`.
   * `consult-mark`: Jump to a marker in the `mark-ring`. Supports live preview
     and recursive editing.
   * `consult-outline`: Jump to a heading of the outline. Supports live preview
@@ -162,8 +163,8 @@ that the main package `consult.el` only depends on Emacs core components.
          ("C-x 5 b" . consult-buffer-other-frame)
          ("C-x r x" . consult-register)
          ("C-x r b" . consult-bookmark)
-         ("M-g g" . consult-goto)
-         ("M-g M-g" . consult-goto)
+         ("M-g g" . consult-goto-line)
+         ("M-g M-g" . consult-goto-line)
          ("M-g o" . consult-outline) ;; "M-s o" is a good alternative
          ("M-g m" . consult-mark)    ;; "M-s m" is a good alternative
          ("M-g l" . consult-line)    ;; "M-s l" is a good alternative
@@ -225,7 +226,7 @@ that the main package `consult.el` only depends on Emacs core components.
 | Variable                    | Default     | Description                                             |
 |-----------------------------|-------------|---------------------------------------------------------|
 | consult-after-jump-hook     | '(recenter) | Functions to call after jumping to a location           |
-| consult-goto-line-numbers   | t           | Show line numbers for `consult-goto`                    |
+| consult-goto-line-numbers   | t           | Show line numbers for `consult-goto-line`               |
 | consult-imenu-narrow        | …           | Narrowing keys for imenu                                |
 | consult-line-numbers-widen  | t           | Show absolute line numbers when narrowing is active.    |
 | consult-mode-histories      | …           | Mode-specific history variables                         |

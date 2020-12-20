@@ -101,7 +101,7 @@ You may want to add a function which pulses the current line, e.g.,
   :type 'boolean)
 
 (defcustom consult-goto-line-numbers t
-  "Show line numbers for `consult-goto'."
+  "Show line numbers for `consult-goto-line'."
   :type 'boolean)
 
 (defcustom consult-fontify-limit 1048576
@@ -831,7 +831,7 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
       (forward-line (- line 1))
       (point))))
 
-(defun consult--goto-hook (&rest _)
+(defun consult--goto-line-hook (&rest _)
   "Hook calling the line number preview."
   (let* ((str (minibuffer-contents-no-properties))
          (line (string-to-number str)))
@@ -839,7 +839,7 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
       (funcall consult--preview-function line))))
 
 ;;;###autoload
-(defun consult-goto ()
+(defun consult-goto-line ()
   "Read line number and jump to the line with preview.
 
 Respects narrowing and the settings
@@ -850,7 +850,7 @@ Respects narrowing and the settings
         (pos))
     (while (progn
              (minibuffer-with-setup-hook
-                 (lambda () (add-hook 'after-change-functions #'consult--goto-hook nil t))
+                 (lambda () (add-hook 'after-change-functions #'consult--goto-line-hook nil t))
                (consult--with-preview
                    (let ((preview (consult--preview-position)))
                      (lambda (cmd cand state)
