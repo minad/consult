@@ -552,16 +552,16 @@ NARROW is an alist of narrowing prefix strings and description."
                   (stringp (car candidates)) ;; string list
                   (symbolp (car candidates)) ;; symbol list
                   (consp (car candidates))))) ;; alist
-  (let ((candidates-fun
-         (if (and sort (not category))
-             candidates
-           (lambda (str pred action)
-             (if (eq action 'metadata)
-                 `(metadata
-                   ,@(if category `((category . ,category)))
-                   ,@(if (not sort) '((cycle-sort-function . identity)
-                                      (display-sort-function . identity))))
-               (complete-with-action action candidates str pred))))))
+  (let* ((metadata
+          `(metadata
+            ,@(when category `((category . ,category)))
+            ,@(unless sort '((cycle-sort-function . identity)
+                             (display-sort-function . identity)))))
+         (table
+          (lambda (str pred action)
+            (if (eq action 'metadata)
+                metadata
+              (complete-with-action action candidates str pred)))))
     (funcall
      lookup candidates
      (consult--with-preview
@@ -569,7 +569,7 @@ NARROW is an alist of narrowing prefix strings and description."
               (lambda (cmd cand state)
                 (funcall preview cmd (and cand (funcall lookup candidates cand)) state)))
        (consult--with-narrow narrow
-         (completing-read prompt candidates-fun
+         (completing-read prompt table
                           predicate require-match initial history default))))))
 
 (defun consult--count-lines (pos)
