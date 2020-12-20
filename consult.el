@@ -268,6 +268,10 @@ does not occur in candidate strings.")
 
 ;;;; Helper functions
 
+(defsubst consult--in-range-p (pos)
+  "Return t if position POS lies in range `point-min' to `point-max'."
+  (and (>= pos (point-min)) (<= pos (point-max))))
+
 (defun consult--lookup-list (alist key)
   "Lookup KEY in ALIST."
   (cdr (assoc key alist)))
@@ -724,13 +728,11 @@ The alist contains (string . position) pairs."
   (consult--fontify)
   (let* ((all-markers (delete-dups (cons (mark-marker) (reverse mark-ring))))
          (max-line 0)
-         (min (point-min))
-         (max (point-max))
          (unformatted-candidates))
     (save-excursion
       (dolist (marker all-markers)
         (let ((pos (marker-position marker)))
-          (when (and (>= pos min) (<= pos max))
+          (when (consult--in-range-p pos)
             (goto-char pos)
             ;; `line-number-at-pos' is a very slow function, which should be replaced everywhere.
             ;; However in this case the slow line-number-at-pos does not hurt much, since
@@ -838,18 +840,30 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
 
 ;;;###autoload
 (defun consult-goto ()
-  "Read line number and jump to the line with preview."
+  "Read line number and jump to the line with preview.
+
+Respects narrowing and the settings
+`consult-goto-line-numbers' and `consult-line-numbers-widen'."
   (interactive)
-  (consult--jump
-   (let ((display-line-numbers consult-goto-line-numbers)
-         (display-line-numbers-widen consult-line-numbers-widen)
-         (preview (consult--preview-position)))
-    (minibuffer-with-setup-hook
-        (lambda () (add-hook 'after-change-functions #'consult--goto-hook nil t))
-      (consult--with-preview
-          (lambda (cmd cand state)
-            (funcall preview cmd (and cand (consult--line-position cand)) state))
-        (consult--line-position (read-number "Go to line: ")))))))
+  (let ((display-line-numbers consult-goto-line-numbers)
+        (display-line-numbers-widen consult-line-numbers-widen)
+        (pos))
+    (while (progn
+             (minibuffer-with-setup-hook
+                 (lambda () (add-hook 'after-change-functions #'consult--goto-hook nil t))
+               (consult--with-preview
+                   (let ((preview (consult--preview-position)))
+                     (lambda (cmd cand state)
+                       (if (eq cmd 'preview)
+                           (let ((pos (consult--line-position cand)))
+                             (when (consult--in-range-p pos)
+                               (funcall preview cmd pos state)))
+                         (funcall preview cmd cand state))))
+                 (setq pos (consult--line-position (read-number "Go to line: ")))))
+             (if (consult--in-range-p pos)
+                 (consult--jump pos)
+               (minibuffer-message "Line number out of range")
+               t)))))
 
 (defun consult--recent-file-read ()
   "Read recent file via `completing-read'."
