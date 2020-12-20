@@ -225,6 +225,7 @@ that the main package `consult.el` only depends on Emacs core components.
 | Variable                    | Default     | Description                                             |
 |-----------------------------|-------------|---------------------------------------------------------|
 | consult-after-jump-hook     | '(recenter) | Functions to call after jumping to a location           |
+| consult-goto-line-numbers   | t           | Show line numbers for `consult-goto`                    |
 | consult-imenu-narrow        | …           | Narrowing keys for imenu                                |
 | consult-line-numbers-widen  | t           | Show absolute line numbers when narrowing is active.    |
 | consult-mode-histories      | …           | Mode-specific history variables                         |

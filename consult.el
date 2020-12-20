@@ -100,6 +100,10 @@ You may want to add a function which pulses the current line, e.g.,
   "Show absolute line numbers when narrowing is active."
   :type 'boolean)
 
+(defcustom consult-goto-line-numbers t
+  "Show line numbers for `consult-goto'."
+  :type 'boolean)
+
 (defcustom consult-fontify-limit 1048576
   "Buffers larger than this limit are not fontified."
   :type 'integer)
@@ -824,15 +828,6 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
       (forward-line (- line 1))
       (point))))
 
-(defmacro consult--with-display-line-numbers (&rest body)
-  "Ensure that line numbers are displayed when executing BODY."
-  (let ((orig (make-symbol "orig")))
-    `(let ((,orig display-line-numbers))
-       (display-line-numbers-mode +1)
-       (unwind-protect
-           (progn ,@body)
-         (unless ,orig (display-line-numbers-mode -1))))))
-
 (defun consult--goto-hook (&rest _)
   "Hook calling the line number preview."
   (let* ((str (minibuffer-contents-no-properties))
@@ -845,13 +840,13 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
   "Read line number and jump to the line with preview."
   (interactive)
   (consult--jump
-   (consult--with-display-line-numbers
+   (let ((display-line-numbers consult-goto-line-numbers)
+         (preview (consult--preview-position)))
     (minibuffer-with-setup-hook
         (lambda () (add-hook 'after-change-functions #'consult--goto-hook nil t))
       (consult--with-preview
-          (let ((preview (consult--preview-position)))
-            (lambda (cmd cand state)
-              (funcall preview cmd (and cand (consult--line-position cand)) state)))
+          (lambda (cmd cand state)
+            (funcall preview cmd (and cand (consult--line-position cand)) state))
         (consult--line-position (read-number "Go to line: ")))))))
 
 (defun consult--recent-file-read ()
