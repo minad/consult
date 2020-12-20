@@ -823,7 +823,8 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
   "Compute position from LINE number."
   (save-excursion
     (save-restriction
-      (widen)
+      (when consult-line-numbers-widen
+        (widen))
       (goto-char (point-min))
       (forward-line (- line 1))
       (point))))
@@ -841,6 +842,7 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
   (interactive)
   (consult--jump
    (let ((display-line-numbers consult-goto-line-numbers)
+         (display-line-numbers-widen consult-line-numbers-widen)
          (preview (consult--preview-position)))
     (minibuffer-with-setup-hook
         (lambda () (add-hook 'after-change-functions #'consult--goto-hook nil t))
