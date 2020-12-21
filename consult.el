@@ -707,7 +707,7 @@ The alist contains (string . position) pairs."
   (unless (marker-position (mark-marker))
     (user-error "No marks"))
   (consult--fontify)
-  (let* ((all-markers (delete-dups (cons (mark-marker) (reverse mark-ring))))
+  (let* ((all-markers (delete-dups (reverse (cons (mark-marker) mark-ring))))
          (max-line 0)
          (unformatted-candidates))
     (save-excursion
