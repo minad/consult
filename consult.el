@@ -501,7 +501,7 @@ FACE is the cursor face."
 (cl-defun consult--read (prompt candidates &key
                                 predicate require-match history history-type default
                                 category initial preview narrow
-                                (sort t) (default-top t) (lookup (lambda (_ x) x)))
+                                (sort t) (default-top t) (lookup (lambda (_ _ x) x)))
   "Simplified completing read function.
 
 PROMPT is the string to prompt with.
