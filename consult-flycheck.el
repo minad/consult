@@ -83,6 +83,7 @@
    (consult--read "Flycheck error: "
                   (consult--with-increased-gc (consult-flycheck--candidates))
                   :category 'flycheck-error
+                  :history t ;; disable history
                   :require-match t
                   :sort nil
                   :narrow '((?e . "Error")

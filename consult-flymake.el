@@ -81,6 +81,7 @@
    (consult--read "Flymake diagnostic: "
                   (consult--with-increased-gc (consult-flymake--candidates))
                   :category 'flymake-error
+                  :history t ;; disable history
                   :require-match t
                   :sort nil
                   :narrow '((?e . "Error")
