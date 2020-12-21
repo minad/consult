@@ -212,32 +212,15 @@ You may want to add a function which pulses the current line, e.g.,
 
 ;;;; History variables
 
-(defvar-local consult-error-history nil
-  "Buffer-local history for the command `consult-error'.")
-
-(defvar-local consult-outline-history nil
-  "Buffer-local history for the command `consult-outline'.")
-
-(defvar-local consult-mark-history nil
-  "Buffer-local history for the command `consult-mark'.")
-
-(defvar-local consult-line-history nil
-  "Buffer-local history for the command `consult-line'.")
-
-(defvar-local consult-imenu-history nil
-  "Buffer-local history for the command `consult-imenu'.")
-
-(defvar consult-apropos-history nil
-  "History for the command `consult-apropos'.")
-
-(defvar consult-theme-history nil
-  "History for the command `consult-theme'.")
-
-(defvar consult-minor-mode-menu-history nil
-  "History for the command `consult-minor-mode-menu'.")
-
-(defvar consult-kmacro-history nil
-  "History for the command `consult-kmacro'.")
+(defvar-local consult--error-history nil)
+(defvar-local consult--outline-history nil)
+(defvar-local consult--mark-history nil)
+(defvar-local consult--line-history nil)
+(defvar-local consult--imenu-history nil)
+(defvar consult--apropos-history nil)
+(defvar consult--theme-history nil)
+(defvar consult--minor-mode-menu-history nil)
+(defvar consult--kmacro-history nil)
 
 ;;;; Internal variables
 
@@ -666,7 +649,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                   :sort nil
                   :require-match t
                   :lookup #'consult--line-match
-                  :history 'consult-outline-history
+                  :history 'consult--outline-history
                   :preview (and consult-preview-outline (consult--preview-position)))))
 
 (defun consult--error-next ()
@@ -710,7 +693,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                   :sort nil
                   :require-match t
                   :lookup #'consult--lookup-candidate
-                  :history 'consult-error-history
+                  :history 'consult--error-history
                   :preview
                   (and consult-preview-error (consult--preview-position 'consult-preview-error)))))
 
@@ -747,7 +730,7 @@ The alist contains (string . position) pairs."
                   :sort nil
                   :require-match t
                   :lookup #'consult--lookup-candidate
-                  :history 'consult-mark-history
+                  :history 'consult--mark-history
                   :preview (and consult-preview-mark (consult--preview-position)))))
 
 (defun consult--line-candidates ()
@@ -815,7 +798,7 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
                     :sort nil
                     :default-top nil
                     :require-match t
-                    :history 'consult-line-history
+                    :history 'consult--line-history
                     :lookup #'consult--line-match
                     :default (car candidates)
                     :initial initial
@@ -1084,7 +1067,7 @@ Otherwise replace the just-yanked text with the selected text."
          (consult--read "Apropos: "
                         obarray
                         :predicate (lambda (x) (or (fboundp x) (boundp x) (facep x) (symbol-plist x)))
-                        :history 'consult-apropos-history
+                        :history 'consult--apropos-history
                         :category 'symbol
                         :default (thing-at-point 'symbol))))
     (if (string= pattern "")
@@ -1166,7 +1149,7 @@ This is an alternative to `minor-mode-menu-from-indicator'."
 		              (describe-minor-mode-completion-table-for-symbol)
 		              (describe-minor-mode-completion-table-for-indicator))
                              :require-match t
-                             :history 'consult-minor-mode-menu-history)))
+                             :history 'consult--minor-mode-menu-history)))
     (call-interactively (or (lookup-minor-mode-from-indicator mode)
                             (intern mode)))))
 
@@ -1186,7 +1169,7 @@ preview if `consult-preview-mode' is enabled."
        (mapcar (lambda (x) (or x 'default)) avail-themes)
        :require-match t
        :category 'theme
-       :history 'consult-theme-history
+       :history 'consult--theme-history
        :lookup (lambda (_input _cands x)
                  (and x (not (string= x "default")) (intern-soft x)))
        :preview (and consult-preview-theme
@@ -1344,7 +1327,7 @@ Macros containing mouse clicks aren't displayed."
                    :category 'kmacro
                    :require-match t
                    :sort nil
-                   :history 'consult-kmacro-history
+                   :history 'consult--kmacro-history
                    :lookup #'consult--lookup-candidate)))
     (if (zerop selected)
         ;; If the first element has been selected, just run the last macro.
@@ -1436,7 +1419,7 @@ Prepend PREFIX in front of all items."
     :narrow (consult--imenu-narrow)
     :category 'imenu
     :lookup #'consult--lookup-candidate
-    :history 'consult-imenu-history
+    :history 'consult--imenu-history
     :sort nil))
   (run-hooks 'consult-after-jump-hook))
 
