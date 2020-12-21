@@ -139,6 +139,10 @@ You may want to add a function which pulses the current line, e.g.,
   "Enable yank preview during selection."
   :type 'boolean)
 
+(defcustom consult-preview-global-mark t
+  "Enable global mark preview during selection."
+  :type 'boolean)
+
 (defcustom consult-preview-mark t
   "Enable mark preview during selection."
   :type 'boolean)
@@ -189,6 +193,10 @@ You may want to add a function which pulses the current line, e.g.,
 (defface consult-imenu-prefix
   '((t :inherit consult-key))
   "Face used to highlight imenu prefix in `consult-imenu'.")
+
+(defface consult-location
+  '((t :inherit consult-file))
+  "Face used to highlight locations in `consult-global-mark'.")
 
 (defface consult-file
   '((t :inherit font-lock-function-name-face))
@@ -255,7 +263,7 @@ does not occur in candidate strings.")
   (when (minibufferp)
     (user-error "Consult called inside the minibuffer")))
 
-(defun consult--fontify ()
+(defun consult--fontify-all ()
   "Ensure that the whole buffer is fontified."
   ;; Font-locking is lazy, i.e., if a line has not been looked at yet, the line is not font-locked.
   ;; We would observe this if consulting an unfontified line. Therefore we have to enforce
@@ -263,6 +271,11 @@ does not occur in candidate strings.")
   ;; against `consult-fontify-limit'.
   (when (and jit-lock-mode (< (buffer-size) consult-fontify-limit))
     (jit-lock-fontify-now)))
+
+(defsubst consult--fontify-region (start end)
+  "Ensure that region between START and END is fontified."
+  (when jit-lock-mode
+    (jit-lock-fontify-now start end)))
 
 ;; We must disambiguate the lines by adding a prefix such that two lines with the same text can be
 ;; distinguished. In order to avoid matching the line number, such that the user can search for
@@ -580,14 +593,15 @@ Since the line number is part of the candidate it will be matched-on during comp
                (consult--unique (cdr cand) (consult--line-number-prefix width (caar cand)))
                (cdar cand))))))
 
-(defsubst consult--line-with-cursor-1 (marker &optional face)
-  "Return current line string with a marking at the current cursor position.
+(defsubst consult--region-with-cursor (begin end marker &optional face)
+  "Return region string with a marking at the cursor position.
 
+BEGIN is the begin position.
+END is the end position.
 MARKER is the cursor position.
 FACE is the face to use for the cursor marking."
-  (let* ((begin (line-beginning-position))
-         (col (- marker begin))
-         (str (buffer-substring begin (line-end-position)))
+  (let* ((col (- marker begin))
+         (str (buffer-substring begin end))
          (end (1+ col))
          (face (or face 'consult-preview-cursor)))
     (if (> end (length str))
@@ -603,7 +617,11 @@ FACE is the face to use for the cursor marking."
 LINE is line number.
 MARKER is the cursor marker.
 FACE is the cursor face."
-  (cons (cons line (consult--line-with-cursor-1 marker face)) marker))
+  (cons (cons line (consult--region-with-cursor
+                    (line-beginning-position)
+                    (line-end-position)
+                    marker face))
+        marker))
 
 ;;;; Commands
 
@@ -622,7 +640,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
 (defun consult--outline-candidates ()
   "Return alist of outline headings and positions."
   (consult--forbid-minibuffer)
-  (consult--fontify)
+  (consult--fontify-all)
   (let* ((line (line-number-at-pos (point-min) consult-line-numbers-widen))
          (heading-regexp (concat "^\\(?:" outline-regexp "\\)"))
          (candidates))
@@ -672,7 +690,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
   (unless next-error-function
     (user-error "Buffer does not support errors"))
   (consult--forbid-minibuffer)
-  (consult--fontify)
+  (consult--fontify-all)
   (let* ((line (line-number-at-pos (point-min) consult-line-numbers-widen))
          (candidates))
       (save-excursion
@@ -706,7 +724,7 @@ The alist contains (string . position) pairs."
   (consult--forbid-minibuffer)
   (unless (marker-position (mark-marker))
     (user-error "No marks"))
-  (consult--fontify)
+  (consult--fontify-all)
   (let* ((all-markers (delete-dups (reverse (cons (mark-marker) mark-ring))))
          (max-line 0)
          (candidates))
@@ -728,7 +746,8 @@ The alist contains (string . position) pairs."
   "Jump to a marker in `mark-ring'."
   (interactive)
   (consult--jump
-   (consult--read "Go to mark: " (consult--with-increased-gc (consult--mark-candidates))
+   (consult--read "Go to mark: "
+                  (consult--with-increased-gc (consult--mark-candidates))
                   :category 'line
                   :sort nil
                   :require-match t
@@ -737,10 +756,57 @@ The alist contains (string . position) pairs."
                   :history-type 'input
                   :preview (and consult-preview-mark (consult--preview-position)))))
 
+(defun consult--global-mark-candidates ()
+  "Return alist of lines containing markers.
+The alist contains (string . position) pairs."
+  (consult--forbid-minibuffer)
+  (let* ((all-markers (delete-dups (reverse global-mark-ring)))
+         (max-loc 0)
+         (candidates))
+    (save-excursion
+      (dolist (marker all-markers)
+        (let ((pos (marker-position marker))
+              (buf (marker-buffer marker)))
+          (when (and pos buf (not (minibufferp buf)))
+            (with-current-buffer buf
+              (when (consult--in-range-p pos)
+                (goto-char pos)
+                ;; `line-number-at-pos' is slow, see comment in `consult--mark-candidates'.
+                (let* ((line (line-number-at-pos pos consult-line-numbers-widen))
+                       (begin (line-beginning-position))
+                       (end (line-end-position))
+                       (loc (format "%s:%d" (buffer-name buf) line)))
+                  (setq max-loc (max (length loc) max-loc))
+                  (consult--fontify-region begin end)
+                  (push (cons (cons loc (consult--region-with-cursor begin end marker)) marker)
+                        candidates))))))))
+    (unless candidates
+      (user-error "No global marks"))
+    (let ((fmt (format "%%-%ds" max-loc)))
+      (dolist (cand candidates candidates)
+        (setcar cand (concat (consult--unique (cdr cand) "")
+                             (propertize (format fmt (caar cand)) 'face 'consult-location)
+                             " " (cdar cand)))))))
+
+;;;###autoload
+(defun consult-global-mark ()
+  "Jump to a marker in `global-mark-ring'."
+  (interactive)
+  (consult--jump
+   (consult--read "Go to global mark: "
+                  (consult--with-increased-gc (consult--global-mark-candidates))
+                  :category 'line
+                  :sort nil
+                  :require-match t
+                  :lookup #'consult--lookup-candidate
+                  :history 'consult--line-history
+                  :history-type 'input
+                  :preview (and consult-preview-global-mark (consult--preview-position)))))
+
 (defun consult--line-candidates ()
   "Return alist of lines and positions."
   (consult--forbid-minibuffer)
-  (consult--fontify)
+  (consult--fontify-all)
   (let* ((default-cand)
          (candidates)
          (pos (point-min))

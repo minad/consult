@@ -97,6 +97,8 @@ completions with richer information (e.g. `M-x`, `describe-face`,
     a drop-in replacement for `goto-line`.
   * `consult-mark`: Jump to a marker in the `mark-ring`. Supports live preview
     and recursive editing.
+  * `consult-global-mark`: Jump to a marker in the `global-mark-ring`. Supports live preview
+    and recursive editing.
   * `consult-outline`: Jump to a heading of the outline. Supports live preview
     and recursive editing.
   * `consult-imenu`: Jump to imenu item. Supports live preview, recursive
@@ -165,11 +167,12 @@ that the main package `consult.el` only depends on Emacs core components.
          ("C-x r b" . consult-bookmark)
          ("M-g g" . consult-goto-line)
          ("M-g M-g" . consult-goto-line)
-         ("M-g o" . consult-outline) ;; "M-s o" is a good alternative
-         ("M-g m" . consult-mark)    ;; "M-s m" is a good alternative
-         ("M-g l" . consult-line)    ;; "M-s l" is a good alternative
-         ("M-g i" . consult-imenu)   ;; "M-s i" is a good alternative
-         ("M-g e" . consult-error)   ;; "M-s e" is a good alternative
+         ("M-g o" . consult-outline)     ;; "M-s o" is a good alternative.
+         ("M-g l" . consult-line)        ;; "M-s l" is a good alternative.
+         ("M-g m" . consult-mark)        ;; I recommend to bind Consult
+         ("M-g x" . consult-global-mark) ;; commands under the "M-g" prefix.
+         ("M-g i" . consult-imenu)
+         ("M-g e" . consult-error)
          ("M-s m" . consult-multi-occur)
          ("M-y" . consult-yank-pop)
          ("<help> a" . consult-apropos))
@@ -227,6 +230,7 @@ that the main package `consult.el` only depends on Emacs core components.
 | consult-preview-error       | t           | Enable error preview during selection                   |
 | consult-preview-flycheck    | t           | Enable flycheck error preview during selection          |
 | consult-preview-flymake     | t           | Enable flymake diagnostic preview during selection      |
+| consult-preview-global-mark | t           | Enable global mark preview during selection             |
 | consult-preview-line        | t           | Enable line preview during selection                    |
 | consult-preview-mark        | t           | Enable mark preview during selection                    |
 | consult-preview-outline     | t           | Enable outline preview during selection                 |
