@@ -86,7 +86,7 @@
                   :narrow '((?e . "Error")
                             (?w . "Warning")
                             (?n . "Note"))
-                  :lookup #'consult--lookup-list
+                  :lookup #'consult--lookup-candidate
                   :preview (and consult-preview-flymake (consult--preview-position 'consult-preview-error)))))
 
 (provide 'consult-flymake)
