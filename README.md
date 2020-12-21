@@ -170,7 +170,7 @@ that the main package `consult.el` only depends on Emacs core components.
          ("M-g o" . consult-outline)     ;; "M-s o" is a good alternative.
          ("M-g l" . consult-line)        ;; "M-s l" is a good alternative.
          ("M-g m" . consult-mark)        ;; I recommend to bind Consult
-         ("M-g x" . consult-global-mark) ;; commands under the "M-g" prefix.
+         ("M-g k" . consult-global-mark) ;; commands under the "M-g" prefix.
          ("M-g i" . consult-imenu)
          ("M-g e" . consult-error)
          ("M-s m" . consult-multi-occur)
