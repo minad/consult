@@ -155,7 +155,7 @@ that the main package `consult.el` only depends on Emacs core components.
 ~~~ elisp
 ;; Example configuration for Consult
 (use-package consult
-  ;; Replace bindings. Lazily loaded due to use-package.
+  ;; Replace bindings. Lazily loaded due by `use-package'.
   :bind (("C-c h" . consult-history)
          ("C-c o" . consult-outline)
          ("C-x b" . consult-buffer)
@@ -177,7 +177,7 @@ that the main package `consult.el` only depends on Emacs core components.
   ;; The :init configuration is always executed (Not lazy!)
   :init
 
-  ;; Replace functions (consult-multi-occur is a drop-in replacement)
+  ;; Replace `multi-occur' with `consult-multi-occur', which is a drop-in replacement.
   (fset 'multi-occur #'consult-multi-occur)
 
   ;; Configure other variables and modes in the :config section, after lazily loading the package
@@ -190,7 +190,7 @@ that the main package `consult.el` only depends on Emacs core components.
   ;; (setq consult-narrow-key (kbd "C-+")
   ;;       consult-widen-key (kbd "C-+ SPC"))
 
-  ;; Optional configure a "view" library to be used by `consult-buffer`.
+  ;; Optional configure a view library to be used by `consult-buffer'.
   ;; The view library must provide two functions, one to open the view by name,
   ;; and one function which must return a list of views as strings.
   ;; Example: https://github.com/minad/bookmark-view/
@@ -206,19 +206,10 @@ that the main package `consult.el` only depends on Emacs core components.
 (use-package consult-selectrum
   :demand t)
 
-;; Optionally add the consult-flycheck command.
+;; Optionally add the `consult-flycheck' command.
 (use-package consult-flycheck
   :bind (:map flycheck-command-map
          ("!" . consult-flycheck)))
-
-;; Optionally enable richer annotations using the Marginalia package
-(use-package marginalia
-  ;; The :init configuration is always executed (Not lazy!)
-  :init
-
-  ;; Must be in the :init section of use-package such that the mode gets
-  ;; enabled right away. Note that this forces loading the package.
-  (marginalia-mode))
 ~~~
 
 ### Configuration settings
