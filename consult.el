@@ -671,7 +671,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                   :category 'line
                   :sort nil
                   :require-match t
-                  :lookup #'consult--lookup-candidate
+                  :lookup #'consult--line-match
                   :history 'consult-outline-history
                   :preview (and consult-preview-outline (consult--preview-position)))))
 
