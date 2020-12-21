@@ -968,6 +968,7 @@ The arguments and expected return value are as specified for
   (consult--read
    "Yank text: "
    (delete-dups (seq-copy kill-ring))
+   :history t ;; disable history
    :sort nil
    :category 'kill-ring
    :require-match t
@@ -1099,6 +1100,7 @@ Otherwise replace the just-yanked text with the selected text."
                (or (delete-dups (mapcar #'prin1-to-string command-history))
                    (user-error "History is empty"))
                :sort nil
+               :history t ;; disable history
                :category 'expression))))
 
 (defun consult--current-history ()
@@ -1147,6 +1149,7 @@ Can handle lists and rings."
                              (or (consult--history-elements
                                   (or history (consult--current-history)))
                                  (user-error "History is empty"))
+                             :history t ;; disable history
                              :sort nil)))
     (when (minibufferp)
       (delete-minibuffer-contents))
