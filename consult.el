@@ -761,7 +761,8 @@ The alist contains (string . position) pairs."
 The alist contains (string . position) pairs."
   (consult--forbid-minibuffer)
   (let* ((all-markers (delete-dups (reverse global-mark-ring)))
-         (max-loc 0)
+         (max-line 0)
+         (max-name 0)
          (candidates))
     (save-excursion
       (dolist (marker all-markers)
@@ -775,18 +776,20 @@ The alist contains (string . position) pairs."
                 (let* ((line (line-number-at-pos pos consult-line-numbers-widen))
                        (begin (line-beginning-position))
                        (end (line-end-position))
-                       (loc (format "%s:%d" (buffer-name buf) line)))
-                  (setq max-loc (max (length loc) max-loc))
+                       (name (buffer-name)))
+                  (setq max-name (max (length name) max-name)
+                        max-line (max line max-line))
                   (consult--fontify-region begin end)
-                  (push (cons (cons loc (consult--region-with-cursor begin end marker)) marker)
+                  (push (cons (list name line (consult--region-with-cursor begin end marker)) marker)
                         candidates))))))))
     (unless candidates
       (user-error "No global marks"))
-    (let ((fmt (format "%%-%ds" max-loc)))
+    (let ((fmt (format "%%%ds:%%-%dd" max-name (length (number-to-string max-line)))))
       (dolist (cand candidates candidates)
-        (setcar cand (concat (consult--unique (cdr cand) "")
-                             (propertize (format fmt (caar cand)) 'face 'consult-location)
-                             " " (cdar cand)))))))
+        (pcase-let ((`(,name ,line ,str) (car cand)))
+          (setcar cand (concat (consult--unique (cdr cand) "")
+                               (propertize (format fmt name line) 'face 'consult-location)
+                               " " str)))))))
 
 ;;;###autoload
 (defun consult-global-mark ()
