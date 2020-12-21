@@ -1190,7 +1190,7 @@ preview if `consult-preview-mode' is enabled."
        :require-match t
        :category 'theme
        :history 'consult-theme-history
-       :lookup (lambda (_ _ x)
+       :lookup (lambda (_input _cands x)
                  (and x (not (string= x "default")) (intern-soft x)))
        :preview (and consult-preview-theme
                      (lambda (cmd cand state)
