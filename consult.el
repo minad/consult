@@ -212,15 +212,12 @@ You may want to add a function which pulses the current line, e.g.,
 
 ;;;; History variables
 
-(defvar-local consult--error-history nil)
-(defvar-local consult--outline-history nil)
-(defvar-local consult--mark-history nil)
-(defvar-local consult--line-history nil)
-(defvar-local consult--imenu-history nil)
+(defvar consult--line-history nil)
 (defvar consult--apropos-history nil)
 (defvar consult--theme-history nil)
 (defvar consult--minor-mode-menu-history nil)
 (defvar consult--kmacro-history nil)
+(defvar-local consult--imenu-history nil)
 
 ;;;; Internal variables
 
@@ -502,7 +499,7 @@ FACE is the cursor face."
                        (consult--overlay pos (1+ pos) face)))))))))
 
 (cl-defun consult--read (prompt candidates &key
-                                predicate require-match history default
+                                predicate require-match history history-type default
                                 category initial preview narrow
                                 (sort t) (default-top t) (lookup (lambda (_ x) x)))
   "Simplified completing read function.
@@ -512,6 +509,7 @@ CANDIDATES is the candidate list or alist.
 PREDICATE is a filter function for the candidates.
 REQUIRE-MATCH equals t means that an exact match is required.
 HISTORY is the symbol of the history variable.
+HISTORY-TYPE must be 'input if the input string should be saved in the history.
 DEFAULT is the default input.
 CATEGORY is the completion category.
 SORT should be set to nil if the candidates are already sorted.
@@ -548,6 +546,9 @@ NARROW is an alist of narrowing prefix strings and description."
                    (consult--with-narrow narrow
                      (completing-read prompt table
                                       predicate require-match initial history default)))))
+    (when (eq history-type 'input)
+      (set history (cdr (symbol-value history)))
+      (add-to-history history input))
     (funcall lookup input candidates result)))
 
 (defun consult--count-lines (pos)
@@ -649,7 +650,8 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                   :sort nil
                   :require-match t
                   :lookup #'consult--line-match
-                  :history 'consult--outline-history
+                  :history 'consult--line-history
+                  :history-type 'input
                   :preview (and consult-preview-outline (consult--preview-position)))))
 
 (defun consult--error-next ()
@@ -693,7 +695,8 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                   :sort nil
                   :require-match t
                   :lookup #'consult--lookup-candidate
-                  :history 'consult--error-history
+                  :history 'consult--line-history
+                  :history-type 'input
                   :preview
                   (and consult-preview-error (consult--preview-position 'consult-preview-error)))))
 
@@ -730,7 +733,8 @@ The alist contains (string . position) pairs."
                   :sort nil
                   :require-match t
                   :lookup #'consult--lookup-candidate
-                  :history 'consult--mark-history
+                  :history 'consult--line-history
+                  :history-type 'input
                   :preview (and consult-preview-mark (consult--preview-position)))))
 
 (defun consult--line-candidates ()
@@ -799,6 +803,7 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
                     :default-top nil
                     :require-match t
                     :history 'consult--line-history
+                    :history-type 'input
                     :lookup #'consult--line-match
                     :default (car candidates)
                     :initial initial
