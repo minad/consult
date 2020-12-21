@@ -227,14 +227,8 @@ You may want to add a function which pulses the current line, e.g.,
 (defvar-local consult-imenu-history nil
   "Buffer-local history for the command `consult-imenu'.")
 
-(defvar consult-buffer-history nil
-  "History for the command `consult-buffer'.")
-
 (defvar consult-apropos-history nil
   "History for the command `consult-apropos'.")
-
-(defvar consult-register-history nil
-  "History for the command `consult-register'.")
 
 (defvar consult-theme-history nil
   "History for the command `consult-theme'.")
@@ -1065,8 +1059,8 @@ Otherwise replace the just-yanked text with the selected text."
                    :category 'register
                    :sort nil
                    :require-match t
-                   :lookup #'consult--lookup-candidate
-                   :history 'consult-register-history)))
+                   :history t ;; disable history
+                   :lookup #'consult--lookup-candidate)))
   (condition-case nil
       (jump-to-register reg)
     (error (insert-register reg))))
@@ -1249,7 +1243,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
          (selected
           (consult--read
            "Switch to: " (append bufs files views bookmarks)
-           :history 'consult-buffer-history
+           :history 'buffer-name-history
            :sort nil
            :narrow `((?b . "Buffer")
                      (?f . "File")
