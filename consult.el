@@ -845,12 +845,12 @@ CAND is the currently selected candidate."
   (when-let (pos (cdr (assoc cand candidates)))
     (if (string-blank-p input)
         pos
+      ;; Strip unique line number prefix
+      (while (and (> (length cand) 0) (>= (elt cand 0) #x100000) (< (elt cand 0) #x10FFFE))
+        (setq cand (substring cand 1)))
       (let ((i 0)
             (step 16)
             (len (length cand)))
-        ;; Strip unique line number prefix
-        (while (and (> (length cand) 0) (>= (elt cand 0) #x100000) (< (elt cand 0) #x10FFFE))
-          (setq cand (substring cand 1)))
         ;; Find match position, remove characters from line until matching fails
         (while (> step 0)
           (while (and (< (+ step i) len)
