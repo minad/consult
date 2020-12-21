@@ -848,16 +848,23 @@ CAND is the currently selected candidate."
       ;; Strip unique line number prefix
       (while (and (> (length cand) 0) (>= (elt cand 0) #x100000) (< (elt cand 0) #x10FFFE))
         (setq cand (substring cand 1)))
-      (let ((i 0)
-            (step 16)
-            (len (length cand)))
-        ;; Find match position, remove characters from line until matching fails
-        (while (> step 0)
-          (while (and (< (+ step i) len)
-                      (completion-all-completions input (list (substring cand (+ step i))) nil 0))
-            (setq i (+ step i)))
-          (setq step (/ step 2)))
-        (+ pos i)))))
+      (let ((start 0)
+            (end (length cand)))
+        ;; Find match end position, remove characters from line end until matching fails
+        (let ((step 16))
+          (while (> step 0)
+            (while (and (> (- end step) 0)
+                        (completion-all-completions input (list (substring cand 0 (- end step))) nil 0))
+              (setq end (- end step)))
+            (setq step (/ step 2))))
+        ;; Find match start position, remove characters from line beginning until matching fails
+        (let ((step 16))
+          (while (> step 0)
+            (while (and (< (+ start step) end)
+                        (completion-all-completions input (list (substring cand (+ start step) end)) nil 0))
+              (setq start (+ start step)))
+            (setq step (/ step 2))))
+        (+ pos start)))))
 
 ;;;###autoload
 (defun consult-line (&optional initial)
