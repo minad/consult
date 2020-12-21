@@ -424,7 +424,7 @@ PREFIXES is an alist of narrowing prefix strings."
   "Disable any overlays that are currently hiding point.
 PERMANENTLY non-nil means the overlays will not be restored later."
   (let ((opened))
-    (dolist (ov (overlays-in (line-beginning-position) (line-end-position)))
+    (dolist (ov (overlays-in (line-beginning-position) (line-end-position)) opened)
       (when (and (invisible-p (overlay-get ov 'invisible))
                  (overlay-get ov 'isearch-open-invisible))
         (if permanently
@@ -432,8 +432,7 @@ PERMANENTLY non-nil means the overlays will not be restored later."
           (push (cons ov (overlay-get ov 'invisible)) opened)
           (if-let ((func (overlay-get ov 'isearch-open-invisible-temporary)))
               (funcall func nil)
-            (overlay-put ov 'invisible nil)))))
-    opened))
+            (overlay-put ov 'invisible nil)))))))
 
 ;; Derived from ctrlf, originally isearch
 (defun consult--invisible-restore (overlays)
@@ -575,12 +574,11 @@ NARROW is an alist of narrowing prefix strings and description."
 The MAX-LINE is needed to determine the width.
 Since the line number is part of the candidate it will be matched-on during completion."
   (let ((width (length (number-to-string max-line))))
-    (dolist (cand candidates)
+    (dolist (cand candidates candidates)
       (setcar cand
               (concat
                (consult--unique (cdr cand) (consult--line-number-prefix width (caar cand)))
-               (cdar cand))))
-    candidates))
+               (cdar cand))))))
 
 (defsubst consult--line-with-cursor-1 (marker &optional face)
   "Return current line string with a marking at the current cursor position.
@@ -627,7 +625,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
   (consult--fontify)
   (let* ((line (line-number-at-pos (point-min) consult-line-numbers-widen))
          (heading-regexp (concat "^\\(?:" outline-regexp "\\)"))
-         (unformatted-candidates))
+         (candidates))
     (save-excursion
       (goto-char (point-min))
       (while (save-excursion (re-search-forward heading-regexp nil t))
@@ -635,10 +633,11 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
         (push (cons
                (cons line (buffer-substring (line-beginning-position) (line-end-position)))
                (point-marker))
-              unformatted-candidates)
+              candidates)
         (unless (eobp) (forward-char 1))))
-    (or (consult--add-line-number line (nreverse unformatted-candidates))
-        (user-error "No headings"))))
+    (unless candidates
+      (user-error "No headings"))
+    (consult--add-line-number line (nreverse candidates))))
 
 ;;;###autoload
 (defun consult-outline ()
@@ -675,15 +674,16 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
   (consult--forbid-minibuffer)
   (consult--fontify)
   (let* ((line (line-number-at-pos (point-min) consult-line-numbers-widen))
-         (unformatted-candidates))
+         (candidates))
       (save-excursion
         (goto-char (point-min))
         (while (when-let (pos (consult--error-next))
                  (setq line (+ line (consult--count-lines pos))))
           (push (consult--line-with-cursor line (point-marker) 'consult-preview-error)
-                unformatted-candidates)))
-    (or (consult--add-line-number line (nreverse unformatted-candidates))
-        (user-error "No errors"))))
+                candidates)))
+      (unless candidates
+        (user-error "No errors"))
+      (consult--add-line-number line (nreverse candidates))))
 
 ;;;###autoload
 (defun consult-error ()
@@ -709,7 +709,7 @@ The alist contains (string . position) pairs."
   (consult--fontify)
   (let* ((all-markers (delete-dups (reverse (cons (mark-marker) mark-ring))))
          (max-line 0)
-         (unformatted-candidates))
+         (candidates))
     (save-excursion
       (dolist (marker all-markers)
         (let ((pos (marker-position marker)))
@@ -720,8 +720,8 @@ The alist contains (string . position) pairs."
             ;; the mark ring is usually small since it is limited by `mark-ring-max'.
             (let ((line (line-number-at-pos pos consult-line-numbers-widen)))
               (setq max-line (max line max-line))
-              (push (consult--line-with-cursor line marker) unformatted-candidates))))))
-    (consult--add-line-number max-line unformatted-candidates)))
+              (push (consult--line-with-cursor line marker) candidates))))))
+    (consult--add-line-number max-line candidates)))
 
 ;;;###autoload
 (defun consult-mark ()
@@ -872,7 +872,8 @@ Respects narrowing and the settings
   "Read recent file via `completing-read'."
   (consult--read
    "Find recent file: "
-   (or (mapcar #'abbreviate-file-name recentf-list) (user-error "No recent files"))
+   (or (mapcar #'abbreviate-file-name recentf-list)
+       (user-error "No recent files"))
    :sort nil
    :require-match t
    :category 'file
@@ -1075,9 +1076,9 @@ Otherwise replace the just-yanked text with the selected text."
                         :history 'consult--apropos-history
                         :category 'symbol
                         :default (thing-at-point 'symbol))))
-    (if (string= pattern "")
-        (user-error "No pattern given")
-      (apropos pattern))))
+    (when (string= pattern "")
+      (user-error "No pattern given"))
+    (apropos pattern)))
 
 ;;;###autoload
 (defun consult-command-history ()
@@ -1204,10 +1205,9 @@ FACE is the face for the candidate."
   "Backend implementation of `consult-buffer'.
 Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be used to display the item."
   (let* ((buf-file-hash (let ((ht (make-hash-table)))
-                          (dolist (buf (buffer-list))
+                          (dolist (buf (buffer-list) ht)
                             (when-let (file (buffer-file-name buf))
-                              (puthash file t ht)))
-                          ht))
+                              (puthash file t ht)))))
          (curr-buf (buffer-name))
          ;; TODO right now we only show visible buffers.
          ;; This is a regression in contrast to the old dynamic narrowing implementation
@@ -1328,7 +1328,8 @@ Macros containing mouse clicks aren't displayed."
   (interactive "p")
   (let ((selected (consult--read
                    "Keyboard macro: "
-                   (or (consult--kmacro-candidates) (user-error "No keyboard macros defined"))
+                   (or (consult--kmacro-candidates)
+                       (user-error "No keyboard macros defined"))
                    :category 'kmacro
                    :require-match t
                    :sort nil
@@ -1410,7 +1411,8 @@ Prepend PREFIX in front of all items."
   (imenu
    (consult--read
     "Go to item: "
-    (or (consult--imenu-candidates) (user-error "Imenu is empty"))
+    (or (consult--imenu-candidates)
+        (user-error "Imenu is empty"))
     :preview (and consult-preview-imenu
                   (let ((preview (consult--preview-position)))
                     (lambda (cmd cand state)
