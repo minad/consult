@@ -845,15 +845,19 @@ CAND is the currently selected candidate."
   (when-let (pos (cdr (assoc cand candidates)))
     (if (string-blank-p input)
         pos
-      (let ((i 1)
+      (let ((i 0)
+            (step 16)
             (len (length cand)))
         ;; Strip unique line number prefix
         (while (and (> (length cand) 0) (>= (elt cand 0) #x100000) (< (elt cand 0) #x10FFFE))
           (setq cand (substring cand 1)))
         ;; Find match position, remove characters from line until matching fails
-        (while (and (< i len) (completion-all-completions input (list (substring cand i)) nil 0))
-          (setq i (1+ i)))
-        (+ pos (- i 1))))))
+        (while (> step 0)
+          (while (and (< (+ step i) len)
+                      (completion-all-completions input (list (substring cand (+ step i))) nil 0))
+            (setq i (+ step i)))
+          (setq step (/ step 2)))
+        (+ pos i)))))
 
 ;;;###autoload
 (defun consult-line (&optional initial)
