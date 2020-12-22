@@ -159,7 +159,7 @@ that the main package `consult.el` only depends on Emacs core components.
 (use-package consult
   ;; Replace bindings. Lazily loaded due by `use-package'.
   :bind (("C-c h" . consult-history)
-         ("C-c o" . consult-outline)
+         ("C-c C-h" . consult-command-history)
          ("C-x b" . consult-buffer)
          ("C-x 4 b" . consult-buffer-other-window)
          ("C-x 5 b" . consult-buffer-other-frame)
@@ -169,7 +169,7 @@ that the main package `consult.el` only depends on Emacs core components.
          ("M-g M-g" . consult-goto-line)
          ("M-g o" . consult-outline)     ;; "M-s o" is a good alternative.
          ("M-g l" . consult-line)        ;; "M-s l" is a good alternative.
-         ("M-g m" . consult-mark)        ;; I recommend to bind Consult
+         ("M-g m" . consult-mark)        ;; I recommend to bind Consult navigation
          ("M-g k" . consult-global-mark) ;; commands under the "M-g" prefix.
          ("M-g i" . consult-imenu)
          ("M-g e" . consult-error)
