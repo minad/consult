@@ -1053,6 +1053,55 @@ The arguments and expected return value are as specified for
         (funcall exit completion exit-status))
       t)))
 
+(defun consult--extract-commands (mode)
+  "Extract commands from MODE."
+  (let ((library-path (symbol-file mode))
+        (mode-rx (regexp-quote
+                  (substring (if (eq major-mode 'c-mode)
+                                 "cc-mode"
+                               (symbol-name major-mode))
+                             0 -5))))
+    (mapcan
+     (lambda (feature)
+       (let ((path (car feature)))
+         (when (or (string= path library-path)
+                   (string-match-p mode-rx (file-name-nondirectory path)))
+           (mapcar #'cdr
+                   (seq-filter
+                    (lambda (item)
+                      (and (consp item)
+                           (eq (car item) 'defun)
+                           (commandp (cdr item))
+                           (not (string-match-p "--" (symbol-name cmd)))))
+                    (cdr feature))))))
+     load-history)))
+
+;;;###autoload
+(defun consult-major-command ()
+  "Run a command from the current major mode."
+  (interactive)
+  (call-interactively
+   (consult--read "M-X: "
+                  (consult--extract-commands major-mode)
+                  :require-match t
+                  :category 'command
+                  :lookup #'intern)))
+
+;;;###autoload
+(defun consult-minor-command ()
+  "Run a command from one of the current active minor modes."
+  (interactive)
+  (call-interactively
+   (consult--read "M-X: "
+                  (mapcan #'consult--extract-commands
+                          (seq-filter (lambda (m)
+                                        (and (boundp m) (symbol-value m)))
+                                      minor-mode-list))
+                  :require-match t
+                  :category 'command
+                  :lookup #'intern)))
+
+
 (defun consult--yank-read ()
   "Open kill ring menu and return selected text."
   (consult--read
