@@ -1198,7 +1198,7 @@ for which the command history is used."
    ;; If pressing "C-x M-:", i.e., `repeat-complex-command',
    ;; we are instead querying the `command-history' and get a full s-expression.
    ((eq last-command 'repeat-complex-command)
-    (consult--remove-dups (mapcar #'prin1-to-string command-history)))
+    (mapcar #'prin1-to-string command-history))
    ;; In the minibuffer we use the current minibuffer history,
    ;; which can be configured by setting `minibuffer-history-variable'.
    ((minibufferp)
@@ -1227,12 +1227,17 @@ for which the command history is used."
                                                            history))
                                    (user-error "History is empty")))
                              :history t ;; disable history
+                             :category ;; Report command category for M-x history
+                             (and (minibufferp)
+                                  (eq minibuffer-history-variable 'extended-command-history)
+                                  'command)
                              :sort nil)))
     (when (minibufferp)
       (delete-minibuffer-contents))
     (insert (substring-no-properties str))))
 
 (defun consult--minor-mode-candidates ()
+  "Return list of minor-mode candidate strings."
   (mapcar
    (pcase-lambda (`(,name . ,sym))
      (cons
