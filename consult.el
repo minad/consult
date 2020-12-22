@@ -159,6 +159,11 @@ You may want to add a function which pulses the current line, e.g.,
   "Enable outline preview during selection."
   :type 'boolean)
 
+;;;###autoload
+(define-minor-mode consult-preview-mode
+  "Enable preview for consult commands."
+  :global t)
+
 ;;;; Faces
 
 (defgroup consult-faces nil
@@ -1511,12 +1516,6 @@ Prepend PREFIX in front of all items."
     :history 'consult--imenu-history
     :sort nil))
   (run-hooks 'consult-after-jump-hook))
-
-;;;###autoload
-(define-minor-mode consult-preview-mode
-  "Enable preview for consult commands."
-  :global t
-  :group 'consult-preview)
 
 ;;;; default completion-system support for preview
 
