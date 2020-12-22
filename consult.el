@@ -76,12 +76,21 @@
   :type 'function)
 
 (defcustom consult-mode-histories
-  '((eshell-mode . eshell-history-ring)
-    (comint-mode . comint-input-ring)
-    (term-mode   . term-input-ring))
-  "Alist of (mode . history) pairs of mode histories.
-The histories can be rings or lists."
-  :type '(list (cons symbol symbol)))
+  '((eshell-mode eshell-history-ring eshell-history-index)
+    (comint-mode comint-input-ring   comint-input-ring-index)
+    (term-mode   term-input-ring))
+  "Alist of (mode history-ring history-index?) triples of mode histories.
+The histories can be rings or lists.
+
+When the optional history-index variable is a non-nil symbol,
+then during a `consult-history' invocation, the value of that
+symbol will be set to a zero-based index corresponding to the
+candidate selected during that invocation. This is useful to
+replay input history within `comint' and `eshell'.
+
+If the history-index variable in a triple is nil or absent, then
+no index reassignment is performed."
+  :type '(list (list symbol)))
 
 (defcustom consult-themes nil
   "List of themes to be presented for selection.
@@ -1203,42 +1212,56 @@ for which the command history is used."
    ;; Alternatively you might want to use `consult-complex-command',
    ;; which can also be bound to "C-x M-:"!
    ((eq last-command 'repeat-complex-command)
-    (mapcar #'prin1-to-string command-history))
+    (cons (mapcar #'prin1-to-string command-history)
+          nil))
    ;; In the minibuffer we use the current minibuffer history,
    ;; which can be configured by setting `minibuffer-history-variable'.
    ((minibufferp)
-    (symbol-value minibuffer-history-variable)) ;; (minibuffer-history-value) is Emacs 27 only
+    (cons (symbol-value minibuffer-history-variable) ;; (minibuffer-history-value) is Emacs 27 only
+          nil))
    ;; Otherwise we use a mode-specific history, see `consult-mode-histories'.
-   (t (when-let (history
-                 (or (seq-find (lambda (ring)
-                                 (and (derived-mode-p (car ring))
-                                      (boundp (cdr ring))))
-                               consult-mode-histories)
-                     (user-error
-                      "No history configured for `%s', see `consult-mode-histories'"
-                      major-mode)))
-        (symbol-value (cdr history))))))
+   (t (pcase-let ((`(,history ,index-variable)
+                   (or (cdr-safe (seq-find (pcase-lambda (`(,mode ,hist-ring ,_))
+                                             (and (derived-mode-p mode)
+                                                  (boundp hist-ring)))
+                                           consult-mode-histories))
+                       (user-error
+                        "No history configured for `%s', see `consult-mode-histories'"
+                        major-mode))))
+        (cons (symbol-value history)
+              index-variable)))))
 
 ;; This command has been adopted from https://github.com/oantolin/completing-history/.
 ;;;###autoload
 (defun consult-history (&optional history)
   "Insert string from buffer HISTORY."
   (interactive)
-  (let* ((enable-recursive-minibuffers t)
-         (str (consult--read "History: "
-                             (let ((history (or history (consult--current-history))))
-                               (or (consult--remove-dups (if (ring-p history)
-                                                             (ring-elements history)
-                                                           history))
-                                   (user-error "History is empty")))
-                             :history t ;; disable history
-                             :category ;; Report command category for M-x history
-                             (and (minibufferp)
-                                  (eq minibuffer-history-variable 'extended-command-history)
-                                  'command)
-                             :sort nil)))
+  (pcase-let* ((enable-recursive-minibuffers t)
+               (`(,dup-cands . ,maybe-index-variable) (if history
+                                                          (cons history nil)
+                                                        (consult--current-history)))
+               (cands-as-seq (if (ring-p dup-cands)
+                                 (ring-elements dup-cands)
+                               dup-cands))
+               (cands-with-indices (seq-map-indexed #'cons cands-as-seq))
+               (unique-cands-with-indices (consult--remove-dups cands-with-indices #'car))
+               (candidate-index
+                (consult--read "History: "
+                               (or unique-cands-with-indices
+                                   (user-error "History is empty"))
+                               :history t ;; disable history
+                               :lookup #'consult--lookup-candidate
+                               :category ;; Report command category for M-x history
+                               (and (minibufferp)
+                                    (eq minibuffer-history-variable 'extended-command-history)
+                                    'command)
+                               :sort nil))
+               (str (seq-elt cands-as-seq
+                             candidate-index)))
     (when (minibufferp)
       (delete-minibuffer-contents))
+    (when maybe-index-variable
+      (setf (symbol-value maybe-index-variable) candidate-index))
     (insert (substring-no-properties str))))
 
 (defun consult--minor-mode-candidates ()
