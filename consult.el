@@ -340,12 +340,12 @@ PREVIEW is the preview function."
 
 (defun consult--narrowed-p (str)
   "Return t if STR has some of the narrowing PREFIXES."
-  (string-match-p (concat "^." consult--narrow-separator) str))
+  (string-match-p (concat "^." (regexp-quote consult--narrow-separator)) str))
 
 (defun consult--narrow-strip (str)
   "Strip narrowing prefix from STR."
   (if (consult--narrowed-p str)
-      (replace-regexp-in-string "^[^ ]+ " "" str)
+      (replace-regexp-in-string (concat "^." (regexp-quote consult--narrow-separator)) "" str)
     str))
 
 (defsubst consult--narrow-candidate (prefix &rest strings)
@@ -1232,20 +1232,45 @@ for which the command history is used."
       (delete-minibuffer-contents))
     (insert (substring-no-properties str))))
 
+(defun consult--minor-mode-candidates ()
+  (mapcar
+   (pcase-lambda (`(,name . ,sym))
+     (cons
+      (consult--narrow-candidate
+       (if (local-variable-if-set-p sym) ?l ?g)
+       (consult--narrow-candidate
+        (if (and (boundp sym) (symbol-value sym)) ?i ?o)
+        name))
+      sym))
+   (delq nil
+         (append
+          ;; according to describe-minor-mode-completion-table-for-symbol
+          ;; the minor-mode-list contains *all* minor modes
+          (mapcar (lambda (sym) (cons (symbol-name sym) sym)) minor-mode-list)
+          ;; take the lighters from minor-mode-alist
+          (mapcar (pcase-lambda (`(,sym ,lighter))
+                    (when (and lighter (not (equal "" lighter)))
+                      (setq lighter (string-trim (format-mode-line lighter)))
+                      (unless (string-blank-p lighter)
+                       (cons lighter sym))))
+                  minor-mode-alist)))))
+
 ;;;###autoload
 (defun consult-minor-mode-menu ()
   "Enable or disable minor mode.
 This is an alternative to `minor-mode-menu-from-indicator'."
   (interactive)
-  (let ((mode (consult--read "Minor mode: "
-                             ;; Taken from describe-minor-mode
-		             (nconc
-		              (describe-minor-mode-completion-table-for-symbol)
-		              (describe-minor-mode-completion-table-for-indicator))
-                             :require-match t
-                             :history 'consult--minor-mode-menu-history)))
-    (call-interactively (or (lookup-minor-mode-from-indicator mode)
-                            (intern mode)))))
+  (call-interactively
+   (consult--read "Minor mode: "
+                  (consult--minor-mode-candidates)
+                  :require-match t
+                  :category 'minor-mode
+                  :narrow '((?l . "Local")
+                            (?g . "Global")
+                            (?i . "On")
+                            (?o . "Off"))
+                  :lookup #'consult--lookup-candidate
+                  :history 'consult--minor-mode-menu-history)))
 
 ;;;###autoload
 (defun consult-theme (theme)
