@@ -250,6 +250,18 @@ does not occur in candidate strings.")
 
 ;;;; Helper functions
 
+(defun consult--remove-dups (list &optional key)
+  "Remove duplicates from LIST. Keep first occurrence of a key.
+KEY is the key function."
+  (let ((ht (make-hash-table :test #'equal :size (length list)))
+        (accum)
+        (key (or key #'identity)))
+    (dolist (entry list (nreverse accum))
+      (let ((k (funcall key entry)))
+        (unless (gethash k ht)
+          (puthash k t ht)
+          (push entry accum))))))
+
 (defsubst consult--in-range-p (pos)
   "Return t if position POS lies in range `point-min' to `point-max'."
   (and (>= pos (point-min)) (<= pos (point-max))))
@@ -725,7 +737,7 @@ The alist contains (string . position) pairs."
   (unless (marker-position (mark-marker))
     (user-error "No marks"))
   (consult--fontify-all)
-  (let* ((all-markers (delete-dups (reverse (cons (mark-marker) mark-ring))))
+  (let* ((all-markers (nreverse (consult--remove-dups (cons (mark-marker) mark-ring))))
          (max-line 0)
          (candidates))
     (save-excursion
@@ -760,7 +772,7 @@ The alist contains (string . position) pairs."
   "Return alist of lines containing markers.
 The alist contains (string . position) pairs."
   (consult--forbid-minibuffer)
-  (let* ((all-markers (delete-dups (reverse global-mark-ring)))
+  (let* ((all-markers (nreverse (consult--remove-dups global-mark-ring)))
          (max-line 0)
          (max-name 0)
          (candidates))
@@ -1036,7 +1048,7 @@ The arguments and expected return value are as specified for
   "Open kill ring menu and return selected text."
   (consult--read
    "Yank text: "
-   (delete-dups (seq-copy kill-ring))
+   (consult--remove-dups kill-ring)
    :history t ;; disable history
    :sort nil
    :category 'kill-ring
@@ -1166,7 +1178,7 @@ Otherwise replace the just-yanked text with the selected text."
   (interactive)
   (eval (read (consult--read
                "Command: "
-               (or (delete-dups (mapcar #'prin1-to-string command-history))
+               (or (consult--remove-dups (mapcar #'prin1-to-string command-history))
                    (user-error "History is empty"))
                :sort nil
                :history t ;; disable history
@@ -1183,7 +1195,7 @@ for which the command history is used."
    ;; If pressing "C-x M-:", i.e., `repeat-complex-command',
    ;; we are instead querying the `command-history' and get a full s-expression.
    ((eq last-command 'repeat-complex-command)
-    (delete-dups (mapcar #'prin1-to-string command-history)))
+    (consult--remove-dups (mapcar #'prin1-to-string command-history)))
    ;; In the minibuffer we use the current minibuffer history,
    ;; which can be configured by setting `minibuffer-history-variable'.
    ((minibufferp)
@@ -1204,9 +1216,9 @@ for which the command history is used."
 (defun consult--history-elements (history)
   "Return elements from HISTORY.
 Can handle lists and rings."
-  (delete-dups (seq-copy (if (ring-p history)
-                             (ring-elements history)
-                           history))))
+  (consult--remove-dups (if (ring-p history)
+                                       (ring-elements history)
+                                     history)))
 
 ;; This command has been adopted from https://github.com/oantolin/completing-history/.
 ;;;###autoload
@@ -1370,7 +1382,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
 
 (defun consult--kmacro-candidates ()
   "Return alist of kmacros and indices."
-  (seq-uniq
+  (consult--remove-dups
    (thread-last
        ;; List of macros
        (cons (list last-kbd-macro
@@ -1397,8 +1409,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                    (propertize " " 'display (format "%d " counter))))
                  (format-kbd-macro keys 1))
                 index))))
-   ;; Remove duplicates
-   (lambda (x y) (equal (car x) (car y)))))
+   #'car))
 
 ;;;###autoload
 (defun consult-kmacro (arg)
