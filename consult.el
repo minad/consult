@@ -251,7 +251,7 @@ does not occur in candidate strings.")
 ;;;; Helper functions
 
 (defun consult--remove-dups (list &optional key)
-  "Remove duplicates from LIST. Keep first occurrence of a key.
+  "Remove duplicate strings from LIST. Keep first occurrence of a key.
 KEY is the key function."
   (let ((ht (make-hash-table :test #'equal :size (length list)))
         (accum)
@@ -737,11 +737,10 @@ The alist contains (string . position) pairs."
   (unless (marker-position (mark-marker))
     (user-error "No marks"))
   (consult--fontify-all)
-  (let* ((all-markers (nreverse (consult--remove-dups (cons (mark-marker) mark-ring))))
-         (max-line 0)
+  (let* ((max-line 0)
          (candidates))
     (save-excursion
-      (dolist (marker all-markers)
+      (dolist (marker (cons (mark-marker) mark-ring))
         (let ((pos (marker-position marker)))
           (when (consult--in-range-p pos)
             (goto-char pos)
@@ -751,7 +750,7 @@ The alist contains (string . position) pairs."
             (let ((line (line-number-at-pos pos consult-line-numbers-widen)))
               (setq max-line (max line max-line))
               (push (consult--line-with-cursor line marker) candidates))))))
-    (consult--add-line-number max-line candidates)))
+    (nreverse (consult--remove-dups (consult--add-line-number max-line candidates) #'car))))
 
 ;;;###autoload
 (defun consult-mark ()
@@ -772,12 +771,11 @@ The alist contains (string . position) pairs."
   "Return alist of lines containing markers.
 The alist contains (string . position) pairs."
   (consult--forbid-minibuffer)
-  (let* ((all-markers (nreverse (consult--remove-dups global-mark-ring)))
-         (max-line 0)
+  (let* ((max-line 0)
          (max-name 0)
          (candidates))
     (save-excursion
-      (dolist (marker all-markers)
+      (dolist (marker global-mark-ring)
         (let ((pos (marker-position marker))
               (buf (marker-buffer marker)))
           (when (and pos buf (not (minibufferp buf)))
@@ -797,7 +795,7 @@ The alist contains (string . position) pairs."
     (unless candidates
       (user-error "No global marks"))
     (let ((fmt (format "%%%ds:%%-%dd" max-name (length (number-to-string max-line)))))
-      (dolist (cand candidates candidates)
+      (dolist (cand candidates (nreverse (consult--remove-dups candidates #'car)))
         (pcase-let ((`(,name ,line ,str) (car cand)))
           (setcar cand (concat (consult--unique (cdr cand) "")
                                (propertize (format fmt name line) 'face 'consult-location)
