@@ -688,19 +688,16 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                   :history-type 'input
                   :preview (and consult-preview-outline (consult--preview-position)))))
 
-(defun consult--error-next ()
+(defun consult--next-error ()
   "Return position of next error or nil."
-  ;; next-error prints messages
-  (cl-letf (((symbol-function 'message) #'format))
-    (condition-case nil
-        (save-excursion
-          (while (let ((last-pos (point)))
-                   (funcall next-error-function 1 (= last-pos (point-min)))
-                   ;; next-error can jump backwards
-                   (when (<= (point) last-pos)
-                     (or (end-of-line) t))))
-          (point))
-      (error nil))))
+  (ignore-errors
+    (save-excursion
+      (while (let ((last-pos (point)))
+               (funcall next-error-function 1 (= last-pos (point-min)))
+               ;; next-error can jump backwards
+               (when (<= (point) last-pos)
+                 (or (end-of-line) t))))
+      (point))))
 
 (defun consult--error-candidates ()
   "Return alist of errors and positions."
@@ -712,7 +709,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
          (candidates))
       (save-excursion
         (goto-char (point-min))
-        (while (when-let (pos (consult--error-next))
+        (while (when-let (pos (consult--next-error))
                  (setq line (+ line (consult--count-lines pos))))
           (push (consult--line-with-cursor line (point-marker) 'consult-preview-error)
                 candidates)))
