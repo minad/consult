@@ -1213,13 +1213,6 @@ for which the command history is used."
                       major-mode)))
         (symbol-value (cdr history))))))
 
-(defun consult--history-elements (history)
-  "Return elements from HISTORY.
-Can handle lists and rings."
-  (consult--remove-dups (if (ring-p history)
-                                       (ring-elements history)
-                                     history)))
-
 ;; This command has been adopted from https://github.com/oantolin/completing-history/.
 ;;;###autoload
 (defun consult-history (&optional history)
@@ -1227,9 +1220,11 @@ Can handle lists and rings."
   (interactive)
   (let* ((enable-recursive-minibuffers t)
          (str (consult--read "History: "
-                             (or (consult--history-elements
-                                  (or history (consult--current-history)))
-                                 (user-error "History is empty"))
+                             (let ((history (or history (consult--current-history))))
+                               (or (consult--remove-dups (if (ring-p history)
+                                                             (ring-elements history)
+                                                           history))
+                                   (user-error "History is empty")))
                              :history t ;; disable history
                              :sort nil)))
     (when (minibufferp)
