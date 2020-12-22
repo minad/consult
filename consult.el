@@ -1173,16 +1173,22 @@ Otherwise replace the just-yanked text with the selected text."
     (apropos pattern)))
 
 ;;;###autoload
-(defun consult-command-history ()
+(defun consult-complex-command ()
   "Select and evaluate command from the command history."
   (interactive)
-  (eval (read (consult--read
-               "Command: "
-               (or (consult--remove-dups (mapcar #'prin1-to-string command-history))
-                   (user-error "History is empty"))
-               :sort nil
-               :history t ;; disable history
-               :category 'expression))))
+  (let* ((history (or (consult--remove-dups (mapcar #'prin1-to-string command-history))
+                      (user-error "There are no previous complex commands")))
+         (cmd (read (consult--read
+                     "Command: " history
+                     :default (car history)
+                     :sort nil
+                     :history t ;; disable history
+                     :category 'expression))))
+    ;; Taken from `repeat-complex-command'
+    (add-to-history 'command-history cmd)
+    (apply #'funcall-interactively
+	   (car cmd)
+	   (mapcar (lambda (e) (eval e t)) (cdr cmd)))))
 
 (defun consult--current-history ()
   "Return the history relevant to the current buffer.
@@ -1194,6 +1200,8 @@ for which the command history is used."
   (cond
    ;; If pressing "C-x M-:", i.e., `repeat-complex-command',
    ;; we are instead querying the `command-history' and get a full s-expression.
+   ;; Alternatively you might want to use `consult-complex-command',
+   ;; which can also be bound to "C-x M-:"!
    ((eq last-command 'repeat-complex-command)
     (mapcar #'prin1-to-string command-history))
    ;; In the minibuffer we use the current minibuffer history,

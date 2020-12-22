@@ -82,7 +82,10 @@ completions with richer information (e.g. `M-x`, `describe-face`,
 
 ### Histories
 
-  * `consult-command-history`: Select a command from the `command-history`.
+  * `consult-complex-command`: Select a command from the `command-history`. This
+    command is a `completing-read` version of `repeat-complex-command` and can
+    also be considered a replacement for the `command-history` command from
+    chistory.el.
   * `consult-history`: Insert a string from the current buffer history.
     This command can be invoked from the minibuffer. In that case the history
     stored in the minibuffer-history-variable is used.
@@ -159,8 +162,8 @@ that the main package `consult.el` only depends on Emacs core components.
 ;; Example configuration for Consult
 (use-package consult
   ;; Replace bindings. Lazily loaded due by `use-package'.
-  :bind (("C-c h" . consult-history)
-         ("C-c C-h" . consult-command-history)
+  :bind (("C-x M-:" . consult-complex-command)
+         ("C-c h" . consult-history)
          ("C-x b" . consult-buffer)
          ("C-x 4 b" . consult-buffer-other-window)
          ("C-x 5 b" . consult-buffer-other-frame)
