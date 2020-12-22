@@ -1199,9 +1199,7 @@ for which the command history is used."
    ;; In the minibuffer we use the current minibuffer history,
    ;; which can be configured by setting `minibuffer-history-variable'.
    ((minibufferp)
-    (if (fboundp 'minibuffer-history-value)
-        (minibuffer-history-value) ;; Emacs 27 only
-      (symbol-value minibuffer-history-variable)))
+    (symbol-value minibuffer-history-variable)) ;; (minibuffer-history-value) is Emacs 27 only
    ;; Otherwise we use a mode-specific history, see `consult-mode-histories'.
    (t (when-let (history
                  (or (seq-find (lambda (ring)
