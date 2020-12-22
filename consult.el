@@ -1287,7 +1287,7 @@ FACE is the face for the candidate."
 (defun consult--buffer (open-buffer open-file open-bookmark)
   "Backend implementation of `consult-buffer'.
 Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be used to display the item."
-  (let* ((buf-file-hash (let ((ht (make-hash-table)))
+  (let* ((buf-file-hash (let ((ht (make-hash-table :test #'equal)))
                           (dolist (buf (buffer-list) ht)
                             (when-let (file (buffer-file-name buf))
                               (puthash file t ht)))))
