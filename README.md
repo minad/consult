@@ -262,8 +262,6 @@ components later to the mix.
 
 You probably guessed from the name that this package took inspiration
 from [Counsel](https://github.com/abo-abo/swiper#counsel) by Oleh Krehel.
-Note that we are not yet on the same level as Counsel in terms of covered functionality.
-
 Some of the commands found in this package originated in the
 [Selectrum wiki](https://github.com/raxod502/selectrum/wiki/Useful-Commands).
 
