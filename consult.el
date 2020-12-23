@@ -64,7 +64,8 @@
   :type 'vector)
 
 (defcustom consult-widen-key nil
-  "Key used for widening during completion."
+  "Key used for widening during completion.
+If this key is unset, defaults to 'consult-narrow-key SPC'."
   :type 'vector)
 
 (defcustom consult-view-list-function nil
@@ -374,6 +375,7 @@ PREVIEW is the preview function."
 
 (defun consult--narrow-set (key)
   "Set narrowing key `consult--narrow' to KEY."
+  (unless (minibufferp) (error "Command must be executed in minibuffer"))
   (setq consult--narrow key)
   (when consult--narrow-predicate
     (setq-local minibuffer-completion-predicate (and consult--narrow consult--narrow-predicate)))
@@ -414,6 +416,27 @@ PREVIEW is the preview function."
            (consult--narrow-set (car pair))
            #'ignore)))))
 
+(defun consult-narrow-help ()
+  "Print narrowing help as `minibuffer-message'.
+This command can be bound in `consult-narrow-map'."
+  (interactive)
+  (minibuffer-message
+   (string-join
+    (delq nil
+          (mapcar (lambda (x)
+                    (when (/= (car x) 32)
+                      (format "%c %s" (car x) (cdr x))))
+                  consult--narrow-prefixes))
+    " ")))
+
+(defvar consult-narrow-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map " " consult--narrow-space)
+    (define-key map [127] consult--narrow-delete)
+    map)
+  "Narrowing keymap which is added to the local minibuffer map.
+Note that `consult-narrow-key' and `consult-widen-key' are bound dynamically.")
+
 (defun consult--define-key (map key cmd desc)
   "Bind CMD to KEY in MAP and add which-key description DESC."
   (define-key map key cmd)
@@ -436,17 +459,18 @@ PREFIXES is the list of narrowing prefixes."
        (lambda ()
          (setq consult--narrow-predicate predicate
                consult--narrow-prefixes prefixes)
-         (let ((map (make-composed-keymap nil (current-local-map))))
+         (let ((map (make-composed-keymap consult-narrow-map (current-local-map))))
            (when consult-narrow-key
              (dolist (pair consult--narrow-prefixes)
                (when (/= (car pair) 32)
                  (consult--define-key map
                                       (vconcat consult-narrow-key (vector (car pair)))
                                       #'consult-narrow (cdr pair)))))
-           (when consult-widen-key
-             (consult--define-key map consult-widen-key #'consult-widen "All"))
-           (define-key map " " consult--narrow-space)
-           (define-key map [127] consult--narrow-delete)
+           ;; If `consult-widen-key' is not set, default to 'consult-narrow-key SPC'.
+           (when-let (widen (or consult-widen-key
+                                (and consult-narrow-key
+                                     (vconcat consult-narrow-key " "))))
+             (consult--define-key map widen #'consult-widen "All"))
            (use-local-map map))))
     (funcall fun)))
 

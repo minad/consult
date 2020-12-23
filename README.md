@@ -149,7 +149,7 @@ Consult has special support to narrow to candidate subsets. When you use the
 `consult-buffer` command, you can press `b SPC` and the list of candidates will
 be restricted such that only buffers are shown. If you press `DEL` afterwards,
 the full candidate list will be shown again. Furthermore a narrowing/widening
-key can be configured which can be pressed to achieve the same effect, ee the
+key can be configured which can be pressed to achieve the same effect, see the
 configuration variables `consult-narrow-key` and `consult-widen-key`.
 
 ## Package configuration
@@ -195,12 +195,12 @@ that the main package `consult.el` only depends on Emacs core components.
   ;; Configure other variables and modes in the :config section, after lazily loading the package
   :config
 
-  ;; Optionally configure narrowing and widening keys.
+  ;; Optionally configure narrowing key.
   ;; Both < and C-+ work reasonably well.
-  ;; (setq consult-narrow-key "<"
-  ;;       consult-widen-key "< ")
-  ;; (setq consult-narrow-key (kbd "C-+")
-  ;;       consult-widen-key (kbd "C-+ SPC"))
+  (setq consult-narrow-key "<") ;; (kbd "C-+")
+  ;; Optionally make narrowing help available in the minibuffer.
+  ;; Probably not needed if you are using which-key.
+  ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
 
   ;; Optional configure a view library to be used by `consult-buffer'.
   ;; The view library must provide two functions, one to open the view by name,
