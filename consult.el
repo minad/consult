@@ -368,14 +368,12 @@ PREVIEW is the preview function."
 
 (defun consult--narrow-set (key)
   "Set narrowing key `consult--narrow' to KEY."
+  (setq consult--narrow key)
+  (when consult--narrow-predicate
+    (setq-local minibuffer-completion-predicate (and consult--narrow consult--narrow-predicate)))
   (when consult--narrow-overlay
     (delete-overlay consult--narrow-overlay))
-  (if (not (setq consult--narrow key))
-      (setq-local minibuffer-completion-predicate nil)
-    ;; Here we override the completion predicate.
-    ;; We could also combine it with an existing predicate function,
-    ;; if this turns out to be necessary!
-    (setq-local minibuffer-completion-predicate consult--narrow-predicate)
+  (when consult--narrow
     (setq consult--narrow-overlay
           (consult--overlay (- (minibuffer-prompt-end) 1) (minibuffer-prompt-end)
                             'after-string
@@ -404,11 +402,11 @@ PREVIEW is the preview function."
     "" nil :filter
     ,(lambda (&optional _)
        (let ((str (minibuffer-contents-no-properties)))
-         (when (= 1 (length str))
-           (when-let (pair (assoc (elt str 0) consult--narrow-prefixes))
-             (delete-minibuffer-contents)
-             (consult--narrow-set (car pair))
-             #'ignore))))))
+         (when-let (pair (or (and (= 1 (length str)) (assoc (elt str 0) consult--narrow-prefixes))
+                             (and (string= str "") (assoc 32 consult--narrow-prefixes))))
+           (delete-minibuffer-contents)
+           (consult--narrow-set (car pair))
+           #'ignore)))))
 
 (defun consult--define-key (map key cmd desc)
   "Bind CMD to KEY in MAP and add which-key description DESC."
@@ -435,9 +433,10 @@ PREFIXES is the list of narrowing prefixes."
          (let ((map (make-composed-keymap nil (current-local-map))))
            (when consult-narrow-key
              (dolist (pair consult--narrow-prefixes)
-               (consult--define-key map
-                                    (vconcat consult-narrow-key (vector (car pair)))
-                                    #'consult-narrow (cdr pair))))
+               (when (/= (car pair) 32)
+                 (consult--define-key map
+                                      (vconcat consult-narrow-key (vector (car pair)))
+                                      #'consult-narrow (cdr pair)))))
            (when consult-widen-key
              (consult--define-key map consult-widen-key #'consult-widen "All"))
            (define-key map " " consult--narrow-space)
@@ -1340,19 +1339,9 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                             (when-let (file (buffer-file-name buf))
                               (puthash file t ht)))))
          (curr-buf (buffer-name))
-         ;; Right now we only show visible buffers.
-         ;; This is a regression in contrast to the old dynamic narrowing implementation
-         ;; and a regression to the default `switch-to-buffer' implementation.
-         ;; But since invisible buffers are seldom accessed, this is not a big problem.
-         ;; Use `switch-to-buffer' in that case.
          (bufs (mapcar (lambda (x)
                          (consult--buffer-candidate ?b x 'consult-buffer))
-                       (append
-                        (seq-remove
-                         ;; Visible buffers only
-                         (lambda (x) (or (string= x curr-buf) (= (elt x 0) 32)))
-                         (mapcar #'buffer-name (buffer-list)))
-                        (list curr-buf))))
+                       (append (mapcar #'buffer-name (buffer-list)) (list curr-buf))))
          (views (when consult-view-list-function
                   (mapcar (lambda (x)
                             (consult--buffer-candidate ?v x 'consult-view))
@@ -1368,8 +1357,18 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
            "Switch to: " (append bufs files views bookmarks)
            :history 'consult--buffer-history
            :sort nil
-           :narrow `((lambda (cand)
-                       (and (not (string= "" cand)) (= (- (elt cand 0) consult--special-char) consult--narrow)))
+           :predicate
+           (lambda (cand)
+             (if (eq consult--narrow 32) ;; narrowed to ephemeral
+                 (and (= (elt cand 0) (+ consult--special-char ?b))
+                      (= (elt cand 1) 32))
+               (and
+                (or (/= (elt cand 0) (+ consult--special-char ?b)) ;; non-ephemeral
+                    (/= (elt cand 1) 32))
+                (or (not consult--narrow) ;; narrowed
+                    (= (- (elt cand 0) consult--special-char) consult--narrow)))))
+           :narrow `(nil
+                     (32 . "Ephemeral")
                      (?b . "Buffer")
                      (?f . "File")
                      (?m . "Bookmark")
