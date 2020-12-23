@@ -230,6 +230,7 @@ You may want to add a function which pulses the current line, e.g.,
 (defvar consult--theme-history nil)
 (defvar consult--minor-mode-menu-history nil)
 (defvar consult--kmacro-history nil)
+(defvar consult--buffer-history nil)
 (defvar-local consult--imenu-history nil)
 
 ;;;; Internal variables
@@ -1357,7 +1358,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
          (selected
           (consult--read
            "Switch to: " (append bufs files views bookmarks)
-           :history 'buffer-name-history
+           :history 'consult--buffer-history
            :sort nil
            :narrow `((?b . "Buffer")
                      (?f . "File")
