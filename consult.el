@@ -229,6 +229,7 @@ You may want to add a function which pulses the current line, e.g.,
 (defvar consult--apropos-history nil)
 (defvar consult--theme-history nil)
 (defvar consult--minor-mode-menu-history nil)
+(defvar consult--mode-command-history nil)
 (defvar consult--kmacro-history nil)
 (defvar consult--buffer-history nil)
 (defvar-local consult--imenu-history nil)
@@ -1053,9 +1054,9 @@ The arguments and expected return value are as specified for
         (funcall exit completion exit-status))
       t)))
 
-(defun consult--extract-commands (mode)
-  "Extract commands from MODE."
-  (let ((library-path (symbol-file mode))
+(defun consult--mode-commands (&optional minor-mode)
+  "Extract commands from MINOR-MODE."
+  (let ((library-path (symbol-file (or minor-mode major-mode)))
         (mode-rx (regexp-quote
                   (substring (if (eq major-mode 'c-mode)
                                  "cc-mode"
@@ -1066,41 +1067,46 @@ The arguments and expected return value are as specified for
        (let ((path (car feature)))
          (when (or (string= path library-path)
                    (string-match-p mode-rx (file-name-nondirectory path)))
-           (mapcar #'cdr
-                   (seq-filter
-                    (lambda (item)
-                      (and (consp item)
-                           (eq (car item) 'defun)
-                           (commandp (cdr item))
-                           (not (string-match-p "--" (symbol-name cmd)))))
-                    (cdr feature))))))
+           (mapcar
+            (lambda (x)
+              (cons
+               (consult--narrow-candidate
+                (cond
+                 ((and minor-mode (local-variable-if-set-p minor-mode)) ?l)
+                 (minor-mode ?g)
+                 (t ?m))
+                (symbol-name (cdr x)))
+               (cdr x)))
+            (seq-filter
+             (lambda (cmd)
+               (and (consp cmd)
+                    (eq (car cmd) 'defun)
+                    (commandp (cdr cmd))
+                    (not (string-match-p "--" (symbol-name (cdr cmd))))))
+             (cdr feature))))))
      load-history)))
 
 ;;;###autoload
-(defun consult-major-command ()
-  "Run a command from the current major mode."
+(defun consult-mode-command ()
+  "Run a command from the currently active major and minor modes."
   (interactive)
-  (call-interactively
-   (consult--read "M-X: "
-                  (consult--extract-commands major-mode)
+  (command-execute
+   (consult--read "Mode command: "
+                  (consult--remove-dups
+                   (append
+                    (consult--mode-commands)
+                    (mapcan #'consult--mode-commands
+                            (seq-filter (lambda (m)
+                                          (and (boundp m) (symbol-value m)))
+                                        minor-mode-list)))
+                   #'cdr)
+                  :narrow '((?m . "Major")
+                            (?l . "Local Minor")
+                            (?g . "Global Major"))
                   :require-match t
-                  :category 'command
-                  :lookup #'intern)))
-
-;;;###autoload
-(defun consult-minor-command ()
-  "Run a command from one of the current active minor modes."
-  (interactive)
-  (call-interactively
-   (consult--read "M-X: "
-                  (mapcan #'consult--extract-commands
-                          (seq-filter (lambda (m)
-                                        (and (boundp m) (symbol-value m)))
-                                      minor-mode-list))
-                  :require-match t
-                  :category 'command
-                  :lookup #'intern)))
-
+                  :history 'consult--mode-command-history
+                  :lookup #'consult--lookup-candidate
+                  :category 'command)))
 
 (defun consult--yank-read ()
   "Open kill ring menu and return selected text."
