@@ -266,6 +266,17 @@ Size of private unicode plane b.")
 
 ;;;; Helper functions
 
+(defmacro consult--overlay (beg end &rest props)
+  "Make consult overlay between BEG and END with PROPS."
+  (let ((ov (make-symbol "ov"))
+        (puts))
+    (while props
+      (push `(overlay-put ,ov ,(car props) ,(cadr props)) puts)
+      (setq props (cddr props)))
+    `(let ((,ov (make-overlay ,beg ,end)))
+       ,@puts
+       ,ov)))
+
 (defun consult--remove-dups (list &optional key)
   "Remove duplicate strings from LIST. Keep first occurrence of a key.
 KEY is the key function."
@@ -361,10 +372,11 @@ PREVIEW is the preview function."
     ;; We could also combine it with an existing predicate function,
     ;; if this turns out to be necessary!
     (setq-local minibuffer-completion-predicate consult--narrow-predicate)
-    (setq consult--narrow-overlay (make-overlay (- (minibuffer-prompt-end) 1) (minibuffer-prompt-end)))
-    (overlay-put consult--narrow-overlay 'before-string
-                 (propertize (format " [%s]" (cdr (assoc key consult--narrow-prefixes)))
-                             'face 'consult-narrow-indicator))))
+    (setq consult--narrow-overlay
+          (consult--overlay (- (minibuffer-prompt-end) 1) (minibuffer-prompt-end)
+                            'after-string
+                            (propertize (format "[%s] " (cdr (assoc key consult--narrow-prefixes)))
+                                        'face 'consult-narrow-indicator)))))
 
 (defun consult-widen ()
   "Widen current completion."
@@ -492,12 +504,6 @@ PERMANENTLY non-nil means the overlays will not be restored later."
     (consult--invisible-show t))
   nil)
 
-(defsubst consult--overlay (beg end face)
-  "Make consult overlay between BEG and END with FACE."
-  (let ((ov (make-overlay beg end)))
-    (overlay-put ov 'face face)
-    ov))
-
 ;; Matched strings are not highlighted as of now.
 ;; see https://github.com/minad/consult/issues/7
 (defun consult--preview-position (&optional face)
@@ -522,8 +528,8 @@ FACE is the cursor face."
          (mapc #'delete-overlay overlays)
          (let ((pos (point)))
            (setq overlays
-                 (list (consult--overlay (line-beginning-position) (line-end-position) 'consult-preview-line)
-                       (consult--overlay pos (1+ pos) face)))))))))
+                 (list (consult--overlay (line-beginning-position) (line-end-position) 'face 'consult-preview-line)
+                       (consult--overlay pos (1+ pos) 'face face)))))))))
 
 (cl-defun consult--read (prompt candidates &key
                                 predicate require-match history history-type default
@@ -1057,8 +1063,7 @@ The arguments and expected return value are as specified for
                  (let* ((pt (point))
                         ;; If previous command is yank, hide previously yanked text
                         (mk (or (and (eq last-command 'yank) (mark t)) pt))
-                        (ov (make-overlay (min pt mk) (max pt mk))))
-                   (overlay-put ov 'invisible t)
+                        (ov (consult--overlay (min pt mk) (max pt mk) 'invisible t)))
                    (lambda (cmd cand _state)
                      (pcase cmd
                        ('restore (delete-overlay ov))
