@@ -53,7 +53,7 @@
 (require 'subr-x)
 
 (defgroup consult nil
-  "Consultation using `completing-read'."
+  "Consulting `completing-read'."
   :group 'convenience
   :prefix "consult-")
 
@@ -348,19 +348,18 @@ DISPLAY is the string to display instead of the unique string."
 PREVIEW is the preview function.
 FUN is the body function."
   (let ((orig-window (selected-window))
-        (selected)
-        (state (funcall preview 'save nil nil)))
+        (selected))
     (minibuffer-with-setup-hook
         (lambda ()
           (setq consult--preview-function
                 (lambda (cand)
                   (with-selected-window orig-window
-                    (funcall preview 'preview cand nil)))))
+                    (funcall preview cand nil)))))
       (unwind-protect
           (save-excursion
             (save-restriction
               (setq selected (funcall fun))))
-        (funcall preview 'restore selected state)))))
+        (funcall preview selected t)))))
 
 (defmacro consult--with-preview (preview &rest body)
   "Install preview in BODY.
@@ -545,24 +544,23 @@ The function can be used as the `:preview' argument of `consult--read'.
 FACE is the cursor face."
   (let ((overlays)
         (invisible)
-        (face (or face 'consult-preview-cursor)))
-    (lambda (cmd cand state)
-      (pcase cmd
-        ('save (current-buffer))
-        ('restore
-         (consult--invisible-restore invisible)
-         (mapc #'delete-overlay overlays)
-         (when (buffer-live-p state)
-           (set-buffer state)))
-        ('preview
-         (consult--jump-1 cand)
-         (consult--invisible-restore invisible)
-         (setq invisible (consult--invisible-show))
-         (mapc #'delete-overlay overlays)
-         (let ((pos (point)))
-           (setq overlays
-                 (list (consult--overlay (line-beginning-position) (line-end-position) 'face 'consult-preview-line)
-                       (consult--overlay pos (1+ pos) 'face face)))))))))
+        (face (or face 'consult-preview-cursor))
+        (saved-buf (current-buffer)))
+    (lambda (cand restore)
+      (if restore
+          (progn
+            (consult--invisible-restore invisible)
+            (mapc #'delete-overlay overlays)
+            (when (buffer-live-p saved-buf)
+              (set-buffer saved-buf)))
+        (consult--jump-1 cand)
+        (consult--invisible-restore invisible)
+        (setq invisible (consult--invisible-show))
+        (mapc #'delete-overlay overlays)
+        (let ((pos (point)))
+          (setq overlays
+                (list (consult--overlay (line-beginning-position) (line-end-position) 'face 'consult-preview-line)
+                      (consult--overlay pos (1+ pos) 'face face))))))))
 
 (cl-defun consult--read (prompt candidates &key
                                 predicate require-match history history-type default
@@ -607,8 +605,8 @@ NARROW is an alist of narrowing prefix strings and description."
               (complete-with-action action candidates str pred))))
          (result (consult--with-preview
                      (and preview
-                          (lambda (cmd cand state)
-                            (funcall preview cmd (and cand (funcall lookup input candidates cand)) state)))
+                          (lambda (cand restore)
+                            (funcall preview (and cand (funcall lookup input candidates cand)) restore)))
                    (consult--with-narrow narrow
                      (completing-read prompt table
                                       predicate require-match initial history default)))))
@@ -838,7 +836,7 @@ The alist contains (string . position) pairs."
         (pcase-let ((`(,name ,line ,str) (car cand)))
           (setcar cand (concat (consult--unique (cdr cand) "")
                                (propertize (format fmt name line) 'face 'consult-location)
-                               " " str)))))))
+                               "   " str)))))))
 
 ;;;###autoload
 (defun consult-global-mark ()
@@ -986,12 +984,12 @@ Respects narrowing and the settings
                  (lambda () (add-hook 'after-change-functions #'consult--goto-line-hook nil t))
                (consult--with-preview
                    (let ((preview (consult--preview-position)))
-                     (lambda (cmd cand state)
-                       (if (eq cmd 'preview)
-                           (let ((pos (consult--line-position cand)))
-                             (when (consult--in-range-p pos)
-                               (funcall preview cmd pos state)))
-                         (funcall preview cmd cand state))))
+                     (lambda (cand restore)
+                       (if restore
+                           (funcall preview cand t)
+                         (let ((pos (consult--line-position cand)))
+                           (when (consult--in-range-p pos)
+                             (funcall preview pos nil))))))
                  (setq pos (consult--line-position (read-number "Go to line: ")))))
              (if (consult--in-range-p pos)
                  (consult--jump pos)
@@ -1149,20 +1147,19 @@ If no modes are specified, use currently active major and minor modes."
    :sort nil
    :category 'kill-ring
    :require-match t
-   :preview (and consult-preview-yank
-                 (let* ((pt (point))
-                        ;; If previous command is yank, hide previously yanked text
-                        (mk (or (and (eq last-command 'yank) (mark t)) pt))
-                        (ov (consult--overlay (min pt mk) (max pt mk) 'invisible t)))
-                   (lambda (cmd cand _state)
-                     (pcase cmd
-                       ('restore (delete-overlay ov))
-                       ('preview
-                        ;; Use `add-face-text-property' on a copy of "cand in order to merge face properties
-                        (setq cand (copy-sequence cand))
-                        (add-face-text-property 0 (length cand) 'consult-preview-yank t cand)
-                        ;; Use the `before-string' property since the overlay might be empty.
-                        (overlay-put ov 'before-string cand))))))))
+   :preview (when consult-preview-yank
+              (let* ((pt (point))
+                     ;; If previous command is yank, hide previously yanked text
+                     (mk (or (and (eq last-command 'yank) (mark t)) pt))
+                     (ov (consult--overlay (min pt mk) (max pt mk) 'invisible t)))
+                (lambda (cand restore)
+                  (if restore
+                      (delete-overlay ov)
+                    ;; Use `add-face-text-property' on a copy of "cand in order to merge face properties
+                    (setq cand (copy-sequence cand))
+                    (add-face-text-property 0 (length cand) 'consult-preview-yank t cand)
+                    ;; Use the `before-string' property since the overlay might be empty.
+                    (overlay-put ov 'before-string cand)))))))
 
 ;; Insert selected text.
 ;; Adapted from the Emacs yank function.
@@ -1386,7 +1383,8 @@ preview if `consult-preview-mode' is enabled."
    (list
     (let ((avail-themes (seq-filter (lambda (x) (or (not consult-themes)
                                                     (memq x consult-themes)))
-                                    (cons nil (custom-available-themes)))))
+                                    (cons nil (custom-available-themes))))
+          (saved-theme (car custom-enabled-themes)))
       (consult--read
        "Theme: "
        (mapcar (lambda (x) (or x 'default)) avail-themes)
@@ -1395,14 +1393,12 @@ preview if `consult-preview-mode' is enabled."
        :history 'consult--theme-history
        :lookup (lambda (_input _cands x)
                  (and x (not (string= x "default")) (intern-soft x)))
-       :preview (and consult-preview-theme
-                     (lambda (cmd cand state)
-                       (pcase cmd
-                         ('save (car custom-enabled-themes))
-                         ('restore (consult-theme state))
-                         ('preview (when (memq cand avail-themes)
-                                     (consult-theme cand))))))
-       :default (symbol-name (or (car custom-enabled-themes) 'default))))))
+       :preview (when consult-preview-theme
+                  (lambda (cand restore)
+                    (cond
+                     (restore (consult-theme saved-theme))
+                     ((memq cand avail-themes) (consult-theme cand)))))
+       :default (symbol-name (or saved-theme 'default))))))
   (unless (eq theme (car custom-enabled-themes))
     (mapc #'disable-theme custom-enabled-themes)
     (when theme
@@ -1440,6 +1436,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
          (files (mapcar (lambda (x)
                           (consult--buffer-candidate ?f (abbreviate-file-name x) 'consult-file))
                         (seq-remove (lambda (x) (gethash x buf-file-hash)) recentf-list)))
+         (saved-buf (current-buffer))
          (selected
           (consult--read
            "Switch to: " (append bufs files views bookmarks)
@@ -1475,18 +1472,17 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                ;; default to creating a new buffer.
                (and (not (string-blank-p cand)) (cons open-buffer cand))))
            :preview
-           (and consult-preview-buffer
-                (lambda (cmd cand state)
-                  (pcase cmd
-                    ('save (current-buffer))
-                    ('restore (when (buffer-live-p state)
-                                (set-buffer state)))
-                    ('preview
-                     ;; In order to avoid slowness and unnecessary complexity, we
-                     ;; only preview buffers. Loading recent files, bookmarks or
-                     ;; views can result in expensive operations.
-                     (when (and (eq (car cand) open-buffer) (get-buffer (cdr cand)))
-                       (funcall open-buffer (cdr cand) 'norecord)))))))))
+           (when consult-preview-buffer
+             (lambda (cand restore)
+               (cond
+                (restore
+                 (when (buffer-live-p saved-buf)
+                   (set-buffer saved-buf)))
+                ;; In order to avoid slowness and unnecessary complexity, we
+                ;; only preview buffers. Loading recent files, bookmarks or
+                ;; views can result in expensive operations.
+                ((and (eq (car cand) open-buffer) (get-buffer (cdr cand)))
+                 (funcall open-buffer (cdr cand) 'norecord))))))))
   (when selected (funcall (car selected) (cdr selected)))))
 
 ;;;###autoload
@@ -1623,24 +1619,26 @@ Prepend PREFIX in front of all items."
        "Go to item: "
        (or (consult--imenu-candidates)
            (user-error "Imenu is empty"))
-       :preview (and consult-preview-imenu
-                     (let ((preview (consult--preview-position)))
-                       (lambda (cmd cand state)
-                         (if (eq cmd 'preview)
-                             ;; Only handle imenu items which are markers for preview,
-                             ;; in order to avoid any bad side effects.
-                             (when (and (consp cand) (markerp (cdr cand)))
-                               (funcall preview cmd (cdr cand) state))
-                           (funcall preview cmd cand state)))))
+       :preview
+       (when consult-preview-imenu
+         (let ((preview (consult--preview-position)))
+           (lambda (cand restore)
+             (if restore
+                 (funcall preview cand t)
+               ;; Only handle imenu items which are markers for preview,
+               ;; in order to avoid any bad side effects.
+               (when (and (consp cand) (markerp (cdr cand)))
+                 (funcall preview (cdr cand) nil))))))
        :require-match t
-       :narrow (cons (lambda (cand)
-                       (when-let (n (cdr (assoc consult--narrow narrow)))
-                         (let* ((c (car cand))
-                                (l (length n)))
-                           (and (> (length c) l)
-                                (eq t (compare-strings n 0 l c 0 l))
-                                (= (elt c l) 32)))))
-                     narrow)
+       :narrow
+       (cons (lambda (cand)
+               (when-let (n (cdr (assoc consult--narrow narrow)))
+                 (let* ((c (car cand))
+                        (l (length n)))
+                   (and (> (length c) l)
+                        (eq t (compare-strings n 0 l c 0 l))
+                        (= (elt c l) 32)))))
+             narrow)
        :category 'imenu
        :lookup #'consult--lookup-cdr
        :history 'consult--imenu-history
