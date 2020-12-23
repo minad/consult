@@ -56,7 +56,8 @@ Most provided commands follow the naming scheme `consult-<thing>`.
      `switch-to-buffer` with support for virtual buffers. Supports live preview
      and recursive editing while previewing. The command supports narrowing. You
      can type `b SPC`, `f SPC`, `m SPC` and `v SPC` in order to narrow to
-     buffers, files, bookmarks and views respectively.
+     buffers, files, bookmarks and views respectively. In order to show
+     ephemeral buffers press `SPC` - it works the same way as `switch-buffer`.
   * `consult-bookmark`: Select or create bookmark. You might prefer the more
     powerful `consult-buffer` instead, which includes bookmarks.
   * `consult-recent-file` (`-other-window`, `-other-frame`): Select a recent
