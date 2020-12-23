@@ -1101,8 +1101,7 @@ The arguments and expected return value are as specified for
                                         minor-mode-list)))
                    #'cdr)
                   :narrow '((?m . "Major")
-                            (?l . "Local Minor")
-                            (?g . "Global Major"))
+                            (?l . "Local Minor"))
                   :require-match t
                   :history 'consult--mode-command-history
                   :lookup #'consult--lookup-candidate
