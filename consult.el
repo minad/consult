@@ -117,6 +117,11 @@ You may want to add a function which pulses the current line, e.g.,
   "Narrowing keys used by `consult-imenu'."
   :type 'alist)
 
+(defcustom consult-mode-command-filter
+  "-mode$\\|--"
+  "Filter regexp for `consult-mode-command'."
+  :type 'regexp)
+
 ;;;; Preview customization
 
 (defgroup consult-preview nil
@@ -1077,7 +1082,8 @@ The arguments and expected return value are as specified for
                (and (consp cmd)
                     (eq (car cmd) 'defun)
                     (commandp (cdr cmd))
-                    (not (string-match-p "--" (symbol-name (cdr cmd))))))
+                    (not (string-match-p consult-mode-command-filter
+                                         (symbol-name (cdr cmd))))))
              (cdr feature))))))
      load-history)))
 

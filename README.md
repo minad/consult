@@ -232,6 +232,7 @@ that the main package `consult.el` only depends on Emacs core components.
 | consult-goto-line-numbers   | t           | Show line numbers for `consult-goto-line`               |
 | consult-imenu-narrow        | …           | Narrowing keys for imenu                                |
 | consult-line-numbers-widen  | t           | Show absolute line numbers when narrowing is active.    |
+| consult-mode-command-filter | …           | Filter regexp for `consult-mode-command`                |
 | consult-mode-histories      | …           | Mode-specific history variables                         |
 | consult-narrow-key          | nil         | Narrowing prefix key during completion                  |
 | consult-widen-key           | nil         | Widening key during completion                          |
