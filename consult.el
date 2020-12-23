@@ -293,9 +293,13 @@ KEY is the key function."
   "Return t if position POS lies in range `point-min' to `point-max'."
   (and (>= pos (point-min)) (<= pos (point-max))))
 
-(defun consult--lookup-candidate (_ candidates cand)
+(defun consult--lookup-cdr (_ candidates cand)
   "Lookup CAND in CANDIDATES."
   (cdr (assoc cand candidates)))
+
+(defun consult--lookup-cadr (_ candidates cand)
+  "Lookup CAND in CANDIDATES."
+  (cadr (assoc cand candidates)))
 
 (defun consult--forbid-minibuffer ()
   "Raise an error if executed from the minibuffer."
@@ -730,7 +734,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                   :category 'line
                   :sort nil
                   :require-match t
-                  :lookup #'consult--lookup-candidate
+                  :lookup #'consult--lookup-cdr
                   :history 'consult--line-history
                   :history-type 'input
                   :preview
@@ -768,7 +772,7 @@ The alist contains (string . position) pairs."
                   :category 'line
                   :sort nil
                   :require-match t
-                  :lookup #'consult--lookup-candidate
+                  :lookup #'consult--lookup-cdr
                   :history 'consult--line-history
                   :history-type 'input
                   :preview (and consult-preview-mark (consult--preview-position)))))
@@ -817,7 +821,7 @@ The alist contains (string . position) pairs."
                   :category 'line
                   :sort nil
                   :require-match t
-                  :lookup #'consult--lookup-candidate
+                  :lookup #'consult--lookup-cdr
                   :history 'consult--line-history
                   :history-type 'input
                   :preview (and consult-preview-global-mark (consult--preview-position)))))
@@ -893,8 +897,8 @@ CAND is the currently selected candidate."
 The default candidate is a non-empty line closest to point.
 This command obeys narrowing. Optionally INITIAL input can be provided."
   (interactive)
-  (consult--jump
-   (let ((candidates (consult--with-increased-gc (consult--line-candidates))))
+  (let ((candidates (consult--with-increased-gc (consult--line-candidates))))
+    (consult--jump
      (consult--read "Go to line: " (cdr candidates)
                     :category 'line
                     :sort nil
@@ -1147,7 +1151,7 @@ Otherwise replace the just-yanked text with the selected text."
                    :sort nil
                    :require-match t
                    :history t ;; disable history
-                   :lookup #'consult--lookup-candidate)))
+                   :lookup #'consult--lookup-cdr)))
   (condition-case nil
       (jump-to-register reg)
     (error (insert-register reg))))
@@ -1274,17 +1278,17 @@ for which the command history is used."
 This is an alternative to `minor-mode-menu-from-indicator'."
   (interactive)
   (call-interactively
-   (car (consult--read "Minor mode: "
-                       (consult--minor-mode-candidates)
-                       :require-match t
-                       :category 'minor-mode
-                       :narrow '((lambda (cand) (seq-position (caddr cand) consult--narrow))
-                                 (?l . "Local")
-                                 (?g . "Global")
-                                 (?i . "On")
-                                 (?o . "Off"))
-                       :lookup #'consult--lookup-candidate
-                       :history 'consult--minor-mode-menu-history))))
+   (consult--read "Minor mode: "
+                  (consult--minor-mode-candidates)
+                  :require-match t
+                  :category 'minor-mode
+                  :narrow '((lambda (cand) (seq-position (caddr cand) consult--narrow))
+                            (?l . "Local")
+                            (?g . "Global")
+                            (?i . "On")
+                            (?o . "Off"))
+                  :lookup #'consult--lookup-cadr
+                  :history 'consult--minor-mode-menu-history)))
 
 ;;;###autoload
 (defun consult-theme (theme)
@@ -1463,7 +1467,7 @@ Macros containing mouse clicks aren't displayed."
                    :require-match t
                    :sort nil
                    :history 'consult--kmacro-history
-                   :lookup #'consult--lookup-candidate)))
+                   :lookup #'consult--lookup-cdr)))
     (if (zerop selected)
         ;; If the first element has been selected, just run the last macro.
         (kmacro-call-macro (or arg 1) t nil)
@@ -1551,7 +1555,7 @@ Prepend PREFIX in front of all items."
                                 (= (elt c l) 32)))))
                      narrow)
        :category 'imenu
-       :lookup #'consult--lookup-candidate
+       :lookup #'consult--lookup-cdr
        :history 'consult--imenu-history
        :sort nil))
      (run-hooks 'consult-after-jump-hook)))

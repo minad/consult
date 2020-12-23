@@ -68,7 +68,7 @@
          (fmt (format "%%-%ds %%-%dd %%-%ds %%s" buffer-width line-width type-width)))
     (mapcar
      (pcase-lambda (`(,buffer ,line ,type ,text ,marker ,narrow))
-       (cons (consult--narrow-candidate narrow (format fmt buffer line type text)) marker))
+       (list (format fmt buffer line type text) marker narrow))
      (sort diags
            (pcase-lambda (`(_ _ ,t1 _ ,m1 _) `(_ _ ,t2 _ ,m2 _))
              (or (string< t1 t2) (and (string= t1 t2) (< m1 m2))))))))
@@ -84,11 +84,13 @@
                   :history t ;; disable history
                   :require-match t
                   :sort nil
-                  :narrow '((?e . "Error")
+                  :narrow '((lambda (cand) (= (caddr cand) consult--narrow))
+                            (?e . "Error")
                             (?w . "Warning")
                             (?n . "Note"))
-                  :lookup #'consult--lookup-candidate
-                  :preview (and consult-preview-flymake (consult--preview-position 'consult-preview-error)))))
+                  :lookup #'consult--lookup-cadr
+                  :preview (and consult-preview-flymake
+                                (consult--preview-position 'consult-preview-error)))))
 
 (provide 'consult-flymake)
 ;;; consult-flymake.el ends here

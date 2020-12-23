@@ -55,24 +55,23 @@
     (mapcar
      (pcase-lambda (`(,file ,line ,err))
        (let ((level (flycheck-error-level err)))
-         (cons
-          (consult--narrow-candidate
-           (pcase level
-             ('error ?e)
-             ('warning ?w)
-             (_ ?i))
-           (format fmt
-                   (propertize file 'face 'flycheck-error-list-filename)
-                   (propertize line 'face 'flycheck-error-list-line-number)
-                   (propertize (symbol-name level) 'face (flycheck-error-level-error-list-face level))
-                   (propertize (flycheck-error-message err) 'face 'flycheck-error-list-error-message)
-                   (propertize (symbol-name (flycheck-error-checker err))
-                               'face 'flycheck-error-list-checker-name)))
+         (list
+          (format fmt
+                  (propertize file 'face 'flycheck-error-list-filename)
+                  (propertize line 'face 'flycheck-error-list-line-number)
+                  (propertize (symbol-name level) 'face (flycheck-error-level-error-list-face level))
+                  (propertize (flycheck-error-message err) 'face 'flycheck-error-list-error-message)
+                  (propertize (symbol-name (flycheck-error-checker err))
+                              'face 'flycheck-error-list-checker-name))
           (set-marker (make-marker)
                       (flycheck-error-pos err)
                       (if (flycheck-error-filename err)
                           (find-file-noselect (flycheck-error-filename err))
-                        (flycheck-error-buffer err))))))
+                        (flycheck-error-buffer err)))
+          (pcase level
+            ('error ?e)
+            ('warning ?w)
+            (_ ?i)))))
      errors)))
 
 ;;;###autoload
@@ -86,11 +85,13 @@
                   :history t ;; disable history
                   :require-match t
                   :sort nil
-                  :narrow '((?e . "Error")
+                  :narrow '((lambda (cand) (= (caddr cand) consult--narrow))
+                            (?e . "Error")
                             (?w . "Warning")
                             (?i . "Info"))
-                  :lookup #'consult--lookup-candidate
-                  :preview (and consult-preview-flycheck (consult--preview-position 'consult-preview-error)))))
+                  :lookup #'consult--lookup-cadr
+                  :preview (and consult-preview-flycheck
+                                (consult--preview-position 'consult-preview-error)))))
 
 (provide 'consult-flycheck)
 ;;; consult-flycheck.el ends here
