@@ -1404,7 +1404,8 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
          (curr-buf (buffer-name))
          (bufs (mapcar (lambda (x)
                          (consult--buffer-candidate ?b x 'consult-buffer))
-                       (append (mapcar #'buffer-name (buffer-list)) (list curr-buf))))
+                       (append (delete curr-buf (mapcar #'buffer-name (buffer-list)))
+                               (list curr-buf))))
          (views (when consult-view-list-function
                   (mapcar (lambda (x)
                             (consult--buffer-candidate ?v x 'consult-view))
