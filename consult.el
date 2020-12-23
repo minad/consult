@@ -382,8 +382,8 @@ PREVIEW is the preview function."
   (when consult--narrow
     (setq consult--narrow-overlay
           (consult--overlay (- (minibuffer-prompt-end) 1) (minibuffer-prompt-end)
-                            'after-string
-                            (propertize (format "[%s] " (cdr (assoc key consult--narrow-prefixes)))
+                            'before-string
+                            (propertize (format " [%s]" (cdr (assoc key consult--narrow-prefixes)))
                                         'face 'consult-narrow-indicator)))))
 
 (defun consult-widen ()
