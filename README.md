@@ -128,8 +128,11 @@ completions with richer information (e.g. `M-x`, `describe-face`,
      In contrast, Selectrum already comes with its own function.
   * `consult-minor-mode-menu`: Enable/disable minor mode. Supports narrowing
      to on/off/local/global modes by pressing `i/o/l/g SPC` respectively.
+  * `consult-mode-command`: Run a command from the currently active minor or
+     major modes. Supports narrowing to local-minor/global-minor/major mode via
+     the keys `l/g/m`.
   * `consult-theme`: Select a theme and disable all currently enabled themes.
-    Supports live preview of the theme while scrolling through the candidates.
+     Supports live preview of the theme while scrolling through the candidates.
 
 ## Live previews
 
