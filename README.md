@@ -168,6 +168,7 @@ that the main package `consult.el` only depends on Emacs core components.
   ;; Replace bindings. Lazily loaded due by `use-package'.
   :bind (("C-x M-:" . consult-complex-command)
          ("C-c h" . consult-history)
+         ("C-c m" . consult-mode-command)
          ("C-x b" . consult-buffer)
          ("C-x 4 b" . consult-buffer-other-window)
          ("C-x 5 b" . consult-buffer-other-frame)
