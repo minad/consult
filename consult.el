@@ -501,7 +501,7 @@ PERMANENTLY non-nil means the overlays will not be restored later."
     (overlay-put ov 'face face)
     ov))
 
-;; TODO Matched strings are not highlighted as of now
+;; Matched strings are not highlighted as of now.
 ;; see https://github.com/minad/consult/issues/7
 (defun consult--preview-position (&optional face)
   "The preview function used if selecting from a list of candidate positions.
@@ -1333,9 +1333,11 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                             (when-let (file (buffer-file-name buf))
                               (puthash file t ht)))))
          (curr-buf (buffer-name))
-         ;; TODO right now we only show visible buffers.
+         ;; Right now we only show visible buffers.
          ;; This is a regression in contrast to the old dynamic narrowing implementation
-         ;; and a regression to the default switch-to-buffer implementation.
+         ;; and a regression to the default `switch-to-buffer' implementation.
+         ;; But since invisible buffers are seldom accessed, this is not a big problem.
+         ;; Use `switch-to-buffer' in that case.
          (bufs (mapcar
                 (lambda (x)
                   (consult--buffer-candidate ?b x 'consult-buffer))
