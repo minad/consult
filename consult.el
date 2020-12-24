@@ -243,6 +243,9 @@ You may want to add a function which pulses the current line, e.g.,
 
 ;;;; Internal variables
 
+(defvar consult--completion-refresh-hook nil
+  "Refresh completion system.")
+
 (defconst consult--special-char #x100000
   "Special character used to encode line prefixes for disambiguation.
 We use the first character of the private unicode plane b.")
@@ -398,7 +401,8 @@ PREVIEW is the preview function."
           (consult--overlay (- (minibuffer-prompt-end) 1) (minibuffer-prompt-end)
                             'before-string
                             (propertize (format " [%s]" (cdr (assoc key consult--narrow-prefixes)))
-                                        'face 'consult-narrow-indicator)))))
+                                        'face 'consult-narrow-indicator))))
+  (run-hooks 'consult--completion-refresh-hook))
 
 (defun consult-widen ()
   "Widen current completion."
@@ -462,9 +466,7 @@ Note that `consult-narrow-key' and `consult-widen-key' are bound dynamically.")
       `(which-key (,desc . ,cmd)))))
 
 (defun consult--narrow-install (settings fun)
-  "Install narrowing in FUN.
-
-SETTINGS is the narrow settings."
+  "Install narrowing in FUN with narrowing SETTINGS."
   (minibuffer-with-setup-hook
       (:append
        (lambda ()
@@ -489,9 +491,7 @@ SETTINGS is the narrow settings."
     (funcall fun)))
 
 (defmacro consult--with-narrow (settings &rest body)
-  "Setup narrowing in BODY.
-
-SETTINGS is the narrow settings."
+  "Setup narrowing in BODY with SETTINGS."
   (declare (indent 1))
   (let ((settings-var (make-symbol "settings")))
     `(let ((,settings-var ,settings))
@@ -1688,11 +1688,11 @@ Prepend PREFIX in front of all items."
 
 (add-hook 'consult-preview-mode-hook #'consult--icomplete-preview-setup)
 
-(defun consult--icomplete-refresh (&rest _)
+(defun consult--icomplete-refresh ()
   "Refresh icomplete view."
   (setq completion-all-sorted-completions nil))
 
-(advice-add #'consult--narrow-set :after #'consult--icomplete-refresh)
+(add-hook 'consult--completion-refresh-hook #'consult--icomplete-refresh)
 
 (provide 'consult)
 ;;; consult.el ends here

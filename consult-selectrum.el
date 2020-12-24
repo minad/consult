@@ -71,12 +71,12 @@ DEFAULT-TOP keyword argument is used to configure Selectrum."
 
 (advice-add #'consult--read :before #'consult-selectrum--read-advice)
 
-(defun consult-selectrum--refresh (&rest _)
+(defun consult-selectrum--refresh ()
   "Refresh selectrum view."
   (when (eq completing-read-function #'selectrum-completing-read)
     (selectrum-exhibit)))
 
-(advice-add #'consult--narrow-set :after #'consult-selectrum--refresh)
+(add-hook 'consult--completion-refresh-hook #'consult-selectrum--refresh)
 
 (provide 'consult-selectrum)
 ;;; consult-selectrum.el ends here
