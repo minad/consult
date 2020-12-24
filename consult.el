@@ -686,39 +686,51 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                 (occur-read-primary-args)))
   (occur-1 regexp nlines bufs))
 
-(defun consult--outline-candidates ()
-  "Return alist of outline headings and positions."
+(defun consult--regexp-candidates (regexp nohl)
+  "Return alist of lines and positions matching REGEXP.
+
+NOHL must be t if no highlighting is desired."
   (consult--forbid-minibuffer)
   (consult--fontify-all)
   (let* ((line (line-number-at-pos (point-min) consult-line-numbers-widen))
-         (heading-regexp (concat "^\\(?:" outline-regexp "\\)"))
          (candidates))
     (save-excursion
-      (goto-char (point-min))
-      (while (save-excursion (re-search-forward heading-regexp nil t))
-        (setq line (+ line (consult--count-lines (match-beginning 0))))
-        (push (cons
-               (cons line (buffer-substring (line-beginning-position) (line-end-position)))
-               (point-marker))
-              candidates)
-        (unless (eobp) (forward-char 1))))
+      (save-match-data
+        (goto-char (point-min))
+        (while (save-excursion (re-search-forward regexp nil t))
+          (setq line (+ line (consult--count-lines (match-beginning 0))))
+          (push (cons
+                 (cons line
+                       (buffer-substring (line-beginning-position) (line-end-position)))
+                 (point-marker))
+                candidates)
+          (unless (eobp) (forward-char 1)))))
     (unless candidates
-      (user-error "No headings"))
+      (user-error "No matching lines found"))
     (consult--add-line-number line (nreverse candidates))))
+
+;;;###autoload
+(defun consult-regexp (regexp &optional prompt nohl)
+  "Jump to lines matching REGEXP.
+
+PROMPT is the optional prompt string.
+NOHL must be t if no highlighting is desired."
+  (interactive "sRegexp: ")
+  (consult--jump
+   (consult--read (or prompt "Go to match: ")
+                  (consult--with-increased-gc
+                   (consult--regexp-candidates regexp nohl))
+                  :category 'line
+                  :sort nil
+                  :require-match t
+                  :lookup #'consult--lookup-cdr
+                  :preview (and consult-preview-outline (consult--preview-position)))))
 
 ;;;###autoload
 (defun consult-outline ()
   "Jump to an outline heading."
   (interactive)
-  (consult--jump
-   (consult--read "Go to heading: " (consult--with-increased-gc (consult--outline-candidates))
-                  :category 'line
-                  :sort nil
-                  :require-match t
-                  :lookup #'consult--line-match
-                  :history 'consult--line-history
-                  :history-type 'input
-                  :preview (and consult-preview-outline (consult--preview-position)))))
+  (consult-regexp (concat "^\\(?:" outline-regexp "\\)") "Go to heading: " t))
 
 (defun consult--next-error ()
   "Return position of next error or nil."
