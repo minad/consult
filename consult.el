@@ -354,7 +354,9 @@ FUN is the body function."
         (lambda ()
           (setq consult--preview-function
                 (lambda (cand)
-                  (with-selected-window orig-window
+                  (with-selected-window (if (window-live-p orig-window)
+                                            orig-window
+                                          (selected-window))
                     (funcall preview cand nil)))))
       (unwind-protect
           (save-excursion
@@ -519,14 +521,21 @@ PERMANENTLY non-nil means the overlays will not be restored later."
 
 (defun consult--jump-1 (pos)
   "Go to POS and recenter."
-  (when pos
+  (cond
+   ((not pos))
+   ((and (markerp pos) (not (buffer-live-p (marker-buffer pos))))
+    ;; Only print a message, no error in order to not mess
+    ;; with the minibuffer update hook.
+    (message "Buffer is dead"))
+   (t
+    ;; Switch to buffer if it is not visible
     (when (and (markerp pos) (not (eq (current-buffer) (marker-buffer pos))))
       (switch-to-buffer (marker-buffer pos)))
     ;; Widen if we cannot jump to the position (idea from flycheck-jump-to-error)
     (unless (= (goto-char pos) (point))
       (widen)
       (goto-char pos))
-    (run-hooks 'consult-after-jump-hook)))
+    (run-hooks 'consult-after-jump-hook))))
 
 (defun consult--jump (pos)
   "Push current position to mark ring, go to POS and recenter."
@@ -916,7 +925,8 @@ CAND is the currently selected candidate."
                         (completion-all-completions input (list (substring cand (+ start step) end)) nil 0))
               (setq start (+ start step)))
             (setq step (/ step 2))))
-        (+ pos start)))))
+        ;; Marker can be dead
+        (ignore-errors (+ pos start))))))
 
 ;;;###autoload
 (defun consult-line (&optional initial)
