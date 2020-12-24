@@ -274,6 +274,16 @@ Size of private unicode plane b.")
 
 ;;;; Helper functions
 
+(defun consult--line-position (line)
+  "Compute position from LINE number."
+  (save-excursion
+    (save-restriction
+      (when consult-line-numbers-widen
+        (widen))
+      (goto-char (point-min))
+      (forward-line (- line 1))
+      (point))))
+
 (defmacro consult--overlay (beg end &rest props)
   "Make consult overlay between BEG and END with PROPS."
   (let ((ov (make-symbol "ov"))
@@ -961,23 +971,6 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
                     isearch-string
                   (regexp-quote isearch-string))))
 
-(defun consult--line-position (line)
-  "Compute position from LINE number."
-  (save-excursion
-    (save-restriction
-      (when consult-line-numbers-widen
-        (widen))
-      (goto-char (point-min))
-      (forward-line (- line 1))
-      (point))))
-
-(defun consult--goto-line-hook (&rest _)
-  "Hook calling the line number preview."
-  (let* ((str (minibuffer-contents-no-properties))
-         (line (string-to-number str)))
-    (when (string= str (number-to-string line))
-      (funcall consult--preview-function line))))
-
 ;;;###autoload
 (defun consult-goto-line ()
   "Read line number and jump to the line with preview.
@@ -990,15 +983,20 @@ Respects narrowing and the settings
         (pos))
     (while (progn
              (minibuffer-with-setup-hook
-                 (lambda () (add-hook 'after-change-functions #'consult--goto-line-hook nil t))
+                 (apply-partially #'add-hook 'after-change-functions
+                                  (lambda (&rest _)
+                                    (funcall consult--preview-function
+                                             (minibuffer-contents-no-properties)))
+                                  nil t)
                (consult--with-preview
                    (let ((preview (consult--preview-position)))
                      (lambda (cand restore)
-                       (if restore
-                           (funcall preview cand t)
-                         (let ((pos (consult--line-position cand)))
+                       (cond
+                        (restore (funcall preview cand t))
+                        ((string-match-p "^[[:digit:]]+$" cand)
+                         (let ((pos (consult--line-position (string-to-number cand))))
                            (when (consult--in-range-p pos)
-                             (funcall preview pos nil))))))
+                             (funcall preview pos nil)))))))
                  (setq pos (consult--line-position (read-number "Go to line: ")))))
              (if (consult--in-range-p pos)
                  (consult--jump pos)
