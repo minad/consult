@@ -317,6 +317,7 @@ variables and functions with their descriptions.
  #+findex: consult-completion-in-region
  #+findex: consult-theme
  #+findex: consult-man
+ #+findex: consult-xref
  - =consult-apropos=: Replacement for =apropos= with completion.
  - =consult-man=: Find Unix man page, via Unix =apropos= or =man -k=.
    The selected man page is opened using the Emacs =man= command.
@@ -331,6 +332,8 @@ variables and functions with their descriptions.
  - =consult-theme=: Select a theme and disable all currently enabled
    themes. Supports live preview of the theme while scrolling through the
    candidates.
+ - =consult-xref=: Integration with xref. This function can be set as
+   as =xref-show-xrefs-function= and =xref-show-definitions-function=.
 
 * Special features
   :properties:
@@ -715,6 +718,10 @@ contributed.
    ;; Optionally tweak the register preview window.
    ;; This adds zebra stripes, sorting and hides the mode line of the window.
    (advice-add #'register-preview :override #'consult-register-window)
+
+   ;; Use Consult to select xref locations with preview
+   (setq xref-show-xrefs-function #'consult-xref
+         xref-show-definitions-function #'consult-xref)
 
    ;; Configure other variables and modes in the :config section,
    ;; after lazily loading the package.

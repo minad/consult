@@ -812,6 +812,20 @@ KEY is the key function."
     (goto-char pos)
     line))
 
+(defun consult--position-marker (buffer line column)
+  "Get marker in BUFFER from LINE and COLUMN."
+  (when (buffer-live-p buffer)
+    (with-current-buffer buffer
+      (save-restriction
+        (save-excursion
+          (widen)
+          (goto-char (point-min))
+          ;; Location data might be invalid by now!
+          (ignore-errors
+            (forward-line (- line 1))
+            (forward-char column))
+          (point-marker))))))
+
 ;; We must disambiguate the lines by adding a prefix such that two lines with
 ;; the same text can be distinguished. In order to avoid matching the line
 ;; number, such that the user can search for numbers with `consult-line', we
@@ -1107,7 +1121,7 @@ This command is used internally by the narrowing system of `consult--read'."
           (consult--overlay
            (- (minibuffer-prompt-end) 1) (minibuffer-prompt-end)
            'before-string
-           (propertize (format " [%s]" (cdr (assoc key consult--narrow-prefixes)))
+           (propertize (format " [%s]" (alist-get key consult--narrow-prefixes))
                        'face 'consult-narrow-indicator))))
   (run-hooks 'consult--completion-refresh-hook))
 
@@ -3624,18 +3638,9 @@ same major mode as the current buffer are used. See also
         (funcall open))
       (funcall
        jump
-       (when-let (buf (and cand (funcall (if restore #'find-file open)
-                                         (car cand))))
-         (with-current-buffer buf
-           (save-restriction
-             (save-excursion
-               (widen)
-               (goto-char (point-min))
-               ;; Location data might be invalid by now!
-               (ignore-errors
-                 (forward-line (- (cadr cand) 1))
-                 (forward-char (caddr cand)))
-               (point-marker)))))
+       (consult--position-marker
+        (and cand (funcall (if restore #'find-file open) (car cand)))
+        (cadr cand) (caddr cand))
        restore))))
 
 (defun consult--grep (prompt cmd dir initial)

@@ -426,6 +426,7 @@ mode via the keys @samp{l/g/m}.
 @findex consult-completion-in-region
 @findex consult-theme
 @findex consult-man
+@findex consult-xref
 @itemize
 @item
 @samp{consult-apropos}: Replacement for @samp{apropos} with completion.
@@ -446,6 +447,9 @@ contrast, Selectrum already comes with its own function.
 @samp{consult-theme}: Select a theme and disable all currently enabled
 themes. Supports live preview of the theme while scrolling through the
 candidates.
+@item
+@samp{consult-xref}: Integration with xref. This function can be set as
+as @samp{xref-show-xrefs-function} and @samp{xref-show-definitions-function}.
 @end itemize
 
 @node Special features
@@ -861,6 +865,10 @@ contributed.
   ;; Optionally tweak the register preview window.
   ;; This adds zebra stripes, sorting and hides the mode line of the window.
   (advice-add #'register-preview :override #'consult-register-window)
+
+  ;; Use Consult to select xref locations with preview
+  (setq xref-show-xrefs-function #'consult-xref
+        xref-show-definitions-function #'consult-xref)
 
   ;; Configure other variables and modes in the :config section,
   ;; after lazily loading the package.
