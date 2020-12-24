@@ -645,23 +645,20 @@ Since the line number is part of the candidate it will be matched-on during comp
                (consult--unique (cdr cand) (consult--line-number-prefix width (caar cand)))
                (cdar cand))))))
 
-(defsubst consult--region-with-cursor (begin end marker &optional face)
+(defsubst consult--highlighted-region (begin end marker-begin marker-end &optional face)
   "Return region string with a marking at the cursor position.
 
 BEGIN is the begin position.
 END is the end position.
 MARKER is the cursor position.
 FACE is the face to use for the cursor marking."
-  (let* ((col (- marker begin))
-         (str (buffer-substring begin end))
-         (end (1+ col))
-         (face (or face 'consult-preview-cursor)))
-    (if (> end (length str))
-        (concat (substring str 0 col)
-                (propertize " " 'face face))
-      (concat (substring str 0 col)
-              (propertize (substring str col end) 'face face)
-              (substring str end)))))
+  (if (> marker-end end)
+      (concat (buffer-substring begin marker-begin)
+              (propertize " " 'face (or face 'consult-preview-cursor)))
+    (concat (buffer-substring begin marker-begin)
+            (propertize (buffer-substring marker-begin marker-end)
+                        'face (or face 'consult-preview-cursor))
+            (buffer-substring marker-end end))))
 
 (defun consult--line-with-cursor (line marker &optional face)
   "Return line candidate.
@@ -669,10 +666,10 @@ FACE is the face to use for the cursor marking."
 LINE is line number.
 MARKER is the cursor marker.
 FACE is the cursor face."
-  (cons (cons line (consult--region-with-cursor
+  (cons (cons line (consult--highlighted-region
                     (line-beginning-position)
                     (line-end-position)
-                    marker face))
+                    marker (1+ marker) face))
         marker))
 
 ;;;; Commands
@@ -827,7 +824,9 @@ The alist contains (string . position) pairs."
                   (setq max-name (max (length name) max-name)
                         max-line (max line max-line))
                   (consult--fontify-region begin end)
-                  (push (cons (list name line (consult--region-with-cursor begin end marker)) marker)
+                  (push (cons (list name line
+                                    (consult--highlighted-region begin end marker (1+ marker)))
+                              marker)
                         candidates))))))))
     (unless candidates
       (user-error "No global marks"))
