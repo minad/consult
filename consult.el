@@ -764,15 +764,15 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
   (consult--fontify-all)
   (let* ((line (line-number-at-pos (point-min) consult-line-numbers-widen))
          (candidates))
-      (save-excursion
-        (goto-char (point-min))
-        (while (when-let (pos (consult--next-error))
-                 (setq line (+ line (consult--count-lines pos))))
-          (push (consult--line-with-cursor line (point-marker) 'consult-preview-error)
-                candidates)))
-      (unless candidates
-        (user-error "No errors"))
-      (consult--add-line-number line (nreverse candidates))))
+    (save-excursion
+      (goto-char (point-min))
+      (while (when-let (pos (consult--next-error))
+               (setq line (+ line (consult--count-lines pos))))
+        (push (consult--line-with-cursor line (point-marker) 'consult-preview-error)
+              candidates)))
+    (unless candidates
+      (user-error "No errors"))
+    (consult--add-line-number line (nreverse candidates))))
 
 ;;;###autoload
 (defun consult-error ()
@@ -1357,7 +1357,7 @@ for which the command history is used."
                     (when (and lighter (not (equal "" lighter)))
                       (setq lighter (string-trim (format-mode-line lighter)))
                       (unless (string-blank-p lighter)
-                       (cons lighter sym))))
+                        (cons lighter sym))))
                   minor-mode-alist)))))
 
 ;;;###autoload
@@ -1487,7 +1487,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                 ;; views can result in expensive operations.
                 ((and (eq (car cand) open-buffer) (get-buffer (cdr cand)))
                  (funcall open-buffer (cdr cand) 'norecord))))))))
-  (when selected (funcall (car selected) (cdr selected)))))
+    (when selected (funcall (car selected) (cdr selected)))))
 
 ;;;###autoload
 (defun consult-buffer-other-frame ()
@@ -1617,34 +1617,34 @@ Prepend PREFIX in front of all items."
 (defun consult-imenu ()
   "Choose from flattened `imenu' using `completing-read'."
   (interactive)
-   (let ((narrow (cdr (seq-find (lambda (x) (derived-mode-p (car x))) consult-imenu-narrow))))
-     (imenu
-      (consult--read
-       "Go to item: "
-       (or (consult--imenu-candidates)
-           (user-error "Imenu is empty"))
-       :preview
-       (when consult-preview-imenu
-         (let ((preview (consult--preview-position)))
-           (lambda (cand restore)
-             ;; Only preview imenu items which are markers,
-             ;; in order to avoid any bad side effects.
-             (funcall preview (and (consp cand) (markerp (cdr cand)) (cdr cand)) restore))))
-       :require-match t
-       :narrow
-       (cons (lambda (cand)
-               (when-let (n (cdr (assoc consult--narrow narrow)))
-                 (let* ((c (car cand))
-                        (l (length n)))
-                   (and (> (length c) l)
-                        (eq t (compare-strings n 0 l c 0 l))
-                        (= (elt c l) 32)))))
-             narrow)
-       :category 'imenu
-       :lookup #'consult--lookup-cdr
-       :history 'consult--imenu-history
-       :sort nil))
-     (run-hooks 'consult-after-jump-hook)))
+  (let ((narrow (cdr (seq-find (lambda (x) (derived-mode-p (car x))) consult-imenu-narrow))))
+    (imenu
+     (consult--read
+      "Go to item: "
+      (or (consult--imenu-candidates)
+          (user-error "Imenu is empty"))
+      :preview
+      (when consult-preview-imenu
+        (let ((preview (consult--preview-position)))
+          (lambda (cand restore)
+            ;; Only preview imenu items which are markers,
+            ;; in order to avoid any bad side effects.
+            (funcall preview (and (consp cand) (markerp (cdr cand)) (cdr cand)) restore))))
+      :require-match t
+      :narrow
+      (cons (lambda (cand)
+              (when-let (n (cdr (assoc consult--narrow narrow)))
+                (let* ((c (car cand))
+                       (l (length n)))
+                  (and (> (length c) l)
+                       (eq t (compare-strings n 0 l c 0 l))
+                       (= (elt c l) 32)))))
+            narrow)
+      :category 'imenu
+      :lookup #'consult--lookup-cdr
+      :history 'consult--imenu-history
+      :sort nil))
+    (run-hooks 'consult-after-jump-hook)))
 
 ;;;; default completion-system support for preview
 
