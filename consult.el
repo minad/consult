@@ -358,16 +358,16 @@ DISPLAY is the string to display instead of the unique string."
 
 PREVIEW is the preview function.
 FUN is the body function."
-  (let ((orig-window (selected-window))
+  (let ((orig-buffer (current-buffer))
         (selected))
     (minibuffer-with-setup-hook
         (lambda ()
           (setq consult--preview-function
                 (lambda (cand)
-                  (with-selected-window (if (window-live-p orig-window)
-                                            orig-window
-                                          (selected-window))
-                    (funcall preview cand nil)))))
+                  (when (buffer-live-p orig-buffer)
+                    (with-current-buffer orig-buffer
+                      (with-selected-window (display-buffer orig-buffer)
+                        (funcall preview cand nil)))))))
       (unwind-protect
           (save-excursion
             (save-restriction
