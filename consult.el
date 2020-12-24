@@ -42,15 +42,16 @@
 
 ;;; Code:
 
+(eval-when-compile
+  (require 'subr-x)
+  (require 'cl-lib))
 (require 'bookmark)
-(require 'cl-lib)
 (require 'imenu)
 (require 'kmacro)
 (require 'outline)
 (require 'recentf)
 (require 'ring)
 (require 'seq)
-(require 'subr-x)
 
 (defgroup consult nil
   "Consulting `completing-read'."
