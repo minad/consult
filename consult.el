@@ -835,7 +835,7 @@ The alist contains (string . position) pairs."
       (dolist (marker global-mark-ring)
         (let ((pos (marker-position marker))
               (buf (marker-buffer marker)))
-          (when (and pos buf (not (minibufferp buf)))
+          (when (and pos buf (buffer-live-p buf) (not (minibufferp buf)))
             (with-current-buffer buf
               (when (consult--in-range-p pos)
                 (goto-char pos)
