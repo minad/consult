@@ -449,16 +449,18 @@ Note that `consult-narrow-key' and `consult-widen-key' are bound dynamically.")
     (define-key map (vconcat (seq-take key idx) (vector 'which-key (elt key idx)))
       `(which-key (,desc . ,cmd)))))
 
-(defun consult--narrow-install (predicate prefixes fun)
+(defun consult--narrow-install (settings fun)
   "Install narrowing in FUN.
 
-PREDICATE is the narrowing predicate.
-PREFIXES is the list of narrowing prefixes."
+SETTINGS is the narrow settings."
   (minibuffer-with-setup-hook
       (:append
        (lambda ()
-         (setq consult--narrow-predicate predicate
-               consult--narrow-prefixes prefixes)
+         (if (functionp (car settings))
+             (setq consult--narrow-predicate (car settings)
+                   consult--narrow-prefixes (cdr settings))
+           (setq consult--narrow-predicate nil
+                 consult--narrow-prefixes settings))
          (let ((map (make-composed-keymap consult-narrow-map (current-local-map))))
            (when consult-narrow-key
              (dolist (pair consult--narrow-prefixes)
@@ -482,7 +484,7 @@ SETTINGS is the narrow settings."
   (let ((settings-var (make-symbol "settings")))
     `(let ((,settings-var ,settings))
        (if ,settings-var
-           (consult--narrow-install (car ,settings-var) (cdr ,settings-var) (lambda () ,@body))
+           (consult--narrow-install ,settings-var (lambda () ,@body))
          ,@body))))
 
 (defmacro consult--with-increased-gc (&rest body)
@@ -1129,8 +1131,7 @@ If no modes are specified, use currently active major and minor modes."
                      (if consult--narrow
                          (= (cdr cand) consult--narrow)
                        (/= (cdr cand) ?g)))
-                   :narrow '(nil
-                             (?m . "Major")
+                   :narrow '((?m . "Major")
                              (?l . "Local Minor")
                              (?g . "Global Minor"))
                    :require-match t
@@ -1451,8 +1452,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                     (/= (elt cand 1) 32))
                 (or (not consult--narrow) ;; narrowed
                     (= (- (elt cand 0) consult--special-char) consult--narrow)))))
-           :narrow `(nil
-                     (32 . "Ephemeral")
+           :narrow `((32 . "Ephemeral")
                      (?b . "Buffer")
                      (?f . "File")
                      (?m . "Bookmark")
