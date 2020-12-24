@@ -532,7 +532,6 @@ PERMANENTLY non-nil means the overlays will not be restored later."
 (defun consult--jump-1 (pos)
   "Go to POS and recenter."
   (cond
-   ((not pos))
    ((and (markerp pos) (not (buffer-live-p (marker-buffer pos))))
     ;; Only print a message, no error in order to not mess
     ;; with the minibuffer update hook.
@@ -569,12 +568,13 @@ FACE is the cursor face."
         (face (or face 'consult-preview-cursor))
         (saved-buf (current-buffer)))
     (lambda (cand restore)
-      (if restore
-          (progn
-            (consult--invisible-restore invisible)
-            (mapc #'delete-overlay overlays)
-            (when (buffer-live-p saved-buf)
-              (set-buffer saved-buf)))
+      (cond
+       (restore
+        (consult--invisible-restore invisible)
+        (mapc #'delete-overlay overlays)
+        (when (buffer-live-p saved-buf)
+          (set-buffer saved-buf)))
+       (cand
         (consult--jump-1 cand)
         (consult--invisible-restore invisible)
         (setq invisible (consult--invisible-show))
@@ -582,7 +582,7 @@ FACE is the cursor face."
         (let ((pos (point)))
           (setq overlays
                 (list (consult--overlay (line-beginning-position) (line-end-position) 'face 'consult-preview-line)
-                      (consult--overlay pos (1+ pos) 'face face))))))))
+                      (consult--overlay pos (1+ pos) 'face face)))))))))
 
 (cl-defun consult--read (prompt candidates &key
                                 predicate require-match history default
@@ -606,7 +606,7 @@ NARROW is an alist of narrowing prefix strings and description."
   (ignore default-top)
   ;; supported types
   (cl-assert (and
-              (not (functionp candidates))
+              (not (functionp candidates)) ;; no function support as of now
               (or (not candidates) ;; nil
                   (obarrayp candidates) ;; obarray
                   (stringp (car candidates)) ;; string list
@@ -979,25 +979,24 @@ Respects narrowing and the settings
 `consult-goto-line-numbers' and `consult-line-numbers-widen'."
   (interactive)
   (let ((display-line-numbers consult-goto-line-numbers)
-        (display-line-numbers-widen consult-line-numbers-widen)
-        (pos))
-    (while (progn
-             (minibuffer-with-setup-hook
-                 (apply-partially #'add-hook 'after-change-functions
-                                  (lambda (&rest _)
-                                    (funcall consult--preview-function
-                                             (minibuffer-contents-no-properties)))
-                                  nil t)
-               (consult--with-preview
-                   (let ((preview (consult--preview-position)))
-                     (lambda (cand restore)
-                       (cond
-                        (restore (funcall preview cand t))
-                        ((string-match-p "^[[:digit:]]+$" cand)
-                         (let ((pos (consult--line-position (string-to-number cand))))
-                           (when (consult--in-range-p pos)
-                             (funcall preview pos nil)))))))
-                 (setq pos (consult--line-position (read-number "Go to line: ")))))
+        (display-line-numbers-widen consult-line-numbers-widen))
+    (while (let ((pos (consult--line-position
+                       (minibuffer-with-setup-hook
+                           (apply-partially #'add-hook 'after-change-functions
+                                            (lambda (&rest _)
+                                              (let ((str (minibuffer-contents-no-properties)))
+                                                (when (string-match-p "^[[:digit:]]+$" str)
+                                                  (funcall consult--preview-function
+                                                           (string-to-number str)))))
+                                            nil t)
+                         (consult--with-preview
+                             (let ((preview (consult--preview-position)))
+                               (lambda (cand restore)
+                                 (funcall preview
+                                          (when-let (pos (and cand (consult--line-position cand)))
+                                            (and (consult--in-range-p pos) pos))
+                                          restore)))
+                           (read-number "Go to line: "))))))
              (if (consult--in-range-p pos)
                  (consult--jump pos)
                (message "Line number out of range")
@@ -1467,7 +1466,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
            :lookup
            (lambda (_ candidates cand)
              (if (member cand candidates)
-                 (cons (pcase (- (elt cand 0) consult--special-char)
+                 (cons (pcase-exhaustive (- (elt cand 0) consult--special-char)
                          (?b open-buffer)
                          (?m open-bookmark)
                          (?v consult-view-open-function)
@@ -1628,12 +1627,9 @@ Prepend PREFIX in front of all items."
        (when consult-preview-imenu
          (let ((preview (consult--preview-position)))
            (lambda (cand restore)
-             (if restore
-                 (funcall preview cand t)
-               ;; Only preview imenu items which are markers,
-               ;; in order to avoid any bad side effects.
-               (when (and (consp cand) (markerp (cdr cand)))
-                 (funcall preview (cdr cand) nil))))))
+             ;; Only preview imenu items which are markers,
+             ;; in order to avoid any bad side effects.
+             (funcall preview (and (consp cand) (markerp (cdr cand)) (cdr cand)) restore))))
        :require-match t
        :narrow
        (cons (lambda (cand)
