@@ -652,16 +652,14 @@ BEGIN is the begin position.
 END is the end position.
 MARKER is the cursor position.
 FACE is the face to use for the cursor marking."
-  (let* ((col (- marker begin))
-         (str (buffer-substring begin end))
-         (end (1+ col))
-         (face (or face 'consult-preview-cursor)))
-    (if (> end (length str))
-        (concat (substring str 0 col)
-                (propertize " " 'face face))
-      (concat (substring str 0 col)
-              (propertize (substring str col end) 'face face)
-              (substring str end)))))
+  (let ((marker-end (1+ marker)))
+    (if (> marker-end end)
+        (concat (buffer-substring begin marker)
+                (propertize " " 'face (or face 'consult-preview-cursor)))
+      (concat (buffer-substring begin marker)
+              (propertize (buffer-substring marker marker-end)
+                          'face (or face 'consult-preview-cursor))
+              (buffer-substring marker-end end)))))
 
 (defun consult--line-with-cursor (line marker &optional face)
   "Return line candidate.
