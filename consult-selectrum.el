@@ -43,9 +43,9 @@
 
 (defun consult-selectrum--preview-setup ()
   "Setup preview support for selectrum."
-  (advice-remove 'selectrum--minibuffer-post-command-hook #'consult-selectrum--preview-update)
-  (when consult-preview-mode
-    (advice-add 'selectrum--minibuffer-post-command-hook :after #'consult-selectrum--preview-update)))
+  (if consult-preview-mode
+      (advice-add 'selectrum--minibuffer-post-command-hook :after #'consult-selectrum--preview-update)
+    (advice-remove 'selectrum--minibuffer-post-command-hook #'consult-selectrum--preview-update)))
 
 (add-hook 'consult-preview-mode-hook #'consult-selectrum--preview-setup)
 (consult-selectrum--preview-setup) ;; call immediately to ensure load-order independence

@@ -1670,9 +1670,9 @@ Prepend PREFIX in front of all items."
 
 (defun consult--default-preview-setup ()
   "Setup preview support for the default completion-system."
-  (remove-hook 'minibuffer-setup-hook #'consult--default-preview-hook)
-  (when consult-preview-mode
-    (add-hook 'minibuffer-setup-hook #'consult--default-preview-hook)))
+  (if consult-preview-mode
+      (add-hook 'minibuffer-setup-hook #'consult--default-preview-hook)
+    (remove-hook 'minibuffer-setup-hook #'consult--default-preview-hook)))
 
 (add-hook 'consult-preview-mode-hook #'consult--default-preview-setup)
 
@@ -1686,9 +1686,9 @@ Prepend PREFIX in front of all items."
 
 (defun consult--icomplete-preview-setup ()
   "Setup preview support for Icomplete."
-  (advice-remove 'icomplete-post-command-hook #'consult--icomplete-preview-update)
-  (when consult-preview-mode
-    (advice-add 'icomplete-post-command-hook :after #'consult--icomplete-preview-update)))
+  (if consult-preview-mode
+      (advice-add 'icomplete-post-command-hook :after #'consult--icomplete-preview-update)
+    (advice-remove 'icomplete-post-command-hook #'consult--icomplete-preview-update)))
 
 (add-hook 'consult-preview-mode-hook #'consult--icomplete-preview-setup)
 
