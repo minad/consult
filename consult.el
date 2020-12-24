@@ -566,7 +566,7 @@ FACE is the cursor face."
                       (consult--overlay pos (1+ pos) 'face face))))))))
 
 (cl-defun consult--read (prompt candidates &key
-                                predicate require-match history history-type default
+                                predicate require-match history default
                                 category initial preview narrow
                                 (sort t) (default-top t) (lookup (lambda (_input _cands x) x)))
   "Simplified completing read function.
@@ -576,7 +576,6 @@ CANDIDATES is the candidate list or alist.
 PREDICATE is a filter function for the candidates.
 REQUIRE-MATCH equals t means that an exact match is required.
 HISTORY is the symbol of the history variable.
-HISTORY-TYPE must be 'input if the input string should be saved in the history.
 DEFAULT is the default input.
 CATEGORY is the completion category.
 SORT should be set to nil if the candidates are already sorted.
@@ -612,10 +611,14 @@ NARROW is an alist of narrowing prefix strings and description."
                             (funcall preview (and cand (funcall lookup input candidates cand)) restore)))
                    (consult--with-narrow narrow
                      (completing-read prompt table
-                                      predicate require-match initial history default)))))
-    (when (eq history-type 'input)
-      (set history (cdr (symbol-value history)))
-      (add-to-history history input))
+                                      predicate require-match initial
+                                      (if (symbolp history) history (cadr history))
+                                      default)))))
+    (pcase-exhaustive history
+      (`(:input ,var)
+       (set var (cdr (symbol-value var)))
+       (add-to-history var input))
+      ((pred symbolp)))
     (funcall lookup input candidates result)))
 
 (defun consult--count-lines (pos)
@@ -720,8 +723,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                   :sort nil
                   :require-match t
                   :lookup #'consult--line-match
-                  :history 'consult--line-history
-                  :history-type 'input
+                  :history '(:input consult--line-history)
                   :preview (and consult-preview-outline (consult--preview-position)))))
 
 (defun consult--next-error ()
@@ -763,8 +765,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                   :sort nil
                   :require-match t
                   :lookup #'consult--lookup-cdr
-                  :history 'consult--line-history
-                  :history-type 'input
+                  :history '(:input consult--line-history)
                   :preview
                   (and consult-preview-error (consult--preview-position 'consult-preview-error)))))
 
@@ -801,8 +802,7 @@ The alist contains (string . position) pairs."
                   :sort nil
                   :require-match t
                   :lookup #'consult--lookup-cdr
-                  :history 'consult--line-history
-                  :history-type 'input
+                  :history '(:input consult--line-history)
                   :preview (and consult-preview-mark (consult--preview-position)))))
 
 (defun consult--global-mark-candidates ()
@@ -850,8 +850,7 @@ The alist contains (string . position) pairs."
                   :sort nil
                   :require-match t
                   :lookup #'consult--lookup-cdr
-                  :history 'consult--line-history
-                  :history-type 'input
+                  :history '(:input consult--line-history)
                   :preview (and consult-preview-global-mark (consult--preview-position)))))
 
 (defun consult--line-candidates ()
@@ -932,8 +931,7 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
                     :sort nil
                     :default-top nil
                     :require-match t
-                    :history 'consult--line-history
-                    :history-type 'input
+                    :history '(:input consult--line-history)
                     :lookup #'consult--line-match
                     :default (car candidates)
                     :initial initial
@@ -1624,7 +1622,7 @@ Prepend PREFIX in front of all items."
            (lambda (cand restore)
              (if restore
                  (funcall preview cand t)
-               ;; Only handle imenu items which are markers for preview,
+               ;; Only preview imenu items which are markers,
                ;; in order to avoid any bad side effects.
                (when (and (consp cand) (markerp (cdr cand)))
                  (funcall preview (cdr cand) nil))))))
