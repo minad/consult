@@ -1386,7 +1386,7 @@ preview if `consult-preview-mode' is enabled."
        :preview (when consult-preview-theme
                   (lambda (cand restore)
                     (cond
-                     (restore (consult-theme saved-theme))
+                     ((and restore (not cand)) (consult-theme saved-theme))
                      ((memq cand avail-themes) (consult-theme cand)))))
        :default (symbol-name (or saved-theme 'default))))))
   (unless (eq theme (car custom-enabled-themes))
