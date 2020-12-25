@@ -25,6 +25,8 @@
 
 ;;; Commentary:
 
+;; Merry Christmas!
+
 ;; Consult implements a set of commands which use `completing-read' to select
 ;; from a list of candidates. Most provided commands follow the naming scheme
 ;; `consult-<thing>'. Some commands are drop-in replacements for existing
