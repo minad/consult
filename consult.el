@@ -605,7 +605,6 @@ NARROW is an alist of narrowing prefix strings and description."
          (input "")
          (table
           (lambda (str pred action)
-            (setq input (substring-no-properties str))
             (if (eq action 'metadata)
                 metadata
               (complete-with-action action candidates str pred))))
@@ -614,10 +613,14 @@ NARROW is an alist of narrowing prefix strings and description."
                           (lambda (cand restore)
                             (funcall preview (and cand (funcall lookup input candidates cand)) restore)))
                    (consult--with-narrow narrow
-                     (completing-read prompt table
-                                      predicate require-match initial
-                                      (if (symbolp history) history (cadr history))
-                                      default)))))
+                     (minibuffer-with-setup-hook
+                         (apply-partially #'add-hook 'post-command-hook
+                                          (lambda () (setq input (minibuffer-contents-no-properties)))
+                                          nil t)
+                       (completing-read prompt table
+                                        predicate require-match initial
+                                        (if (symbolp history) history (cadr history))
+                                        default))))))
     (pcase-exhaustive history
       (`(:input ,var)
        (set var (cdr (symbol-value var)))
@@ -967,8 +970,8 @@ Respects narrowing and the settings
         (display-line-numbers-widen consult-line-numbers-widen))
     (while (let ((pos (consult--line-position
                        (minibuffer-with-setup-hook
-                           (apply-partially #'add-hook 'after-change-functions
-                                            (lambda (&rest _)
+                           (apply-partially #'add-hook 'post-command-hook
+                                            (lambda ()
                                               (let ((str (minibuffer-contents-no-properties)))
                                                 (when (string-match-p "^[[:digit:]]+$" str)
                                                   (funcall consult--preview-function
