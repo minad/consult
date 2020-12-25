@@ -50,33 +50,22 @@
 (add-hook 'consult-preview-mode-hook #'consult-selectrum--preview-setup)
 (consult-selectrum--preview-setup) ;; call immediately to ensure load-order independence
 
-;; HACK: Hopefully selectrum adds something like this to the official API.
-;; https://github.com/raxod502/selectrum/issues/243
-;; https://github.com/raxod502/selectrum/pull/244
-(defsubst consult-selectrum--configure (options)
-  "Add OPTIONS to the next `selectrum-read' call."
-  (when (and options (eq completing-read-function #'selectrum-completing-read))
-    (letrec ((advice (lambda (orig prompt candidates &rest args)
-                       (advice-remove #'selectrum-read advice)
-                       (apply orig prompt candidates (append options args)))))
-      (advice-add #'selectrum-read :around advice))))
-
-(cl-defun consult-selectrum--read-advice (_prompt _candidates &rest rest &key default-top &allow-other-keys)
-  "Advice for `consult--read' performing Selectrum-specific configuration.
-
-_PROMPT, _CANDIDATES and REST are ignored.
-DEFAULT-TOP keyword argument is used to configure Selectrum."
-  (consult-selectrum--configure
-   `(,@(unless default-top '(:no-move-default-candidate t)))))
-
-(advice-add #'consult--read :before #'consult-selectrum--read-advice)
-
 (defun consult-selectrum--refresh ()
   "Refresh selectrum view."
   (when (eq completing-read-function #'selectrum-completing-read)
     (selectrum-exhibit)))
 
 (add-hook 'consult--completion-refresh-hook #'consult-selectrum--refresh)
+
+;; HACK: Hopefully selectrum adds something like this to the official API.
+;; https://github.com/raxod502/selectrum/issues/243
+;; https://github.com/raxod502/selectrum/pull/244
+(advice-add #'consult--read :around
+            (lambda (fun prompt candidates &rest opts)
+              (minibuffer-with-setup-hook
+                  (lambda ()
+                    (setq-local selectrum--move-default-candidate-p (plist-get opts :default-top)))
+                (apply fun prompt candidates opts))))
 
 (provide 'consult-selectrum)
 ;;; consult-selectrum.el ends here
