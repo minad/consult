@@ -277,6 +277,11 @@ Size of private unicode plane b.")
 
 ;;;; Helper functions
 
+(defsubst consult--string-to-number (str)
+  "Safer STR to number conversion."
+  (when (and str (string-match-p "^[[:digit:]]+$" str))
+    (string-to-number str)))
+
 (defun consult--line-position (line)
   "Compute position from LINE number."
   (save-excursion
@@ -968,25 +973,27 @@ Respects narrowing and the settings
   (interactive)
   (let ((display-line-numbers consult-goto-line-numbers)
         (display-line-numbers-widen consult-line-numbers-widen))
-    (while (let ((pos (consult--line-position
-                       (minibuffer-with-setup-hook
-                           (lambda ()
-                             (setq-local consult--completion-candidate-hook
-                                         '((lambda ()
-                                             (let ((str (minibuffer-contents-no-properties)))
-                                               (when (string-match-p "^[[:digit:]]+$" str)
-                                                 (string-to-number str)))))))
-                         (consult--with-preview
-                             (let ((preview (consult--preview-position)))
-                               (lambda (cand restore)
-                                 (funcall preview
-                                          (when-let (pos (and cand (consult--line-position cand)))
-                                            (and (consult--in-range-p pos) pos))
-                                          restore)))
-                           (read-number "Go to line: "))))))
-             (if (consult--in-range-p pos)
-                 (consult--jump pos)
-               (message "Line number out of range")
+    (while (let ((str (minibuffer-with-setup-hook
+                          (lambda ()
+                            (setq-local consult--completion-candidate-hook
+                                        '(minibuffer-contents-no-properties)))
+                        (consult--with-preview
+                            (let ((preview (consult--preview-position)))
+                              (lambda (cand restore)
+                                (funcall preview
+                                         (when-let* ((num (consult--string-to-number cand))
+                                                     (pos (and num (consult--line-position num))))
+                                           (and (consult--in-range-p pos) pos))
+                                         restore)))
+                          (read-from-minibuffer "Go to line: ")))))
+             (if-let (num (consult--string-to-number str))
+                 (let ((pos (consult--line-position num)))
+                   (if (consult--in-range-p pos)
+                       (consult--jump pos)
+                     (message "Line number out of range.")
+                     (sit-for 1)
+                     t))
+               (message "Please enter a number.")
                (sit-for 1)
                t)))))
 
