@@ -357,36 +357,28 @@ DISPLAY is the string to display instead of the unique string."
     (propertize str 'display display)))
 
 (defun consult--preview-install (preview fun)
-  "Install preview support to minibuffer completion.
-
-PREVIEW is the preview function.
-FUN is the body function."
-  (let ((orig-window (selected-window))
-        (selected))
-    (minibuffer-with-setup-hook
-        (lambda ()
-          (setq consult--preview-function
-                (lambda (cand)
-                  (with-selected-window (if (window-live-p orig-window)
-                                            orig-window
-                                          (selected-window))
-                    (funcall preview cand nil)))))
-      (unwind-protect
-          (save-excursion
-            (save-restriction
-              (setq selected (funcall fun))))
-        (funcall preview selected t)))))
+  "Install PREVIEW function for FUN."
+  (if (not preview) (funcall fun)
+    (let ((orig-window (selected-window))
+          (selected))
+      (minibuffer-with-setup-hook
+          (lambda ()
+            (setq consult--preview-function
+                  (lambda (cand)
+                    (with-selected-window (if (window-live-p orig-window)
+                                              orig-window
+                                            (selected-window))
+                      (funcall preview cand nil)))))
+        (unwind-protect
+            (save-excursion
+              (save-restriction
+                (setq selected (funcall fun))))
+          (funcall preview selected t))))))
 
 (defmacro consult--with-preview (preview &rest body)
-  "Install preview in BODY.
-
-PREVIEW is the preview function."
+  "Install PREVIEW in BODY."
   (declare (indent 1))
-  (let ((preview-var (make-symbol "preview")))
-    `(let ((,preview-var ,preview))
-       (if ,preview-var
-           (consult--preview-install ,preview-var (lambda () ,@body))
-         ,@body))))
+  `(consult--preview-install ,preview (lambda () ,@body)))
 
 (defun consult--narrow-set (key)
   "Set narrowing key `consult--narrow' to KEY."
@@ -467,37 +459,34 @@ Note that `consult-narrow-key' and `consult-widen-key' are bound dynamically.")
 
 (defun consult--narrow-install (settings fun)
   "Install narrowing in FUN with narrowing SETTINGS."
-  (minibuffer-with-setup-hook
-      (:append
-       (lambda ()
-         (if (functionp (car settings))
-             (setq consult--narrow-predicate (car settings)
-                   consult--narrow-prefixes (cdr settings))
-           (setq consult--narrow-predicate nil
-                 consult--narrow-prefixes settings))
-         (let ((map (make-composed-keymap consult-narrow-map (current-local-map))))
-           (when consult-narrow-key
-             (dolist (pair consult--narrow-prefixes)
-               (when (/= (car pair) 32)
-                 (consult--define-key map
-                                      (vconcat consult-narrow-key (vector (car pair)))
-                                      #'consult-narrow (cdr pair)))))
-           ;; If `consult-widen-key' is not set, default to 'consult-narrow-key SPC'.
-           (when-let (widen (or consult-widen-key
-                                (and consult-narrow-key
-                                     (vconcat consult-narrow-key " "))))
-             (consult--define-key map widen #'consult-widen "All"))
-           (use-local-map map))))
-    (funcall fun)))
+  (if (not settings) (funcall fun)
+    (minibuffer-with-setup-hook
+        (:append
+         (lambda ()
+           (if (functionp (car settings))
+               (setq consult--narrow-predicate (car settings)
+                     consult--narrow-prefixes (cdr settings))
+             (setq consult--narrow-predicate nil
+                   consult--narrow-prefixes settings))
+           (let ((map (make-composed-keymap consult-narrow-map (current-local-map))))
+             (when consult-narrow-key
+               (dolist (pair consult--narrow-prefixes)
+                 (when (/= (car pair) 32)
+                   (consult--define-key map
+                                        (vconcat consult-narrow-key (vector (car pair)))
+                                        #'consult-narrow (cdr pair)))))
+             ;; If `consult-widen-key' is not set, default to 'consult-narrow-key SPC'.
+             (when-let (widen (or consult-widen-key
+                                  (and consult-narrow-key
+                                       (vconcat consult-narrow-key " "))))
+               (consult--define-key map widen #'consult-widen "All"))
+             (use-local-map map))))
+      (funcall fun))))
 
 (defmacro consult--with-narrow (settings &rest body)
   "Setup narrowing in BODY with SETTINGS."
   (declare (indent 1))
-  (let ((settings-var (make-symbol "settings")))
-    `(let ((,settings-var ,settings))
-       (if ,settings-var
-           (consult--narrow-install ,settings-var (lambda () ,@body))
-         ,@body))))
+  `(consult--narrow-install ,settings (lambda () ,@body)))
 
 (defmacro consult--with-increased-gc (&rest body)
   "Temporarily increase the gc limit in BODY to optimize for throughput."
@@ -605,13 +594,12 @@ PREVIEW is a preview function.
 NARROW is an alist of narrowing prefix strings and description."
   (ignore default-top)
   ;; supported types
-  (cl-assert (and
-              (not (functionp candidates)) ;; no function support as of now
-              (or (not candidates) ;; nil
-                  (obarrayp candidates) ;; obarray
-                  (stringp (car candidates)) ;; string list
-                  (symbolp (car candidates)) ;; symbol list
-                  (consp (car candidates))))) ;; alist
+  (cl-assert (and (not (functionp candidates))    ;; no function support
+                  (or (not candidates)            ;; nil
+                      (obarrayp candidates)       ;; obarray
+                      (stringp (car candidates))  ;; string list
+                      (symbolp (car candidates))  ;; symbol list
+                      (consp (car candidates))))) ;; alist
   (let* ((metadata
           `(metadata
             ,@(when category `((category . ,category)))
