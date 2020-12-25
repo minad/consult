@@ -382,8 +382,15 @@ DISPLAY is the string to display instead of the unique string."
   (declare (indent 1))
   `(consult--preview-install ,preview (lambda () ,@body)))
 
-(defun consult--narrow-set (key)
-  "Set narrowing key `consult--narrow' to KEY."
+(defun consult--widen-key ()
+  "Return widening key, if `consult-widen-key' is not set, default to 'consult-narrow-key SPC'."
+  (or consult-widen-key (and consult-narrow-key (vconcat consult-narrow-key " "))))
+
+(defun consult-narrow (key)
+  "Narrow current completion with KEY."
+  (interactive
+   (list (unless (equal (this-single-command-keys) (consult--widen-key))
+           last-command-event)))
   (unless (minibufferp) (error "Command must be executed in minibuffer"))
   (setq consult--narrow key)
   (when consult--narrow-predicate
@@ -398,22 +405,13 @@ DISPLAY is the string to display instead of the unique string."
                                         'face 'consult-narrow-indicator))))
   (run-hooks 'consult--completion-refresh-hook))
 
-(defun consult-widen ()
-  "Widen current completion."
-  (interactive)
-  (consult--narrow-set nil))
-
-(defun consult-narrow ()
-  "Narrow current completion."
-  (interactive)
-  (consult--narrow-set last-command-event))
-
 (defconst consult--narrow-delete
   `(menu-item
     "" nil :filter
     ,(lambda (&optional _)
        (when (string= (minibuffer-contents-no-properties) "")
-         #'consult-widen))))
+         (consult-narrow nil)
+         #'ignore))))
 
 (defconst consult--narrow-space
   `(menu-item
@@ -423,7 +421,7 @@ DISPLAY is the string to display instead of the unique string."
          (when-let (pair (or (and (= 1 (length str)) (assoc (elt str 0) consult--narrow-prefixes))
                              (and (string= str "") (assoc 32 consult--narrow-prefixes))))
            (delete-minibuffer-contents)
-           (consult--narrow-set (car pair))
+           (consult-narrow (car pair))
            #'ignore)))))
 
 (defun consult-narrow-help ()
@@ -477,11 +475,8 @@ Note that `consult-narrow-key' and `consult-widen-key' are bound dynamically.")
                    (consult--define-key map
                                         (vconcat consult-narrow-key (vector (car pair)))
                                         #'consult-narrow (cdr pair)))))
-             ;; If `consult-widen-key' is not set, default to 'consult-narrow-key SPC'.
-             (when-let (widen (or consult-widen-key
-                                  (and consult-narrow-key
-                                       (vconcat consult-narrow-key " "))))
-               (consult--define-key map widen #'consult-widen "All"))
+             (when-let (widen (consult--widen-key))
+               (consult--define-key map widen #'consult-narrow "All"))
              (use-local-map map))))
       (funcall fun))))
 
