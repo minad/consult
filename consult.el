@@ -25,8 +25,6 @@
 
 ;;; Commentary:
 
-;; Merry Christmas!
-
 ;; Consult implements a set of commands which use `completing-read' to select
 ;; from a list of candidates. Most provided commands follow the naming scheme
 ;; `consult-<thing>'. Some commands are drop-in replacements for existing
@@ -245,6 +243,9 @@ You may want to add a function which pulses the current line, e.g.,
 
 ;;;; Internal variables
 
+(defvar consult--completion-candidate-hook nil
+  "Get candidate from completion system.")
+
 (defvar consult--completion-refresh-hook nil
   "Refresh completion system.")
 
@@ -273,9 +274,6 @@ Size of private unicode plane b.")
 
 (defvar consult--gc-percentage 0.5
   "Large gc percentage for temporary increase.")
-
-(defvar-local consult--preview-function nil
-  "Active preview function.")
 
 ;;;; Helper functions
 
@@ -360,17 +358,19 @@ DISPLAY is the string to display instead of the unique string."
 
 (defun consult--preview-install (preview fun)
   "Install PREVIEW function for FUN."
-  (if (not preview) (funcall fun)
+  (if (or (not consult-preview-mode) (not preview)) (funcall fun)
     (let ((orig-window (selected-window))
           (selected))
       (minibuffer-with-setup-hook
-          (lambda ()
-            (setq consult--preview-function
-                  (lambda (cand)
-                    (with-selected-window (if (window-live-p orig-window)
-                                              orig-window
-                                            (selected-window))
-                      (funcall preview cand nil)))))
+          (apply-partially
+           #'add-hook 'post-command-hook
+           (lambda ()
+             (when-let (cand (run-hook-with-args-until-success 'consult--completion-candidate-hook))
+               (with-selected-window (if (window-live-p orig-window)
+                                         orig-window
+                                       (selected-window))
+                 (funcall preview cand nil))))
+           nil t)
         (unwind-protect
             (save-excursion
               (save-restriction
@@ -970,13 +970,12 @@ Respects narrowing and the settings
         (display-line-numbers-widen consult-line-numbers-widen))
     (while (let ((pos (consult--line-position
                        (minibuffer-with-setup-hook
-                           (apply-partially #'add-hook 'post-command-hook
-                                            (lambda ()
-                                              (let ((str (minibuffer-contents-no-properties)))
-                                                (when (string-match-p "^[[:digit:]]+$" str)
-                                                  (funcall consult--preview-function
-                                                           (string-to-number str)))))
-                                            nil t)
+                           (lambda ()
+                             (setq-local consult--completion-candidate-hook
+                                         '((lambda ()
+                                             (let ((str (minibuffer-contents-no-properties)))
+                                               (when (string-match-p "^[[:digit:]]+$" str)
+                                                 (string-to-number str)))))))
                          (consult--with-preview
                              (let ((preview (consult--preview-position)))
                                (lambda (cand restore)
@@ -1368,10 +1367,7 @@ This is an alternative to `minor-mode-menu-from-indicator'."
 
 ;;;###autoload
 (defun consult-theme (theme)
-  "Disable current themes and enable THEME from `consult-themes'.
-
-During theme selection the theme is shown as
-preview if `consult-preview-mode' is enabled."
+  "Disable current themes and enable THEME from `consult-themes'."
   (interactive
    (list
     (let ((avail-themes (seq-filter (lambda (x) (or (not consult-themes)
@@ -1634,47 +1630,26 @@ Prepend PREFIX in front of all items."
       :sort nil))
     (run-hooks 'consult-after-jump-hook)))
 
-;;;; default completion-system support for preview
+;;;; default completion-system support
 
-(defun consult--default-preview-update (&rest _)
-  "Preview function used for the default completion system."
-  (when consult--preview-function
+(defun consult--default-candidate ()
+  "Return current candidate from default completion system."
+  (when (and (not icomplete-mode) (eq completing-read-function #'completing-read-default))
     (let ((cand (minibuffer-contents-no-properties)))
       (when (test-completion cand
                              minibuffer-completion-table
                              minibuffer-completion-predicate)
-        (funcall consult--preview-function cand)))))
+        cand))))
 
-(defun consult--default-preview-hook ()
-  "Add preview update to `after-change-functions' if the default completion system is active."
-  ;; Check if the default completion-system is active, by looking
-  ;; at `completing-read-function' and `icomplete-mode'.
-  (when (and (not icomplete-mode) (eq completing-read-function #'completing-read-default))
-    (add-hook 'after-change-functions #'consult--default-preview-update nil t)))
+(add-hook 'consult--completion-candidate-hook #'consult--default-candidate)
 
-(defun consult--default-preview-setup ()
-  "Setup preview support for the default completion-system."
-  (if consult-preview-mode
-      (add-hook 'minibuffer-setup-hook #'consult--default-preview-hook)
-    (remove-hook 'minibuffer-setup-hook #'consult--default-preview-hook)))
+;;;; icomplete support
 
-(add-hook 'consult-preview-mode-hook #'consult--default-preview-setup)
+(defun consult--icomplete-candidate ()
+  "Return current icomplete candidate."
+  (and icomplete-mode (car completion-all-sorted-completions)))
 
-;;;; icomplete support for preview
-
-(defun consult--icomplete-preview-update ()
-  "Preview function used for Icomplete."
-  (when consult--preview-function
-    (when-let (cand (car completion-all-sorted-completions))
-      (funcall consult--preview-function cand))))
-
-(defun consult--icomplete-preview-setup ()
-  "Setup preview support for Icomplete."
-  (if consult-preview-mode
-      (advice-add 'icomplete-post-command-hook :after #'consult--icomplete-preview-update)
-    (advice-remove 'icomplete-post-command-hook #'consult--icomplete-preview-update)))
-
-(add-hook 'consult-preview-mode-hook #'consult--icomplete-preview-setup)
+(add-hook 'consult--completion-candidate-hook #'consult--icomplete-candidate)
 
 (defun consult--icomplete-refresh ()
   "Refresh icomplete view."

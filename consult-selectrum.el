@@ -35,20 +35,12 @@
 (require 'consult)
 (require 'selectrum)
 
-(defun consult-selectrum--preview-update ()
-  "Preview function used for Selectrum."
-  (when consult--preview-function
-    (when-let (cand (selectrum-get-current-candidate))
-      (funcall consult--preview-function cand))))
+(defun consult-selectrum--candidate ()
+  "Return current selectrum candidate."
+  (and (eq completing-read-function #'selectrum-completing-read)
+       (selectrum-get-current-candidate)))
 
-(defun consult-selectrum--preview-setup ()
-  "Setup preview support for selectrum."
-  (if consult-preview-mode
-      (advice-add 'selectrum--minibuffer-post-command-hook :after #'consult-selectrum--preview-update)
-    (advice-remove 'selectrum--minibuffer-post-command-hook #'consult-selectrum--preview-update)))
-
-(add-hook 'consult-preview-mode-hook #'consult-selectrum--preview-setup)
-(consult-selectrum--preview-setup) ;; call immediately to ensure load-order independence
+(add-hook 'consult--completion-candidate-hook #'consult-selectrum--candidate)
 
 (defun consult-selectrum--refresh ()
   "Refresh selectrum view."
