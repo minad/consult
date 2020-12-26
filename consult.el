@@ -206,9 +206,9 @@ You may want to add a function which pulses the current line, e.g.,
   '((t :inherit consult-key))
   "Face used to highlight imenu prefix in `consult-imenu'.")
 
-(defface consult-location
-  '((t :inherit consult-file))
-  "Face used to highlight locations in `consult-global-mark'.")
+(defface consult-line-number
+  '((t :inherit consult-key))
+  "Face used to highlight location line in `consult-global-mark'.")
 
 (defface consult-file
   '((t :inherit font-lock-function-name-face))
@@ -226,7 +226,7 @@ You may want to add a function which pulses the current line, e.g.,
   '((t :inherit font-lock-keyword-face))
   "Face used to highlight views in `consult-buffer'.")
 
-(defface consult-line-number
+(defface consult-line-number-prefix
   '((t :inherit line-number))
   "Face used to highlight line numbers in selections.")
 
@@ -276,6 +276,12 @@ Size of private unicode plane b.")
   "Large gc percentage for temporary increase.")
 
 ;;;; Helper functions
+
+(defsubst consult--format-location (file line)
+  "Format location string FILE:LINE."
+  (concat
+   (propertize file 'face 'consult-file) ":"
+   (propertize (number-to-string line) 'face 'consult-line-number)))
 
 (defun consult--line-position (line)
   "Compute position from LINE number."
@@ -654,7 +660,7 @@ NARROW is an alist of narrowing prefix strings and description."
                (make-string (- width (length line)) 32)
                line
                " ")
-              'face 'consult-line-number))
+              'face 'consult-line-number-prefix))
 
 (defun consult--add-line-number (max-line candidates)
   "Add line numbers to unformatted CANDIDATES as prefix.
@@ -825,8 +831,7 @@ The alist contains (string . position) pairs."
   "Return alist of lines containing markers.
 The alist contains (string . position) pairs."
   (consult--forbid-minibuffer)
-  (let* ((max-line 0)
-         (max-name 0)
+  (let* ((max-loc 0)
          (candidates))
     (save-excursion
       (dolist (marker global-mark-ring)
@@ -840,20 +845,18 @@ The alist contains (string . position) pairs."
                 (let* ((line (line-number-at-pos pos consult-line-numbers-widen))
                        (begin (line-beginning-position))
                        (end (line-end-position))
-                       (name (buffer-name)))
-                  (setq max-name (max (length name) max-name)
-                        max-line (max line max-line))
+                       (loc (consult--format-location (buffer-name buf) line)))
+                  (setq max-loc (max (length loc) max-loc))
                   (consult--fontify-region begin end)
-                  (push (cons (list name line (consult--region-with-cursor begin end marker)) marker)
+                  (push (cons (cons loc (consult--region-with-cursor begin end marker)) marker)
                         candidates))))))))
     (unless candidates
       (user-error "No global marks"))
-    (let ((fmt (format "%%%ds:%%-%dd" max-name (length (number-to-string max-line)))))
-      (dolist (cand candidates (nreverse (consult--remove-dups candidates #'car)))
-        (pcase-let ((`(,name ,line ,str) (car cand)))
-          (setcar cand (concat (consult--unique (cdr cand) "")
-                               (propertize (format fmt name line) 'face 'consult-location)
-                               "   " str)))))))
+    (dolist (cand candidates (nreverse (consult--remove-dups candidates #'car)))
+      (setcar cand (concat (consult--unique (cdr cand) "")
+                           (caar cand)
+                           (make-string (+ 3 (- max-loc (length (caar cand)))) 32)
+                           (cdar cand))))))
 
 ;;;###autoload
 (defun consult-global-mark ()
