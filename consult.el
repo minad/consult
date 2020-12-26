@@ -1803,6 +1803,9 @@ Prepend PREFIX in front of all items."
       :sort nil))
     (run-hooks 'consult-after-jump-hook)))
 
+;; TODO instead of applying the REGEXP ourselves to the
+;; strings, we should rather parse the grep highlighting of the matches!
+;; Unfortunately it seems we cannot use the grep-regexp-alist then!
 (defun consult--grep-matches (regexp lines)
   "Find grep match for REGEXP in LINES."
   (pcase-let ((`(,grep-regexp ,file-group ,line-group . ,_) (car grep-regexp-alist)))
