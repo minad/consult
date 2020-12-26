@@ -45,11 +45,7 @@
 (defun consult-selectrum--refresh ()
   "Refresh selectrum view."
   (when (eq completing-read-function #'selectrum-completing-read)
-    ;; TODO async refresh hack!
-    (let ((old-index selectrum--current-candidate-index))
-      (selectrum-exhibit)
-      (setq selectrum--current-candidate-index old-index)
-      (selectrum--minibuffer-post-command-hook))))
+    (selectrum-exhibit 'keep-selected)))
 
 (add-hook 'consult--completion-refresh-hook #'consult-selectrum--refresh)
 
