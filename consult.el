@@ -361,7 +361,7 @@ DISPLAY is the string to display instead of the unique string."
              (and (>= n consult--special-range) (setq n (/ n consult--special-range)))))
     (propertize str 'display display)))
 
-(defun consult--preview-install (preview fun)
+(defun consult--with-preview-1 (preview fun)
   "Install PREVIEW function for FUN."
   (if (or (not consult-preview-mode) (not preview)) (funcall fun)
     (let ((orig-window (selected-window))
@@ -385,7 +385,7 @@ DISPLAY is the string to display instead of the unique string."
 (defmacro consult--with-preview (preview &rest body)
   "Install PREVIEW in BODY."
   (declare (indent 1))
-  `(consult--preview-install ,preview (lambda () ,@body)))
+  `(consult--with-preview-1 ,preview (lambda () ,@body)))
 
 (defun consult--widen-key ()
   "Return widening key, if `consult-widen-key' is not set, default to 'consult-narrow-key SPC'."
@@ -462,7 +462,7 @@ Note that `consult-narrow-key' and `consult-widen-key' are bound dynamically.")
     (define-key map (vconcat (seq-take key idx) (vector 'which-key (elt key idx)))
       `(which-key (,desc . ,cmd)))))
 
-(defun consult--narrow-install (settings fun)
+(defun consult--with-narrow-1 (settings fun)
   "Install narrowing in FUN with narrowing SETTINGS."
   (if (not settings) (funcall fun)
     (minibuffer-with-setup-hook
@@ -488,7 +488,7 @@ Note that `consult-narrow-key' and `consult-widen-key' are bound dynamically.")
 (defmacro consult--with-narrow (settings &rest body)
   "Setup narrowing in BODY with SETTINGS."
   (declare (indent 1))
-  `(consult--narrow-install ,settings (lambda () ,@body)))
+  `(consult--with-narrow-1 ,settings (lambda () ,@body)))
 
 (defmacro consult--with-increased-gc (&rest body)
   "Temporarily increase the gc limit in BODY to optimize for throughput."
