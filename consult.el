@@ -277,11 +277,6 @@ Size of private unicode plane b.")
 
 ;;;; Helper functions
 
-(defsubst consult--string-to-number (str)
-  "Safer STR to number conversion."
-  (when (and str (string-match-p "^[[:digit:]]+$" str))
-    (string-to-number str)))
-
 (defun consult--line-position (line)
   "Compute position from LINE number."
   (save-excursion
@@ -361,31 +356,44 @@ DISPLAY is the string to display instead of the unique string."
              (and (>= n consult--special-range) (setq n (/ n consult--special-range)))))
     (propertize str 'display display)))
 
-(defun consult--with-preview-1 (preview fun)
-  "Install PREVIEW function for FUN."
-  (if (or (not consult-preview-mode) (not preview)) (funcall fun)
+(defun consult--with-preview-1 (transform preview fun)
+  "Install TRANSFORM and PREVIEW function for FUN."
+  (if (or (not consult-preview-mode) (not preview))
+      (let ((input ""))
+        (minibuffer-with-setup-hook
+            (apply-partially
+             #'add-hook 'post-command-hook
+             (lambda () (setq input (minibuffer-contents-no-properties)))
+             nil t)
+          (cons (when-let (result (funcall fun))
+                  (funcall transform input result))
+                input)))
     (let ((orig-window (selected-window))
-          (selected))
+          (selected)
+          (input ""))
       (minibuffer-with-setup-hook
           (apply-partially
            #'add-hook 'post-command-hook
            (lambda ()
+             (setq input (minibuffer-contents-no-properties))
              (when-let (cand (run-hook-with-args-until-success 'consult--completion-candidate-hook))
                (with-selected-window (if (window-live-p orig-window)
                                          orig-window
                                        (selected-window))
-                 (funcall preview cand nil))))
+                 (funcall preview (and cand (funcall transform input cand)) nil))))
            nil t)
         (unwind-protect
             (save-excursion
               (save-restriction
-                (setq selected (funcall fun))))
+                (setq selected (when-let (result (funcall fun))
+                                 (funcall transform input result)))
+                (cons selected input)))
           (funcall preview selected t))))))
 
-(defmacro consult--with-preview (preview &rest body)
-  "Install PREVIEW in BODY."
-  (declare (indent 1))
-  `(consult--with-preview-1 ,preview (lambda () ,@body)))
+(defmacro consult--with-preview (transform preview &rest body)
+  "Install TRANSFORM and PREVIEW in BODY."
+  (declare (indent 2))
+  `(consult--with-preview-1 ,transform ,preview (lambda () ,@body)))
 
 (defun consult--widen-key ()
   "Return widening key, if `consult-widen-key' is not set, default to 'consult-narrow-key SPC'."
@@ -602,36 +610,32 @@ NARROW is an alist of narrowing prefix strings and description."
                       (stringp (car candidates))  ;; string list
                       (symbolp (car candidates))  ;; symbol list
                       (consp (car candidates))))) ;; alist
-  (let* ((metadata
-          `(metadata
-            ,@(when category `((category . ,category)))
-            ,@(unless sort '((cycle-sort-function . identity)
-                             (display-sort-function . identity)))))
-         (input "")
-         (table
-          (lambda (str pred action)
-            (if (eq action 'metadata)
-                metadata
-              (complete-with-action action candidates str pred))))
-         (result (consult--with-preview
-                     (and preview
-                          (lambda (cand restore)
-                            (funcall preview (and cand (funcall lookup input candidates cand)) restore)))
-                   (consult--with-narrow narrow
-                     (minibuffer-with-setup-hook
-                         (apply-partially #'add-hook 'post-command-hook
-                                          (lambda () (setq input (minibuffer-contents-no-properties)))
-                                          nil t)
-                       (completing-read prompt table
-                                        predicate require-match initial
-                                        (if (symbolp history) history (cadr history))
-                                        default))))))
-    (pcase-exhaustive history
-      (`(:input ,var)
-       (set var (cdr (symbol-value var)))
-       (add-to-history var input))
-      ((pred symbolp)))
-    (funcall lookup input candidates result)))
+  (consult--with-narrow narrow
+    (let* ((metadata
+            `(metadata
+              ,@(when category `((category . ,category)))
+              ,@(unless sort '((cycle-sort-function . identity)
+                               (display-sort-function . identity)))))
+           (table
+            (lambda (str pred action)
+              (if (eq action 'metadata)
+                  metadata
+                (complete-with-action action candidates str pred))))
+           (transform
+            (lambda (input cand)
+              (funcall lookup input candidates cand)))
+           (result
+            (consult--with-preview transform preview
+              (completing-read prompt table
+                               predicate require-match initial
+                               (if (symbolp history) history (cadr history))
+                               default))))
+      (pcase-exhaustive history
+        (`(:input ,var)
+         (set var (cdr (symbol-value var)))
+         (add-to-history var (cdr result)))
+        ((pred symbolp)))
+      (car result))))
 
 (defun consult--count-lines (pos)
   "Move to position POS and return number of lines."
@@ -973,21 +977,23 @@ Respects narrowing and the settings
   (interactive)
   (let ((display-line-numbers consult-goto-line-numbers)
         (display-line-numbers-widen consult-line-numbers-widen))
-    (while (let ((str (minibuffer-with-setup-hook
+    (while (let ((ret (minibuffer-with-setup-hook
                           (lambda ()
                             (setq-local consult--completion-candidate-hook
                                         '(minibuffer-contents-no-properties)))
                         (consult--with-preview
+                            (lambda (_ cand)
+                              (when (and cand (string-match-p "^[[:digit:]]+$" cand))
+                                (string-to-number cand)))
                             (let ((preview (consult--preview-position)))
                               (lambda (cand restore)
                                 (funcall preview
-                                         (when-let* ((num (consult--string-to-number cand))
-                                                     (pos (and num (consult--line-position num))))
+                                         (when-let (pos (and cand (consult--line-position cand)))
                                            (and (consult--in-range-p pos) pos))
                                          restore)))
                           (read-from-minibuffer "Go to line: ")))))
-             (if-let (num (consult--string-to-number str))
-                 (let ((pos (consult--line-position num)))
+             (if (car ret)
+                 (let ((pos (consult--line-position (car ret))))
                    (if (consult--in-range-p pos)
                        (consult--jump pos)
                      (message "Line number out of range.")
