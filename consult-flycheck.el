@@ -66,7 +66,7 @@
           (set-marker (make-marker)
                       (flycheck-error-pos err)
                       (if (flycheck-error-filename err)
-                          (find-file-noselect (flycheck-error-filename err))
+                          (find-file-noselect (flycheck-error-filename err) 'nowarn)
                         (flycheck-error-buffer err)))
           (pcase level
             ('error ?e)
