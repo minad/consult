@@ -52,6 +52,8 @@
 (require 'recentf)
 (require 'ring)
 (require 'seq)
+(require 'json)
+(require 'url)
 
 (defgroup consult nil
   "Consulting `completing-read'."
@@ -242,6 +244,7 @@ You may want to add a function which pulses the current line, e.g.,
 
 ;;;; History variables
 
+(defvar consult--websearch-history nil)
 (defvar consult--grep-history nil)
 (defvar consult--line-history nil)
 (defvar consult--apropos-history nil)
@@ -1936,6 +1939,67 @@ OPEN is the function to open new files."
   "Search for REGEXP with rg."
   (interactive "sRipgrep: ")
   (consult--grep consult--ripgrep regexp))
+
+(defvar url-http-end-of-headers)
+(defun consult--fetch-json (url cb)
+  "Fetch json from URL and call CB."
+  (url-retrieve url (lambda (&rest _)
+                      (funcall cb (unwind-protect
+                                      (progn
+                                        (goto-char url-http-end-of-headers)
+                                        (let ((json-object-type 'alist)
+                                              (json-array-type 'list)
+                                              (json-key-type 'string))
+                                          (json-read)))
+                                    (kill-buffer (current-buffer)))))
+                nil t t))
+
+(defun consult--async-json (async url cb)
+  "Create async function from ASYNC querying URL and calling CB."
+  (let* ((input "")
+         (running nil)
+         (last-input "")
+         (timer (run-at-time 0.3 0.3
+                             (lambda ()
+                               (unless (or running (string= input "") (string= input last-input))
+                                 (setq running t last-input input)
+                                 (consult--fetch-json (concat url (url-hexify-string input))
+                                                      (lambda (result)
+                                                        (setq running nil)
+                                                        (funcall cb async input result))))))))
+    (lambda (action)
+      (pcase action
+        ((pred stringp) (setq input action))
+        ('destroy (cancel-timer timer)))
+      (funcall async action))))
+
+(defvar consult--websearch-json "https://duckduckgo.com/ac/?client=firefox&q=")
+(defvar consult--websearch-html "https://duckduckgo.com/html/?q=")
+(defvar consult--websearch-candidates (lambda (x) (mapcar #'cdar x)))
+
+(defun consult-websearch ()
+  "Search in the web with completion."
+  (interactive)
+  (browse-url
+   (concat
+    consult--websearch-html
+    (url-hexify-string
+     ;; XXX HACK remove candidate prefix
+     (replace-regexp-in-string
+      "^.*? : " ""
+      (consult--read
+       "Web search: "
+       (consult--async-json
+        (consult--async-sink)
+        consult--websearch-json
+        (lambda (async input result)
+          (funcall async 'flush)
+          ;; XXX HACK add prefix such that candidates are not filtered
+          (setq input (propertize (concat input " : ") 'display ""))
+          (funcall async (mapcar (lambda (x) (concat input x))
+                                 (funcall consult--websearch-candidates result)))
+          (funcall async 'refresh)))
+       :history '(:input consult--websearch-history)))))))
 
 ;;;; default completion-system support
 
