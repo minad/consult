@@ -226,29 +226,30 @@ that the main package `consult.el` only depends on Emacs core components.
 
 ### Configuration settings
 
-| Variable                    | Default     | Description                                             |
-|-----------------------------|-------------|---------------------------------------------------------|
-| consult-after-jump-hook     | '(recenter) | Functions to call after jumping to a location           |
-| consult-goto-line-numbers   | t           | Show line numbers for `consult-goto-line`               |
-| consult-imenu-narrow        | …           | Narrowing keys for imenu                                |
-| consult-line-numbers-widen  | t           | Show absolute line numbers when narrowing is active.    |
-| consult-mode-command-filter | …           | Filter regexp for `consult-mode-command`                |
-| consult-mode-histories      | …           | Mode-specific history variables                         |
-| consult-narrow-key          | nil         | Narrowing prefix key during completion                  |
-| consult-widen-key           | nil         | Widening key during completion                          |
-| consult-preview-buffer      | t           | Enable buffer preview during selection                  |
-| consult-preview-error       | t           | Enable error preview during selection                   |
-| consult-preview-flycheck    | t           | Enable flycheck error preview during selection          |
-| consult-preview-flymake     | t           | Enable flymake diagnostic preview during selection      |
-| consult-preview-global-mark | t           | Enable global mark preview during selection             |
-| consult-preview-line        | t           | Enable line preview during selection                    |
-| consult-preview-mark        | t           | Enable mark preview during selection                    |
-| consult-preview-outline     | t           | Enable outline preview during selection                 |
-| consult-preview-theme       | t           | Enable theme preview during selection                   |
-| consult-preview-yank        | t           | Enable yank preview during selection                    |
-| consult-themes              | nil         | List of themes to be presented for selection            |
-| consult-view-list-function  | nil         | Function which returns a list of view names as strings  |
-| consult-view-open-function  | nil         | Function to open a view by name                         |
+| Variable                     | Default          | Description                                             |
+|------------------------------|------------------|---------------------------------------------------------|
+| consult-after-jump-hook      | '(recenter)      | Functions to call after jumping to a location           |
+| consult-goto-line-numbers    | t                | Show line numbers for `consult-goto-line`               |
+| consult-imenu-narrow         | …                | Narrowing keys for imenu                                |
+| consult-line-numbers-widen   | t                | Show absolute line numbers when narrowing is active.    |
+| consult-line-point-placement | 'match-beginning | Placement of the point used by `consult-line`           |
+| consult-mode-command-filter  | …                | Filter regexp for `consult-mode-command`                |
+| consult-mode-histories       | …                | Mode-specific history variables                         |
+| consult-narrow-key           | nil              | Narrowing prefix key during completion                  |
+| consult-widen-key            | nil              | Widening key during completion                          |
+| consult-preview-buffer       | t                | Enable buffer preview during selection                  |
+| consult-preview-error        | t                | Enable error preview during selection                   |
+| consult-preview-flycheck     | t                | Enable flycheck error preview during selection          |
+| consult-preview-flymake      | t                | Enable flymake diagnostic preview during selection      |
+| consult-preview-global-mark  | t                | Enable global mark preview during selection             |
+| consult-preview-line         | t                | Enable line preview during selection                    |
+| consult-preview-mark         | t                | Enable mark preview during selection                    |
+| consult-preview-outline      | t                | Enable outline preview during selection                 |
+| consult-preview-theme        | t                | Enable theme preview during selection                   |
+| consult-preview-yank         | t                | Enable yank preview during selection                    |
+| consult-themes               | nil              | List of themes to be presented for selection            |
+| consult-view-list-function   | nil              | Function which returns a list of view names as strings  |
+| consult-view-open-function   | nil              | Function to open a view by name                         |
 
 ## Related packages
 

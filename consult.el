@@ -98,11 +98,11 @@ You may want to add a function which pulses the current line, e.g.,
 `xref-pulse-momentarily'."
   :type 'hook)
 
-(defcustom consult-line-point-placement 'start-of-match
+(defcustom consult-line-point-placement 'match-beginning
   "Where to leave point after `consult-line' jumps to a match."
-  :type '(choice (const :tag "Start of the line" start-of-line)
-                 (const :tag "Start of the match" start-of-match)
-                 (const :tag "End of the match" end-of-match)))
+  :type '(choice (const :tag "Beginning of the line" line-beginning)
+                 (const :tag "Beginning of the match" match-beginning)
+                 (const :tag "End of the match" match-end)))
 
 (defcustom consult-line-numbers-widen t
   "Show absolute line numbers when narrowing is active."
@@ -919,14 +919,14 @@ CANDIDATES is the line candidates alist.
 CAND is the currently selected candidate."
   (when-let (pos (cdr (assoc cand candidates)))
     (if (or (string-blank-p input)
-            (eq consult-line-point-placement 'start-of-line))
+            (eq consult-line-point-placement 'line-beginning))
         pos
       ;; Strip unique line number prefix
       (while (and (> (length cand) 0)
                   (>= (elt cand 0) consult--special-char)
                   (< (elt cand 0) (+ consult--special-char consult--special-range)))
         (setq cand (substring cand 1)))
-      (let ((start 0)
+      (let ((beg 0)
             (end (length cand)))
         ;; Find match end position, remove characters from line end until matching fails
         (let ((step 16))
@@ -935,18 +935,17 @@ CAND is the currently selected candidate."
                         (completion-all-completions input (list (substring cand 0 (- end step))) nil 0))
               (setq end (- end step)))
             (setq step (/ step 2))))
-        ;; Find match start position, remove characters from line beginning until matching fails
-        (when (eq consult-line-point-placement 'start-of-match)
+        ;; Find match beginning position, remove characters from line beginning until matching fails
+        (when (eq consult-line-point-placement 'match-beginning)
           (let ((step 16))
             (while (> step 0)
-              (while (and (< (+ start step) end)
-                          (completion-all-completions input (list (substring cand (+ start step) end)) nil 0))
-                (setq start (+ start step)))
-              (setq step (/ step 2)))))
+              (while (and (< (+ beg step) end)
+                          (completion-all-completions input (list (substring cand (+ beg step) end)) nil 0))
+                (setq beg (+ beg step)))
+              (setq step (/ step 2)))
+            (setq end beg)))
         ;; Marker can be dead
-        (ignore-errors (+ pos (pcase consult-line-point-placement
-                                ('start-of-match start)
-                                ('end-of-match end))))))))
+        (ignore-errors (+ pos end))))))
 
 ;;;###autoload
 (defun consult-line (&optional initial)
