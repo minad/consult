@@ -98,6 +98,12 @@ You may want to add a function which pulses the current line, e.g.,
 `xref-pulse-momentarily'."
   :type 'hook)
 
+(defcustom consult-line-point-placement 'start-of-match
+  "Where to leave point after `consult-line' jumps to a match."
+  :type '(choice (const :tag "Start of the line" start-of-line)
+                 (const :tag "Start of the match" start-of-match)
+                 (const :tag "End of the match" end-of-match)))
+
 (defcustom consult-line-numbers-widen t
   "Show absolute line numbers when narrowing is active."
   :type 'boolean)
@@ -912,7 +918,8 @@ INPUT is the input string entered by the user.
 CANDIDATES is the line candidates alist.
 CAND is the currently selected candidate."
   (when-let (pos (cdr (assoc cand candidates)))
-    (if (string-blank-p input)
+    (if (or (string-blank-p input)
+            (eq consult-line-point-placement 'start-of-line))
         pos
       ;; Strip unique line number prefix
       (while (and (> (length cand) 0)
@@ -929,14 +936,17 @@ CAND is the currently selected candidate."
               (setq end (- end step)))
             (setq step (/ step 2))))
         ;; Find match start position, remove characters from line beginning until matching fails
-        (let ((step 16))
-          (while (> step 0)
-            (while (and (< (+ start step) end)
-                        (completion-all-completions input (list (substring cand (+ start step) end)) nil 0))
-              (setq start (+ start step)))
-            (setq step (/ step 2))))
+        (when (eq consult-line-point-placement 'start-of-match)
+          (let ((step 16))
+            (while (> step 0)
+              (while (and (< (+ start step) end)
+                          (completion-all-completions input (list (substring cand (+ start step) end)) nil 0))
+                (setq start (+ start step)))
+              (setq step (/ step 2)))))
         ;; Marker can be dead
-        (ignore-errors (+ pos start))))))
+        (ignore-errors (+ pos (pcase consult-line-point-placement
+                                ('start-of-match start)
+                                ('end-of-match end))))))))
 
 ;;;###autoload
 (defun consult-line (&optional initial)
