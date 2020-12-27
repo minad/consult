@@ -204,6 +204,10 @@ You may want to add a function which pulses the current line, e.g.,
   '((t :inherit warning))
   "Face used for the narrowing indicator.")
 
+(defface consult-async-indicator
+  '((t :inherit consult-narrow-indicator))
+  "Face used for the async indicator.")
+
 (defface consult-key
   '((t :inherit font-lock-keyword-face))
   "Face used to highlight keys, e.g., in `consult-register'.")
@@ -283,6 +287,10 @@ Size of private unicode plane b.")
 
 (defvar consult--gc-percentage 0.5
   "Large gc percentage for temporary increase.")
+
+(defconst consult--async-stderr
+  " *consult-async-stderr*"
+  "Buffer for stderr output used by `consult--async-process'.")
 
 ;;;; Helper functions
 
@@ -598,6 +606,160 @@ FACE is the cursor face."
                 (list (consult--overlay (line-beginning-position) (line-end-position) 'face 'consult-preview-line)
                       (consult--overlay pos (1+ pos) 'face face)))))))))
 
+(defun consult--async-sink ()
+  "Create ASYNC function.
+
+The async function should accept a single action argument.
+Only for the 'setup action, it is guaranteed that the call
+originates from the minibuffer. For the other actions no
+assumptions can be made.
+Depending on the argument, the caller context differ.
+
+'setup   Setup the internal state.
+'destroy Destroy the internal state.
+'done    Signal that the async process is done.
+'flush   Flush the list of candidates.
+'refresh Request UI refresh.
+'get     Get the list of candidates.
+List     Append the list to the list of candidates.
+String   The input string, called when the user enters something."
+  (let ((candidates))
+    (lambda (action)
+      (pcase-exhaustive action
+        ((or (pred stringp) 'setup 'destroy 'done) nil)
+        ('flush (setq candidates nil))
+        ('get candidates)
+        ('refresh
+         (when-let (win (active-minibuffer-window))
+           (with-selected-window win
+             (run-hooks 'consult--completion-refresh-hook))))
+        ((pred listp) (setq candidates (nconc candidates action)))))))
+
+(defun consult--async-process (async cmd)
+  "Process source for ASYNC.
+
+CMD is the command argument list."
+  (let* ((rest "") (proc))
+    (lambda (action)
+      (pcase action
+        ('setup
+         (funcall async 'setup)
+         (setq proc (make-process
+                     :name (car cmd)
+                     :stderr consult--async-stderr
+                     :noquery t
+                     :command cmd
+                     :filter
+                     (lambda (_ out)
+                       (let ((lines (split-string out "\n")))
+                         (if (cdr lines)
+                             (progn
+                               (setcar lines (concat rest (car lines)))
+                               (setq rest (car (last lines)))
+                               (funcall async (nbutlast lines)))
+                           (setq rest (concat rest (car lines))))))
+                     :sentinel
+                     (lambda (_ event)
+                       (cond
+                        ((string-prefix-p "finished" event)
+                         (unless (string= rest "")
+                           (funcall async (list rest)))
+                         (funcall async 'done))
+                        ((string-match-p "^\\(failed\\|exited abnormally\\)" event)
+                         (run-at-time
+                          0 nil
+                          (lambda ()
+                            (message "%s: %s, see buffer `%s'"
+                                     (car cmd) (string-trim event)
+                                     consult--async-stderr)))
+                         (abort-recursive-edit)))))))
+        ('destroy
+         (ignore-errors (kill-process proc))
+         (funcall async 'destroy))
+        (_ (funcall async action))))))
+
+(defun consult--async-indicator (async)
+  "Add indicator to ASYNC."
+  (let ((ov))
+    (lambda (action)
+      (pcase action
+        ('setup
+         (setq ov (consult--overlay (- (minibuffer-prompt-end) 2) (- (minibuffer-prompt-end) 1)
+                                    'display "*" 'face 'consult-async-indicator)))
+        ((or 'destroy 'done) (delete-overlay ov)))
+      (funcall async action))))
+
+(defun consult--async-refresh (async &optional delay)
+  "Add refresh timer to ASYNC.
+
+DELAY is the refresh delay, default 0.1.
+The delay can also be 0 in order to trigger an immediate
+refreshing when candidates are pushed."
+  (if (equal delay 0)
+      ;; Immediate refresher
+      (lambda (action)
+        (pcase action
+          ((or (pred listp) (pred stringp) 'flush)
+           (prog1 (funcall async action)
+             (funcall async 'refresh)))
+          (_ (funcall async action))))
+      ;; Timer based refresher
+    (let ((timer)
+          (refresh t)
+          (delay (or delay 0.1)))
+      (lambda (action)
+        (pcase action
+          ((or (pred listp) (pred stringp) 'refresh 'flush)
+           (setq refresh t))
+          ('done
+           (cancel-timer timer)
+           (funcall async 'refresh))
+          ('destroy (cancel-timer timer))
+          ('setup
+           (setq timer (run-with-timer
+                        delay delay
+                        (lambda ()
+                          (when refresh
+                            (setq refresh nil)
+                            (funcall async 'refresh)))))))
+        (funcall async action)))))
+
+(defmacro consult--async-transform (async &rest transform)
+  "Use FUN to TRANSFORM candidates of ASYNC."
+  (let ((async-var (make-symbol "async"))
+        (action-var (make-symbol "action")))
+    `(let ((,async-var ,async))
+       (lambda (,action-var)
+         (funcall ,async-var (if (listp ,action-var) (,@transform ,action-var) ,action-var))))))
+
+(defun consult--async-map (async fun)
+  "Map candidates of ASYNC by FUN."
+  (consult--async-transform async mapcar fun))
+
+(defun consult--async-filter (async fun)
+  "Filter candidates of ASYNC by FUN."
+  (consult--async-transform async seq-filter fun))
+
+(defun consult--with-async-1 (async fun)
+  "Setup ASYNC for FUN."
+  (if (not (functionp async)) (funcall fun (lambda (_) async))
+    (minibuffer-with-setup-hook
+        (lambda ()
+          (funcall async 'setup)
+          (add-hook 'post-command-hook
+                    (lambda ()
+                      ;; push input string to request refresh
+                      (funcall async (minibuffer-contents-no-properties)))
+                    nil t))
+      (unwind-protect
+          (funcall fun async)
+        (funcall async 'destroy)))))
+
+(defmacro consult--with-async (async &rest body)
+  "Setup ASYNC for BODY."
+  (declare (indent 1))
+  `(consult--with-async-1 ,@(cdr async) (lambda (,(car async)) ,@body)))
+
 (cl-defun consult--read (prompt candidates &key
                                 predicate require-match history default
                                 category initial preview narrow
@@ -619,38 +781,39 @@ PREVIEW is a preview function.
 NARROW is an alist of narrowing prefix strings and description."
   (ignore default-top)
   ;; supported types
-  (cl-assert (and (not (functionp candidates))    ;; no function support
-                  (or (not candidates)            ;; nil
-                      (obarrayp candidates)       ;; obarray
-                      (stringp (car candidates))  ;; string list
-                      (symbolp (car candidates))  ;; symbol list
-                      (consp (car candidates))))) ;; alist
-  (consult--with-narrow narrow
-    (let* ((metadata
-            `(metadata
-              ,@(when category `((category . ,category)))
-              ,@(unless sort '((cycle-sort-function . identity)
-                               (display-sort-function . identity)))))
-           (table
-            (lambda (str pred action)
-              (if (eq action 'metadata)
-                  metadata
-                (complete-with-action action candidates str pred))))
-           (transform
-            (lambda (input cand)
-              (funcall lookup input candidates cand)))
-           (result
-            (consult--with-preview transform preview
-              (completing-read prompt table
-                               predicate require-match initial
-                               (if (symbolp history) history (cadr history))
-                               default))))
-      (pcase-exhaustive history
-        (`(:input ,var)
-         (set var (cdr (symbol-value var)))
-         (add-to-history var (cdr result)))
-        ((pred symbolp)))
-      (car result))))
+  (cl-assert (or (functionp candidates)     ;; async table
+                 (not candidates)           ;; nil, empty list
+                 (obarrayp candidates)      ;; obarray
+                 (stringp (car candidates)) ;; string list
+                 (symbolp (car candidates)) ;; symbol list
+                 (consp (car candidates)))) ;; alist
+  (consult--with-async (async candidates)
+    (consult--with-narrow narrow
+      (let* ((metadata
+              `(metadata
+                ,@(when category `((category . ,category)))
+                ,@(unless sort '((cycle-sort-function . identity)
+                                 (display-sort-function . identity)))))
+             (table
+              (lambda (str pred action)
+                (if (eq action 'metadata)
+                    metadata
+                  (complete-with-action action (funcall async 'get) str pred))))
+             (transform
+              (lambda (input cand)
+                (funcall lookup input (funcall async 'get) cand)))
+             (result
+              (consult--with-preview transform preview
+                (completing-read prompt table
+                                 predicate require-match initial
+                                 (if (symbolp history) history (cadr history))
+                                 default))))
+        (pcase-exhaustive history
+          (`(:input ,var)
+           (set var (cdr (symbol-value var)))
+           (add-to-history var (cdr result)))
+          ((pred symbolp)))
+        (car result)))))
 
 (defun consult--count-lines (pos)
   "Move to position POS and return number of lines."
@@ -1686,9 +1849,29 @@ Prepend PREFIX in front of all items."
 
 (add-hook 'consult--completion-candidate-hook #'consult--icomplete-candidate)
 
+(declare-function icomplete-exhibit "icomplete")
+(declare-function icomplete--field-beg "icomplete")
+(declare-function icomplete--field-end "icomplete")
 (defun consult--icomplete-refresh ()
-  "Refresh icomplete view."
-  (setq completion-all-sorted-completions nil))
+  "Refresh icomplete view, keep current candidate selected if possible."
+  (when icomplete-mode
+    (let ((top (car completion-all-sorted-completions)))
+      (completion--flush-all-sorted-completions)
+      (when top
+        (let* ((completions (completion-all-sorted-completions
+                             (icomplete--field-beg) (icomplete--field-end)))
+               (last (last completions))
+               (before)) ;; completions before top
+          ;; warning: completions is an improper list
+          (while (consp completions)
+            (if (equal (car completions) top)
+                (progn
+                  (setcdr last (append (nreverse before) (cdr last)))
+                  (setq completion-all-sorted-completions completions
+                        completions nil))
+              (push (car completions) before)
+              (setq completions (cdr completions)))))))
+    (icomplete-exhibit)))
 
 (add-hook 'consult--completion-refresh-hook #'consult--icomplete-refresh)
 

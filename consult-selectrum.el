@@ -52,7 +52,7 @@
 (defun consult-selectrum--refresh ()
   "Refresh selectrum view."
   (when (eq completing-read-function #'selectrum-completing-read)
-    (selectrum-exhibit)))
+    (selectrum-exhibit 'keep-selected)))
 
 (add-hook 'consult--completion-refresh-hook #'consult-selectrum--refresh)
 
@@ -63,7 +63,10 @@
             (lambda (fun prompt candidates &rest opts)
               (minibuffer-with-setup-hook
                   (lambda ()
-                    (setq-local selectrum--move-default-candidate-p (plist-get opts :default-top)))
+                    (setq-local selectrum--move-default-candidate-p (plist-get opts :default-top))
+                    ;; Fix height for async completion table
+                    (when (functionp candidates)
+                      (setq-local selectrum-fix-minibuffer-height t)))
                 (apply fun prompt candidates opts))))
 
 (provide 'consult-selectrum)
