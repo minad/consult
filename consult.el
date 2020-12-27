@@ -1973,9 +1973,53 @@ OPEN is the function to open new files."
         ('destroy (cancel-timer timer)))
       (funcall async action))))
 
+(defvar-local consult--async-split-orig nil)
+
+(defun consult--async-split-wrap (fun)
+  (lambda (str table pred point &optional metadata)
+    (let ((completion-styles consult--async-split-orig)
+          (pos (seq-position str 59)))
+      (funcall fun
+               (if pos (substring str (1+ pos)) "")
+               table pred
+               (if (and pos (> point pos)) (- point pos 1) 0)
+               metadata))))
+
+(add-to-list 'completion-styles-alist
+             (list 'consult--async-split
+                   (consult--async-split-wrap #'completion-try-completion)
+                   (consult--async-split-wrap #'completion-all-completions)
+                   "Split async and filter part."))
+
+(defun consult--async-split (async)
+  (lambda (action)
+    (pcase action
+      ('setup
+       ;; TODO move to consult-selectrum
+       (if (bound-and-true-p selectrum-mode)
+           (let ((orig selectrum-refine-candidates-function))
+             (setq selectrum-refine-candidates-function
+                   (lambda (str cands)
+                     (funcall orig (replace-regexp-in-string "[^;]*;" "" str) cands)))
+             (funcall async action))
+         (setq-local consult--async-split-orig completion-styles
+                     completion-styles '(consult--async-split))))
+      ((pred stringp) (funcall async (replace-regexp-in-string ";.*" "" action)))
+      (_ (funcall async action)))))
+
 (defvar consult--websearch-json "https://duckduckgo.com/ac/?client=firefox&q=")
 (defvar consult--websearch-html "https://duckduckgo.com/html/?q=")
 (defvar consult--websearch-candidates (lambda (x) (mapcar #'cdar x)))
+
+(defun consult--websearch-async ()
+  (thread-first (consult--async-sink)
+    (consult--async-json
+     consult--websearch-json
+     (lambda (async _input result)
+       (funcall async 'flush)
+       (funcall async (funcall consult--websearch-candidates result))
+       (funcall async 'refresh)))
+    (consult--async-split)))
 
 (defun consult-websearch ()
   "Search in the web with completion."
@@ -1984,22 +2028,10 @@ OPEN is the function to open new files."
    (concat
     consult--websearch-html
     (url-hexify-string
-     ;; XXX HACK remove candidate prefix
-     (replace-regexp-in-string
-      "^.*? : " ""
-      (consult--read
-       "Web search: "
-       (consult--async-json
-        (consult--async-sink)
-        consult--websearch-json
-        (lambda (async input result)
-          (funcall async 'flush)
-          ;; XXX HACK add prefix such that candidates are not filtered
-          (setq input (propertize (concat input " : ") 'display ""))
-          (funcall async (mapcar (lambda (x) (concat input x))
-                                 (funcall consult--websearch-candidates result)))
-          (funcall async 'refresh)))
-       :history '(:input consult--websearch-history)))))))
+     (consult--read
+      "Web search: "
+      (consult--websearch-async)
+      :history '(:input consult--websearch-history))))))
 
 ;;;; default completion-system support
 
