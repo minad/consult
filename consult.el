@@ -242,6 +242,7 @@ You may want to add a function which pulses the current line, e.g.,
 
 ;;;; History variables
 
+(defvar consult--grep-history nil)
 (defvar consult--line-history nil)
 (defvar consult--apropos-history nil)
 (defvar consult--theme-history nil)
@@ -605,6 +606,36 @@ FACE is the cursor face."
           (setq overlays
                 (list (consult--overlay (line-beginning-position) (line-end-position) 'face 'consult-preview-line)
                       (consult--overlay pos (1+ pos) 'face face)))))))))
+
+(defun consult--with-temporary-files-1 (fun)
+  "Provide a function to open files temporarily.
+The files are closed automatically in the end.
+
+FUN receives the open function as argument."
+  (let* ((new-buffers)
+         (old-recentf-list (copy-sequence recentf-list))
+         (open-file (lambda (name)
+                      (let ((buf (find-file-noselect name 'nowarn)))
+                        (push buf new-buffers)
+                        buf))))
+    (unwind-protect
+        (funcall fun open-file)
+      ;; Restore old recentf-list and record the current buffer
+      (setq recentf-list old-recentf-list)
+      ;; kill all temporary buffers
+      (dolist (buf new-buffers)
+        (if (or (eq buf (current-buffer)) (buffer-modified-p buf))
+            (when recentf-mode
+              (recentf-add-file (buffer-file-name buf)))
+          (kill-buffer buf))))))
+
+(defmacro consult--with-temporary-files (args &rest body)
+  "Provide a function to open files temporarily.
+The files are closed automatically in the end.
+
+ARGS is the open function argument for BODY."
+  (declare (indent 1))
+  `(consult--with-temporary-files-1 (lambda ,args ,@body)))
 
 (defun consult--async-sink ()
   "Create ASYNC function.
@@ -1821,6 +1852,90 @@ Prepend PREFIX in front of all items."
       :history 'consult--imenu-history
       :sort nil))
     (run-hooks 'consult-after-jump-hook)))
+
+;; TODO instead of applying the REGEXP ourselves to the
+;; strings, we should rather parse the grep highlighting of the matches!
+;; Unfortunately it seems we cannot use the grep-regexp-alist then!
+(defun consult--grep-matches (regexp lines)
+  "Find grep match for REGEXP in LINES."
+  (pcase-let ((`(,grep-regexp ,file-group ,line-group . ,_) (car grep-regexp-alist)))
+    (save-match-data
+      (delq nil
+            (mapcar
+             (lambda (str)
+               (when (string-match grep-regexp str)
+                 (let* ((file (match-string file-group str))
+                        (line (string-to-number (match-string line-group str)))
+                        (match (substring str (match-end 0)))
+                        (col 0)
+                        (loc (consult--format-location file line)))
+                   (when (string-match regexp match)
+                     (setq col (match-beginning 0)
+                           match (concat (substring match 0 col)
+                                         (propertize (substring match col (match-end 0))
+                                                     'face 'consult-preview-cursor)
+                                         (substring match (match-end 0)))))
+                   (list (concat loc (make-string (+ 3 (max 0 (- 60 (length loc)))) 32) match)
+                         (expand-file-name file) line col))))
+             lines)))))
+
+(defun consult--grep-marker (open)
+  "Grep candidate to marker.
+
+OPEN is the function to open new files."
+  (lambda (_input candidates cand)
+    (when-let (loc (cdr (assoc cand candidates)))
+      (with-current-buffer (or (get-file-buffer (car loc))
+                               (funcall open (car loc)))
+        (save-restriction
+          (save-excursion
+            (widen)
+            (goto-char (point-min))
+            (forward-line (- (cadr loc) 1))
+            (forward-char (caddr loc))
+            (point-marker)))))))
+
+(defvar consult--git-grep '("git" "grep" "--color=never" "-n" "-e"))
+(defvar consult--grep '("grep" "--line-buffered" "--color=never" "--exclude-dir=.git" "-n" "-r" "-e"))
+(defvar consult--ripgrep '("rg" "--line-buffered" "--color=never" "--max-columns=500" "--no-heading" "-n" "." "-e"))
+
+(defun consult--grep-async (cmd regexp)
+  "Async table for grep CMD searching for REGEXP."
+  (thread-first (consult--async-sink)
+    (consult--async-refresh)
+    (consult--async-indicator)
+    (consult--async-transform consult--grep-matches regexp)
+    (consult--async-process `(,@cmd ,regexp))))
+
+(defun consult--grep (cmd regexp)
+  "Run grep CMD with REGEXP in current directory."
+  (consult--with-temporary-files (open)
+    (consult--jump
+     (consult--read
+      "Go to match: " (consult--grep-async cmd regexp)
+      :lookup (consult--grep-marker open)
+      :preview (consult--preview-position)
+      :require-match t
+      :history '(:input consult--grep-history)
+      :sort nil))))
+
+;;;###autoload
+(defun consult-grep (regexp)
+  "Search for REGEXP with grep."
+  (interactive "sGrep: ")
+  (consult--grep consult--grep regexp))
+
+;;;###autoload
+(defun consult-git-grep (regexp)
+  "Search for REGEXP with grep."
+  (interactive "sGit Grep: ")
+  (consult--grep consult--git-grep regexp))
+
+;;;###autoload
+(defun consult-ripgrep (regexp)
+  "Search for REGEXP with rg."
+  (interactive "sRipgrep: ")
+  (consult--grep consult--ripgrep regexp))
 
 ;;;; default completion-system support
 
