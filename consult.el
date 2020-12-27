@@ -1910,10 +1910,25 @@ OPEN is the function to open new files."
 
 (declare-function icomplete-exhibit "icomplete")
 (defun consult--icomplete-refresh ()
-  "Refresh icomplete view."
-  ;; TODO ensure that scrolling works with async
+  "Refresh icomplete view, keep current candidate selected if possible."
   (when icomplete-mode
-    (setq completion-all-sorted-completions nil)
+    (let ((top (car completion-all-sorted-completions)))
+      (completion--flush-all-sorted-completions)
+      (unless (null top)
+        (let* ((beg (icomplete--field-beg))
+               (end (icomplete--field-end))
+               (completions (completion-all-sorted-completions beg end))
+               (last (last completions))
+               (before nil)) ; completions before top
+          ;; warning: completions is an improper list
+          (while (consp completions)
+            (if (equal (car completions) top)
+                (progn
+                  (setcdr last (append (nreverse before) (cdr last)))
+                  (setq completion-all-sorted-completions completions)
+                  (setq completions nil))
+              (push (car completions) before)
+              (setq completions (cdr completions)))))))
     (icomplete-exhibit)))
 
 (add-hook 'consult--completion-refresh-hook #'consult--icomplete-refresh)
