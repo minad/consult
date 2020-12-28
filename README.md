@@ -72,14 +72,45 @@ Most provided commands follow the naming scheme `consult-<thing>`.
     supported when selecting from the kill-ring.
   * `consult-kmacro`: Select macro from the macro ring and execute it.
 
-### Help and Discoverability
+### Navigation and Search
 
-  * `consult-apropos`: Replacement for `apropos` with completion.
+  * `consult-goto-line`: Jump to line number enhanced with live preview. This is
+    a drop-in replacement for `goto-line`.
+  * `consult-mark`: Jump to a marker in the `mark-ring`. Supports live preview
+    and recursive editing.
+  * `consult-global-mark`: Jump to a marker in the `global-mark-ring`. Supports
+    live preview and recursive editing.
+  * `consult-outline`: Jump to a heading of the outline. Supports live preview
+    and recursive editing.
+  * `consult-imenu`: Jump to imenu item. Supports live preview, recursive
+    editing and narrowing.
 
-Note that there is the [Marginalia](https://github.com/minad/marginalia/)
-package, which provides `marginalia-mode`. Enabling this mode annotates
-completions with richer information (e.g. `M-x`, `describe-face`,
-`describe-symbol`, `helpful-function`, …).
+### Search
+
+  * `consult-line` (`-symbol-at-point`, `-from-isearch`): Select from matching
+    lines. Supports live preview and recursive editing. There are
+    two variants, which search for the symbol at point and for the most
+    recent isearch string respectively.
+  * `consult-grep`: **EXPERIMENTAL** Search in current directory. Grep is
+    invoked asynchronously!
+  * `consult-ripgrep`: **EXPERIMENTAL** Search in current directory. Ripgrep is
+    invoked asynchronously!
+  * `consult-git-grep`: **EXPERIMENTAL** Search in current repository. Git-Grep
+    is invoked asynchronously!
+  * `consult-multi-occur`: Replacement for `multi-occur` which uses
+    `completing-read-multiple`.
+
+### Compilation errors
+
+  * `consult-error`: Jump to an error. Supports live preview
+    and recursive editing. In contrast to `consult-flycheck` it shows the line
+    and is more general since it is not tied to a specific backend.
+  * `consult-flycheck`: Jump to flycheck error. Supports live preview and
+    recursive editing. The command supports narrowing. Press `e SPC`, `w SPC`,
+    `i SPC` to only show errors, warnings and infos respectively. This command
+    requires to install the additional `consult-flycheck.el` package since the
+    main `consult.el` package only depends on Emacs core components.
+  * `consult-flymake`: Jump to Flymake diagnostic, like `consult-flycheck`.
 
 ### Histories
 
@@ -91,46 +122,27 @@ completions with richer information (e.g. `M-x`, `describe-face`,
     This command can be invoked from the minibuffer. In that case the history
     stored in the minibuffer-history-variable is used.
 
-### Navigation and Search
+### Minor and Major modes
 
-  * `consult-line` (`-symbol-at-point`, `-from-isearch`): Select from matching
-    lines. Supports live preview and recursive editing. There are
-    two variants, which search for the symbol at point and for the most
-    recent isearch string respectively.
-  * `consult-goto-line`: Jump to line number enhanced with live preview. This is
-    a drop-in replacement for `goto-line`.
-  * `consult-mark`: Jump to a marker in the `mark-ring`. Supports live preview
-    and recursive editing.
-  * `consult-global-mark`: Jump to a marker in the `global-mark-ring`. Supports live preview
-    and recursive editing.
-  * `consult-outline`: Jump to a heading of the outline. Supports live preview
-    and recursive editing.
-  * `consult-imenu`: Jump to imenu item. Supports live preview, recursive
-    editing and narrowing.
-  * `consult-error`: Jump to an error. Supports live preview
-    and recursive editing. In contrast to `consult-flycheck` it shows the line
-    and is more general since it is not tied to a specific backend.
-  * `consult-flycheck`: Jump to flycheck error. Supports live preview and
-    recursive editing. The command supports narrowing. Press `e SPC`, `w SPC`,
-    `i SPC` to only show errors, warnings and infos respectively. This command
-    requires to install the additional `consult-flycheck.el` package since the
-    main `consult.el` package only depends on Emacs core components.
-  * `consult-flymake`: Jump to Flymake diagnostic, like `consult-flycheck`.
-
-### Miscellaneous
-
-  * `consult-file-externally`: Select a file and open it externally, e.g. using `xdg-open` on Linux.
-  * `consult-multi-occur`: Replacement for `multi-occur` which uses `completing-read-multiple`.
-  * `consult-completion-in-region`: Function which can be used as `completion-in-region-function`.
-     This way, the minibuffer completion UI will be used for `completion-at-point`.
-     This function is particularily useful in combination with Icomplete-vertical,
-     since Icomplete does not provide its own `completion-in-region-function`.
-     In contrast, Selectrum already comes with its own function.
-  * `consult-minor-mode-menu`: Enable/disable minor mode. Supports narrowing
-     to on/off/local/global modes by pressing `i/o/l/g SPC` respectively.
+  * `consult-minor-mode-menu`: Enable/disable minor mode. Supports narrowing to
+     on/off/local/global modes by pressing `i/o/l/g SPC` respectively.
   * `consult-mode-command`: Run a command from the currently active minor or
      major modes. Supports narrowing to local-minor/global-minor/major mode via
      the keys `l/g/m`.
+
+### Miscellaneous
+
+  * `consult-websearch`: **EXPERIMENTAL** Query search engine with
+    auto-completion.
+  * `consult-apropos`: Replacement for `apropos` with completion.
+  * `consult-file-externally`: Select a file and open it externally, e.g. using
+    `xdg-open` on Linux.
+  * `consult-completion-in-region`: Function which can be used as
+     `completion-in-region-function`. This way, the minibuffer completion UI
+     will be used for `completion-at-point`. This function is particularily
+     useful in combination with Icomplete-vertical, since Icomplete does not
+     provide its own `completion-in-region-function`. In contrast, Selectrum
+     already comes with its own function.
   * `consult-theme`: Select a theme and disable all currently enabled themes.
      Supports live preview of the theme while scrolling through the candidates.
 
@@ -261,7 +273,8 @@ It is recommended to install the following package combination:
 * selectrum or icomplete-vertical: Vertical completion systems
 * marginalia: Annotations for the completion candidates
 * embark: Action commands, which can act on the completion candidates
-* orderless or prescient: Completion styles, cndidate filtering, Prescient also offers sorting.
+* orderless or prescient: Completion styles, candidate filtering, Prescient also
+  offers sorting.
 
 Note that all packages are independent and can potentially be exchanged with
 alternative components, since there exist no hard dependencies. Furthermore it
