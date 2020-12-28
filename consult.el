@@ -728,18 +728,14 @@ CMD is the command argument list."
                                (setq rest (concat rest (car lines))))))
                          :sentinel
                          (lambda (_ event)
+                           (with-current-buffer consult--async-stderr
+                             (insert (format "consult--async-process sentinel: %s" event)))
                            (when flush
                              (setq flush nil)
                              (funcall async 'flush))
                            (overlay-put indicator 'display nil)
-                           (cond
-                            ((string-prefix-p "finished" event)
-                             (unless (string= rest "")
-                               (funcall async (list rest))))
-                            ((string-match-p "^\\(failed\\|exited abnormally\\)" event)
-                             (minibuffer-message "%s: %s, see buffer `%s'"
-                                                 (car args) (string-trim event)
-                                                 consult--async-stderr)))))))))
+                           (when (and (string-prefix-p "finished" event) (not (string= rest "")))
+                             (funcall async (list rest)))))))))
         ('destroy
          (ignore-errors (kill-process proc))
          (delete-overlay indicator)
