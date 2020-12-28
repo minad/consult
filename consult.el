@@ -190,8 +190,12 @@ You may want to add a function which pulses the current line, e.g.,
   '((t :inherit region))
   "Face used to for line previews.")
 
-(defface consult-preview-cursor
+(defface consult-preview-match
   '((t :inherit match))
+  "Face used to for match previews in `consult-grep'.")
+
+(defface consult-preview-cursor
+  '((t :inherit consult-preview-match))
   "Face used to for cursor previews and marks in `consult-mark'.")
 
 (defface consult-preview-error
@@ -1936,31 +1940,31 @@ Prepend PREFIX in front of all items."
       :sort nil))
     (run-hooks 'consult-after-jump-hook)))
 
+(defconst consult--grep-regexp "\\([^\0\n]+\\)\0\\([^:]+\\):")
+
+(defsubst consult--strip-escape (s)
+  (replace-regexp-in-string "\e\\[[0-9;]*[mK]" "" s))
+
 (defun consult--grep-matches (lines)
   "Find grep match for REGEXP in LINES."
-  (pcase-let ((`(,grep-regexp ,file-group ,line-group . ,_) (car grep-regexp-alist)))
-    (save-match-data
-      (delq nil
-            (mapcar
-             (lambda (str)
-               (when (string-match grep-regexp str)
-                 (let* ((file (match-string file-group str))
-                        (line (string-to-number (match-string line-group str)))
-                        (match (substring str (match-end 0)))
-                        (col 0)
-                        (loc (consult--format-location file line)))
-                   ;; TODO instead of applying the REGEXP ourselves to the
-                   ;; strings, we should rather parse the grep highlighting of the matches!
-                   ;; Unfortunately it seems we cannot use the grep-regexp-alist then!
-                   ;; (when (string-match regexp match)
-                   ;;   (setq col (match-beginning 0)
-                   ;;         match (concat (substring match 0 col)
-                   ;;                       (propertize (substring match col (match-end 0))
-                   ;;                                   'face 'consult-preview-cursor)
-                   ;;                       (substring match (match-end 0)))))
-                   (list (concat loc (make-string (+ 3 (max 0 (- 60 (length loc)))) 32) match)
-                         (expand-file-name file) line col))))
-             lines)))))
+  (save-match-data
+    (delq nil
+          (mapcar
+           (lambda (str)
+             (when (string-match consult--grep-regexp str)
+               (let* ((file (consult--strip-escape (match-string 1 str)))
+                      (line (string-to-number (consult--strip-escape (match-string 2 str))))
+                      (str (substring str (match-end 0)))
+                      (loc (consult--format-location file line)))
+                 (while (string-match "\e\\[[0-9;]+m\\(.*?\\)\e\\[[0-9;]*m" str)
+                   (setq str (concat (substring str 0 (match-beginning 0))
+                                     (propertize (substring (match-string 1 str)) 'face 'consult-preview-match)
+                                     (substring str (match-end 0)))))
+                 (setq str (consult--strip-escape str))
+                 (list (concat loc (make-string (+ 3 (max 0 (- 60 (length loc)))) 32) str)
+                       (expand-file-name file) line
+                       (next-single-char-property-change 0 'face str)))))
+           lines))))
 
 (defun consult--grep-marker (open)
   "Grep candidate to marker.
@@ -1978,9 +1982,9 @@ OPEN is the function to open new files."
             (forward-char (caddr loc))
             (point-marker)))))))
 
-(defvar consult--git-grep '("git" "grep" "--color=never" "-n" "-e"))
-(defvar consult--grep '("grep" "--line-buffered" "--color=never" "--exclude-dir=.git" "-n" "-r" "-e"))
-(defvar consult--ripgrep '("rg" "--line-buffered" "--color=never" "--max-columns=500" "--no-heading" "-n" "." "-e"))
+(defvar consult--git-grep '("git" "grep" "--null" "--color=always" "-n" "-e"))
+(defvar consult--grep '("grep" "--null" "--line-buffered" "--color=always" "--exclude-dir=.git" "-n" "-r" "-e"))
+(defvar consult--ripgrep '("rg" "--null" "--line-buffered" "--color=always" "--max-columns=500" "--no-heading" "-n" "." "-e"))
 
 (defun consult--grep-async (cmd)
   "Async function for `consult-grep'.
