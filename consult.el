@@ -712,6 +712,60 @@ CMD is the command argument list."
          (funcall async 'destroy))
         (_ (funcall async action))))))
 
+(defun consult--async-process2 (async cmd)
+  "Process source for ASYNC.
+
+CMD is the command argument list."
+  (let* ((rest) (proc) (flush))
+    (lambda (action)
+      (pcase action
+        ((pred stringp)
+         (funcall async action)
+         (unless (string-blank-p action)
+           (ignore-errors (kill-process proc))
+           (let ((args (append cmd (list action))))
+             (setq rest ""
+                   flush t
+                   proc (make-process
+                         :name (car args)
+                         :stderr consult--async-stderr
+                         :noquery t
+                         :command args
+                         :filter
+                         (lambda (_ out)
+                           (when flush
+                             (setq flush nil)
+                             (funcall async 'flush))
+                           (let ((lines (split-string out "\n")))
+                             (if (cdr lines)
+                                 (progn
+                                   (setcar lines (concat rest (car lines)))
+                                   (setq rest (car (last lines)))
+                                   (funcall async (nbutlast lines)))
+                               (setq rest (concat rest (car lines))))))
+                         :sentinel
+                         (lambda (_ event)
+                           (when flush
+                             (setq flush nil)
+                             (funcall async 'flush))
+                           (cond
+                            ((string-prefix-p "finished" event)
+                             (unless (string= rest "")
+                               (funcall async (list rest))))
+                            ((string-match-p "^\\(failed\\|exited abnormally\\)" event)
+                             ;;(run-at-time
+                             ;; 0 nil
+                             ;; (lambda ()
+                             ;;   (message "%s: %s, see buffer `%s'"
+                             ;;            (car args) (string-trim event)
+                             ;;            consult--async-stderr)))
+                             ;;(abort-recursive-edit)
+                             ))))))))
+        ('destroy
+         (ignore-errors (kill-process proc))
+         (funcall async 'destroy))
+        (_ (funcall async action))))))
+
 (defun consult--async-indicator (async)
   "Add indicator to ASYNC."
   (let ((ov))
@@ -1859,7 +1913,7 @@ Prepend PREFIX in front of all items."
 ;; TODO instead of applying the REGEXP ourselves to the
 ;; strings, we should rather parse the grep highlighting of the matches!
 ;; Unfortunately it seems we cannot use the grep-regexp-alist then!
-(defun consult--grep-matches (regexp lines)
+(defun consult--grep-matches (lines)
   "Find grep match for REGEXP in LINES."
   (pcase-let ((`(,grep-regexp ,file-group ,line-group . ,_) (car grep-regexp-alist)))
     (save-match-data
@@ -1872,12 +1926,12 @@ Prepend PREFIX in front of all items."
                         (match (substring str (match-end 0)))
                         (col 0)
                         (loc (consult--format-location file line)))
-                   (when (string-match regexp match)
-                     (setq col (match-beginning 0)
-                           match (concat (substring match 0 col)
-                                         (propertize (substring match col (match-end 0))
-                                                     'face 'consult-preview-cursor)
-                                         (substring match (match-end 0)))))
+                   ;; (when (string-match regexp match)
+                   ;;   (setq col (match-beginning 0)
+                   ;;         match (concat (substring match 0 col)
+                   ;;                       (propertize (substring match col (match-end 0))
+                   ;;                                   'face 'consult-preview-cursor)
+                   ;;                       (substring match (match-end 0)))))
                    (list (concat loc (make-string (+ 3 (max 0 (- 60 (length loc)))) 32) match)
                          (expand-file-name file) line col))))
              lines)))))
@@ -1902,20 +1956,21 @@ OPEN is the function to open new files."
 (defvar consult--grep '("grep" "--line-buffered" "--color=never" "--exclude-dir=.git" "-n" "-r" "-e"))
 (defvar consult--ripgrep '("rg" "--line-buffered" "--color=never" "--max-columns=500" "--no-heading" "-n" "." "-e"))
 
-(defun consult--grep-async (cmd regexp)
+(defun consult--grep-async (cmd)
   "Async table for grep CMD searching for REGEXP."
   (thread-first (consult--async-sink)
     (consult--async-refresh)
     (consult--async-indicator)
-    (consult--async-transform consult--grep-matches regexp)
-    (consult--async-process `(,@cmd ,regexp))))
+    (consult--async-transform consult--grep-matches)
+    (consult--async-process2 cmd)
+    (consult--async-split)))
 
-(defun consult--grep (cmd regexp)
+(defun consult--grep (prompt cmd)
   "Run grep CMD with REGEXP in current directory."
   (consult--with-temporary-files (open)
     (consult--jump
      (consult--read
-      "Go to match: " (consult--grep-async cmd regexp)
+      prompt (consult--grep-async cmd)
       :lookup (consult--grep-marker open)
       :preview (consult--preview-position)
       :require-match t
@@ -1923,22 +1978,22 @@ OPEN is the function to open new files."
       :sort nil))))
 
 ;;;###autoload
-(defun consult-grep (regexp)
+(defun consult-grep ()
   "Search for REGEXP with grep."
-  (interactive "sGrep: ")
-  (consult--grep consult--grep regexp))
+  (interactive)
+  (consult--grep "Grep: " consult--grep))
 
 ;;;###autoload
-(defun consult-git-grep (regexp)
+(defun consult-git-grep ()
   "Search for REGEXP with grep."
-  (interactive "sGit Grep: ")
-  (consult--grep consult--git-grep regexp))
+  (interactive)
+  (consult--grep "Git Grep: " consult--git-grep))
 
 ;;;###autoload
-(defun consult-ripgrep (regexp)
+(defun consult-ripgrep ()
   "Search for REGEXP with rg."
-  (interactive "sRipgrep: ")
-  (consult--grep consult--ripgrep regexp))
+  (interactive)
+  (consult--grep "Ripgrep: " consult--ripgrep))
 
 (defvar url-http-end-of-headers)
 (defun consult--fetch-json (url cb)
