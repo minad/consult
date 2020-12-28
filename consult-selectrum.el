@@ -35,10 +35,17 @@
 (require 'consult)
 (require 'selectrum)
 
+(defun consult-selectrum--match ()
+  "Return selectrum matching function."
+  (when (eq completing-read-function #'selectrum-completing-read)
+    selectrum-refine-candidates-function))
+
+(add-hook 'consult--completion-match-hook #'consult-selectrum--match)
+
 (defun consult-selectrum--candidate ()
   "Return current selectrum candidate."
-  (and (eq completing-read-function #'selectrum-completing-read)
-       (selectrum-get-current-candidate)))
+  (when (eq completing-read-function #'selectrum-completing-read)
+    (selectrum-get-current-candidate)))
 
 (add-hook 'consult--completion-candidate-hook #'consult-selectrum--candidate)
 

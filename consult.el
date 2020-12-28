@@ -249,6 +249,9 @@ You may want to add a function which pulses the current line, e.g.,
 
 ;;;; Internal variables
 
+(defvar consult--completion-match-hook nil
+  "Obtain match function from completion system.")
+
 (defvar consult--completion-candidate-hook nil
   "Get candidate from completion system.")
 
@@ -927,12 +930,13 @@ CAND is the currently selected candidate."
                   (< (elt cand 0) (+ consult--special-char consult--special-range)))
         (setq cand (substring cand 1)))
       (let ((beg 0)
-            (end (length cand)))
+            (end (length cand))
+            (match (run-hook-with-args-until-success 'consult--completion-match-hook)))
         ;; Find match end position, remove characters from line end until matching fails
         (let ((step 16))
           (while (> step 0)
             (while (and (> (- end step) 0)
-                        (completion-all-completions input (list (substring cand 0 (- end step))) nil 0))
+                        (funcall match input (list (substring cand 0 (- end step)))))
               (setq end (- end step)))
             (setq step (/ step 2))))
         ;; Find match beginning position, remove characters from line beginning until matching fails
@@ -940,7 +944,7 @@ CAND is the currently selected candidate."
           (let ((step 16))
             (while (> step 0)
               (while (and (< (+ beg step) end)
-                          (completion-all-completions input (list (substring cand (+ beg step) end)) nil 0))
+                          (funcall match input (list (substring cand (+ beg step) end))))
                 (setq beg (+ beg step)))
               (setq step (/ step 2)))
             (setq end beg)))
@@ -1667,6 +1671,12 @@ Prepend PREFIX in front of all items."
         cand))))
 
 (add-hook 'consult--completion-candidate-hook #'consult--default-candidate)
+
+(defun consult--default-match ()
+  "Return default matching function."
+  (lambda (str cands) (completion-all-completions str cands nil (length str))))
+
+(add-hook 'consult--completion-match-hook #'consult--default-match)
 
 ;;;; icomplete support
 
