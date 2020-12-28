@@ -292,7 +292,7 @@ Size of private unicode plane b.")
 (defvar consult--gc-percentage 0.5
   "Large gc percentage for temporary increase.")
 
-(defconst consult--async-stderr
+(defvar consult--async-stderr
   " *consult-async-stderr*"
   "Buffer for stderr output used by `consult--async-process'.")
 
