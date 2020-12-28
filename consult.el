@@ -668,11 +668,9 @@ String   The input string, called when the user enters something."
              (run-hooks 'consult--completion-refresh-hook))))
         ((pred listp) (setq candidates (nconc candidates action)))))))
 
-(defvar-local consult--async-input-split-orig nil)
-
-(defun consult--async-input-split-wrap (fun)
+(defun consult--async-input-split-wrap (fun orig)
   (lambda (str table pred point &optional metadata)
-    (let ((completion-styles consult--async-input-split-orig)
+    (let ((completion-styles orig)
           (pos (seq-position str 59)))
       (funcall fun
                (if pos (substring str (1+ pos)) "")
@@ -680,24 +678,18 @@ String   The input string, called when the user enters something."
                (if (and pos (> point pos)) (- point pos 1) 0)
                metadata))))
 
-(add-to-list 'completion-styles-alist
-             (list 'consult--async-input-split
-                   (consult--async-input-split-wrap #'completion-try-completion)
-                   (consult--async-input-split-wrap #'completion-all-completions)
-                   "Split async and filter part."))
-
 (defun consult--async-input-split (async)
   (lambda (action)
     (pcase action
       ('setup
-       ;; TODO move to consult-selectrum
-       (if (bound-and-true-p selectrum-mode)
-           (let ((orig selectrum-refine-candidates-function))
-             (setq selectrum-refine-candidates-function
-                   (lambda (str cands)
-                     (funcall orig (replace-regexp-in-string "[^;]*;" "" str) cands)))
-             (funcall async action))
-         (setq-local consult--async-input-split-orig completion-styles
+       (let ((orig completion-styles))
+         (setq-local completion-styles-alist
+                     (cons
+                      (list 'consult--async-input-split
+                            (consult--async-input-split-wrap #'completion-try-completion orig)
+                            (consult--async-input-split-wrap #'completion-all-completions orig)
+                            "Split async and filter part.")
+                      completion-styles-alist)
                      completion-styles '(consult--async-input-split))))
       ((pred stringp) (funcall async (replace-regexp-in-string ";.*" "" action)))
       (_ (funcall async action)))))

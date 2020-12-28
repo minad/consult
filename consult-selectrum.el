@@ -69,5 +69,21 @@
                       (setq-local selectrum-fix-minibuffer-height t)))
                 (apply fun prompt candidates opts))))
 
+(defun consult-selectrum--async-input-split (orig async)
+  (if (eq completing-read-function #'selectrum-completing-read)
+      (lambda (action)
+        (pcase action
+          ('setup
+           (let ((orig selectrum-refine-candidates-function))
+             (setq selectrum-refine-candidates-function
+                   (lambda (str cands)
+                     (funcall orig (replace-regexp-in-string "[^;]*;" "" str) cands)))
+             (funcall async action)))
+          ((pred stringp) (funcall async (replace-regexp-in-string ";.*" "" action)))
+          (_ (funcall async action))))
+    (funcall orig async)))
+
+(advice-add #'consult--async-input-split :around #'consult-selectrum--async-input-split)
+
 (provide 'consult-selectrum)
 ;;; consult-selectrum.el ends here
