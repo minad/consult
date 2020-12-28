@@ -671,7 +671,7 @@ String   The input string, called when the user enters something."
 (defun consult--async-input-split-wrap (fun)
   (lambda (str table pred point &optional metadata)
     (let ((completion-styles (cdr completion-styles))
-          (pos (seq-position str 59)))
+          (pos (seq-position str ?,)))
       (funcall fun
                (if pos (substring str (1+ pos)) "")
                table pred
@@ -689,7 +689,7 @@ String   The input string, called when the user enters something."
     (pcase action
       ('setup (setq-local completion-styles
                           (cons 'consult--async-input-split completion-styles)))
-      ((pred stringp) (funcall async (replace-regexp-in-string ";.*" "" action)))
+      ((pred stringp) (funcall async (replace-regexp-in-string ",.*" "" action)))
       (_ (funcall async action)))))
 
 (defun consult--async-process (async cmd)

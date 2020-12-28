@@ -77,9 +77,9 @@
            (let ((orig selectrum-refine-candidates-function))
              (setq selectrum-refine-candidates-function
                    (lambda (str cands)
-                     (funcall orig (replace-regexp-in-string "[^;]*;" "" str) cands)))
+                     (funcall orig (replace-regexp-in-string "[^,]*," "" str) cands)))
              (funcall async action)))
-          ((pred stringp) (funcall async (replace-regexp-in-string ";.*" "" action)))
+          ((pred stringp) (funcall async (replace-regexp-in-string ",.*" "" action)))
           (_ (funcall async action))))
     (funcall orig async)))
 
