@@ -79,6 +79,10 @@ If this key is unset, defaults to 'consult-narrow-key SPC'."
   "Function which opens a view, used by `consult-buffer'."
   :type 'function)
 
+(defcustom consult-grep-min-input 3
+  "Minimum number of letters which must be entered, before grep is called."
+  :type 'integer)
+
 (defcustom consult-mode-histories
   '((eshell-mode . eshell-history-ring)
     (comint-mode . comint-input-ring)
@@ -851,41 +855,44 @@ CMD is the command argument list."
            (unless (equal args last-args)
              (setq last-args args)
              (ignore-errors (kill-process proc))
-             (overlay-put indicator 'display (propertize "*" 'face 'consult-async-indicator))
-             (with-current-buffer (get-buffer-create consult--async-stderr)
-               (goto-char (point-max))
-               (insert (format "consult--async-process: %S\n" args)))
-             (setq rest ""
-                   flush t
-                   proc (make-process
-                         :name (car args)
-                         :stderr consult--async-stderr
-                         :noquery t
-                         :command args
-                         :filter
-                         (lambda (_ out)
-                           (when flush
-                             (setq flush nil)
-                             (funcall async 'flush))
-                           (let ((lines (split-string out "\n")))
-                             (if (cdr lines)
-                                 (progn
-                                   (setcar lines (concat rest (car lines)))
-                                   (setq rest (car (last lines)))
-                                   (funcall async (nbutlast lines)))
-                               (setq rest (concat rest (car lines))))))
-                         :sentinel
-                         (lambda (_ event)
-                           (with-current-buffer (get-buffer-create consult--async-stderr)
-                             (goto-char (point-max))
-                             (insert (format "consult--async-process sentinel: %s\n" event)))
-                           (when flush
-                             (setq flush nil)
-                             (funcall async 'flush))
-                           (when (string-prefix-p "finished" event)
-                             (overlay-put indicator 'display nil)
-                             (unless (string= rest "")
-                               (funcall async (list rest))))))))))
+             (when args
+               (overlay-put indicator 'display (propertize "*" 'face 'consult-async-indicator))
+               (with-current-buffer (get-buffer-create consult--async-stderr)
+                 (goto-char (point-max))
+                 (insert (format "consult--async-process: %S\n" args)))
+               (setq
+                rest ""
+                flush t
+                proc
+                (make-process
+                 :name (car args)
+                 :stderr consult--async-stderr
+                 :noquery t
+                 :command args
+                 :filter
+                 (lambda (_ out)
+                   (when flush
+                     (setq flush nil)
+                     (funcall async 'flush))
+                   (let ((lines (split-string out "\n")))
+                     (if (cdr lines)
+                         (progn
+                           (setcar lines (concat rest (car lines)))
+                           (setq rest (car (last lines)))
+                           (funcall async (nbutlast lines)))
+                       (setq rest (concat rest (car lines))))))
+                 :sentinel
+                 (lambda (_ event)
+                   (with-current-buffer (get-buffer-create consult--async-stderr)
+                     (goto-char (point-max))
+                     (insert (format "consult--async-process sentinel: %s\n" event)))
+                   (when flush
+                     (setq flush nil)
+                     (funcall async 'flush))
+                   (when (string-prefix-p "finished" event)
+                     (overlay-put indicator 'display nil)
+                     (unless (string= rest "")
+                       (funcall async (list rest)))))))))))
         ('destroy
          (ignore-errors (kill-process proc))
          (delete-overlay indicator)
@@ -1940,10 +1947,12 @@ Prepend PREFIX in front of all items."
       :sort nil))
     (run-hooks 'consult-after-jump-hook)))
 
-(defconst consult--grep-regexp "\\([^\0\n]+\\)\0\\([^:]+\\):")
+(defconst consult--grep-regexp "\\([^\0\n]+\\)\0\\([^:]+\\):"
+  "Regexp used to match file and line of grep output.")
 
-(defsubst consult--strip-escape (s)
-  (replace-regexp-in-string "\e\\[[0-9;]*[mK]" "" s))
+(defsubst consult--strip-escape (str)
+  "Strip ansi escape sequences from STR."
+  (replace-regexp-in-string "\e\\[[0-9;]*[mK]" "" str))
 
 (defun consult--grep-matches (lines)
   "Find grep match for REGEXP in LINES."
@@ -2005,7 +2014,9 @@ PROMPT is the prompt string."
     (consult--jump
      (consult--read
       prompt
-      (consult--grep-async (lambda (input) (append cmd (list input))))
+      (consult--grep-async (lambda (input)
+                             (when (>= (length input) consult-grep-min-input)
+                               (append cmd (list input)))))
       :lookup (consult--grep-marker open)
       :preview (consult--preview-position)
       :require-match t

@@ -245,6 +245,7 @@ that the main package `consult.el` only depends on Emacs core components.
 |------------------------------|------------------|---------------------------------------------------------|
 | consult-after-jump-hook      | '(recenter)      | Functions to call after jumping to a location           |
 | consult-goto-line-numbers    | t                | Show line numbers for `consult-goto-line`               |
+| consult-grep-min-input       | 3                | Minimum numbers of letters needed for grep              |
 | consult-imenu-narrow         | …                | Narrowing keys for imenu                                |
 | consult-line-numbers-widen   | t                | Show absolute line numbers when narrowing is active.    |
 | consult-line-point-placement | 'match-beginning | Placement of the point used by `consult-line`           |
