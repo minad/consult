@@ -651,7 +651,6 @@ Depending on the argument, the caller context differ.
 
 'setup   Setup the internal state.
 'destroy Destroy the internal state.
-'done    Signal that the async process is done.
 'flush   Flush the list of candidates.
 'refresh Request UI refresh.
 'get     Get the list of candidates.
@@ -660,7 +659,7 @@ String   The input string, called when the user enters something."
   (let ((candidates))
     (lambda (action)
       (pcase-exhaustive action
-        ((or (pred stringp) 'setup 'destroy 'done) nil)
+        ((or (pred stringp) 'setup 'destroy) nil)
         ('flush (setq candidates nil))
         ('get candidates)
         ('refresh
@@ -669,61 +668,53 @@ String   The input string, called when the user enters something."
              (run-hooks 'consult--completion-refresh-hook))))
         ((pred listp) (setq candidates (nconc candidates action)))))))
 
+(defvar-local consult--async-input-split-orig nil)
+
+(defun consult--async-input-split-wrap (fun)
+  (lambda (str table pred point &optional metadata)
+    (let ((completion-styles consult--async-input-split-orig)
+          (pos (seq-position str 59)))
+      (funcall fun
+               (if pos (substring str (1+ pos)) "")
+               table pred
+               (if (and pos (> point pos)) (- point pos 1) 0)
+               metadata))))
+
+(add-to-list 'completion-styles-alist
+             (list 'consult--async-input-split
+                   (consult--async-input-split-wrap #'completion-try-completion)
+                   (consult--async-input-split-wrap #'completion-all-completions)
+                   "Split async and filter part."))
+
+(defun consult--async-input-split (async)
+  (lambda (action)
+    (pcase action
+      ('setup
+       ;; TODO move to consult-selectrum
+       (if (bound-and-true-p selectrum-mode)
+           (let ((orig selectrum-refine-candidates-function))
+             (setq selectrum-refine-candidates-function
+                   (lambda (str cands)
+                     (funcall orig (replace-regexp-in-string "[^;]*;" "" str) cands)))
+             (funcall async action))
+         (setq-local consult--async-input-split-orig completion-styles
+                     completion-styles '(consult--async-input-split))))
+      ((pred stringp) (funcall async (replace-regexp-in-string ";.*" "" action)))
+      (_ (funcall async action)))))
+
 (defun consult--async-process (async cmd)
   "Process source for ASYNC.
 
 CMD is the command argument list."
-  (let* ((rest "") (proc))
-    (lambda (action)
-      (pcase action
-        ('setup
-         (funcall async 'setup)
-         (setq proc (make-process
-                     :name (car cmd)
-                     :stderr consult--async-stderr
-                     :noquery t
-                     :command cmd
-                     :filter
-                     (lambda (_ out)
-                       (let ((lines (split-string out "\n")))
-                         (if (cdr lines)
-                             (progn
-                               (setcar lines (concat rest (car lines)))
-                               (setq rest (car (last lines)))
-                               (funcall async (nbutlast lines)))
-                           (setq rest (concat rest (car lines))))))
-                     :sentinel
-                     (lambda (_ event)
-                       (cond
-                        ((string-prefix-p "finished" event)
-                         (unless (string= rest "")
-                           (funcall async (list rest)))
-                         (funcall async 'done))
-                        ((string-match-p "^\\(failed\\|exited abnormally\\)" event)
-                         (run-at-time
-                          0 nil
-                          (lambda ()
-                            (message "%s: %s, see buffer `%s'"
-                                     (car cmd) (string-trim event)
-                                     consult--async-stderr)))
-                         (abort-recursive-edit)))))))
-        ('destroy
-         (ignore-errors (kill-process proc))
-         (funcall async 'destroy))
-        (_ (funcall async action))))))
-
-(defun consult--async-process2 (async cmd)
-  "Process source for ASYNC.
-
-CMD is the command argument list."
-  (let* ((rest) (proc) (flush))
+  (let* ((rest) (proc) (flush) (input "") (indicator))
     (lambda (action)
       (pcase action
         ((pred stringp)
-         (funcall async action)
-         (unless (string-blank-p action)
+         (unless (string= action input)
+           (setq input action)
            (ignore-errors (kill-process proc))
-           (let ((args (append cmd (list action))))
+           (let ((args (funcall cmd action)))
+             (overlay-put indicator 'display (propertize "*" 'face 'consult-async-indicator))
              (setq rest ""
                    flush t
                    proc (make-process
@@ -748,69 +739,69 @@ CMD is the command argument list."
                            (when flush
                              (setq flush nil)
                              (funcall async 'flush))
+                           (overlay-put indicator 'display nil)
                            (cond
                             ((string-prefix-p "finished" event)
                              (unless (string= rest "")
                                (funcall async (list rest))))
                             ((string-match-p "^\\(failed\\|exited abnormally\\)" event)
-                             ;;(run-at-time
-                             ;; 0 nil
-                             ;; (lambda ()
-                             ;;   (message "%s: %s, see buffer `%s'"
-                             ;;            (car args) (string-trim event)
-                             ;;            consult--async-stderr)))
-                             ;;(abort-recursive-edit)
-                             ))))))))
+                             (minibuffer-message "%s: %s, see buffer `%s'"
+                                                 (car args) (string-trim event)
+                                                 consult--async-stderr)))))))))
         ('destroy
          (ignore-errors (kill-process proc))
+         (delete-overlay indicator)
          (funcall async 'destroy))
+        ('setup
+         (setq indicator (make-overlay (- (minibuffer-prompt-end) 2) (- (minibuffer-prompt-end) 1)))
+         (funcall async 'setup))
         (_ (funcall async action))))))
 
-(defun consult--async-indicator (async)
-  "Add indicator to ASYNC."
-  (let ((ov))
+(defun consult--async-input-limiter (async &optional delay)
+  "Create async function from ASYNC querying URL and calling CB."
+  (let* ((delay (or delay 0.5))
+         (input "")
+         (timer (run-at-time delay delay
+                             (lambda ()
+                               (unless (string= input "")
+                                 (funcall async input))))))
     (lambda (action)
       (pcase action
-        ('setup
-         (setq ov (consult--overlay (- (minibuffer-prompt-end) 2) (- (minibuffer-prompt-end) 1)
-                                    'display "*" 'face 'consult-async-indicator)))
-        ((or 'destroy 'done) (delete-overlay ov)))
-      (funcall async action))))
+        ((pred stringp) (setq input action))
+        ('destroy (cancel-timer timer)
+                  (funcall async 'destroy))
+        (_ (funcall async action))))))
 
-(defun consult--async-refresh (async &optional delay)
+(defun consult--async-refresh-immediate (async)
+  (lambda (action)
+    (pcase action
+      ((or (pred listp) (pred stringp) 'flush)
+       (prog1 (funcall async action)
+         (funcall async 'refresh)))
+      (_ (funcall async action)))))
+
+(defun consult--async-refresh-timer (async &optional delay)
   "Add refresh timer to ASYNC.
 
 DELAY is the refresh delay, default 0.1.
 The delay can also be 0 in order to trigger an immediate
 refreshing when candidates are pushed."
-  (if (equal delay 0)
-      ;; Immediate refresher
-      (lambda (action)
-        (pcase action
-          ((or (pred listp) (pred stringp) 'flush)
-           (prog1 (funcall async action)
-             (funcall async 'refresh)))
-          (_ (funcall async action))))
-      ;; Timer based refresher
-    (let ((timer)
-          (refresh t)
-          (delay (or delay 0.1)))
-      (lambda (action)
-        (pcase action
-          ((or (pred listp) (pred stringp) 'refresh 'flush)
-           (setq refresh t))
-          ('done
-           (cancel-timer timer)
-           (funcall async 'refresh))
-          ('destroy (cancel-timer timer))
-          ('setup
-           (setq timer (run-with-timer
-                        delay delay
-                        (lambda ()
-                          (when refresh
-                            (setq refresh nil)
-                            (funcall async 'refresh)))))))
-        (funcall async action)))))
+  (let ((timer)
+        (refresh t)
+        (delay (or delay 0.1)))
+    (lambda (action)
+      (pcase action
+        ((or (pred listp) (pred stringp) 'refresh 'flush)
+         (setq refresh t))
+        ('destroy (cancel-timer timer))
+        ('setup
+         (setq timer (run-with-timer
+                      delay delay
+                      (lambda ()
+                        (when refresh
+                          (setq refresh nil)
+                          (funcall async 'refresh)))))))
+      (funcall async action))))
 
 (defmacro consult--async-transform (async &rest transform)
   "Use FUN to TRANSFORM candidates of ASYNC."
@@ -1910,9 +1901,6 @@ Prepend PREFIX in front of all items."
       :sort nil))
     (run-hooks 'consult-after-jump-hook)))
 
-;; TODO instead of applying the REGEXP ourselves to the
-;; strings, we should rather parse the grep highlighting of the matches!
-;; Unfortunately it seems we cannot use the grep-regexp-alist then!
 (defun consult--grep-matches (lines)
   "Find grep match for REGEXP in LINES."
   (pcase-let ((`(,grep-regexp ,file-group ,line-group . ,_) (car grep-regexp-alist)))
@@ -1926,6 +1914,9 @@ Prepend PREFIX in front of all items."
                         (match (substring str (match-end 0)))
                         (col 0)
                         (loc (consult--format-location file line)))
+                   ;; TODO instead of applying the REGEXP ourselves to the
+                   ;; strings, we should rather parse the grep highlighting of the matches!
+                   ;; Unfortunately it seems we cannot use the grep-regexp-alist then!
                    ;; (when (string-match regexp match)
                    ;;   (setq col (match-beginning 0)
                    ;;         match (concat (substring match 0 col)
@@ -1959,18 +1950,19 @@ OPEN is the function to open new files."
 (defun consult--grep-async (cmd)
   "Async table for grep CMD searching for REGEXP."
   (thread-first (consult--async-sink)
-    (consult--async-refresh)
-    (consult--async-indicator)
+    (consult--async-refresh-timer)
     (consult--async-transform consult--grep-matches)
-    (consult--async-process2 cmd)
-    (consult--async-split)))
+    (consult--async-process cmd)
+    (consult--async-input-limiter)
+    (consult--async-input-split)))
 
 (defun consult--grep (prompt cmd)
   "Run grep CMD with REGEXP in current directory."
   (consult--with-temporary-files (open)
     (consult--jump
      (consult--read
-      prompt (consult--grep-async cmd)
+      prompt
+      (consult--grep-async (lambda (input) (append cmd (list input))))
       :lookup (consult--grep-marker open)
       :preview (consult--preview-position)
       :require-match t
@@ -2009,58 +2001,20 @@ OPEN is the function to open new files."
                                     (kill-buffer (current-buffer)))))
                 nil t t))
 
-(defun consult--async-json (async url cb)
+(defun consult--async-json (async url callback)
   "Create async function from ASYNC querying URL and calling CB."
-  (let* ((input "")
-         (running nil)
-         (last-input "")
-         (timer (run-at-time 0.3 0.3
-                             (lambda ()
-                               (unless (or running (string= input "") (string= input last-input))
-                                 (setq running t last-input input)
-                                 (consult--fetch-json (concat url (url-hexify-string input))
-                                                      (lambda (result)
-                                                        (setq running nil)
-                                                        (funcall cb async input result))))))))
+  (let* ((running)
+         (input ""))
     (lambda (action)
-      (pcase action
-        ((pred stringp) (setq input action))
-        ('destroy (cancel-timer timer)))
+      (when (and (stringp action)
+                 (not running)
+                 (not (string= action input)))
+        (setq running t input action)
+        (consult--fetch-json (funcall url action)
+                             (lambda (result)
+                               (setq running nil)
+                               (funcall callback async action result))))
       (funcall async action))))
-
-(defvar-local consult--async-split-orig nil)
-
-(defun consult--async-split-wrap (fun)
-  (lambda (str table pred point &optional metadata)
-    (let ((completion-styles consult--async-split-orig)
-          (pos (seq-position str 59)))
-      (funcall fun
-               (if pos (substring str (1+ pos)) "")
-               table pred
-               (if (and pos (> point pos)) (- point pos 1) 0)
-               metadata))))
-
-(add-to-list 'completion-styles-alist
-             (list 'consult--async-split
-                   (consult--async-split-wrap #'completion-try-completion)
-                   (consult--async-split-wrap #'completion-all-completions)
-                   "Split async and filter part."))
-
-(defun consult--async-split (async)
-  (lambda (action)
-    (pcase action
-      ('setup
-       ;; TODO move to consult-selectrum
-       (if (bound-and-true-p selectrum-mode)
-           (let ((orig selectrum-refine-candidates-function))
-             (setq selectrum-refine-candidates-function
-                   (lambda (str cands)
-                     (funcall orig (replace-regexp-in-string "[^;]*;" "" str) cands)))
-             (funcall async action))
-         (setq-local consult--async-split-orig completion-styles
-                     completion-styles '(consult--async-split))))
-      ((pred stringp) (funcall async (replace-regexp-in-string ";.*" "" action)))
-      (_ (funcall async action)))))
 
 (defvar consult--websearch-json "https://duckduckgo.com/ac/?client=firefox&q=")
 (defvar consult--websearch-html "https://duckduckgo.com/html/?q=")
@@ -2069,12 +2023,13 @@ OPEN is the function to open new files."
 (defun consult--websearch-async ()
   (thread-first (consult--async-sink)
     (consult--async-json
-     consult--websearch-json
+     (lambda (input) (concat consult--websearch-json (url-hexify-string input)))
      (lambda (async _input result)
        (funcall async 'flush)
        (funcall async (funcall consult--websearch-candidates result))
        (funcall async 'refresh)))
-    (consult--async-split)))
+    (consult--async-input-limiter)
+    (consult--async-input-split)))
 
 (defun consult-websearch ()
   "Search in the web with completion."
