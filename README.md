@@ -88,15 +88,18 @@ Most provided commands follow the naming scheme `consult-<thing>`.
 ### Search
 
   * `consult-line` (`-symbol-at-point`, `-from-isearch`): Select from matching
-    lines. Supports live preview and recursive editing. There are
-    two variants, which search for the symbol at point and for the most
-    recent isearch string respectively.
+    lines. Supports live preview and recursive editing. There are two variants,
+    which search for the symbol at point and for the most recent isearch string
+    respectively.
   * `consult-grep`: **EXPERIMENTAL** Search in current directory. Grep is
-    invoked asynchronously!
-  * `consult-ripgrep`: **EXPERIMENTAL** Search in current directory. Ripgrep is
-    invoked asynchronously!
-  * `consult-git-grep`: **EXPERIMENTAL** Search in current repository. Git-Grep
-    is invoked asynchronously!
+    invoked asynchronously, while you enter the search term. After having
+    entered the search term for `grep`, enter a comma. The following input is
+    used in order to use the *fast* Emacs filtering to further narrow down the
+    list of found matches.
+  * `consult-ripgrep`: **EXPERIMENTAL** Search in current directory. Works
+    similarily to `consult-grep`.
+  * `consult-git-grep`: **EXPERIMENTAL** Search in current git repository. Works
+    similarily to `consult-grep`.
   * `consult-multi-occur`: Replacement for `multi-occur` which uses
     `completing-read-multiple`.
 
