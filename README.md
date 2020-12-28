@@ -96,10 +96,10 @@ Most provided commands follow the naming scheme `consult-<thing>`.
     entered the search term for `grep`, enter a comma. The following input is
     used in order to use the *fast* Emacs filtering to further narrow down the
     list of found matches.
-  * `consult-ripgrep`: **EXPERIMENTAL** Search in current directory. Works
-    similarily to `consult-grep`.
-  * `consult-git-grep`: **EXPERIMENTAL** Search in current git repository. Works
-    similarily to `consult-grep`.
+  * `consult-ripgrep`: **EXPERIMENTAL** Search in current directory, like
+    `consult-grep`. similarily to `consult-grep`.
+  * `consult-git-grep`: **EXPERIMENTAL** Search in current git repository, like
+    `consult-grep`.
   * `consult-multi-occur`: Replacement for `multi-occur` which uses
     `completing-read-multiple`.
 
