@@ -687,8 +687,10 @@ String   The input string, called when the user enters something."
 (defun consult--async-input-split (async)
   (lambda (action)
     (pcase action
-      ('setup (setq-local completion-styles
-                          (cons 'consult--async-input-split completion-styles)))
+      ('setup
+       (setq-local completion-styles
+                   (cons 'consult--async-input-split completion-styles))
+       (funcall async 'setup))
       ((pred stringp) (funcall async (replace-regexp-in-string ",.*" "" action)))
       (_ (funcall async action)))))
 
@@ -696,7 +698,7 @@ String   The input string, called when the user enters something."
   "Process source for ASYNC.
 
 CMD is the command argument list."
-  (let* ((rest) (proc) (flush) (last-args nil) (indicator))
+  (let* ((rest) (proc) (flush) (last-args) (indicator))
     (lambda (action)
       (pcase action
         ((pred stringp)
@@ -750,14 +752,15 @@ CMD is the command argument list."
 
 (defun consult--async-input-limiter (async &optional delay)
   "Create async function from ASYNC querying URL and calling CB."
-  (let* ((delay (or delay 0.5))
-         (input "")
-         (timer (run-at-time delay delay
-                             (lambda ()
-                               (unless (string= input "")
-                                 (funcall async input))))))
+  (let ((delay (or delay 0.5)) (input "") (timer))
     (lambda (action)
       (pcase action
+        ('setup
+         (funcall async 'setup)
+         (setq timer (run-at-time delay delay
+                                  (lambda ()
+                                    (unless (string= input "")
+                                      (funcall async input))))))
         ((pred stringp) (setq input action))
         ('destroy (cancel-timer timer)
                   (funcall async 'destroy))
@@ -777,9 +780,7 @@ CMD is the command argument list."
 DELAY is the refresh delay, default 0.1.
 The delay can also be 0 in order to trigger an immediate
 refreshing when candidates are pushed."
-  (let ((timer)
-        (refresh t)
-        (delay (or delay 0.1)))
+  (let ((timer) (refresh t) (delay (or delay 0.1)))
     (lambda (action)
       (pcase action
         ((or (pred listp) (pred stringp) 'refresh 'flush)
