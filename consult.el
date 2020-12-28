@@ -1987,8 +1987,10 @@ OPEN is the function to open new files."
           (save-excursion
             (widen)
             (goto-char (point-min))
-            (forward-line (- (cadr loc) 1))
-            (forward-char (caddr loc))
+            ;; Location data might be invalid by now!
+            (ignore-errors
+              (forward-line (- (cadr loc) 1))
+              (forward-char (caddr loc)))
             (point-marker)))))))
 
 (defvar consult--git-grep '("git" "grep" "--null" "--color=always" "-n" "-e"))
