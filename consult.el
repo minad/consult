@@ -698,15 +698,18 @@ String   The input string, called when the user enters something."
   "Process source for ASYNC.
 
 CMD is the command argument list."
-  (let* ((rest) (proc) (flush) (input "") (indicator))
+  (let* ((rest) (proc) (flush) (last-args nil) (indicator))
     (lambda (action)
       (pcase action
         ((pred stringp)
-         (unless (string= action input)
-           (setq input action)
-           (ignore-errors (kill-process proc))
-           (let ((args (funcall cmd action)))
+         (let ((args (funcall cmd action)))
+           (unless (equal args last-args)
+             (setq last-args args)
+             (ignore-errors (kill-process proc))
              (overlay-put indicator 'display (propertize "*" 'face 'consult-async-indicator))
+             (with-current-buffer (get-buffer-create consult--async-stderr)
+               (goto-char (point-max))
+               (insert (format "consult--async-process: %S\n" args)))
              (setq rest ""
                    flush t
                    proc (make-process
@@ -728,14 +731,16 @@ CMD is the command argument list."
                                (setq rest (concat rest (car lines))))))
                          :sentinel
                          (lambda (_ event)
-                           (with-current-buffer consult--async-stderr
-                             (insert (format "consult--async-process sentinel: %s" event)))
+                           (with-current-buffer (get-buffer-create consult--async-stderr)
+                             (goto-char (point-max))
+                             (insert (format "consult--async-process sentinel: %s\n" event)))
                            (when flush
                              (setq flush nil)
                              (funcall async 'flush))
-                           (overlay-put indicator 'display nil)
-                           (when (and (string-prefix-p "finished" event) (not (string= rest "")))
-                             (funcall async (list rest)))))))))
+                           (when (string-prefix-p "finished" event)
+                             (overlay-put indicator 'display nil)
+                             (unless (string= rest "")
+                               (funcall async (list rest))))))))))
         ('destroy
          (ignore-errors (kill-process proc))
          (delete-overlay indicator)
