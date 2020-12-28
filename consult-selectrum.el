@@ -69,16 +69,20 @@
                       (setq-local selectrum-fix-minibuffer-height t)))
                 (apply fun prompt candidates opts))))
 
+(defun consult-selectrum--async-input-split-wrap (orig)
+  (lambda (str cands)
+    (funcall orig (replace-regexp-in-string "[^,]*," "" str) cands)))
+
 (defun consult-selectrum--async-input-split (orig async)
   (if (eq completing-read-function #'selectrum-completing-read)
       (lambda (action)
         (pcase action
           ('setup
-           (let ((orig selectrum-refine-candidates-function))
-             (setq selectrum-refine-candidates-function
-                   (lambda (str cands)
-                     (funcall orig (replace-regexp-in-string "[^,]*," "" str) cands)))
-             (funcall async action)))
+           (setq-local selectrum-refine-candidates-function
+                       (consult-selectrum--async-input-split-wrap selectrum-refine-candidates-function))
+           (setq-local selectrum-highlight-candidates-function
+                       (consult-selectrum--async-input-split-wrap selectrum-highlight-candidates-function))
+           (funcall async 'setup))
           ((pred stringp) (funcall async (replace-regexp-in-string ",.*" "" action)))
           (_ (funcall async action))))
     (funcall orig async)))
