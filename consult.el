@@ -640,177 +640,6 @@ ARGS is the open function argument for BODY."
   (declare (indent 1))
   `(consult--with-temporary-files-1 (lambda ,args ,@body)))
 
-(defun consult--async-sink ()
-  "Create ASYNC function.
-
-The async function should accept a single action argument.
-Only for the 'setup action, it is guaranteed that the call
-originates from the minibuffer. For the other actions no
-assumptions can be made.
-Depending on the argument, the caller context differ.
-
-'setup   Setup the internal state.
-'destroy Destroy the internal state.
-'flush   Flush the list of candidates.
-'refresh Request UI refresh.
-'get     Get the list of candidates.
-List     Append the list to the list of candidates.
-String   The input string, called when the user enters something."
-  (let ((candidates))
-    (lambda (action)
-      (pcase-exhaustive action
-        ((or (pred stringp) 'setup 'destroy) nil)
-        ('flush (setq candidates nil))
-        ('get candidates)
-        ('refresh
-         (when-let (win (active-minibuffer-window))
-           (with-selected-window win
-             (run-hooks 'consult--completion-refresh-hook))))
-        ((pred listp) (setq candidates (nconc candidates action)))))))
-
-(defun consult--async-input-split-wrap (fun)
-  (lambda (str table pred point &optional metadata)
-    (let ((completion-styles (cdr completion-styles))
-          (pos (seq-position str ?,)))
-      (funcall fun
-               (if pos (substring str (1+ pos)) "")
-               table pred
-               (if (and pos (> point pos)) (- point pos 1) 0)
-               metadata))))
-
-(add-to-list 'completion-styles-alist
-             (list 'consult--async-input-split
-                   (consult--async-input-split-wrap #'completion-try-completion)
-                   (consult--async-input-split-wrap #'completion-all-completions)
-                   "Split async and filter part."))
-
-(defun consult--async-input-split (async)
-  (lambda (action)
-    (pcase action
-      ('setup
-       (setq-local completion-styles
-                   (cons 'consult--async-input-split completion-styles))
-       (funcall async 'setup))
-      ((pred stringp) (funcall async (replace-regexp-in-string ",.*" "" action)))
-      (_ (funcall async action)))))
-
-(defun consult--async-process (async cmd)
-  "Process source for ASYNC.
-
-CMD is the command argument list."
-  (let* ((rest) (proc) (flush) (last-args) (indicator))
-    (lambda (action)
-      (pcase action
-        ((pred stringp)
-         (let ((args (funcall cmd action)))
-           (unless (equal args last-args)
-             (setq last-args args)
-             (ignore-errors (kill-process proc))
-             (overlay-put indicator 'display (propertize "*" 'face 'consult-async-indicator))
-             (with-current-buffer (get-buffer-create consult--async-stderr)
-               (goto-char (point-max))
-               (insert (format "consult--async-process: %S\n" args)))
-             (setq rest ""
-                   flush t
-                   proc (make-process
-                         :name (car args)
-                         :stderr consult--async-stderr
-                         :noquery t
-                         :command args
-                         :filter
-                         (lambda (_ out)
-                           (when flush
-                             (setq flush nil)
-                             (funcall async 'flush))
-                           (let ((lines (split-string out "\n")))
-                             (if (cdr lines)
-                                 (progn
-                                   (setcar lines (concat rest (car lines)))
-                                   (setq rest (car (last lines)))
-                                   (funcall async (nbutlast lines)))
-                               (setq rest (concat rest (car lines))))))
-                         :sentinel
-                         (lambda (_ event)
-                           (with-current-buffer (get-buffer-create consult--async-stderr)
-                             (goto-char (point-max))
-                             (insert (format "consult--async-process sentinel: %s\n" event)))
-                           (when flush
-                             (setq flush nil)
-                             (funcall async 'flush))
-                           (when (string-prefix-p "finished" event)
-                             (overlay-put indicator 'display nil)
-                             (unless (string= rest "")
-                               (funcall async (list rest))))))))))
-        ('destroy
-         (ignore-errors (kill-process proc))
-         (delete-overlay indicator)
-         (funcall async 'destroy))
-        ('setup
-         (setq indicator (make-overlay (- (minibuffer-prompt-end) 2) (- (minibuffer-prompt-end) 1)))
-         (funcall async 'setup))
-        (_ (funcall async action))))))
-
-(defun consult--async-input-limiter (async &optional delay)
-  "Create async function from ASYNC querying URL and calling CB."
-  (let ((delay (or delay 0.5)) (input "") (timer))
-    (lambda (action)
-      (pcase action
-        ('setup
-         (funcall async 'setup)
-         (setq timer (run-at-time delay delay
-                                  (lambda ()
-                                    (unless (string= input "")
-                                      (funcall async input))))))
-        ((pred stringp) (setq input action))
-        ('destroy (cancel-timer timer)
-                  (funcall async 'destroy))
-        (_ (funcall async action))))))
-
-(defun consult--async-refresh-immediate (async)
-  (lambda (action)
-    (pcase action
-      ((or (pred listp) (pred stringp) 'flush)
-       (prog1 (funcall async action)
-         (funcall async 'refresh)))
-      (_ (funcall async action)))))
-
-(defun consult--async-refresh-timer (async &optional delay)
-  "Add refresh timer to ASYNC.
-
-DELAY is the refresh delay, default 0.1.
-The delay can also be 0 in order to trigger an immediate
-refreshing when candidates are pushed."
-  (let ((timer) (refresh t) (delay (or delay 0.1)))
-    (lambda (action)
-      (pcase action
-        ((or (pred listp) (pred stringp) 'refresh 'flush)
-         (setq refresh t))
-        ('destroy (cancel-timer timer))
-        ('setup
-         (setq timer (run-with-timer
-                      delay delay
-                      (lambda ()
-                        (when refresh
-                          (setq refresh nil)
-                          (funcall async 'refresh)))))))
-      (funcall async action))))
-
-(defmacro consult--async-transform (async &rest transform)
-  "Use FUN to TRANSFORM candidates of ASYNC."
-  (let ((async-var (make-symbol "async"))
-        (action-var (make-symbol "action")))
-    `(let ((,async-var ,async))
-       (lambda (,action-var)
-         (funcall ,async-var (if (listp ,action-var) (,@transform ,action-var) ,action-var))))))
-
-(defun consult--async-map (async fun)
-  "Map candidates of ASYNC by FUN."
-  (consult--async-transform async mapcar fun))
-
-(defun consult--async-filter (async fun)
-  "Filter candidates of ASYNC by FUN."
-  (consult--async-transform async seq-filter fun))
-
 (defun consult--with-async-1 (async fun)
   "Setup ASYNC for FUN."
   (if (not (functionp async)) (funcall fun (lambda (_) async))
@@ -943,6 +772,220 @@ FACE is the cursor face."
                     (line-end-position)
                     marker face))
         marker))
+
+;;;; Async functions
+
+(defun consult--async-sink ()
+  "Create ASYNC sink function.
+
+The async function should accept a single action argument.
+Only for the 'setup action, it is guaranteed that the call
+originates from the minibuffer. For the other actions no
+assumptions can be made.
+Depending on the argument, the caller context differ.
+
+'setup   Setup the internal state.
+'destroy Destroy the internal state.
+'flush   Flush the list of candidates.
+'refresh Request UI refresh.
+'get     Get the list of candidates.
+List     Append the list to the list of candidates.
+String   The input string, called when the user enters something."
+  (let ((candidates))
+    (lambda (action)
+      (pcase-exhaustive action
+        ((or (pred stringp) 'setup 'destroy) nil)
+        ('flush (setq candidates nil))
+        ('get candidates)
+        ('refresh
+         (when-let (win (active-minibuffer-window))
+           (with-selected-window win
+             (run-hooks 'consult--completion-refresh-hook))))
+        ((pred listp) (setq candidates (nconc candidates action)))))))
+
+(defun consult--async-input-split-wrap (fun)
+  "Wrap completion style function FUN for `consult--async-input-split'."
+  (lambda (str table pred point &optional metadata)
+    (let ((completion-styles (cdr completion-styles))
+          (pos (seq-position str ?,)))
+      (funcall fun
+               (if pos (substring str (1+ pos)) "")
+               table pred
+               (if (and pos (> point pos)) (- point pos 1) 0)
+               metadata))))
+
+(add-to-list 'completion-styles-alist
+             (list 'consult--async-input-split
+                   (consult--async-input-split-wrap #'completion-try-completion)
+                   (consult--async-input-split-wrap #'completion-all-completions)
+                   "Split async and filter part."))
+
+(defun consult--async-input-split (async)
+  "Create async function, which splits the input string.
+
+The input string is split at the first comma. The part before
+the comma is passed to ASYNC, the second part is used for filtering."
+  (lambda (action)
+    (pcase action
+      ('setup
+       (setq-local completion-styles
+                   (cons 'consult--async-input-split completion-styles))
+       (funcall async 'setup))
+      ((pred stringp) (funcall async (replace-regexp-in-string ",.*" "" action)))
+      (_ (funcall async action)))))
+
+(defun consult--async-process (async cmd)
+  "Create process source async function.
+
+ASYNC is the async function which receives the candidates.
+CMD is the command argument list."
+  (let* ((rest) (proc) (flush) (last-args) (indicator))
+    (lambda (action)
+      (pcase action
+        ((pred stringp)
+         (let ((args (funcall cmd action)))
+           (unless (equal args last-args)
+             (setq last-args args)
+             (ignore-errors (kill-process proc))
+             (overlay-put indicator 'display (propertize "*" 'face 'consult-async-indicator))
+             (with-current-buffer (get-buffer-create consult--async-stderr)
+               (goto-char (point-max))
+               (insert (format "consult--async-process: %S\n" args)))
+             (setq rest ""
+                   flush t
+                   proc (make-process
+                         :name (car args)
+                         :stderr consult--async-stderr
+                         :noquery t
+                         :command args
+                         :filter
+                         (lambda (_ out)
+                           (when flush
+                             (setq flush nil)
+                             (funcall async 'flush))
+                           (let ((lines (split-string out "\n")))
+                             (if (cdr lines)
+                                 (progn
+                                   (setcar lines (concat rest (car lines)))
+                                   (setq rest (car (last lines)))
+                                   (funcall async (nbutlast lines)))
+                               (setq rest (concat rest (car lines))))))
+                         :sentinel
+                         (lambda (_ event)
+                           (with-current-buffer (get-buffer-create consult--async-stderr)
+                             (goto-char (point-max))
+                             (insert (format "consult--async-process sentinel: %s\n" event)))
+                           (when flush
+                             (setq flush nil)
+                             (funcall async 'flush))
+                           (when (string-prefix-p "finished" event)
+                             (overlay-put indicator 'display nil)
+                             (unless (string= rest "")
+                               (funcall async (list rest))))))))))
+        ('destroy
+         (ignore-errors (kill-process proc))
+         (delete-overlay indicator)
+         (funcall async 'destroy))
+        ('setup
+         (setq indicator (make-overlay (- (minibuffer-prompt-end) 2) (- (minibuffer-prompt-end) 1)))
+         (funcall async 'setup))
+        (_ (funcall async action))))))
+
+(defun consult--async-input-limiter (async &optional delay)
+  "Create async function from ASYNC which limits the input rate by DELAY."
+  (let ((delay (or delay 0.5)) (input "") (timer))
+    (lambda (action)
+      (pcase action
+        ('setup
+         (funcall async 'setup)
+         (setq timer (run-at-time delay delay
+                                  (lambda ()
+                                    (unless (string= input "")
+                                      (funcall async input))))))
+        ((pred stringp) (setq input action))
+        ('destroy (cancel-timer timer)
+                  (funcall async 'destroy))
+        (_ (funcall async action))))))
+
+(defun consult--async-refresh-immediate (async)
+  "Create async function from ASYNC, which refreshes the display.
+
+The refresh happens immediately when candidates are pushed."
+  (lambda (action)
+    (pcase action
+      ((or (pred listp) (pred stringp) 'flush)
+       (prog1 (funcall async action)
+         (funcall async 'refresh)))
+      (_ (funcall async action)))))
+
+(defun consult--async-refresh-timer (async &optional delay)
+  "Create async function from ASYNC, which refreshes the display.
+
+The refresh happens after a DELAY, defaulting to 0.1."
+  (let ((timer) (refresh t) (delay (or delay 0.1)))
+    (lambda (action)
+      (pcase action
+        ((or (pred listp) (pred stringp) 'refresh 'flush)
+         (setq refresh t))
+        ('destroy (cancel-timer timer))
+        ('setup
+         (setq timer (run-with-timer
+                      delay delay
+                      (lambda ()
+                        (when refresh
+                          (setq refresh nil)
+                          (funcall async 'refresh)))))))
+      (funcall async action))))
+
+(defmacro consult--async-transform (async &rest transform)
+  "Use FUN to TRANSFORM candidates of ASYNC."
+  (let ((async-var (make-symbol "async"))
+        (action-var (make-symbol "action")))
+    `(let ((,async-var ,async))
+       (lambda (,action-var)
+         (funcall ,async-var (if (listp ,action-var) (,@transform ,action-var) ,action-var))))))
+
+(defun consult--async-map (async fun)
+  "Map candidates of ASYNC by FUN."
+  (consult--async-transform async mapcar fun))
+
+(defun consult--async-filter (async fun)
+  "Filter candidates of ASYNC by FUN."
+  (consult--async-transform async seq-filter fun))
+
+(defvar url-http-end-of-headers)
+(defun consult--fetch-json (url callback)
+  "Fetch json from URL and call CALLBACK with the result."
+  (url-retrieve url (lambda (&rest _)
+                      (funcall callback
+                               (unwind-protect
+                                   (progn
+                                     (goto-char url-http-end-of-headers)
+                                     (let ((json-object-type 'alist)
+                                           (json-array-type 'list)
+                                           (json-key-type 'string))
+                                       (json-read)))
+                                 (kill-buffer (current-buffer)))))
+                nil t t))
+
+(defun consult--async-json (async url transform)
+  "Create async function from ASYNC which fetches json.
+
+URL must return an url. It is called with the input.
+TRANSFORM is a transformation function which receives the json,
+and must return a list of candidates."
+  (let ((running) (input ""))
+    (lambda (action)
+      (if (stringp action)
+          (when (and (not running) (not (string= action input)))
+            (setq running t input action)
+            (consult--fetch-json (funcall url action)
+                                 (lambda (result)
+                                   (setq running nil)
+                                   (funcall async 'flush)
+                                   (funcall async (funcall transform result))
+                                   (funcall async 'refresh))))
+        (funcall async action)))))
 
 ;;;; Commands
 
@@ -1940,7 +1983,9 @@ OPEN is the function to open new files."
 (defvar consult--ripgrep '("rg" "--line-buffered" "--color=never" "--max-columns=500" "--no-heading" "-n" "." "-e"))
 
 (defun consult--grep-async (cmd)
-  "Async table for grep CMD searching for REGEXP."
+  "Async function for `consult-grep'.
+
+CMD is the grep argument list."
   (thread-first (consult--async-sink)
     (consult--async-refresh-timer)
     (consult--async-transform consult--grep-matches)
@@ -1949,7 +1994,9 @@ OPEN is the function to open new files."
     (consult--async-input-split)))
 
 (defun consult--grep (prompt cmd)
-  "Run grep CMD with REGEXP in current directory."
+  "Run grep CMD in current directory.
+
+PROMPT is the prompt string."
   (consult--with-temporary-files (open)
     (consult--jump
      (consult--read
@@ -1979,47 +2026,16 @@ OPEN is the function to open new files."
   (interactive)
   (consult--grep "Ripgrep: " consult--ripgrep))
 
-(defvar url-http-end-of-headers)
-(defun consult--fetch-json (url cb)
-  "Fetch json from URL and call CB."
-  (url-retrieve url (lambda (&rest _)
-                      (funcall cb (unwind-protect
-                                      (progn
-                                        (goto-char url-http-end-of-headers)
-                                        (let ((json-object-type 'alist)
-                                              (json-array-type 'list)
-                                              (json-key-type 'string))
-                                          (json-read)))
-                                    (kill-buffer (current-buffer)))))
-                nil t t))
-
-(defun consult--async-json (async url callback)
-  "Create async function from ASYNC querying URL and calling CB."
-  (let* ((running)
-         (input ""))
-    (lambda (action)
-      (when (and (stringp action)
-                 (not running)
-                 (not (string= action input)))
-        (setq running t input action)
-        (consult--fetch-json (funcall url action)
-                             (lambda (result)
-                               (setq running nil)
-                               (funcall callback async action result))))
-      (funcall async action))))
-
 (defvar consult--websearch-json "https://duckduckgo.com/ac/?client=firefox&q=")
 (defvar consult--websearch-html "https://duckduckgo.com/html/?q=")
 (defvar consult--websearch-candidates (lambda (x) (mapcar #'cdar x)))
 
 (defun consult--websearch-async ()
+  "Async function for `consult-websearch'."
   (thread-first (consult--async-sink)
     (consult--async-json
      (lambda (input) (concat consult--websearch-json (url-hexify-string input)))
-     (lambda (async _input result)
-       (funcall async 'flush)
-       (funcall async (funcall consult--websearch-candidates result))
-       (funcall async 'refresh)))
+     consult--websearch-candidates)
     (consult--async-input-limiter)
     (consult--async-input-split)))
 

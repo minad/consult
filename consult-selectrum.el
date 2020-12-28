@@ -70,10 +70,15 @@
                 (apply fun prompt candidates opts))))
 
 (defun consult-selectrum--async-input-split-wrap (orig)
+  "Wrap selectrum candidates highlight/refinement ORIG function for `consult--async-input-split'."
   (lambda (str cands)
     (funcall orig (replace-regexp-in-string "[^,]*," "" str) cands)))
 
 (defun consult-selectrum--async-input-split (orig async)
+  "Advice for `consult--async-input-split' to be used by Selectrum.
+
+ORIG is the original function.
+ASYNC is the async function, argument to the original function."
   (if (eq completing-read-function #'selectrum-completing-read)
       (lambda (action)
         (pcase action
