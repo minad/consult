@@ -43,9 +43,10 @@
 ;;; Code:
 
 (eval-when-compile
-  (require 'subr-x)
-  (require 'cl-lib))
+  (require 'cl-lib)
+  (require 'subr-x))
 (require 'bookmark)
+(require 'compile)
 (require 'imenu)
 (require 'kmacro)
 (require 'outline)
@@ -259,6 +260,7 @@ You may want to add a function which pulses the current line, e.g.,
 
 ;;;; History variables
 
+(defvar consult--error-history nil)
 (defvar consult--search-history nil)
 (defvar consult--apropos-history nil)
 (defvar consult--theme-history nil)
@@ -766,32 +768,30 @@ Since the line number is part of the candidate it will be matched-on during comp
                (consult--unique (cdr cand) (consult--line-number-prefix width (caar cand)))
                (cdar cand))))))
 
-(defsubst consult--region-with-cursor (begin end marker &optional face)
+(defsubst consult--region-with-cursor (begin end marker)
   "Return region string with a marking at the cursor position.
 
 BEGIN is the begin position.
 END is the end position.
-MARKER is the cursor position.
-FACE is the face to use for the cursor marking."
+MARKER is the cursor position."
   (let ((marker-end (1+ marker)))
     (if (> marker-end end)
         (concat (buffer-substring begin marker)
-                (propertize " " 'face (or face 'consult-preview-cursor)))
+                (propertize " " 'face 'consult-preview-cursor))
       (concat (buffer-substring begin marker)
               (propertize (buffer-substring marker marker-end)
-                          'face (or face 'consult-preview-cursor))
+                          'face 'consult-preview-cursor)
               (buffer-substring marker-end end)))))
 
-(defun consult--line-with-cursor (line marker &optional face)
+(defsubst consult--line-with-cursor (line marker)
   "Return line candidate.
 
 LINE is line number.
-MARKER is the cursor marker.
-FACE is the cursor face."
+MARKER is the cursor marker."
   (cons (cons line (consult--region-with-cursor
                     (line-beginning-position)
                     (line-end-position)
-                    marker face))
+                    marker))
         marker))
 
 ;;;; Async functions
@@ -1026,46 +1026,65 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                   :add-history (list (thing-at-point 'symbol))
                   :preview (and consult-preview-outline (consult--preview-position)))))
 
-(defun consult--next-error ()
-  "Return position of next error or nil."
-  (ignore-errors
-    (save-excursion
-      (while (let ((last-pos (point)))
-               (funcall next-error-function 1 (= last-pos (point-min)))
-               ;; next-error can jump backwards
-               (when (<= (point) last-pos)
-                 (or (end-of-line) t))))
-      (point))))
+(defun consult--font-lock (str)
+  "Apply `font-lock' faces in STR."
+  (let ((pos 0) (len (length str)))
+    (while (< pos len)
+      (let* ((face (get-text-property pos 'font-lock-face str))
+             (end (or (text-property-not-all pos len 'font-lock-face face str) len)))
+        (put-text-property pos end 'face face str)
+        (setq pos end)))
+    str))
 
 (defun consult--error-candidates ()
   "Return alist of errors and positions."
-  (unless next-error-function
-    (user-error "Buffer does not support errors"))
-  (consult--forbid-minibuffer)
-  (consult--fontify-all)
-  (let* ((line (line-number-at-pos (point-min) consult-line-numbers-widen))
-         (candidates))
+  (let ((candidates)
+        (pos (point-min)))
     (save-excursion
-      (goto-char (point-min))
-      (while (when-let (pos (consult--next-error))
-               (setq line (+ line (consult--count-lines pos))))
-        (push (consult--line-with-cursor line (point-marker) 'consult-preview-error)
-              candidates)))
-    (unless candidates
-      (user-error "No errors"))
-    (consult--add-line-number line (nreverse candidates))))
+      (while (setq pos (compilation-next-single-property-change pos 'compilation-message))
+        (when-let* ((msg (get-text-property pos 'compilation-message))
+                    (loc (compilation--message->loc msg)))
+          (goto-char pos)
+          (push (list
+                 (consult--font-lock (buffer-substring pos (line-end-position)))
+                 (with-current-buffer
+                     ;; taken from compile.el
+                     (apply #'compilation-find-file
+                            (point-marker)
+                            (caar (compilation--loc->file-struct loc))
+                            (cadar (compilation--loc->file-struct loc))
+                            (compilation--file-struct->formats
+                             (compilation--loc->file-struct loc)))
+                   (goto-char (point-min))
+                   ;; location might be invalid by now
+                   (ignore-errors
+                     (forward-line (- (compilation--loc->line loc) 1))
+                     (forward-char (compilation--loc->col loc)))
+                   (point-marker))
+                 (pcase (compilation--message->type msg)
+                   (0 ?i)
+                   (1 ?w)
+                   (_ ?e)))
+                candidates))))
+    (nreverse candidates)))
 
 ;;;###autoload
 (defun consult-error ()
   "Jump to an error in the current buffer."
   (interactive)
+  (unless (compilation-buffer-p (current-buffer))
+    (user-error "Not a compilation buffer"))
   (consult--jump
    (consult--read "Go to error: " (consult--with-increased-gc (consult--error-candidates))
-                  :category 'line
+                  :category 'compilation-error
                   :sort nil
                   :require-match t
-                  :lookup #'consult--lookup-cdr
-                  :history '(:input consult--search-history)
+                  :lookup #'consult--lookup-cadr
+                  :narrow '((lambda (cand) (= (caddr cand) consult--narrow))
+                            (?e . "Error")
+                            (?w . "Warning")
+                            (?i . "Info"))
+                  :history '(:input consult--error-history)
                   :preview
                   (and consult-preview-error (consult--preview-position 'consult-preview-error)))))
 
