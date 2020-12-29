@@ -588,6 +588,17 @@ FACE is the cursor face."
                 (list (consult--overlay (line-beginning-position) (line-end-position) 'face 'consult-preview-line)
                       (consult--overlay pos (1+ pos) 'face face)))))))))
 
+(defun consult--add-history (items)
+  "Add ITEMS to the minibuffer history via `minibuffer-default-add-function'."
+  (when (setq items (delq nil items))
+    (setq-local minibuffer-default-add-function
+                (if-let (orig minibuffer-default-add-function)
+                    (lambda ()
+                      ;; the minibuffer-default-add-function may want generate more items
+                      (setq-local minibuffer-default-add-function orig)
+                      (consult--remove-dups (append items (funcall orig))))
+                  (lambda () items)))))
+
 (cl-defun consult--read (prompt candidates &key
                                 predicate require-match history default
                                 category initial preview narrow add-history
@@ -616,21 +627,11 @@ NARROW is an alist of narrowing prefix strings and description."
                       (stringp (car candidates))  ;; string list
                       (symbolp (car candidates))  ;; symbol list
                       (consp (car candidates))))) ;; alist
-  (setq add-history (delq nil (cons default add-history)))
   (minibuffer-with-setup-hook
       (:append
        (lambda ()
-         (when add-history
-           (let ((orig minibuffer-default-add-function))
-             (setq-local minibuffer-default-add-function
-                         (lambda ()
-                           (if (not orig)
-                               add-history
-                             ;; the minibuffer-default-add-function may want generate more items
-                             (setq-local minibuffer-default-add-function orig)
-                             (consult--remove-dups (append add-history (funcall orig))))))))
-         (when narrow
-           (consult--narrow-setup narrow))))
+         (consult--add-history (cons default add-history))
+         (when narrow (consult--narrow-setup narrow))))
     (let* ((metadata
             `(metadata
               ,@(when category `((category . ,category)))
