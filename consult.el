@@ -590,7 +590,7 @@ FACE is the cursor face."
 
 (cl-defun consult--read (prompt candidates &key
                                 predicate require-match history default
-                                category initial preview narrow
+                                category initial preview narrow add-history
                                 (sort t) (default-top t) (lookup (lambda (_input _cands x) x)))
   "Simplified completing read function.
 
@@ -599,7 +599,8 @@ CANDIDATES is the candidate list or alist.
 PREDICATE is a filter function for the candidates.
 REQUIRE-MATCH equals t means that an exact match is required.
 HISTORY is the symbol of the history variable.
-DEFAULT is the default input.
+DEFAULT is the default selected value.
+ADD-HISTORY is a list of items to add to the history.
 CATEGORY is the completion category.
 SORT should be set to nil if the candidates are already sorted.
 LOOKUP is a function which is applied to the result.
@@ -615,9 +616,17 @@ NARROW is an alist of narrowing prefix strings and description."
                       (stringp (car candidates))  ;; string list
                       (symbolp (car candidates))  ;; symbol list
                       (consp (car candidates))))) ;; alist
+  (setq add-history (delq nil (cons default add-history)))
   (minibuffer-with-setup-hook
       (:append
        (lambda ()
+         (when add-history
+           (let ((orig minibuffer-default-add-function))
+             (setq-local minibuffer-default-add-function
+                         (lambda ()
+                           (setq-local minibuffer-default-add-done nil)
+                           (setq-local minibuffer-default-add-function orig)
+                           add-history))))
          (when narrow
            (consult--narrow-setup narrow))))
     (let* ((metadata
