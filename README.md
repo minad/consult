@@ -93,10 +93,10 @@ completions with richer information (e.g. `M-x`, `describe-face`,
 
 ### Navigation and Search
 
-  * `consult-line` (`-symbol-at-point`, `-from-isearch`): Select from matching
-    lines. Supports live preview and recursive editing. There are
-    two variants, which search for the symbol at point and for the most
-    recent isearch string respectively.
+  * `consult-line`: Enter search string and select from matching lines. Supports
+    live preview and recursive editing. The symbol at point and the recent
+    isearch string are added to the "future history" and can be accessed by
+    pressing `M-n`.
   * `consult-goto-line`: Jump to line number enhanced with live preview. This is
     a drop-in replacement for `goto-line`.
   * `consult-mark`: Jump to a marker in the `mark-ring`. Supports live preview

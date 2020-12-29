@@ -980,20 +980,6 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
                     :preview (and consult-preview-line (consult--preview-position))))))
 
 ;;;###autoload
-(defun consult-line-symbol-at-point ()
-  "Search for a symbol at point."
-  (interactive)
-  (consult-line (thing-at-point 'symbol)))
-
-;;;###autoload
-(defun consult-line-from-isearch ()
-  "Search by lines from isearch string."
-  (interactive)
-  (consult-line (if isearch-regexp
-                    isearch-string
-                  (regexp-quote isearch-string))))
-
-;;;###autoload
 (defun consult-goto-line ()
   "Read line number and jump to the line with preview.
 
