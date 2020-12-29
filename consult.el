@@ -967,6 +967,12 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
                     :sort nil
                     :default-top nil
                     :require-match t
+                    :add-history (list
+                                  (thing-at-point 'symbol)
+                                  (when isearch-string
+                                    (if isearch-regexp
+                                        isearch-string
+                                      (regexp-quote isearch-string))))
                     :history '(:input consult--line-history)
                     :lookup #'consult--line-match
                     :default (car candidates)
