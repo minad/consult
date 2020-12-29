@@ -77,6 +77,10 @@ If this key is unset, defaults to 'consult-narrow-key SPC'."
   "Function which opens a view, used by `consult-buffer'."
   :type 'function)
 
+(defcustom consult-grep-min-input 3
+  "Minimum number of letters which must be entered, before grep is called."
+  :type 'integer)
+
 (defcustom consult-mode-histories
   '((eshell-mode . eshell-history-ring)
     (comint-mode . comint-input-ring)
@@ -188,8 +192,12 @@ You may want to add a function which pulses the current line, e.g.,
   '((t :inherit region))
   "Face used to for line previews.")
 
-(defface consult-preview-cursor
+(defface consult-preview-match
   '((t :inherit match))
+  "Face used to for match previews in `consult-grep'.")
+
+(defface consult-preview-cursor
+  '((t :inherit consult-preview-match))
   "Face used to for cursor previews and marks in `consult-mark'.")
 
 (defface consult-preview-error
@@ -242,6 +250,7 @@ You may want to add a function which pulses the current line, e.g.,
 
 ;;;; History variables
 
+(defvar consult--grep-history nil)
 (defvar consult--line-history nil)
 (defvar consult--apropos-history nil)
 (defvar consult--theme-history nil)
@@ -595,6 +604,36 @@ FACE is the cursor face."
           (setq overlays
                 (list (consult--overlay (line-beginning-position) (line-end-position) 'face 'consult-preview-line)
                       (consult--overlay pos (1+ pos) 'face face)))))))))
+
+(defun consult--with-temporary-files-1 (fun)
+  "Provide a function to open files temporarily.
+The files are closed automatically in the end.
+
+FUN receives the open function as argument."
+  (let* ((new-buffers)
+         (old-recentf-list (copy-sequence recentf-list))
+         (open-file (lambda (name)
+                      (let ((buf (find-file-noselect name 'nowarn)))
+                        (push buf new-buffers)
+                        buf))))
+    (unwind-protect
+        (funcall fun open-file)
+      ;; Restore old recentf-list and record the current buffer
+      (setq recentf-list old-recentf-list)
+      ;; kill all temporary buffers
+      (dolist (buf new-buffers)
+        (if (or (eq buf (current-buffer)) (buffer-modified-p buf))
+            (when recentf-mode
+              (recentf-add-file (buffer-file-name buf)))
+          (kill-buffer buf))))))
+
+(defmacro consult--with-temporary-files (args &rest body)
+  "Provide a function to open files temporarily.
+The files are closed automatically in the end.
+
+ARGS is the open function argument for BODY."
+  (declare (indent 1))
+  `(consult--with-temporary-files-1 (lambda ,args ,@body)))
 
 (defun consult--with-async-1 (async fun)
   "Setup ASYNC for FUN."
@@ -1871,6 +1910,102 @@ Prepend PREFIX in front of all items."
       :add-history (list (thing-at-point 'symbol))
       :sort nil))
     (run-hooks 'consult-after-jump-hook)))
+
+(defconst consult--grep-regexp "\\([^\0\n]+\\)\0\\([^:]+\\):"
+  "Regexp used to match file and line of grep output.")
+
+(defsubst consult--strip-escape (str)
+  "Strip ansi escape sequences from STR."
+  (replace-regexp-in-string "\e\\[[0-9;]*[mK]" "" str))
+
+(defun consult--grep-matches (lines)
+  "Find grep match for REGEXP in LINES."
+  (save-match-data
+    (delq nil
+          (mapcar
+           (lambda (str)
+             (when (string-match consult--grep-regexp str)
+               (let* ((file (consult--strip-escape (match-string 1 str)))
+                      (line (string-to-number (consult--strip-escape (match-string 2 str))))
+                      (str (substring str (match-end 0)))
+                      (loc (consult--format-location file line)))
+                 (while (string-match "\e\\[[0-9;]+m\\(.*?\\)\e\\[[0-9;]*m" str)
+                   (setq str (concat (substring str 0 (match-beginning 0))
+                                     (propertize (substring (match-string 1 str)) 'face 'consult-preview-match)
+                                     (substring str (match-end 0)))))
+                 (setq str (consult--strip-escape str))
+                 (list (concat loc (make-string (+ 3 (max 0 (- 60 (length loc)))) 32) str)
+                       (expand-file-name file) line
+                       (next-single-char-property-change 0 'face str)))))
+           lines))))
+
+(defun consult--grep-marker (open)
+  "Grep candidate to marker.
+
+OPEN is the function to open new files."
+  (lambda (_input candidates cand)
+    (when-let (loc (cdr (assoc cand candidates)))
+      (with-current-buffer (or (get-file-buffer (car loc))
+                               (funcall open (car loc)))
+        (save-restriction
+          (save-excursion
+            (widen)
+            (goto-char (point-min))
+            ;; Location data might be invalid by now!
+            (ignore-errors
+              (forward-line (- (cadr loc) 1))
+              (forward-char (caddr loc)))
+            (point-marker)))))))
+
+(defvar consult--git-grep '("git" "grep" "--null" "--color=always" "-n" "-e"))
+(defvar consult--grep '("grep" "--null" "--line-buffered" "--color=always" "--exclude-dir=.git" "-n" "-r" "-e"))
+(defvar consult--ripgrep '("rg" "--null" "--line-buffered" "--color=always" "--max-columns=500" "--no-heading" "-n" "." "-e"))
+
+(defun consult--grep-async (cmd)
+  "Async function for `consult-grep'.
+
+CMD is the grep argument list."
+  (thread-first (consult--async-sink)
+    (consult--async-refresh-timer)
+    (consult--async-transform consult--grep-matches)
+    (consult--async-process cmd)
+    (consult--async-input-limiter)
+    (consult--async-input-split)))
+
+(defun consult--grep (prompt cmd)
+  "Run grep CMD in current directory.
+
+PROMPT is the prompt string."
+  (consult--with-temporary-files (open)
+    (consult--jump
+     (consult--read
+      prompt
+      (consult--grep-async (lambda (input)
+                             (when (>= (length input) consult-grep-min-input)
+                               (append cmd (list input)))))
+      :lookup (consult--grep-marker open)
+      :preview (consult--preview-position)
+      :require-match t
+      :history '(:input consult--grep-history)
+      :sort nil))))
+
+;;;###autoload
+(defun consult-grep ()
+  "Search for REGEXP with grep."
+  (interactive)
+  (consult--grep "Grep: " consult--grep))
+
+;;;###autoload
+(defun consult-git-grep ()
+  "Search for REGEXP with grep."
+  (interactive)
+  (consult--grep "Git Grep: " consult--git-grep))
+
+;;;###autoload
+(defun consult-ripgrep ()
+  "Search for REGEXP with rg."
+  (interactive)
+  (consult--grep "Ripgrep: " consult--ripgrep))
 
 ;;;; default completion-system support
 
