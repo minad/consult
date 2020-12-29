@@ -77,8 +77,9 @@ If this key is unset, defaults to 'consult-narrow-key SPC'."
   "Function which opens a view, used by `consult-buffer'."
   :type 'function)
 
-(defcustom consult-grep-min-input 3
-  "Minimum number of letters which must be entered, before grep is called."
+(defcustom consult-async-min-input 3
+  "Minimum number of letters needed, before asynchronous process is called.
+This applies for example to `consult-grep'."
   :type 'integer)
 
 (defcustom consult-grep-directory-hook (list (lambda () default-directory))
@@ -924,7 +925,7 @@ CMD is the command argument list."
          (funcall async 'setup)
          (setq timer (run-at-time delay delay
                                   (lambda ()
-                                    (unless (string= input "")
+                                    (when (>= (length input) consult-async-min-input)
                                       (funcall async input))))))
         ((pred stringp) (setq input action))
         ('destroy (cancel-timer timer)
@@ -1986,9 +1987,7 @@ PROMPT is the prompt string."
     (consult--jump
      (consult--read
       prompt
-      (consult--grep-async (lambda (input)
-                             (when (>= (length input) consult-grep-min-input)
-                               (append cmd (list input)))))
+      (consult--grep-async (lambda (input) (append cmd (list input))))
       :lookup (consult--grep-marker open)
       :preview (and consult-preview-grep (consult--preview-position))
       :require-match t
