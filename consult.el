@@ -889,8 +889,9 @@ CMD is the command argument list."
                    (when flush
                      (setq flush nil)
                      (funcall async 'flush))
+                   (when (string-match-p "finished\\|exited\\|failed" event)
+                     (overlay-put indicator 'display nil))
                    (when (string-prefix-p "finished" event)
-                     (overlay-put indicator 'display nil)
                      (unless (string= rest "")
                        (funcall async (list rest)))))))))))
         ('destroy
