@@ -230,6 +230,7 @@ that the main package `consult.el` only depends on Emacs core components.
 ;; Enable Consult-Selectrum integration.
 ;; This package should be installed if Selectrum is used.
 (use-package consult-selectrum
+  :after selectrum
   :demand t)
 
 ;; Optionally add the `consult-flycheck' command.
