@@ -1911,7 +1911,7 @@ Prepend PREFIX in front of all items."
       :sort nil))
     (run-hooks 'consult-after-jump-hook)))
 
-(defconst consult--grep-regexp "\\([^\0\n]+\\)\0\\([^:]+\\):"
+(defconst consult--grep-regexp "\\([^\0\n]+\\)\0\\([^:\0]+\\)[:\0]"
   "Regexp used to match file and line of grep output.")
 
 (defsubst consult--strip-escape (str)
