@@ -1993,7 +1993,7 @@ PROMPT is the prompt string."
       :lookup (consult--grep-marker open)
       :preview (and consult-preview-grep (consult--preview-position))
       :require-match t
-      :category 'grep
+      :category 'xref-location
       :history '(:input consult--grep-history)
       :sort nil))))
 
