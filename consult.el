@@ -176,6 +176,10 @@ You may want to add a function which pulses the current line, e.g.,
   "Enable outline preview during selection."
   :type 'boolean)
 
+(defcustom consult-preview-grep t
+  "Enable grep preview during selection."
+  :type 'boolean)
+
 ;;;###autoload
 (define-minor-mode consult-preview-mode
   "Enable preview for consult commands."
@@ -1984,7 +1988,7 @@ PROMPT is the prompt string."
                              (when (>= (length input) consult-grep-min-input)
                                (append cmd (list input)))))
       :lookup (consult--grep-marker open)
-      :preview (consult--preview-position)
+      :preview (and consult-preview-grep (consult--preview-position))
       :require-match t
       :history '(:input consult--grep-history)
       :sort nil))))

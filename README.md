@@ -95,9 +95,9 @@ Most provided commands follow the naming scheme `consult-<thing>`.
     `completing-read-multiple`.
   * `consult-grep`: **EXPERIMENTAL** Search in current directory. Grep is
     invoked asynchronously, while you enter the search term. After having
-    entered the search term for `grep`, enter a comma. The following input is
-    used in order to use the *fast* Emacs filtering to further narrow down the
-    list of found matches.
+    entered the search term for `grep`, you can insert a comma. The following
+    input is used in order to use the *fast* Emacs filtering to further narrow
+    down the list of matches. `consult-grep` supports preview.
   * `consult-ripgrep`: **EXPERIMENTAL** Search in current directory, like
     `consult-grep`. similarily to `consult-grep`.
   * `consult-git-grep`: **EXPERIMENTAL** Search in current git repository, like
@@ -257,6 +257,7 @@ that the main package `consult.el` only depends on Emacs core components.
 | consult-preview-flycheck     | t                | Enable flycheck error preview during selection          |
 | consult-preview-flymake      | t                | Enable flymake diagnostic preview during selection      |
 | consult-preview-global-mark  | t                | Enable global mark preview during selection             |
+| consult-preview-grep         | t                | Enable grep preview during selection                 |
 | consult-preview-line         | t                | Enable line preview during selection                    |
 | consult-preview-mark         | t                | Enable mark preview during selection                    |
 | consult-preview-outline      | t                | Enable outline preview during selection                 |
