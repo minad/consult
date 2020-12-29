@@ -99,7 +99,7 @@ Most provided commands follow the naming scheme `consult-<thing>`.
     input is used in order to use the *fast* Emacs filtering to further narrow
     down the list of matches. `consult-grep` supports preview.
   * `consult-ripgrep`: **EXPERIMENTAL** Search in current directory, like
-    `consult-grep`. similarily to `consult-grep`.
+    `consult-grep`.
   * `consult-git-grep`: **EXPERIMENTAL** Search in current git repository, like
     `consult-grep`.
 
@@ -244,6 +244,7 @@ that the main package `consult.el` only depends on Emacs core components.
 |------------------------------|------------------|---------------------------------------------------------|
 | consult-after-jump-hook      | '(recenter)      | Functions to call after jumping to a location           |
 | consult-goto-line-numbers    | t                | Show line numbers for `consult-goto-line`               |
+| consult-grep-directory-hook  | …                | Return directory to use for grep                        |
 | consult-grep-min-input       | 3                | Minimum numbers of letters needed for grep              |
 | consult-imenu-narrow         | …                | Narrowing keys for imenu                                |
 | consult-line-numbers-widen   | t                | Show absolute line numbers when narrowing is active.    |
@@ -257,7 +258,7 @@ that the main package `consult.el` only depends on Emacs core components.
 | consult-preview-flycheck     | t                | Enable flycheck error preview during selection          |
 | consult-preview-flymake      | t                | Enable flymake diagnostic preview during selection      |
 | consult-preview-global-mark  | t                | Enable global mark preview during selection             |
-| consult-preview-grep         | t                | Enable grep preview during selection                 |
+| consult-preview-grep         | t                | Enable grep preview during selection                    |
 | consult-preview-line         | t                | Enable line preview during selection                    |
 | consult-preview-mark         | t                | Enable mark preview during selection                    |
 | consult-preview-outline      | t                | Enable outline preview during selection                 |

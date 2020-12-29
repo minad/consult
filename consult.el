@@ -81,6 +81,10 @@ If this key is unset, defaults to 'consult-narrow-key SPC'."
   "Minimum number of letters which must be entered, before grep is called."
   :type 'integer)
 
+(defcustom consult-grep-directory-hook (list (lambda () default-directory))
+  "Return directory to use for `consult-grep'."
+  :type 'hook)
+
 (defcustom consult-mode-histories
   '((eshell-mode . eshell-history-ring)
     (comint-mode . comint-input-ring)
@@ -1927,17 +1931,17 @@ Prepend PREFIX in front of all items."
     (save-match-data
       (dolist (str lines)
         (when (string-match consult--grep-regexp str)
-          (let* ((file (consult--strip-ansi-escape (match-string 1 str)))
+          (let* ((file (expand-file-name (consult--strip-ansi-escape (match-string 1 str))))
                  (line (string-to-number (consult--strip-ansi-escape (match-string 2 str))))
                  (str (substring str (match-end 0)))
-                 (loc (consult--format-location file line)))
+                 (loc (consult--format-location (file-relative-name file) line)))
             (while (string-match consult--grep-match-regexp str)
               (setq str (concat (substring str 0 (match-beginning 0))
                                 (propertize (substring (match-string 1 str)) 'face 'consult-preview-match)
                                 (substring str (match-end 0)))))
             (setq str (consult--strip-ansi-escape str))
             (push (list (concat loc str)
-                  (expand-file-name file) line
+                  file line
                   (next-single-char-property-change 0 'face str))
                   candidates)))))
     (nreverse candidates)))
@@ -1993,23 +1997,30 @@ PROMPT is the prompt string."
       :history '(:input consult--grep-history)
       :sort nil))))
 
-;;;###autoload
-(defun consult-grep ()
-  "Search for REGEXP with grep."
-  (interactive)
-  (consult--grep "Grep: " consult--grep-command))
+(defsubst consult--grep-directory ()
+  "Return grep directory."
+  (run-hook-with-args-until-success 'consult-grep-directory-hook))
 
 ;;;###autoload
-(defun consult-git-grep ()
-  "Search for REGEXP with grep."
-  (interactive)
-  (consult--grep "Git Grep: " consult--git-grep-command))
+(defun consult-grep (dir)
+  "Search for REGEXP with grep in DIR."
+  (interactive (list (consult--grep-directory)))
+  (let ((default-directory dir))
+    (consult--grep "Grep: " consult--grep-command)))
 
 ;;;###autoload
-(defun consult-ripgrep ()
-  "Search for REGEXP with rg."
-  (interactive)
-  (consult--grep "Ripgrep: " consult--ripgrep-command))
+(defun consult-git-grep (dir)
+  "Search for REGEXP with grep in DIR."
+  (interactive (list (consult--grep-directory)))
+  (let ((default-directory dir))
+    (consult--grep "Git Grep: " consult--git-grep-command)))
+
+;;;###autoload
+(defun consult-ripgrep (dir)
+  "Search for REGEXP with rg in DIR."
+  (interactive (list (consult--grep-directory)))
+  (let ((default-directory dir))
+    (consult--grep "Ripgrep: " consult--ripgrep-command)))
 
 ;;;; default completion-system support
 
