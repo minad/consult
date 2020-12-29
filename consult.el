@@ -1245,6 +1245,7 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
 Respects narrowing and the settings
 `consult-goto-line-numbers' and `consult-line-numbers-widen'."
   (interactive)
+  (consult--forbid-minibuffer)
   (let ((display-line-numbers consult-goto-line-numbers)
         (display-line-numbers-widen consult-line-numbers-widen))
     (while (let ((ret (minibuffer-with-setup-hook
