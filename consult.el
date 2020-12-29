@@ -1961,9 +1961,9 @@ OPEN is the function to open new files."
               (forward-char (caddr loc)))
             (point-marker)))))))
 
-(defvar consult--git-grep '("git" "grep" "--null" "--color=always" "-n" "-e"))
-(defvar consult--grep '("grep" "--null" "--line-buffered" "--color=always" "--exclude-dir=.git" "-n" "-r" "-e"))
-(defvar consult--ripgrep '("rg" "--null" "--line-buffered" "--color=always" "--max-columns=500" "--no-heading" "-n" "." "-e"))
+(defvar consult--git-grep-command '("git" "--no-pager" "grep" "--null" "--color=always" "--line-number" "-I" "-e"))
+(defvar consult--grep-command '("grep" "--null" "--line-buffered" "--color=always" "--exclude-dir=.git" "--line-number" "-I" "-r" "-e"))
+(defvar consult--ripgrep-command '("rg" "--null" "--line-buffered" "--color=always" "--max-columns=500" "--no-heading" "--line-number" "." "-e"))
 
 (defun consult--grep-async (cmd)
   "Async function for `consult-grep'.
@@ -1997,19 +1997,19 @@ PROMPT is the prompt string."
 (defun consult-grep ()
   "Search for REGEXP with grep."
   (interactive)
-  (consult--grep "Grep: " consult--grep))
+  (consult--grep "Grep: " consult--grep-command))
 
 ;;;###autoload
 (defun consult-git-grep ()
   "Search for REGEXP with grep."
   (interactive)
-  (consult--grep "Git Grep: " consult--git-grep))
+  (consult--grep "Git Grep: " consult--git-grep-command))
 
 ;;;###autoload
 (defun consult-ripgrep ()
   "Search for REGEXP with rg."
   (interactive)
-  (consult--grep "Ripgrep: " consult--ripgrep))
+  (consult--grep "Ripgrep: " consult--ripgrep-command))
 
 ;;;; default completion-system support
 
