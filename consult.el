@@ -52,7 +52,6 @@
 (require 'recentf)
 (require 'ring)
 (require 'seq)
-(require 'json)
 (require 'url)
 
 (defgroup consult nil
@@ -972,37 +971,35 @@ The refresh happens after a DELAY, defaulting to 0.1."
   (consult--async-transform async seq-filter fun))
 
 (defvar url-http-end-of-headers)
-(defun consult--fetch-json (url callback)
-  "Fetch json from URL and call CALLBACK with the result."
+(defun consult--fetch-url (url callback)
+  "Fetch from URL and call CALLBACK inside the result buffer."
   (url-retrieve url (lambda (&rest _)
-                      (funcall callback
-                               (unwind-protect
-                                   (progn
-                                     (goto-char url-http-end-of-headers)
-                                     (let ((json-object-type 'alist)
-                                           (json-array-type 'list)
-                                           (json-key-type 'string))
-                                       (json-read)))
-                                 (kill-buffer (current-buffer)))))
+                      (unwind-protect
+                          (progn
+                            (goto-char url-http-end-of-headers)
+                            (funcall callback))
+                        (kill-buffer (current-buffer))))
                 nil t t))
 
-(defun consult--async-json (async url transform)
-  "Create async function from ASYNC which fetches json.
+(defun consult--async-url (async url candidates)
+  "Create async function from ASYNC which fetches from url.
 
-URL must return an url. It is called with the input.
-TRANSFORM is a transformation function which receives the json,
+URL is a function which must return an url. It is called with the input.
+CANDIDATES is a function which is called with the result buffer
 and must return a list of candidates."
   (let ((running) (input ""))
     (lambda (action)
       (if (stringp action)
           (when (and (not running) (not (string= action input)))
             (setq running t input action)
-            (consult--fetch-json (funcall url action)
-                                 (lambda (result)
-                                   (setq running nil)
-                                   (funcall async 'flush)
-                                   (funcall async (funcall transform result))
-                                   (funcall async 'refresh))))
+            (consult--fetch-url
+             (funcall url action)
+             (lambda ()
+               (setq running nil)
+               (let ((candidates (funcall candidates)))
+                 (funcall async 'flush)
+                 (funcall async candidates)
+                 (funcall async 'refresh)))))
         (funcall async action)))))
 
 ;;;; Commands
@@ -2044,16 +2041,32 @@ PROMPT is the prompt string."
   (interactive)
   (consult--grep "Ripgrep: " consult--ripgrep))
 
-(defvar consult--websearch-json "https://duckduckgo.com/ac/?client=firefox&q=")
-(defvar consult--websearch-html "https://duckduckgo.com/html/?q=")
-(defvar consult--websearch-candidates (lambda (x) (mapcar #'cdar x)))
+(defvar consult--websearch-url "https://duckduckgo.com/html/?q=")
+
+(defun consult--websearch-candidates ()
+  "Parse candidates from websearch result."
+  (let ((candidates))
+    (save-match-data
+      (while (re-search-forward "<a.*?class=\"result[^\"]*\".*?href=\".+?\\(http[^\"]+\\)\">\\(.*?\\)</a>"
+                                nil 'noerror)
+        (let ((title (match-string 2))
+              (url (url-unhex-string (match-string 1))))
+          (push
+           (cons
+            (concat
+             url
+             " "
+             (replace-regexp-in-string "[^[:alnum:][:punct:] ]" "" (replace-regexp-in-string "<[^>]+>" "" title)))
+            url)
+           candidates)))
+      candidates)))
 
 (defun consult--websearch-async ()
   "Async function for `consult-websearch'."
   (thread-first (consult--async-sink)
-    (consult--async-json
-     (lambda (input) (concat consult--websearch-json (url-hexify-string input)))
-     consult--websearch-candidates)
+    (consult--async-url
+     (lambda (input) (concat consult--websearch-url (url-hexify-string input)))
+     #'consult--websearch-candidates)
     (consult--async-input-limiter)
     (consult--async-input-split)))
 
@@ -2061,13 +2074,11 @@ PROMPT is the prompt string."
   "Search in the web with completion."
   (interactive)
   (browse-url
-   (concat
-    consult--websearch-html
-    (url-hexify-string
-     (consult--read
-      "Web search: "
-      (consult--websearch-async)
-      :history '(:input consult--websearch-history))))))
+   (consult--read
+    "Web search: "
+    (consult--websearch-async)
+    :lookup #'consult--lookup-cdr
+    :history '(:input consult--websearch-history))))
 
 ;;;; default completion-system support
 
