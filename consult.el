@@ -624,9 +624,11 @@ NARROW is an alist of narrowing prefix strings and description."
            (let ((orig minibuffer-default-add-function))
              (setq-local minibuffer-default-add-function
                          (lambda ()
-                           (setq-local minibuffer-default-add-done nil)
-                           (setq-local minibuffer-default-add-function orig)
-                           add-history))))
+                           (if (not orig)
+                               add-history
+                             ;; the minibuffer-default-add-function may want generate more items
+                             (setq-local minibuffer-default-add-function orig)
+                             (consult--remove-dups (append add-history (funcall orig))))))))
          (when narrow
            (consult--narrow-setup narrow))))
     (let* ((metadata
