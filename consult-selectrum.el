@@ -63,8 +63,39 @@
             (lambda (fun prompt candidates &rest opts)
               (minibuffer-with-setup-hook
                   (lambda ()
-                    (setq-local selectrum--move-default-candidate-p (plist-get opts :default-top)))
+                    (setq-local selectrum--move-default-candidate-p (plist-get opts :default-top))
+                    ;; Fix height for async completion table
+                    (when (functionp candidates)
+                      (setq-local selectrum-fix-minibuffer-height t)))
                 (apply fun prompt candidates opts))))
+
+(defun consult-selectrum--async-input-split-wrap (orig)
+  "Wrap selectrum candidates highlight/refinement ORIG function for `consult--async-input-split'."
+  (lambda (str cands)
+    (funcall orig
+             (if-let (pos (seq-position str ?,))
+                 (substring str (1+ pos)) "")
+             cands)))
+
+(defun consult-selectrum--async-input-split (orig async)
+  "Advice for `consult--async-input-split' to be used by Selectrum.
+
+ORIG is the original function.
+ASYNC is the async function, argument to the original function."
+  (if (eq completing-read-function #'selectrum-completing-read)
+      (lambda (action)
+        (pcase action
+          ('setup
+           (setq-local selectrum-refine-candidates-function
+                       (consult-selectrum--async-input-split-wrap selectrum-refine-candidates-function))
+           (setq-local selectrum-highlight-candidates-function
+                       (consult-selectrum--async-input-split-wrap selectrum-highlight-candidates-function))
+           (funcall async 'setup))
+          ((pred stringp) (funcall async (replace-regexp-in-string ",.*" "" action)))
+          (_ (funcall async action))))
+    (funcall orig async)))
+
+(advice-add #'consult--async-input-split :around #'consult-selectrum--async-input-split)
 
 (provide 'consult-selectrum)
 ;;; consult-selectrum.el ends here
