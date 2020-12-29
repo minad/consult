@@ -310,8 +310,10 @@ Size of private unicode plane b.")
 (defsubst consult--format-location (file line)
   "Format location string FILE:LINE."
   (concat
-   (propertize file 'face 'consult-file) ":"
-   (propertize (number-to-string line) 'face 'consult-line-number)))
+   (propertize file 'face 'consult-file)
+   ":"
+   (propertize (number-to-string line) 'face 'consult-line-number)
+   ":"))
 
 (defun consult--line-position (line)
   "Compute position from LINE number."
@@ -1103,8 +1105,7 @@ The alist contains (string . position) pairs."
   "Return alist of lines containing markers.
 The alist contains (string . position) pairs."
   (consult--forbid-minibuffer)
-  (let* ((max-loc 0)
-         (candidates))
+  (let ((candidates))
     (save-excursion
       (dolist (marker global-mark-ring)
         (let ((pos (marker-position marker))
@@ -1118,17 +1119,15 @@ The alist contains (string . position) pairs."
                        (begin (line-beginning-position))
                        (end (line-end-position))
                        (loc (consult--format-location (buffer-name buf) line)))
-                  (setq max-loc (max (length loc) max-loc))
                   (consult--fontify-region begin end)
-                  (push (cons (cons loc (consult--region-with-cursor begin end marker)) marker)
+                  (push (cons (concat (consult--unique marker "")
+                                      loc
+                                      (consult--region-with-cursor begin end marker))
+                              marker)
                         candidates))))))))
     (unless candidates
       (user-error "No global marks"))
-    (dolist (cand candidates (nreverse (consult--remove-dups candidates #'car)))
-      (setcar cand (concat (consult--unique (cdr cand) "")
-                           (caar cand)
-                           (make-string (+ 3 (- max-loc (length (caar cand)))) 32)
-                           (cdar cand))))))
+    (nreverse (consult--remove-dups candidates #'car))))
 
 ;;;###autoload
 (defun consult-global-mark ()
@@ -1938,7 +1937,7 @@ Prepend PREFIX in front of all items."
                                      (propertize (substring (match-string 1 str)) 'face 'consult-preview-match)
                                      (substring str (match-end 0)))))
                  (setq str (consult--strip-escape str))
-                 (list (concat loc (make-string (+ 3 (max 0 (- 60 (length loc)))) 32) str)
+                 (list (concat loc str)
                        (expand-file-name file) line
                        (next-single-char-property-change 0 'face str)))))
            lines))))
