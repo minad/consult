@@ -4,27 +4,27 @@
 
 This package provides various commands based on the Emacs completion function
 `completing-read`, in particular a more advanced buffer switching command
-`consult-buffer` and a [Swiper](https://github.com/abo-abo/swiper#swiper)-like
-search command `consult-line`.
+`consult-buffer` which allows to select from buffers, recent files and more.
+Furthermore various search commands are provided, like `consult-grep` and
+`consult-line`, which resembles [Swiper](https://github.com/abo-abo/swiper#swiper).
 
-The commands are compatible with completion-systems based on the standard Emacs
+The commands are compatible with completion systems based on the standard Emacs
 API, e.g., the Emacs builtin
 [Icomplete](https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html)
 and [Selectrum](https://github.com/raxod502/selectrum). If Icomplete is used, it
 is recommended to install
-[Icomplete-vertical](https://github.com/oantolin/icomplete-vertical). The goal
-is to keep the completion-system specifics in this package to a minimum.
+[Icomplete-vertical](https://github.com/oantolin/icomplete-vertical). The
+completion system specifics in this package are kept to a minimum.
 
-Note that there is the [Marginalia](https://github.com/minad/marginalia/)
-package, which can be combined with Consult. The `marginalia-mode` enriches the
-completion display with annotations. The annotations show for example
-documentation strings or file information. Marginalia has been extracted from
-[Embark](https://github.com/oantolin/embark/) and Consult since both packages
-provided minibuffer annotations. Embark provides local actions (like a context
-menu), which can be executed while selecting a candidate in the minibuffer. For
-example, when selecting a file, an action to delete the file is offered.
+There are the [Marginalia](https://github.com/minad/marginalia/) and
+[Embark](https://github.com/oantolin/embark/) packages, which can be combined
+with Consult. The `marginalia-mode` enriches the completion display with
+annotations. The annotations show for example documentation strings or file
+information. Embark provides local actions (like a context menu), which can be
+executed while selecting a candidate in the minibuffer. For example, when
+selecting a file, an action to delete the file is offered.
 
-If you use [Ivy](https://github.com/abo-abo/swiper#ivy) or
+*Note*: If you use [Ivy](https://github.com/abo-abo/swiper#ivy) or
 [Helm](https://github.com/emacs-helm/helm), you probably don't need Consult,
 since both packages already bring their own rich set of additional commands.
 
