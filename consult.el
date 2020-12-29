@@ -447,7 +447,7 @@ DISPLAY is the string to display instead of the unique string."
   (unless (minibufferp) (error "Command must be executed in minibuffer"))
   (setq consult--narrow key)
   (when consult--narrow-predicate
-    (setq-local minibuffer-completion-predicate (and consult--narrow consult--narrow-predicate)))
+    (setq minibuffer-completion-predicate (and consult--narrow consult--narrow-predicate)))
   (when consult--narrow-overlay
     (delete-overlay consult--narrow-overlay))
   (when consult--narrow
