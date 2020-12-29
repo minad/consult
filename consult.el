@@ -940,8 +940,8 @@ The refresh happens immediately when candidates are pushed."
 (defun consult--async-refresh-timer (async &optional delay)
   "Create async function from ASYNC, which refreshes the display.
 
-The refresh happens after a DELAY, defaulting to 0.1."
-  (let ((timer) (refresh t) (delay (or delay 0.1)))
+The refresh happens after a DELAY, defaulting to 0.2."
+  (let ((timer) (refresh t) (delay (or delay 0.2)))
     (lambda (action)
       (pcase action
         ((or (pred listp) (pred stringp) 'refresh 'flush)
