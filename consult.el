@@ -760,6 +760,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                   :require-match t
                   :lookup #'consult--line-match
                   :history '(:input consult--line-history)
+                  :add-history (list (thing-at-point 'symbol))
                   :preview (and consult-preview-outline (consult--preview-position)))))
 
 (defun consult--next-error ()
@@ -1653,6 +1654,7 @@ Prepend PREFIX in front of all items."
       :category 'imenu
       :lookup #'consult--lookup-cdr
       :history 'consult--imenu-history
+      :add-history (list (thing-at-point 'symbol))
       :sort nil))
     (run-hooks 'consult-after-jump-hook)))
 
