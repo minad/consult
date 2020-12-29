@@ -307,13 +307,15 @@ Size of private unicode plane b.")
 
 ;;;; Helper functions
 
+(defsubst consult--strip-ansi-escape (str)
+  "Strip ansi escape sequences from STR."
+  (replace-regexp-in-string "\e\\[[0-9;]*[mK]" "" str))
+
 (defsubst consult--format-location (file line)
-  "Format location string FILE:LINE."
+  "Format location string 'FILE:LINE:'."
   (concat
-   (propertize file 'face 'consult-file)
-   ":"
-   (propertize (number-to-string line) 'face 'consult-line-number)
-   ":"))
+   (propertize file 'face 'consult-file) ":"
+   (propertize (number-to-string line) 'face 'consult-line-number) ":"))
 
 (defun consult--line-position (line)
   "Compute position from LINE number."
@@ -481,11 +483,9 @@ This command can be bound in `consult-narrow-map'."
   (interactive)
   (minibuffer-message
    (string-join
-    (delq nil
-          (mapcar (lambda (x)
-                    (when (/= (car x) 32)
-                      (format "%c %s" (car x) (cdr x))))
-                  consult--narrow-prefixes))
+    (thread-last consult--narrow-prefixes
+      (seq-filter (lambda (x) (/= (car x) 32)))
+      (mapcar (lambda (x) (format "%c %s" (car x) (cdr x)))))
     " ")))
 
 (defvar consult-narrow-map
@@ -1617,12 +1617,12 @@ for which the command history is used."
            (concat
             (if (local-variable-if-set-p sym) "l" "g")
             (if (and (boundp sym) (symbol-value sym)) "i" "o"))))
-   (delq nil
-         (append
-          ;; according to describe-minor-mode-completion-table-for-symbol
-          ;; the minor-mode-list contains *all* minor modes
-          (mapcar (lambda (sym) (cons (symbol-name sym) sym)) minor-mode-list)
-          ;; take the lighters from minor-mode-alist
+   (append
+    ;; according to describe-minor-mode-completion-table-for-symbol
+    ;; the minor-mode-list contains *all* minor modes
+    (mapcar (lambda (sym) (cons (symbol-name sym) sym)) minor-mode-list)
+    ;; take the lighters from minor-mode-alist
+    (delq nil
           (mapcar (pcase-lambda (`(,sym ,lighter))
                     (when (and lighter (not (equal "" lighter)))
                       (setq lighter (string-trim (format-mode-line lighter)))
@@ -1917,30 +1917,29 @@ Prepend PREFIX in front of all items."
 (defconst consult--grep-regexp "\\([^\0\n]+\\)\0\\([^:\0]+\\)[:\0]"
   "Regexp used to match file and line of grep output.")
 
-(defsubst consult--strip-escape (str)
-  "Strip ansi escape sequences from STR."
-  (replace-regexp-in-string "\e\\[[0-9;]*[mK]" "" str))
+(defconst consult--grep-match-regexp "\e\\[[0-9;]+m\\(.*?\\)\e\\[[0-9;]*m"
+  "Regexp used to find matches in grep output.")
 
 (defun consult--grep-matches (lines)
   "Find grep match for REGEXP in LINES."
-  (save-match-data
-    (delq nil
-          (mapcar
-           (lambda (str)
-             (when (string-match consult--grep-regexp str)
-               (let* ((file (consult--strip-escape (match-string 1 str)))
-                      (line (string-to-number (consult--strip-escape (match-string 2 str))))
-                      (str (substring str (match-end 0)))
-                      (loc (consult--format-location file line)))
-                 (while (string-match "\e\\[[0-9;]+m\\(.*?\\)\e\\[[0-9;]*m" str)
-                   (setq str (concat (substring str 0 (match-beginning 0))
-                                     (propertize (substring (match-string 1 str)) 'face 'consult-preview-match)
-                                     (substring str (match-end 0)))))
-                 (setq str (consult--strip-escape str))
-                 (list (concat loc str)
-                       (expand-file-name file) line
-                       (next-single-char-property-change 0 'face str)))))
-           lines))))
+  (let ((candidates))
+    (save-match-data
+      (dolist (str lines)
+        (when (string-match consult--grep-regexp str)
+          (let* ((file (consult--strip-ansi-escape (match-string 1 str)))
+                 (line (string-to-number (consult--strip-ansi-escape (match-string 2 str))))
+                 (str (substring str (match-end 0)))
+                 (loc (consult--format-location file line)))
+            (while (string-match consult--grep-match-regexp str)
+              (setq str (concat (substring str 0 (match-beginning 0))
+                                (propertize (substring (match-string 1 str)) 'face 'consult-preview-match)
+                                (substring str (match-end 0)))))
+            (setq str (consult--strip-ansi-escape str))
+            (push (list (concat loc str)
+                  (expand-file-name file) line
+                  (next-single-char-property-change 0 'face str))
+                  candidates)))))
+    (nreverse candidates)))
 
 (defun consult--grep-marker (open)
   "Grep candidate to marker.
