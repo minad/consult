@@ -505,33 +505,23 @@ Note that `consult-narrow-key' and `consult-widen-key' are bound dynamically.")
     (define-key map (vconcat (seq-take key idx) (vector 'which-key (elt key idx)))
       `(which-key (,desc . ,cmd)))))
 
-(defun consult--with-narrow-1 (settings fun)
-  "Install narrowing in FUN with narrowing SETTINGS."
-  (if (not settings) (funcall fun)
-    (minibuffer-with-setup-hook
-        (:append
-         (lambda ()
-           (if (functionp (car settings))
-               (setq consult--narrow-predicate (car settings)
-                     consult--narrow-prefixes (cdr settings))
-             (setq consult--narrow-predicate nil
-                   consult--narrow-prefixes settings))
-           (let ((map (make-composed-keymap consult-narrow-map (current-local-map))))
-             (when consult-narrow-key
-               (dolist (pair consult--narrow-prefixes)
-                 (when (/= (car pair) 32)
-                   (consult--define-key map
-                                        (vconcat consult-narrow-key (vector (car pair)))
-                                        #'consult-narrow (cdr pair)))))
-             (when-let (widen (consult--widen-key))
-               (consult--define-key map widen #'consult-narrow "All"))
-             (use-local-map map))))
-      (funcall fun))))
-
-(defmacro consult--with-narrow (settings &rest body)
-  "Setup narrowing in BODY with SETTINGS."
-  (declare (indent 1))
-  `(consult--with-narrow-1 ,settings (lambda () ,@body)))
+(defun consult--narrow-setup (settings)
+  "Setup narrowing with SETTINGS."
+  (if (functionp (car settings))
+      (setq consult--narrow-predicate (car settings)
+            consult--narrow-prefixes (cdr settings))
+    (setq consult--narrow-predicate nil
+          consult--narrow-prefixes settings))
+  (let ((map (make-composed-keymap consult-narrow-map (current-local-map))))
+    (when consult-narrow-key
+      (dolist (pair consult--narrow-prefixes)
+        (when (/= (car pair) 32)
+          (consult--define-key map
+                               (vconcat consult-narrow-key (vector (car pair)))
+                               #'consult-narrow (cdr pair)))))
+    (when-let (widen (consult--widen-key))
+      (consult--define-key map widen #'consult-narrow "All"))
+    (use-local-map map)))
 
 (defmacro consult--with-increased-gc (&rest body)
   "Temporarily increase the gc limit in BODY to optimize for throughput."
@@ -668,9 +658,20 @@ ARGS is the open function argument for BODY."
   (declare (indent 1))
   `(consult--with-async-1 ,@(cdr async) (lambda (,(car async)) ,@body)))
 
+(defun consult--add-history (items)
+  "Add ITEMS to the minibuffer history via `minibuffer-default-add-function'."
+  (when (setq items (delq nil items))
+    (setq-local minibuffer-default-add-function
+                (if-let (orig minibuffer-default-add-function)
+                    (lambda ()
+                      ;; the minibuffer-default-add-function may want generate more items
+                      (setq-local minibuffer-default-add-function orig)
+                      (consult--remove-dups (append items (funcall orig))))
+                  (lambda () items)))))
+
 (cl-defun consult--read (prompt candidates &key
                                 predicate require-match history default
-                                category initial preview narrow
+                                category initial preview narrow add-history
                                 (sort t) (default-top t) (lookup (lambda (_input _cands x) x)))
   "Simplified completing read function.
 
@@ -679,7 +680,8 @@ CANDIDATES is the candidate list or alist.
 PREDICATE is a filter function for the candidates.
 REQUIRE-MATCH equals t means that an exact match is required.
 HISTORY is the symbol of the history variable.
-DEFAULT is the default input.
+DEFAULT is the default selected value.
+ADD-HISTORY is a list of items to add to the history.
 CATEGORY is the completion category.
 SORT should be set to nil if the candidates are already sorted.
 LOOKUP is a function which is applied to the result.
@@ -695,8 +697,12 @@ NARROW is an alist of narrowing prefix strings and description."
                  (stringp (car candidates)) ;; string list
                  (symbolp (car candidates)) ;; symbol list
                  (consp (car candidates)))) ;; alist
-  (consult--with-async (async candidates)
-    (consult--with-narrow narrow
+  (minibuffer-with-setup-hook
+      (:append
+       (lambda ()
+         (consult--add-history (cons default add-history))
+         (when narrow (consult--narrow-setup narrow))))
+    (consult--with-async (async candidates)
       (let* ((metadata
               `(metadata
                 ,@(when category `((category . ,category)))
@@ -1044,6 +1050,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                   :require-match t
                   :lookup #'consult--line-match
                   :history '(:input consult--line-history)
+                  :add-history (list (thing-at-point 'symbol))
                   :preview (and consult-preview-outline (consult--preview-position)))))
 
 (defun consult--next-error ()
@@ -1253,25 +1260,17 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
                     :sort nil
                     :default-top nil
                     :require-match t
+                    :add-history (list
+                                  (thing-at-point 'symbol)
+                                  (when isearch-string
+                                    (if isearch-regexp
+                                        isearch-string
+                                      (regexp-quote isearch-string))))
                     :history '(:input consult--line-history)
                     :lookup #'consult--line-match
                     :default (car candidates)
                     :initial initial
                     :preview (and consult-preview-line (consult--preview-position))))))
-
-;;;###autoload
-(defun consult-line-symbol-at-point ()
-  "Search for a symbol at point."
-  (interactive)
-  (consult-line (thing-at-point 'symbol)))
-
-;;;###autoload
-(defun consult-line-from-isearch ()
-  "Search by lines from isearch string."
-  (interactive)
-  (consult-line (if isearch-regexp
-                    isearch-string
-                  (regexp-quote isearch-string))))
 
 ;;;###autoload
 (defun consult-goto-line ()
@@ -1945,6 +1944,7 @@ Prepend PREFIX in front of all items."
       :category 'imenu
       :lookup #'consult--lookup-cdr
       :history 'consult--imenu-history
+      :add-history (list (thing-at-point 'symbol))
       :sort nil))
     (run-hooks 'consult-after-jump-hook)))
 

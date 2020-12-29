@@ -72,7 +72,7 @@ Most provided commands follow the naming scheme `consult-<thing>`.
     supported when selecting from the kill-ring.
   * `consult-kmacro`: Select macro from the macro ring and execute it.
 
-### Navigation and Search
+### Navigation
 
   * `consult-goto-line`: Jump to line number enhanced with live preview. This is
     a drop-in replacement for `goto-line`.
@@ -87,10 +87,10 @@ Most provided commands follow the naming scheme `consult-<thing>`.
 
 ### Search
 
-  * `consult-line` (`-symbol-at-point`, `-from-isearch`): Select from matching
-    lines. Supports live preview and recursive editing. There are two variants,
-    which search for the symbol at point and for the most recent isearch string
-    respectively.
+  * `consult-line`: Enter search string and select from matching lines. Supports
+    live preview and recursive editing. The symbol at point and the recent
+    isearch string are added to the "future history" and can be accessed by
+    pressing `M-n`.
   * `consult-grep`: **EXPERIMENTAL** Search in current directory. Grep is
     invoked asynchronously, while you enter the search term. After having
     entered the search term for `grep`, enter a comma. The following input is
