@@ -195,6 +195,8 @@ that the main package `consult.el` only depends on Emacs core components.
          ("M-g l" . consult-line)        ;; "M-s l" is a good alternative.
          ("M-g m" . consult-mark)        ;; I recommend to bind Consult navigation
          ("M-g k" . consult-global-mark) ;; commands under the "M-g" prefix.
+         ("M-g w" . consult-websearch)
+         ("M-g r" . consult-git-grep)    ;; or consult-grep, consult-ripgrep
          ("M-g i" . consult-imenu)
          ("M-g e" . consult-error)
          ("M-s m" . consult-multi-occur)
