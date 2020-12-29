@@ -485,33 +485,23 @@ Note that `consult-narrow-key' and `consult-widen-key' are bound dynamically.")
     (define-key map (vconcat (seq-take key idx) (vector 'which-key (elt key idx)))
       `(which-key (,desc . ,cmd)))))
 
-(defun consult--with-narrow-1 (settings fun)
-  "Install narrowing in FUN with narrowing SETTINGS."
-  (if (not settings) (funcall fun)
-    (minibuffer-with-setup-hook
-        (:append
-         (lambda ()
-           (if (functionp (car settings))
-               (setq consult--narrow-predicate (car settings)
-                     consult--narrow-prefixes (cdr settings))
-             (setq consult--narrow-predicate nil
-                   consult--narrow-prefixes settings))
-           (let ((map (make-composed-keymap consult-narrow-map (current-local-map))))
-             (when consult-narrow-key
-               (dolist (pair consult--narrow-prefixes)
-                 (when (/= (car pair) 32)
-                   (consult--define-key map
-                                        (vconcat consult-narrow-key (vector (car pair)))
-                                        #'consult-narrow (cdr pair)))))
-             (when-let (widen (consult--widen-key))
-               (consult--define-key map widen #'consult-narrow "All"))
-             (use-local-map map))))
-      (funcall fun))))
-
-(defmacro consult--with-narrow (settings &rest body)
-  "Setup narrowing in BODY with SETTINGS."
-  (declare (indent 1))
-  `(consult--with-narrow-1 ,settings (lambda () ,@body)))
+(defun consult--narrow-setup (settings)
+  "Setup narrowing with SETTINGS."
+  (if (functionp (car settings))
+      (setq consult--narrow-predicate (car settings)
+            consult--narrow-prefixes (cdr settings))
+    (setq consult--narrow-predicate nil
+          consult--narrow-prefixes settings))
+  (let ((map (make-composed-keymap consult-narrow-map (current-local-map))))
+    (when consult-narrow-key
+      (dolist (pair consult--narrow-prefixes)
+        (when (/= (car pair) 32)
+          (consult--define-key map
+                               (vconcat consult-narrow-key (vector (car pair)))
+                               #'consult-narrow (cdr pair)))))
+    (when-let (widen (consult--widen-key))
+      (consult--define-key map widen #'consult-narrow "All"))
+    (use-local-map map)))
 
 (defmacro consult--with-increased-gc (&rest body)
   "Temporarily increase the gc limit in BODY to optimize for throughput."
@@ -625,7 +615,11 @@ NARROW is an alist of narrowing prefix strings and description."
                       (stringp (car candidates))  ;; string list
                       (symbolp (car candidates))  ;; symbol list
                       (consp (car candidates))))) ;; alist
-  (consult--with-narrow narrow
+  (minibuffer-with-setup-hook
+      (:append
+       (lambda ()
+         (when narrow
+           (consult--narrow-setup narrow))))
     (let* ((metadata
             `(metadata
               ,@(when category `((category . ,category)))
