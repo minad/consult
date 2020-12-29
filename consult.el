@@ -1964,8 +1964,8 @@ OPEN is the function to open new files."
               (forward-char (caddr loc)))
             (point-marker)))))))
 
-(defvar consult--git-grep-command '("git" "--no-pager" "grep" "--null" "--color=always" "--line-number" "-I" "-e"))
-(defvar consult--grep-command '("grep" "--null" "--line-buffered" "--color=always" "--exclude-dir=.git" "--line-number" "-I" "-r" "." "-e"))
+(defvar consult--git-grep-command '("git" "--no-pager" "grep" "--null" "--color=always" "--extended-regexp" "--line-number" "-I" "-e"))
+(defvar consult--grep-command '("grep" "--null" "--line-buffered" "--color=always" "--extended-regexp" "--exclude-dir=.git" "--line-number" "-I" "-r" "." "-e"))
 (defvar consult--ripgrep-command '("rg" "--null" "--line-buffered" "--color=always" "--max-columns=500" "--no-heading" "--line-number" "." "-e"))
 
 (defun consult--grep-async (cmd)
