@@ -824,8 +824,8 @@ String   The input string, called when the user enters something."
              (run-hooks 'consult--completion-refresh-hook))))
         ((pred listp) (setq candidates (nconc candidates action)))))))
 
-(defun consult--async-input-split-wrap (fun)
-  "Wrap completion style function FUN for `consult--async-input-split'."
+(defun consult--async-split-wrap (fun)
+  "Wrap completion style function FUN for `consult--async-split'."
   (lambda (str table pred point &optional metadata)
     (let ((completion-styles (cdr completion-styles))
           (pos (seq-position str ?,)))
@@ -836,12 +836,12 @@ String   The input string, called when the user enters something."
                metadata))))
 
 (add-to-list 'completion-styles-alist
-             (list 'consult--async-input-split
-                   (consult--async-input-split-wrap #'completion-try-completion)
-                   (consult--async-input-split-wrap #'completion-all-completions)
+             (list 'consult--async-split
+                   (consult--async-split-wrap #'completion-try-completion)
+                   (consult--async-split-wrap #'completion-all-completions)
                    "Split async and filter part."))
 
-(defun consult--async-input-split (async)
+(defun consult--async-split (async)
   "Create async function, which splits the input string.
 
 The input string is split at the first comma. The part before
@@ -850,7 +850,7 @@ the comma is passed to ASYNC, the second part is used for filtering."
     (pcase action
       ('setup
        (setq-local completion-styles
-                   (cons 'consult--async-input-split completion-styles))
+                   (cons 'consult--async-split completion-styles))
        (funcall async 'setup))
       ((pred stringp) (funcall async (replace-regexp-in-string ",.*" "" action)))
       (_ (funcall async action)))))
@@ -916,7 +916,7 @@ CMD is the command argument list."
          (funcall async 'setup))
         (_ (funcall async action))))))
 
-(defun consult--async-input-limiter (async &optional delay)
+(defun consult--async-throttle (async &optional delay)
   "Create async function from ASYNC which limits the input rate by DELAY."
   (let ((delay (or delay 0.5)) (input "") (timer))
     (lambda (action)
@@ -1995,8 +1995,8 @@ CMD is the grep argument list."
     (consult--async-refresh-timer)
     (consult--async-transform consult--grep-matches)
     (consult--async-process cmd)
-    (consult--async-input-limiter)
-    (consult--async-input-split)))
+    (consult--async-throttle)
+    (consult--async-split)))
 
 (defun consult--grep (prompt cmd)
   "Run grep CMD in current directory.
