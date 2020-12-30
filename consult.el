@@ -275,7 +275,8 @@ You may want to add a function which pulses the current line, e.g.,
 ;;;; History variables
 
 (defvar consult--error-history nil)
-(defvar consult--search-history nil)
+(defvar consult--grep-history nil)
+(defvar consult--line-history nil)
 (defvar consult--apropos-history nil)
 (defvar consult--theme-history nil)
 (defvar consult--minor-mode-menu-history nil)
@@ -1076,7 +1077,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                   :sort nil
                   :require-match t
                   :lookup #'consult--line-match
-                  :history '(:input consult--search-history)
+                  :history '(:input consult--line-history)
                   :add-history (list (thing-at-point 'symbol))
                   :preview (and consult-preview-outline (consult--preview-position)))))
 
@@ -1175,7 +1176,7 @@ The alist contains (string . position) pairs."
                   :sort nil
                   :require-match t
                   :lookup #'consult--lookup-cdr
-                  :history '(:input consult--search-history)
+                  :history '(:input consult--line-history)
                   :preview (and consult-preview-mark (consult--preview-position)))))
 
 (defun consult--global-mark-candidates ()
@@ -1217,7 +1218,7 @@ The alist contains (string . position) pairs."
                   :sort nil
                   :require-match t
                   :lookup #'consult--lookup-cdr
-                  :history '(:input consult--search-history)
+                  :history '(:input consult--line-history)
                   :preview (and consult-preview-global-mark (consult--preview-position)))))
 
 (defun consult--line-candidates ()
@@ -1309,7 +1310,7 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
                                     (if isearch-regexp
                                         isearch-string
                                       (regexp-quote isearch-string))))
-                    :history '(:input consult--search-history)
+                    :history '(:input consult--line-history)
                     :lookup #'consult--line-match
                     :default (car candidates)
                     :initial initial
@@ -2084,7 +2085,7 @@ PROMPT is the prompt string."
       :initial consult-async-default-split
       :require-match t
       :category 'xref-location
-      :history '(:input consult--search-history)
+      :history '(:input consult--grep-history)
       :sort nil))))
 
 ;;;###autoload
