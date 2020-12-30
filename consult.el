@@ -91,7 +91,8 @@ If this key is unset, defaults to 'consult-narrow-key SPC'."
 This applies for example to `consult-grep'."
   :type 'integer)
 
-(defcustom consult-async-default-split "/"
+(defcustom consult-async-default-split
+  (propertize "/" 'face 'consult-async-split)
   "Default async input separator used for splitting.
 Can also be nil in order to disable it."
   :type 'string)
@@ -271,6 +272,10 @@ You may want to add a function which pulses the current line, e.g.,
 (defface consult-line-number-prefix
   '((t :inherit line-number))
   "Face used to highlight line numbers in selections.")
+
+(defface consult-async-split
+  '((t :inherit consult-async-indicator))
+  "Face used to highlight split character.")
 
 ;;;; History variables
 
@@ -846,15 +851,20 @@ the separator. Examples: \"/async/filter\", \"#async#filter\"."
   (if (string-match-p "^[[:punct:]]" str)
       (save-match-data
         (let ((q (regexp-quote (substring str 0 1))))
-          (string-match (concat "^" q "\\([^" q "]*\\)" q "?") str)
-          (cons (match-string 1 str) (match-end 0))))
-    (cons str (length str))))
+          (string-match (concat "^" q "\\([^" q "]*\\)\\(" q "?\\)\\(.*\\)") str)
+          (list (match-string 1 str)
+                (match-end 0)
+                (concat (propertize q 'face 'consult-async-split)
+                        (match-string 1 str)
+                        (propertize (match-string 2 str) 'face 'consult-async-split)
+                        (match-string 3 str)))))
+    (list str (length str) str)))
 
 (defun consult--async-split-wrap (fun)
   "Wrap completion style function FUN for `consult--async-split'."
   (lambda (str table pred point &optional metadata)
     (let ((completion-styles (cdr completion-styles))
-          (pos (cdr (consult--async-split-string str))))
+          (pos (cadr (consult--async-split-string str))))
       (funcall fun
                (substring str pos)
                table pred
@@ -882,11 +892,14 @@ the comma is passed to ASYNC, the second part is used for filtering."
        (consult--async-split-setup)
        (funcall async 'setup))
       ((pred stringp)
-       (let* ((pair (consult--async-split-string action))
-              (len (length (car pair))))
+       (let* ((split (consult--async-split-string action))
+              (first (car split))
+              (len (length first)))
+         (delete-minibuffer-contents)
+         (insert (caddr split))
          (when (or (>= (length action) (+ 2 len))
                    (>= len consult-async-min-input))
-           (funcall async (car pair)))))
+           (funcall async first))))
       (_ (funcall async action)))))
 
 (defun consult--async-process (async cmd)

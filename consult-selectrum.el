@@ -72,7 +72,7 @@
 (defun consult-selectrum--async-split-wrap (orig)
   "Wrap selectrum candidates highlight/refinement ORIG function for `consult--async-split'."
   (lambda (str cands)
-    (funcall orig (substring str (cdr (consult--async-split-string str))) cands)))
+    (funcall orig (substring str (cadr (consult--async-split-string str))) cands)))
 
 (defun consult-selectrum--async-split-setup ()
   "Advice for `consult--async-split-setup' to be used by Selectrum."
