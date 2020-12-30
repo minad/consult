@@ -72,10 +72,7 @@
 (defun consult-selectrum--async-split-wrap (orig)
   "Wrap selectrum candidates highlight/refinement ORIG function for `consult--async-split'."
   (lambda (str cands)
-    (funcall orig
-             (if-let (pos (cdr (consult--async-split-string str)))
-                 (substring str pos) "")
-             cands)))
+    (funcall orig (substring str (cdr (consult--async-split-string str))) cands)))
 
 (defun consult-selectrum--async-split (orig async)
   "Advice for `consult--async-split' to be used by Selectrum.
@@ -91,7 +88,9 @@ ASYNC is the async function, argument to the original function."
            (setq-local selectrum-highlight-candidates-function
                        (consult-selectrum--async-split-wrap selectrum-highlight-candidates-function))
            (funcall async 'setup))
-          ((pred stringp) (funcall async (car (consult--async-split-string action))))
+          ((pred stringp)
+           (when-let (input (consult--async-split-first action))
+             (funcall async input)))
           (_ (funcall async action))))
     (funcall orig async)))
 

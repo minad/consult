@@ -838,7 +838,15 @@ the separator. Examples: \"/async/filter\", \"#async#filter\"."
         (let ((q (regexp-quote (substring str 0 1))))
           (string-match (concat "^" q "\\([^" q "]*\\)" q "?") str)
           (cons (match-string 1 str) (match-end 0))))
-    (cons str nil)))
+    (cons str (length str))))
+
+(defun consult--async-split-first (str)
+  "Return first part of STR after splitting by `consult--async-split-string'."
+  (let* ((pair (consult--async-split-string str))
+         (len (length (car pair))))
+    (when (or (>= (length str) (+ 2 len))
+              (>= len consult-async-min-input))
+      (car pair))))
 
 (defun consult--async-split-wrap (fun)
   "Wrap completion style function FUN for `consult--async-split'."
@@ -846,9 +854,9 @@ the separator. Examples: \"/async/filter\", \"#async#filter\"."
     (let ((completion-styles (cdr completion-styles))
           (pos (cdr (consult--async-split-string str))))
       (funcall fun
-               (if pos (substring str pos) "")
+               (substring str pos)
                table pred
-               (if (and pos (>= point pos)) (- point pos) 0)
+               (- point pos)
                metadata))))
 
 (add-to-list 'completion-styles-alist
@@ -868,7 +876,9 @@ the comma is passed to ASYNC, the second part is used for filtering."
        (setq-local completion-styles
                    (cons 'consult--async-split completion-styles))
        (funcall async 'setup))
-      ((pred stringp) (funcall async (car (consult--async-split-string action))))
+      ((pred stringp)
+       (when-let (input (consult--async-split-first action))
+         (funcall async input)))
       (_ (funcall async action)))))
 
 (defun consult--async-process (async cmd)
@@ -941,7 +951,7 @@ CMD is the command argument list."
          (funcall async 'setup)
          (setq timer (run-at-time delay delay
                                   (lambda ()
-                                    (when (>= (length input) consult-async-min-input)
+                                    (unless (string= input "")
                                       (funcall async input))))))
         ((pred stringp) (setq input action))
         ('destroy (cancel-timer timer)
