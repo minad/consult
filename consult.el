@@ -512,7 +512,7 @@ Note that `consult-narrow-key' and `consult-widen-key' are bound dynamically.")
   ;; See https://github.com/justbur/emacs-which-key/issues/177
   (let ((idx (- (length key) 1)))
     (define-key map (vconcat (seq-take key idx) (vector 'which-key (elt key idx)))
-      `(which-key (,desc . ,cmd)))))
+      `(which-key (,desc)))))
 
 (defun consult--narrow-setup (settings)
   "Setup narrowing with SETTINGS."
