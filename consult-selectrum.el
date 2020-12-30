@@ -74,27 +74,14 @@
   (lambda (str cands)
     (funcall orig (substring str (cdr (consult--async-split-string str))) cands)))
 
-(defun consult-selectrum--async-split (orig async)
-  "Advice for `consult--async-split' to be used by Selectrum.
+(defun consult-selectrum--async-split-setup ()
+  "Advice for `consult--async-split-setup' to be used by Selectrum."
+  (setq-local selectrum-refine-candidates-function
+              (consult-selectrum--async-split-wrap selectrum-refine-candidates-function))
+  (setq-local selectrum-highlight-candidates-function
+              (consult-selectrum--async-split-wrap selectrum-highlight-candidates-function)))
 
-ORIG is the original function.
-ASYNC is the async function, argument to the original function."
-  (if (eq completing-read-function #'selectrum-completing-read)
-      (lambda (action)
-        (pcase action
-          ('setup
-           (setq-local selectrum-refine-candidates-function
-                       (consult-selectrum--async-split-wrap selectrum-refine-candidates-function))
-           (setq-local selectrum-highlight-candidates-function
-                       (consult-selectrum--async-split-wrap selectrum-highlight-candidates-function))
-           (funcall async 'setup))
-          ((pred stringp)
-           (when-let (input (consult--async-split-first action))
-             (funcall async input)))
-          (_ (funcall async action))))
-    (funcall orig async)))
-
-(advice-add #'consult--async-split :around #'consult-selectrum--async-split)
+(advice-add #'consult--async-split-setup :before #'consult-selectrum--async-split-setup)
 
 (provide 'consult-selectrum)
 ;;; consult-selectrum.el ends here

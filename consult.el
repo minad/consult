@@ -840,14 +840,6 @@ the separator. Examples: \"/async/filter\", \"#async#filter\"."
           (cons (match-string 1 str) (match-end 0))))
     (cons str (length str))))
 
-(defun consult--async-split-first (str)
-  "Return first part of STR after splitting by `consult--async-split-string'."
-  (let* ((pair (consult--async-split-string str))
-         (len (length (car pair))))
-    (when (or (>= (length str) (+ 2 len))
-              (>= len consult-async-min-input))
-      (car pair))))
-
 (defun consult--async-split-wrap (fun)
   "Wrap completion style function FUN for `consult--async-split'."
   (lambda (str table pred point &optional metadata)
@@ -865,6 +857,10 @@ the separator. Examples: \"/async/filter\", \"#async#filter\"."
                    (consult--async-split-wrap #'completion-all-completions)
                    "Split async and filter part."))
 
+(defun consult--async-split-setup ()
+  "Setup `consult--async-split' completion styles."
+  (setq-local completion-styles (cons 'consult--async-split completion-styles)))
+
 (defun consult--async-split (async)
   "Create async function, which splits the input string.
 
@@ -873,12 +869,14 @@ the comma is passed to ASYNC, the second part is used for filtering."
   (lambda (action)
     (pcase action
       ('setup
-       (setq-local completion-styles
-                   (cons 'consult--async-split completion-styles))
+       (consult--async-split-setup)
        (funcall async 'setup))
       ((pred stringp)
-       (when-let (input (consult--async-split-first action))
-         (funcall async input)))
+       (let* ((pair (consult--async-split-string action))
+              (len (length (car pair))))
+         (when (or (>= (length action) (+ 2 len))
+                   (>= len consult-async-min-input))
+           (funcall async (car pair)))))
       (_ (funcall async action)))))
 
 (defun consult--async-process (async cmd)
