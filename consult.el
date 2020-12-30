@@ -39,7 +39,7 @@
 ;; This package took inspiration from Counsel by Oleh Krehel. Some of the
 ;; commands found in this package originated in the Selectrum wiki. See the
 ;; README for a full list of contributors.
-v2
+
 ;;; Code:
 
 (eval-when-compile
