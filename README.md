@@ -55,9 +55,14 @@ Most provided commands follow the naming scheme `consult-<thing>`.
   * `consult-buffer` (`-other-window`, `-other-frame`): Enhanced version of
      `switch-to-buffer` with support for virtual buffers. Supports live preview
      and recursive editing while previewing. The command supports narrowing. You
-     can type `b SPC`, `f SPC`, `m SPC` and `v SPC` in order to narrow to
-     buffers, files, bookmarks and views respectively. In order to show
-     ephemeral buffers press `SPC` - it works the same way as `switch-buffer`.
+     can type `f SPC` in order to narrow to recent files. Ephemeral buffers can
+     be shown by pressing `SPC` - it works the same way as `switch-buffer`.
+     Supported narrowing keys:
+     * b Buffers
+     * f Files
+     * m Bookmarks
+     * p Project
+     * v Views
   * `consult-bookmark`: Select or create bookmark. You might prefer the more
     powerful `consult-buffer` instead, which includes bookmarks.
   * `consult-recent-file` (`-other-window`, `-other-frame`): Select a recent
@@ -246,34 +251,35 @@ that the main package `consult.el` only depends on Emacs core components.
 
 ### Configuration settings
 
-| Variable                     | Default          | Description                                             |
-|------------------------------|------------------|---------------------------------------------------------|
-| consult-after-jump-hook      | '(recenter)      | Functions to call after jumping to a location           |
-| consult-async-min-input      | 3                | Minimum numbers of letters needed for async process     |
-| consult-async-default-split  | "/"              | Separator character used for splitting /async/filter    |
-| consult-goto-line-numbers    | t                | Show line numbers for `consult-goto-line`               |
-| consult-grep-directory-hook  | …                | Return directory to use for grep                        |
-| consult-imenu-narrow         | …                | Narrowing keys for imenu                                |
-| consult-line-numbers-widen   | t                | Show absolute line numbers when narrowing is active.    |
-| consult-line-point-placement | 'match-beginning | Placement of the point used by `consult-line`           |
-| consult-mode-command-filter  | "-mode$\\|--"    | Filter regexp for `consult-mode-command`                |
-| consult-mode-histories       | …                | Mode-specific history variables                         |
-| consult-narrow-key           | nil              | Narrowing prefix key during completion                  |
-| consult-widen-key            | nil              | Widening key during completion                          |
-| consult-preview-buffer       | t                | Enable buffer preview during selection                  |
-| consult-preview-error        | t                | Enable error preview during selection                   |
-| consult-preview-flycheck     | t                | Enable flycheck error preview during selection          |
-| consult-preview-flymake      | t                | Enable flymake diagnostic preview during selection      |
-| consult-preview-global-mark  | t                | Enable global mark preview during selection             |
-| consult-preview-grep         | t                | Enable grep preview during selection                    |
-| consult-preview-line         | t                | Enable line preview during selection                    |
-| consult-preview-mark         | t                | Enable mark preview during selection                    |
-| consult-preview-outline      | t                | Enable outline preview during selection                 |
-| consult-preview-theme        | t                | Enable theme preview during selection                   |
-| consult-preview-yank         | t                | Enable yank preview during selection                    |
-| consult-themes               | nil              | List of themes to be presented for selection            |
-| consult-view-list-function   | nil              | Function which returns a list of view names as strings  |
-| consult-view-open-function   | nil              | Function to open a view by name                         |
+| Variable                        | Default          | Description                                             |
+|---------------------------------|------------------|---------------------------------------------------------|
+| consult-after-jump-hook         | '(recenter)      | Functions to call after jumping to a location           |
+| consult-async-min-input         | 3                | Minimum numbers of letters needed for async process     |
+| consult-async-default-split     | "/"              | Separator character used for splitting /async/filter    |
+| consult-goto-line-numbers       | t                | Show line numbers for `consult-goto-line`               |
+| consult-grep-directory-function | …                | Return directory to use for grep                        |
+| consult-imenu-narrow            | …                | Narrowing keys for imenu                                |
+| consult-line-numbers-widen      | t                | Show absolute line numbers when narrowing is active.    |
+| consult-line-point-placement    | 'match-beginning | Placement of the point used by `consult-line`           |
+| consult-mode-command-filter     | "-mode$\\|--"    | Filter regexp for `consult-mode-command`                |
+| consult-mode-histories          | …                | Mode-specific history variables                         |
+| consult-narrow-key              | nil              | Narrowing prefix key during completion                  |
+| consult-widen-key               | nil              | Widening key during completion                          |
+| consult-preview-buffer          | t                | Enable buffer preview during selection                  |
+| consult-preview-error           | t                | Enable error preview during selection                   |
+| consult-preview-flycheck        | t                | Enable flycheck error preview during selection          |
+| consult-preview-flymake         | t                | Enable flymake diagnostic preview during selection      |
+| consult-preview-global-mark     | t                | Enable global mark preview during selection             |
+| consult-preview-grep            | t                | Enable grep preview during selection                    |
+| consult-preview-line            | t                | Enable line preview during selection                    |
+| consult-preview-mark            | t                | Enable mark preview during selection                    |
+| consult-preview-outline         | t                | Enable outline preview during selection                 |
+| consult-preview-theme           | t                | Enable theme preview during selection                   |
+| consult-preview-yank            | t                | Enable yank preview during selection                    |
+| consult-project-root-function   | nil              | Function which returns current project root             |
+| consult-themes                  | nil              | List of themes to be presented for selection            |
+| consult-view-list-function      | nil              | Function which returns a list of view names as strings  |
+| consult-view-open-function      | nil              | Function to open a view by name                         |
 
 ## Related packages
 

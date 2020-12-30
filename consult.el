@@ -78,6 +78,14 @@ If this key is unset, defaults to 'consult-narrow-key SPC'."
   "Function which opens a view, used by `consult-buffer'."
   :type 'function)
 
+(defcustom consult-project-root-function nil
+  "Function which returns project root, used by `consult-buffer' and `consult-grep'."
+  :type 'function)
+
+(defcustom consult-grep-directory-function 'consult-grep-directory-default
+  "Return directory to use for `consult-grep'."
+  :type 'function)
+
 (defcustom consult-async-min-input 3
   "Minimum number of letters needed, before asynchronous process is called.
 This applies for example to `consult-grep'."
@@ -87,10 +95,6 @@ This applies for example to `consult-grep'."
   "Default async input separator used for splitting.
 Can also be nil in order to disable it."
   :type 'string)
-
-(defcustom consult-grep-directory-hook (list (lambda () default-directory))
-  "Return directory to use for `consult-grep'."
-  :type 'hook)
 
 (defcustom consult-mode-histories
   '((eshell-mode . eshell-history-ring)
@@ -1737,15 +1741,16 @@ FACE is the face for the candidate."
 (defun consult--buffer (open-buffer open-file open-bookmark)
   "Backend implementation of `consult-buffer'.
 Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be used to display the item."
-  (let* ((buf-file-hash (let ((ht (make-hash-table :test #'equal)))
-                          (dolist (buf (buffer-list) ht)
+  (let* ((curr-buf (current-buffer))
+         (all-bufs-list (buffer-list))
+         (buf-file-hash (let ((ht (make-hash-table :test #'equal)))
+                          (dolist (buf all-bufs-list ht)
                             (when-let (file (buffer-file-name buf))
                               (puthash file t ht)))))
-         (curr-buf (buffer-name))
+         (all-bufs (append (delq curr-buf all-bufs-list) (list curr-buf)))
          (bufs (mapcar (lambda (x)
-                         (consult--buffer-candidate ?b x 'consult-buffer))
-                       (append (delete curr-buf (mapcar #'buffer-name (buffer-list)))
-                               (list curr-buf))))
+                         (consult--buffer-candidate ?b (buffer-name x) 'consult-buffer))
+                       all-bufs))
          (views (when consult-view-list-function
                   (mapcar (lambda (x)
                             (consult--buffer-candidate ?v x 'consult-view))
@@ -1753,29 +1758,45 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
          (bookmarks (mapcar (lambda (x)
                               (consult--buffer-candidate ?m (car x) 'consult-bookmark))
                             bookmark-alist))
+         (all-files (seq-remove (lambda (x) (gethash x buf-file-hash)) recentf-list))
          (files (mapcar (lambda (x)
                           (consult--buffer-candidate ?f (abbreviate-file-name x) 'consult-file))
-                        (seq-remove (lambda (x) (gethash x buf-file-hash)) recentf-list)))
+                        all-files))
+         (proj-root (and consult-project-root-function (funcall consult-project-root-function)))
+         (proj-bufs (when proj-root
+                         (mapcar (lambda (x)
+                                   (consult--buffer-candidate ?p (buffer-name x) 'consult-buffer))
+                                 (seq-filter (lambda (x)
+                                               (when-let (file (buffer-file-name x))
+                                                 (string-prefix-p proj-root file)))
+                                             all-bufs))))
+         (proj-files (when proj-root
+                          (mapcar (lambda (x)
+                                    (consult--buffer-candidate ?q (file-relative-name x proj-root) 'consult-file))
+                                  (seq-filter (lambda (x) (string-prefix-p proj-root x)) all-files))))
          (saved-buf (current-buffer))
          (selected
           (consult--read
-           "Switch to: " (append bufs files views bookmarks)
+           "Switch to: " (append bufs files proj-bufs proj-files views bookmarks)
            :history 'consult--buffer-history
            :sort nil
            :predicate
            (lambda (cand)
-             (if (eq consult--narrow 32) ;; narrowed to ephemeral
-                 (and (= (elt cand 0) (+ consult--special-char ?b))
-                      (= (elt cand 1) 32))
-               (and
-                (or (/= (elt cand 0) (+ consult--special-char ?b)) ;; non-ephemeral
-                    (/= (elt cand 1) 32))
-                (or (not consult--narrow) ;; narrowed
-                    (= (- (elt cand 0) consult--special-char) consult--narrow)))))
+             (let ((type (- (elt cand 0) consult--special-char)))
+               (when (= type ?q) (setq type ?p)) ;; q=project files
+               (if (eq consult--narrow 32) ;; narrowed to ephemeral
+                   (and (= type ?b)
+                        (= (elt cand 1) 32))
+                 (and
+                  (or (/= type ?b) ;; non-ephemeral
+                      (/= (elt cand 1) 32))
+                  (or (not consult--narrow) ;; narrowed
+                      (= type consult--narrow))))))
            :narrow `((32 . "Ephemeral")
                      (?b . "Buffer")
                      (?f . "File")
                      (?m . "Bookmark")
+                     ,@(when proj-root '((?p . "Project")))
                      ,@(when consult-view-list-function '((?v . "View"))))
            :category 'virtual-buffer
            :lookup
@@ -1785,6 +1806,8 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                          (?b open-buffer)
                          (?m open-bookmark)
                          (?v consult-view-open-function)
+                         (?p open-buffer)
+                         (?q open-file)
                          (?f open-file))
                        (substring cand 1))
                ;; When candidate is not found in the alist,
@@ -2039,28 +2062,32 @@ PROMPT is the prompt string."
       :history '(:input consult--search-history)
       :sort nil))))
 
-(defsubst consult--grep-directory ()
-  "Return grep directory."
-  (run-hook-with-args-until-success 'consult-grep-directory-hook))
+(defun consult-grep-directory-default ()
+  "Return grep directory.
+First try `consult-project-root-function',
+if not available use `default-directory'."
+  (or (and consult-project-root-function
+           (funcall consult-project-root-function))
+      default-directory))
 
 ;;;###autoload
 (defun consult-grep (dir)
   "Search for REGEXP with grep in DIR."
-  (interactive (list (consult--grep-directory)))
+  (interactive (list (funcall consult-grep-directory-function)))
   (let ((default-directory dir))
     (consult--grep "Grep: " consult--grep-command)))
 
 ;;;###autoload
 (defun consult-git-grep (dir)
   "Search for REGEXP with grep in DIR."
-  (interactive (list (consult--grep-directory)))
+  (interactive (list (funcall consult-grep-directory-function)))
   (let ((default-directory dir))
     (consult--grep "Git Grep: " consult--git-grep-command)))
 
 ;;;###autoload
 (defun consult-ripgrep (dir)
   "Search for REGEXP with rg in DIR."
-  (interactive (list (consult--grep-directory)))
+  (interactive (list (funcall consult-grep-directory-function)))
   (let ((default-directory dir))
     (consult--grep "Ripgrep: " consult--ripgrep-command)))
 
