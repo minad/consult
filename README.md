@@ -281,6 +281,8 @@ that the main package `consult.el` only depends on Emacs core components.
 | consult-preview-outline       | t                | Enable outline preview during selection                 |
 | consult-preview-theme         | t                | Enable theme preview during selection                   |
 | consult-preview-yank          | t                | Enable yank preview during selection                    |
+| consult-preview-max-count     | 10               | Maximum number of files to keep open during preview     |
+| consult-preview-max-size      | 102400           | Size limit for previewed files                          |
 | consult-project-root-function | nil              | Function which returns current project root             |
 | consult-themes                | nil              | List of themes to be presented for selection            |
 | consult-view-list-function    | nil              | Function which returns a list of view names as strings  |

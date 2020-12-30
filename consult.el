@@ -200,6 +200,14 @@ You may want to add a function which pulses the current line, e.g.,
   "Enable grep preview during selection."
   :type 'boolean)
 
+(defcustom consult-preview-max-size 102400
+  "Files larger than this limit are not previewed."
+  :type 'integer)
+
+(defcustom consult-preview-max-count 10
+  "Number of files to keep open at once during preview."
+  :type 'integer)
+
 ;;;###autoload
 (define-minor-mode consult-preview-mode
   "Enable preview for consult commands."
@@ -652,36 +660,46 @@ FACE is the cursor face."
                 (list (consult--overlay (line-beginning-position) (line-end-position) 'face 'consult-preview-line)
                       (consult--overlay pos (1+ pos) 'face face)))))))))
 
-(defun consult--with-temporary-files-1 (fun)
+(defun consult--kill-clean-buffer (buf)
+  "Kill BUF if it has not been modified."
+  (unless (or (eq buf (current-buffer)) (buffer-modified-p buf))
+    (kill-buffer buf)))
+
+(defun consult--with-preview-files-1 (fun)
   "Provide a function to open files temporarily.
 The files are closed automatically in the end.
 
 FUN receives the open function as argument."
   (let* ((new-buffers)
          (old-recentf-list (copy-sequence recentf-list))
-         (open-file (lambda (name)
-                      (or (get-file-buffer name)
-                          (let ((buf (find-file-noselect name 'nowarn)))
-                            (push buf new-buffers)
-                            buf)))))
+         (open-file
+          (lambda (name)
+            (or (get-file-buffer name)
+                (when-let (attrs (file-attributes name))
+                  (when (<= (file-attribute-size attrs) consult-preview-max-size)
+                    (let ((buf (find-file-noselect name 'nowarn)))
+                      (push buf new-buffers)
+                      ;; Only keep a few buffers alive
+                      (while (> (length new-buffers) consult-preview-max-count)
+                        (consult--kill-clean-buffer (car (last new-buffers)))
+                        (setq new-buffers (nbutlast new-buffers)))
+                      buf)))))))
     (unwind-protect
         (funcall fun open-file)
+      ;; Kill all temporary buffers
+      (mapc #'consult--kill-clean-buffer new-buffers)
       ;; Restore old recentf-list and record the current buffer
       (setq recentf-list old-recentf-list)
-      ;; kill all temporary buffers
-      (dolist (buf new-buffers)
-        (if (or (eq buf (current-buffer)) (buffer-modified-p buf))
-            (when recentf-mode
-              (recentf-add-file (buffer-file-name buf)))
-          (kill-buffer buf))))))
+      (when (member (current-buffer) new-buffers)
+        (recentf-add-file (buffer-file-name (current-buffer)))))))
 
-(defmacro consult--with-temporary-files (args &rest body)
+(defmacro consult--with-preview-files (args &rest body)
   "Provide a function to open files temporarily.
 The files are closed automatically in the end.
 
 ARGS is the open function argument for BODY."
   (declare (indent 1))
-  `(consult--with-temporary-files-1 (lambda ,args ,@body)))
+  `(consult--with-preview-files-1 (lambda ,args ,@body)))
 
 (defun consult--with-async-1 (async fun)
   "Setup ASYNC for FUN."
@@ -2044,8 +2062,9 @@ Prepend PREFIX in front of all items."
 
 OPEN is the function to open new files."
   (lambda (_input candidates cand)
-    (when-let (loc (cdr (assoc cand candidates)))
-      (with-current-buffer (funcall open (car loc))
+    (when-let* ((loc (cdr (assoc cand candidates)))
+                (buf (funcall open (car loc))))
+      (with-current-buffer buf
         (save-restriction
           (save-excursion
             (widen)
@@ -2075,7 +2094,7 @@ CMD is the grep argument list."
   "Run grep CMD in the cxurrent directory.
 
 PROMPT is the prompt string."
-  (consult--with-temporary-files (open)
+  (consult--with-preview-files (open)
     (consult--jump
      (consult--read
       (format "%s %s: " prompt (abbreviate-file-name default-directory))
