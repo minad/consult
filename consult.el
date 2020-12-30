@@ -91,7 +91,7 @@ If this key is unset, defaults to 'consult-narrow-key SPC'."
 This applies for example to `consult-grep'."
   :type 'integer)
 
-(defcustom consult-async-default-split "/"
+(defcustom consult-async-default-split "#"
   "Default async input separator used for splitting.
 Can also be nil in order to disable it."
   :type 'string)
@@ -284,6 +284,7 @@ You may want to add a function which pulses the current line, e.g.,
 
 (defvar consult--error-history nil)
 (defvar consult--grep-history nil)
+(defvar consult--find-history nil)
 (defvar consult--line-history nil)
 (defvar consult--apropos-history nil)
 (defvar consult--theme-history nil)
@@ -2086,19 +2087,19 @@ CMD is the grep argument list."
   (thread-first (consult--async-sink)
     (consult--async-refresh-timer)
     (consult--async-transform consult--grep-matches)
-    (consult--async-process cmd)
+    (consult--async-process (lambda (input) (append cmd (list input))))
     (consult--async-throttle)
     (consult--async-split)))
 
 (defun consult--grep (prompt cmd)
-  "Run grep CMD in the cxurrent directory.
+  "Run grep CMD in the current directory.
 
 PROMPT is the prompt string."
   (consult--with-preview-files (open)
     (consult--jump
      (consult--read
       (format "%s %s: " prompt (abbreviate-file-name default-directory))
-      (consult--grep-async (lambda (input) (append cmd (list input))))
+      (consult--grep-async cmd)
       :lookup (consult--grep-marker open)
       :preview (and consult-preview-grep (consult--preview-position))
       :initial consult-async-default-split
@@ -2109,24 +2110,74 @@ PROMPT is the prompt string."
 
 ;;;###autoload
 (defun consult-grep (&optional dir)
-  "Search for REGEXP with grep in DIR."
+  "Search for regexp with grep in DIR."
   (interactive "P")
   (consult--with-directory dir
     (consult--grep "Grep" consult--grep-command)))
 
 ;;;###autoload
 (defun consult-git-grep (&optional dir)
-  "Search for REGEXP with grep in DIR."
+  "Search for regexp with grep in DIR."
   (interactive "P")
   (consult--with-directory dir
     (consult--grep "Git Grep" consult--git-grep-command)))
 
 ;;;###autoload
 (defun consult-ripgrep (&optional dir)
-  "Search for REGEXP with rg in DIR."
+  "Search for regexp with rg in DIR."
   (interactive "P")
   (consult--with-directory dir
     (consult--grep "Ripgrep" consult--ripgrep-command)))
+
+(defun consult--find-async (cmd)
+  "Async function for `consult--find'.
+
+CMD is the find argument list."
+  (thread-first (consult--async-sink)
+    (consult--async-refresh-timer)
+    (consult--async-map #'file-relative-name)
+    (consult--async-process (lambda (input) (append cmd (list input))))
+    (consult--async-throttle)
+    (consult--async-split)))
+
+(defun consult--find (prompt cmd)
+  "Generalized function for `consult-find' and similar functions.
+
+PROMPT is the prompt.
+CMD is the find argument list."
+  (find-file
+   (consult--read
+    prompt
+    (consult--find-async cmd)
+    :sort nil
+    :require-match t
+    :initial consult-async-default-split
+    :category 'file
+    :history '(:input consult--find-history))))
+
+(defvar consult--find-cmd '("find" "-not" "(" "-wholename" "./.git" "-prune" ")" "-ipath"))
+(defvar consult--fd-cmd '("fdfind" "--color=never" "--full-path"))
+(defvar consult--locate-cmd '("locate" "--ignore-case" "--existing" "--regexp"))
+
+;;;###autoload
+(defun consult-find (&optional dir)
+  "Search for regexp with find in DIR."
+  (interactive "P")
+  (consult--with-directory dir
+    (consult--find (format "Find %s: " default-directory) consult--find-cmd)))
+
+;;;###autoload
+(defun consult-fd (&optional dir)
+  "Search for regexp with fd in DIR."
+  (interactive "P")
+  (consult--with-directory dir
+    (consult--find (format "Find %s: " default-directory) consult--fd-cmd)))
+
+;;;###autoload
+(defun consult-locate ()
+  "Search for regexp with locate."
+  (interactive)
+  (consult--find "Locate: " consult--locate-cmd))
 
 ;;;; default completion-system support
 
@@ -2180,79 +2231,6 @@ PROMPT is the prompt string."
     (icomplete-exhibit)))
 
 (add-hook 'consult--completion-refresh-hook #'consult--icomplete-refresh)
-
-
-;;;; find, fd, locate
-(defun consult--guess-initial-dir (&optional askdir)
-  "Returns root directory for use in `consult' searching functions.
-If ASKDIR is not `nil' prompt the user for the inital directory,
-else use simple logic: first try `project', then `projectile',
-and defaults to `default-directory'."
-  (expand-file-name
-   (if askdir
-       (read-directory-name "Initial directory: ")
-     (cond
-      ((and (fboundp 'project-current) (project-current))
-       (project-root (project-current)))
-      ((and (fboundp 'projectile-project-root) (projectile-project-root))
-       (projectile-project-root))
-      (t default-directory)))))
-
-(defun consult--find-async (cmd)
-  "Async function for `consult--find'.
-CMD is a function that builds the argument list."
-  (thread-first (consult--async-sink)
-    (consult--async-refresh-timer)
-    (consult--async-process cmd)
-    (consult--async-throttle)
-    (consult--async-split)))
-
-(defun consult--find (prompt func &optional initial)
-  "Generalized function for `consult-find' and similar functions."
-  (find-file
-   (consult--read
-    prompt
-    (consult--find-async func)
-    :sort nil
-    :require-match t
-    :initial initial
-    :category 'file
-    :history 'file-name-history)))
-
-
-(defvar consult--find-cmd '("find"))
-(defvar consult--fd-cmd '("fd" "-c" "never" "-H" "-p"))
-(defvar consult--locate-cmd '("locate" "-iebr"))
-
-;;;###autoload
-(defun consult-find (&optional askuser)
-  "Search for REGEXP with find.
-If ASKUSER is not `nil', prompt the user, else use simple logic."
-  (interactive "P")
-  (let ((initialpath (consult--guess-initial-dir askuser)))
-    (consult--find
-     (concat "Find in " (propertize initialpath 'face 'consult-file) ": ")
-     (lambda (input) (append consult--find-cmd (list initialpath "-ipath" input)))
-     consult-async-default-split)))
-
-;;;###autoload
-(defun consult-fd (&optional askuser)
-  "Search for REGEXP with fd.
-If ASKUSER is not `nil', prompt the user, else use simple logic."
-  (interactive "P")
-  (let ((initialpath (consult--guess-initial-dir askuser)))
-    (consult--find
-     (concat "FD in " (propertize initialpath 'face 'consult-file) ": ")
-     (lambda (input) (append consult--fd-cmd (list input initialpath))))))
-
-;;;###autoload
-(defun consult-locate ()
-  "Search for REGEXP with locate."
-  (interactive)
-  (consult--find
-   "Locate: "
-   (lambda (input) (append consult--locate-cmd (list input)))))
-
 
 (provide 'consult)
 ;;; consult.el ends here

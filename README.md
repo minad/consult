@@ -98,20 +98,21 @@ Most provided commands follow the naming scheme `consult-<thing>`.
     pressing `M-n`.
   * `consult-multi-occur`: Replacement for `multi-occur` which uses
     `completing-read-multiple`.
-  * `consult-grep`: **EXPERIMENTAL** Search in current directory. Grep is
-    invoked asynchronously, while you enter the search term. You are required to
-    enter at least `consult-async-min-input` characters in order for the search
-    to get started. The input string is split into two parts, if the first
-    character is a punctuation character, like `/`. For example
-    `"/grep-regexp/filter-string`, is split at the second `/`. The string
-    `"grep-regexp"` is passed to Grep, the `"filter-string"` is passed to the
-    **fast** Emacs filtering to further narrow down the list of matches. This is
-    particularily useful if you are using an advanced completion style like
-    orderless. `consult-grep` supports preview.
-  * `consult-ripgrep`: **EXPERIMENTAL** Search in current directory, like
-    `consult-grep`.
-  * `consult-git-grep`: **EXPERIMENTAL** Search in current git repository, like
-    `consult-grep`.
+  * `consult-grep`, `consult-ripgrep`, `consult-git-grep`: **EXPERIMENTAL**
+    Search in current directory. Grep is invoked asynchronously, while you enter
+    the search term. You are required to enter at least
+    `consult-async-min-input` characters in order for the search to get started.
+    The input string is split into two parts, if the first character is a
+    punctuation character, like `#`. For example `"#grep-regexp#filter-string`,
+    is split at the second `#`. The string `"grep-regexp"` is passed to Grep,
+    the `"filter-string"` is passed to the **fast** Emacs filtering to further
+    narrow down the list of matches. This is particularily useful if you are
+    using an advanced completion style like orderless. `consult-grep` supports
+    preview.
+  * `consult-find`, `consult-fd`, `consult-locate`: **EXPERIMENTAL** Find file
+    by matching the path against a regexp. The input string is treated similarly
+    to `consult-grep`, where the first part is passed to find, and the second
+    part is used for Emacs filtering.
 
 ### Compilation errors
 
@@ -204,6 +205,7 @@ that the main package `consult.el` only depends on Emacs core components.
          ("M-g m" . consult-mark)        ;; I recommend to bind Consult navigation
          ("M-g k" . consult-global-mark) ;; commands under the "M-g" prefix.
          ("M-g r" . consult-git-grep)    ;; or consult-grep, consult-ripgrep
+         ("M-g f" . consult-find)        ;; or consult-fd, consult-locate
          ("M-g i" . consult-imenu)
          ("M-g e" . consult-error)
          ("M-s m" . consult-multi-occur)
@@ -259,7 +261,7 @@ that the main package `consult.el` only depends on Emacs core components.
 |-------------------------------|------------------|---------------------------------------------------------|
 | consult-after-jump-hook       | '(recenter)      | Functions to call after jumping to a location           |
 | consult-async-min-input       | 3                | Minimum numbers of letters needed for async process     |
-| consult-async-default-split   | "/"              | Separator character used for splitting /async/filter    |
+| consult-async-default-split   | "#"              | Separator character used for splitting #async#filter    |
 | consult-directory-function    | …                | Return directory to use for grep                        |
 | consult-goto-line-numbers     | t                | Show line numbers for `consult-goto-line`               |
 | consult-imenu-narrow          | …                | Mode-specific narrowing keys for `consult-imenu`        |
@@ -320,6 +322,7 @@ Code contributions:
 * [Clemens Radermacher](https://github.com/clemera/)
 * [Tom Fitzhenry](https://github.com/tomfitzhenry/)
 * [jakanakaevangeli](https://github.com/jakanakaevangeli)
+* [inigoserna](https://github.com/inigoserna/)
 
 Advice and useful discussions:
 * [Clemens Radermacher](https://github.com/clemera/)
