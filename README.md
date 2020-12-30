@@ -219,6 +219,10 @@ that the main package `consult.el` only depends on Emacs core components.
   ;; Configure other variables and modes in the :config section, after lazily loading the package
   :config
 
+  ;; Optionally configure a function which returns the project root directory
+  (autoload 'projectile-project-root "projectile")
+  (setq consult-project-root-function #'projectile-project-root)
+
   ;; Optionally configure narrowing key.
   ;; Both < and C-+ work reasonably well.
   (setq consult-narrow-key "<") ;; (kbd "C-+")
