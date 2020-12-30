@@ -2181,5 +2181,78 @@ PROMPT is the prompt string."
 
 (add-hook 'consult--completion-refresh-hook #'consult--icomplete-refresh)
 
+
+;;;; find, fd, locate
+(defun consult--guess-initial-dir (&optional askdir)
+  "Returns root directory for use in `consult' searching functions.
+If ASKDIR is not `nil' prompt the user for the inital directory,
+else use simple logic: first try `project', then `projectile',
+and defaults to `default-directory'."
+  (expand-file-name
+   (if askdir
+       (read-directory-name "Initial directory: ")
+     (cond
+      ((and (fboundp 'project-current) (project-current))
+       (project-root (project-current)))
+      ((and (fboundp 'projectile-project-root) (projectile-project-root))
+       (projectile-project-root))
+      (t default-directory)))))
+
+(defun consult--find-async (cmd)
+  "Async function for `consult--find'.
+CMD is a function that builds the argument list."
+  (thread-first (consult--async-sink)
+    (consult--async-refresh-timer)
+    (consult--async-process cmd)
+    (consult--async-throttle)
+    (consult--async-split)))
+
+(defun consult--find (prompt func &optional initial)
+  "Generalized function for `consult-find' and similar functions."
+  (find-file
+   (consult--read
+    prompt
+    (consult--find-async func)
+    :sort nil
+    :require-match t
+    :initial initial
+    :category 'file
+    :history 'file-name-history)))
+
+
+(defvar consult--find-cmd '("find"))
+(defvar consult--fd-cmd '("fd" "-c" "never" "-H" "-p"))
+(defvar consult--locate-cmd '("locate" "-iebr"))
+
+;;;###autoload
+(defun consult-find (&optional askuser)
+  "Search for REGEXP with find.
+If ASKUSER is not `nil', prompt the user, else use simple logic."
+  (interactive "P")
+  (let ((initialpath (consult--guess-initial-dir askuser)))
+    (consult--find
+     (concat "Find in " (propertize initialpath 'face 'consult-file) ": ")
+     (lambda (input) (append consult--find-cmd (list initialpath "-ipath" input)))
+     consult-async-default-split)))
+
+;;;###autoload
+(defun consult-fd (&optional askuser)
+  "Search for REGEXP with fd.
+If ASKUSER is not `nil', prompt the user, else use simple logic."
+  (interactive "P")
+  (let ((initialpath (consult--guess-initial-dir askuser)))
+    (consult--find
+     (concat "FD in " (propertize initialpath 'face 'consult-file) ": ")
+     (lambda (input) (append consult--fd-cmd (list input initialpath))))))
+
+;;;###autoload
+(defun consult-locate ()
+  "Search for REGEXP with locate."
+  (interactive)
+  (consult--find
+   "Locate: "
+   (lambda (input) (append consult--locate-cmd (list input)))))
+
+
 (provide 'consult)
 ;;; consult.el ends here
