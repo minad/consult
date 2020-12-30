@@ -2057,7 +2057,7 @@ PROMPT is the prompt string."
   (consult--with-temporary-files (open)
     (consult--jump
      (consult--read
-      prompt
+      (format "%s %s: " prompt (abbreviate-file-name default-directory))
       (consult--grep-async (lambda (input) (append cmd (list input))))
       :lookup (consult--grep-marker open)
       :preview (and consult-preview-grep (consult--preview-position))
@@ -2080,21 +2080,21 @@ if not available use `default-directory'."
   "Search for REGEXP with grep in DIR."
   (interactive (list (funcall consult-grep-directory-function)))
   (let ((default-directory dir))
-    (consult--grep "Grep: " consult--grep-command)))
+    (consult--grep "Grep" consult--grep-command)))
 
 ;;;###autoload
 (defun consult-git-grep (dir)
   "Search for REGEXP with grep in DIR."
   (interactive (list (funcall consult-grep-directory-function)))
   (let ((default-directory dir))
-    (consult--grep "Git Grep: " consult--git-grep-command)))
+    (consult--grep "Git Grep" consult--git-grep-command)))
 
 ;;;###autoload
 (defun consult-ripgrep (dir)
   "Search for REGEXP with rg in DIR."
   (interactive (list (funcall consult-grep-directory-function)))
   (let ((default-directory dir))
-    (consult--grep "Ripgrep: " consult--ripgrep-command)))
+    (consult--grep "Ripgrep" consult--ripgrep-command)))
 
 ;;;; default completion-system support
 
