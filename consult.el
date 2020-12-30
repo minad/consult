@@ -82,10 +82,6 @@ If this key is unset, defaults to 'consult-narrow-key SPC'."
   "Function which returns project root, used by `consult-buffer' and `consult-grep'."
   :type 'function)
 
-(defcustom consult-directory-function 'consult-directory-default
-  "Return directory to use for `consult-grep'."
-  :type 'function)
-
 (defcustom consult-async-min-input 3
   "Minimum number of letters needed, before asynchronous process is called.
 This applies for example to `consult-grep'."
@@ -337,25 +333,25 @@ Size of private unicode plane b.")
 
 ;;;; Helper functions
 
-(defun consult-directory-default ()
+(defun consult--get-directory (dir)
   "Return consult directory.
-First try `consult-project-root-function',
-if not available use `default-directory'."
-  (or (and consult-project-root-function
-           (funcall consult-project-root-function))
-      default-directory))
+
+If DIR is a string, it is returned.
+If DIR is a true value, the user is asked.
+Then the `consult-project-root-function' is tried.
+Otherwise the `default-directory' is returned."
+  (cond
+   ((stringp dir) (expand-file-name dir))
+   (dir (read-directory-name "Directory: " nil nil t))
+   (t (or (and consult-project-root-function
+               (funcall consult-project-root-function))
+          default-directory))))
 
 (defmacro consult--with-directory (dir &rest body)
   "Change `default-directory' to DIR inside BODY."
   (declare (indent 1))
-  (let ((dir-var (make-symbol "dir")))
-    `(let* ((,dir-var ,dir)
-            (default-directory
-              (cond
-               ((stringp ,dir-var) (expand-file-name ,dir-var))
-               (,dir-var (read-directory-name "Directory: " nil nil t))
-               (t (funcall consult-directory-function)))))
-       ,@body)))
+  `(let ((default-directory (consult--get-directory ,dir)))
+     ,@body))
 
 (defsubst consult--strip-ansi-escape (str)
   "Strip ansi escape sequences from STR."

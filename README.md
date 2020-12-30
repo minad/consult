@@ -262,7 +262,6 @@ that the main package `consult.el` only depends on Emacs core components.
 | consult-after-jump-hook       | '(recenter)      | Functions to call after jumping to a location           |
 | consult-async-min-input       | 3                | Minimum numbers of letters needed for async process     |
 | consult-async-default-split   | "#"              | Separator character used for splitting #async#filter    |
-| consult-directory-function    | …                | Return directory to use for grep                        |
 | consult-goto-line-numbers     | t                | Show line numbers for `consult-goto-line`               |
 | consult-imenu-narrow          | …                | Mode-specific narrowing keys for `consult-imenu`        |
 | consult-imenu-toplevel        | …                | Mode-specific toplevel names used by `consult-imenu`    |
