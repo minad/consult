@@ -82,7 +82,7 @@ If this key is unset, defaults to 'consult-narrow-key SPC'."
   "Function which returns project root, used by `consult-buffer' and `consult-grep'."
   :type 'function)
 
-(defcustom consult-grep-directory-function 'consult-grep-directory-default
+(defcustom consult-directory-function 'consult-directory-default
   "Return directory to use for `consult-grep'."
   :type 'function)
 
@@ -326,6 +326,26 @@ Size of private unicode plane b.")
   "Buffer for stderr output used by `consult--async-process'.")
 
 ;;;; Helper functions
+
+(defun consult-directory-default ()
+  "Return consult directory.
+First try `consult-project-root-function',
+if not available use `default-directory'."
+  (or (and consult-project-root-function
+           (funcall consult-project-root-function))
+      default-directory))
+
+(defmacro consult--with-directory (dir &rest body)
+  "Change `default-directory' to DIR inside BODY."
+  (declare (indent 1))
+  (let ((dir-var (make-symbol "dir")))
+    `(let* ((,dir-var ,dir)
+            (default-directory
+              (cond
+               ((stringp ,dir-var) (expand-file-name ,dir-var))
+               (,dir-var (read-directory-name "Directory: " nil nil t))
+               (t (funcall consult-directory-function)))))
+       ,@body)))
 
 (defsubst consult--strip-ansi-escape (str)
   "Strip ansi escape sequences from STR."
@@ -2051,7 +2071,7 @@ CMD is the grep argument list."
     (consult--async-split)))
 
 (defun consult--grep (prompt cmd)
-  "Run grep CMD in current directory.
+  "Run grep CMD in the cxurrent directory.
 
 PROMPT is the prompt string."
   (consult--with-temporary-files (open)
@@ -2067,33 +2087,25 @@ PROMPT is the prompt string."
       :history '(:input consult--search-history)
       :sort nil))))
 
-(defun consult-grep-directory-default ()
-  "Return grep directory.
-First try `consult-project-root-function',
-if not available use `default-directory'."
-  (or (and consult-project-root-function
-           (funcall consult-project-root-function))
-      default-directory))
-
 ;;;###autoload
-(defun consult-grep (dir)
+(defun consult-grep (&optional dir)
   "Search for REGEXP with grep in DIR."
-  (interactive (list (funcall consult-grep-directory-function)))
-  (let ((default-directory dir))
+  (interactive "P")
+  (consult--with-directory dir
     (consult--grep "Grep" consult--grep-command)))
 
 ;;;###autoload
-(defun consult-git-grep (dir)
+(defun consult-git-grep (&optional dir)
   "Search for REGEXP with grep in DIR."
-  (interactive (list (funcall consult-grep-directory-function)))
-  (let ((default-directory dir))
+  (interactive "P")
+  (consult--with-directory dir
     (consult--grep "Git Grep" consult--git-grep-command)))
 
 ;;;###autoload
-(defun consult-ripgrep (dir)
+(defun consult-ripgrep (&optional dir)
   "Search for REGEXP with rg in DIR."
-  (interactive (list (funcall consult-grep-directory-function)))
-  (let ((default-directory dir))
+  (interactive "P")
+  (consult--with-directory dir
     (consult--grep "Ripgrep" consult--ripgrep-command)))
 
 ;;;; default completion-system support
