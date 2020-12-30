@@ -83,6 +83,11 @@ If this key is unset, defaults to 'consult-narrow-key SPC'."
 This applies for example to `consult-grep'."
   :type 'integer)
 
+(defcustom consult-async-default-split "/"
+  "Default async input separator used for splitting.
+Can also be nil in order to disable it."
+  :type 'string)
+
 (defcustom consult-grep-directory-hook (list (lambda () default-directory))
   "Return directory to use for `consult-grep'."
   :type 'hook)
@@ -824,15 +829,26 @@ String   The input string, called when the user enters something."
              (run-hooks 'consult--completion-refresh-hook))))
         ((pred listp) (setq candidates (nconc candidates action)))))))
 
+(defun consult--async-split-string (str)
+  "Split STR in async input and filtering part.
+If the first character is a punctuation character it determines
+the separator. Examples: \"/async/filter\", \"#async#filter\"."
+  (if (string-match-p "^[[:punct:]]" str)
+      (save-match-data
+        (let ((q (regexp-quote (substring str 0 1))))
+          (string-match (concat "^" q "\\([^" q "]*\\)" q "?") str)
+          (cons (match-string 1 str) (match-end 0))))
+    (cons str nil)))
+
 (defun consult--async-split-wrap (fun)
   "Wrap completion style function FUN for `consult--async-split'."
   (lambda (str table pred point &optional metadata)
     (let ((completion-styles (cdr completion-styles))
-          (pos (seq-position str ?,)))
+          (pos (cdr (consult--async-split-string str))))
       (funcall fun
-               (if pos (substring str (1+ pos)) "")
+               (if pos (substring str pos) "")
                table pred
-               (if (and pos (> point pos)) (- point pos 1) 0)
+               (if (and pos (>= point pos)) (- point pos) 0)
                metadata))))
 
 (add-to-list 'completion-styles-alist
@@ -852,7 +868,7 @@ the comma is passed to ASYNC, the second part is used for filtering."
        (setq-local completion-styles
                    (cons 'consult--async-split completion-styles))
        (funcall async 'setup))
-      ((pred stringp) (funcall async (replace-regexp-in-string ",.*" "" action)))
+      ((pred stringp) (funcall async (car (consult--async-split-string action))))
       (_ (funcall async action)))))
 
 (defun consult--async-process (async cmd)
@@ -2009,6 +2025,7 @@ PROMPT is the prompt string."
       (consult--grep-async (lambda (input) (append cmd (list input))))
       :lookup (consult--grep-marker open)
       :preview (and consult-preview-grep (consult--preview-position))
+      :initial consult-async-default-split
       :require-match t
       :category 'xref-location
       :history '(:input consult--search-history)

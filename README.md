@@ -94,10 +94,15 @@ Most provided commands follow the naming scheme `consult-<thing>`.
   * `consult-multi-occur`: Replacement for `multi-occur` which uses
     `completing-read-multiple`.
   * `consult-grep`: **EXPERIMENTAL** Search in current directory. Grep is
-    invoked asynchronously, while you enter the search term. After having
-    entered the search term for `grep`, you can insert a comma. The following
-    input is used in order to use the *fast* Emacs filtering to further narrow
-    down the list of matches. `consult-grep` supports preview.
+    invoked asynchronously, while you enter the search term. You are required to
+    enter at least `consult-async-min-input` characters in order for the search
+    to get started. The input string is split into two parts, if the first
+    character is a punctuation character, like `/`. For example
+    `"/grep-regexp/filter-string`, is split at the second `/`. The string
+    `"grep-regexp"` is passed to Grep, the `"filter-string"` is passed to the
+    **fast** Emacs filtering to further narrow down the list of matches. This is
+    particularily useful if you are using an advanced completion style like
+    orderless. `consult-grep` supports preview.
   * `consult-ripgrep`: **EXPERIMENTAL** Search in current directory, like
     `consult-grep`.
   * `consult-git-grep`: **EXPERIMENTAL** Search in current git repository, like
@@ -245,6 +250,7 @@ that the main package `consult.el` only depends on Emacs core components.
 |------------------------------|------------------|---------------------------------------------------------|
 | consult-after-jump-hook      | '(recenter)      | Functions to call after jumping to a location           |
 | consult-async-min-input      | 3                | Minimum numbers of letters needed for async process     |
+| consult-async-default-split  | "/"              | Separator character used for splitting /async/filter    |
 | consult-goto-line-numbers    | t                | Show line numbers for `consult-goto-line`               |
 | consult-grep-directory-hook  | …                | Return directory to use for grep                        |
 | consult-imenu-narrow         | …                | Narrowing keys for imenu                                |
