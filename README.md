@@ -262,7 +262,8 @@ that the main package `consult.el` only depends on Emacs core components.
 | consult-async-default-split     | "/"              | Separator character used for splitting /async/filter    |
 | consult-goto-line-numbers       | t                | Show line numbers for `consult-goto-line`               |
 | consult-grep-directory-function | …                | Return directory to use for grep                        |
-| consult-imenu-narrow            | …                | Narrowing keys for imenu                                |
+| consult-imenu-narrow            | …                | Mode-specific narrowing keys for `consult-imenu`        |
+| consult-imenu-toplevel          | …                | Mode-specific toplevel names used by `consult-imenu`    |
 | consult-line-numbers-widen      | t                | Show absolute line numbers when narrowing is active.    |
 | consult-line-point-placement    | 'match-beginning | Placement of the point used by `consult-line`           |
 | consult-mode-command-filter     | "-mode$\\|--"    | Filter regexp for `consult-mode-command`                |

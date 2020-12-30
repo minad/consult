@@ -144,6 +144,11 @@ You may want to add a function which pulses the current line, e.g.,
   "Narrowing keys used by `consult-imenu'."
   :type 'alist)
 
+(defcustom consult-imenu-toplevel
+  '((emacs-lisp-mode . "Functions"))
+  "Names of toplevel items, used by `consult-imenu'."
+  :type 'alist)
+
 (defcustom consult-mode-command-filter
   "-mode$\\|--"
   "Filter regexp for `consult-mode-command'."
@@ -1944,11 +1949,11 @@ Prepend PREFIX in front of all items."
          (imenu-use-markers t)
          (items (imenu--make-index-alist t)))
     (setq items (remove (assoc "*Rescan*" items) items))
-    ;; Functions appear at the top-level for emacs-lisp-mode. Fix this!
-    (when (derived-mode-p 'emacs-lisp-mode)
-      (let ((fns (seq-remove (lambda (x) (listp (cdr x))) items))
+    ;; Fix toplevel items, e.g., emacs-lisp-mode toplevel items are functions
+    (when-let ((toplevel (cdr (seq-find (lambda (x) (derived-mode-p (car x))) consult-imenu-toplevel))))
+      (let ((tops (seq-remove (lambda (x) (listp (cdr x))) items))
             (rest (seq-filter (lambda (x) (listp (cdr x))) items)))
-        (setq items (append rest (list (cons "Functions" fns))))))
+        (setq items (append rest (list (cons toplevel tops))))))
     (seq-sort-by #'car #'string<
                  (consult--imenu-flatten nil items))))
 
