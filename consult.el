@@ -634,9 +634,10 @@ FUN receives the open function as argument."
   (let* ((new-buffers)
          (old-recentf-list (copy-sequence recentf-list))
          (open-file (lambda (name)
-                      (let ((buf (find-file-noselect name 'nowarn)))
-                        (push buf new-buffers)
-                        buf))))
+                      (or (get-file-buffer name)
+                          (let ((buf (find-file-noselect name 'nowarn)))
+                            (push buf new-buffers)
+                            buf)))))
     (unwind-protect
         (funcall fun open-file)
       ;; Restore old recentf-list and record the current buffer
@@ -2018,8 +2019,7 @@ Prepend PREFIX in front of all items."
 OPEN is the function to open new files."
   (lambda (_input candidates cand)
     (when-let (loc (cdr (assoc cand candidates)))
-      (with-current-buffer (or (get-file-buffer (car loc))
-                               (funcall open (car loc)))
+      (with-current-buffer (funcall open (car loc))
         (save-restriction
           (save-excursion
             (widen)
