@@ -61,8 +61,8 @@ Most provided commands follow the naming scheme `consult-<thing>`.
      * b Buffers
      * f Files
      * m Bookmarks
-     * p Project
-     * v Views
+     * p Project (only available if `consult-project-root-function` is configured)
+     * v Views (only available if `consult-view-*-function`s are configured)
   * `consult-bookmark`: Select or create bookmark. You might prefer the more
     powerful `consult-buffer` instead, which includes bookmarks.
   * `consult-recent-file` (`-other-window`, `-other-frame`): Select a recent
