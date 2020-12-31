@@ -1831,7 +1831,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                                              all-bufs))))
          (proj-files (when proj-root
                           (mapcar (lambda (x)
-                                    (consult--buffer-candidate ?q (file-relative-name x proj-root) 'consult-file))
+                                    (consult--buffer-candidate ?q (string-remove-prefix proj-root x) 'consult-file))
                                   (seq-filter (lambda (x) (string-prefix-p proj-root x)) all-files))))
          (saved-buf (current-buffer))
          (selected
@@ -2147,7 +2147,7 @@ PROMPT is the prompt string."
 CMD is the find argument list."
   (thread-first (consult--async-sink)
     (consult--async-refresh-timer)
-    (consult--async-map #'file-relative-name)
+    (consult--async-map (lambda (x) (string-remove-prefix "./" x)))
     (consult--async-process (lambda (input) (append cmd (list input))))
     (consult--async-throttle)
     (consult--async-split)))
