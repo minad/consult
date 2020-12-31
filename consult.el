@@ -1229,7 +1229,7 @@ The alist contains (string . position) pairs."
   (consult--jump
    (consult--read "Go to global mark: "
                   (consult--with-increased-gc (consult--global-mark-candidates))
-                  :category 'xref-location
+                  :category 'line
                   :sort nil
                   :require-match t
                   :lookup #'consult--lookup-cdr
