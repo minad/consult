@@ -2093,6 +2093,7 @@ PROMPT is the prompt string."
       :lookup (consult--grep-marker open)
       :preview (and consult-preview-grep (consult--preview-position))
       :initial consult-async-default-split
+      :add-history (list (concat consult-async-default-split (thing-at-point 'symbol)))
       :require-match t
       :category 'xref-location
       :history '(:input consult--grep-history)
@@ -2142,6 +2143,7 @@ CMD is the find argument list."
     :sort nil
     :require-match t
     :initial consult-async-default-split
+    :add-history (list (concat consult-async-default-split (thing-at-point 'symbol)))
     :category 'file
     :history '(:input consult--find-history))))
 
