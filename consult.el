@@ -347,12 +347,6 @@ Otherwise the `default-directory' is returned."
                (funcall consult-project-root-function))
           default-directory))))
 
-(defmacro consult--with-directory (dir &rest body)
-  "Change `default-directory' to DIR inside BODY."
-  (declare (indent 1))
-  `(let ((default-directory (consult--get-directory ,dir)))
-     ,@body))
-
 (defsubst consult--strip-ansi-escape (str)
   "Strip ansi escape sequences from STR."
   (replace-regexp-in-string "\e\\[[0-9;]*[mK]" "" str))
@@ -2108,21 +2102,21 @@ PROMPT is the prompt string."
 (defun consult-grep (&optional dir)
   "Search for regexp with grep in DIR."
   (interactive "P")
-  (consult--with-directory dir
+  (let ((default-directory (consult--get-directory dir)))
     (consult--grep "Grep" consult--grep-command)))
 
 ;;;###autoload
 (defun consult-git-grep (&optional dir)
   "Search for regexp with grep in DIR."
   (interactive "P")
-  (consult--with-directory dir
+  (let ((default-directory (consult--get-directory dir)))
     (consult--grep "Git Grep" consult--git-grep-command)))
 
 ;;;###autoload
 (defun consult-ripgrep (&optional dir)
   "Search for regexp with rg in DIR."
   (interactive "P")
-  (consult--with-directory dir
+  (let ((default-directory (consult--get-directory dir)))
     (consult--grep "Ripgrep" consult--ripgrep-command)))
 
 (defun consult--find-async (cmd)
@@ -2159,14 +2153,14 @@ CMD is the find argument list."
 (defun consult-find (&optional dir)
   "Search for regexp with find in DIR."
   (interactive "P")
-  (consult--with-directory dir
+  (let ((default-directory (consult--get-directory dir)))
     (consult--find (format "Find %s: " default-directory) consult--find-cmd)))
 
 ;;;###autoload
 (defun consult-fd (&optional dir)
   "Search for regexp with fd in DIR."
   (interactive "P")
-  (consult--with-directory dir
+  (let ((default-directory (consult--get-directory dir)))
     (consult--find (format "Find %s: " default-directory) consult--fd-cmd)))
 
 ;;;###autoload
