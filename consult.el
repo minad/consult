@@ -2088,7 +2088,7 @@ PROMPT is the prompt string."
   (consult--with-preview-files (open)
     (consult--jump
      (consult--read
-      (format "%s %s: " prompt (abbreviate-file-name default-directory))
+      (format "%s in %s: " prompt (abbreviate-file-name default-directory))
       (consult--grep-async cmd)
       :lookup (consult--grep-marker open)
       :preview (and consult-preview-grep (consult--preview-position))
@@ -2154,14 +2154,14 @@ CMD is the find argument list."
   "Search for regexp with find in DIR."
   (interactive "P")
   (let ((default-directory (consult--get-directory dir)))
-    (consult--find (format "Find %s: " default-directory) consult--find-cmd)))
+    (consult--find (format "Find in %s: " default-directory) consult--find-cmd)))
 
 ;;;###autoload
 (defun consult-fd (&optional dir)
   "Search for regexp with fd in DIR."
   (interactive "P")
   (let ((default-directory (consult--get-directory dir)))
-    (consult--find (format "Find %s: " default-directory) consult--fd-cmd)))
+    (consult--find (format "Fd in %s: " default-directory) consult--fd-cmd)))
 
 ;;;###autoload
 (defun consult-locate ()
