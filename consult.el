@@ -333,19 +333,41 @@ Size of private unicode plane b.")
 
 ;;;; Helper functions
 
-(defun consult--get-directory (dir)
-  "Return consult directory.
+(defun consult--format-directory-prompt (prompt dir)
+  "Format PROMPT with directory DIR."
+  (save-match-data
+    (let ((edir (expand-file-name dir)))
+      (if (string= default-directory edir)
+          (cons (concat prompt ": ") default-directory)
+        (let ((adir (abbreviate-file-name edir)))
+          (cons (if (string-match "/\\([^/]+\\)/\\([^/]+\\)/$" adir)
+                    (format "%s in …/%s/%s/: " prompt (match-string 1 adir) (match-string 2 adir))
+                  (format "%s in %s: " prompt adir))
+                edir))))))
+
+(defun consult--directory-prompt (prompt dir)
+  "Return prompt and directory.
+
+PROMPT is the prompt prefix. The directory
+is appended to the prompt prefix. For projects
+only the project name is shown. The `default-directory'
+is not shown. Other directories are abbreviated and
+only the last two path components are shown.
 
 If DIR is a string, it is returned.
 If DIR is a true value, the user is asked.
 Then the `consult-project-root-function' is tried.
 Otherwise the `default-directory' is returned."
   (cond
-   ((stringp dir) (expand-file-name dir))
-   (dir (read-directory-name "Directory: " nil nil t))
-   (t (or (and consult-project-root-function
-               (funcall consult-project-root-function))
-          default-directory))))
+   ((stringp dir) (consult--format-directory-prompt prompt dir))
+   (dir (consult--format-directory-prompt prompt (read-directory-name "Directory: " nil nil t)))
+   ((when-let (root (and consult-project-root-function
+                         (funcall consult-project-root-function)))
+      (save-match-data
+        (if (string-match "/\\([^/]+\\)/$" root)
+            (cons (format "%s in project %s: " prompt (match-string 1 root)) root)
+          (consult--format-directory-prompt prompt root)))))
+   (t (consult--format-directory-prompt prompt default-directory))))
 
 (defsubst consult--strip-ansi-escape (str)
   "Strip ansi escape sequences from STR."
@@ -2081,44 +2103,42 @@ CMD is the grep argument list."
     (consult--async-throttle)
     (consult--async-split)))
 
-(defun consult--grep (prompt cmd)
-  "Run grep CMD in the current directory.
+(defun consult--grep (prompt cmd dir)
+  "Run grep CMD in DIR.
 
 PROMPT is the prompt string."
-  (consult--with-preview-files (open)
-    (consult--jump
-     (consult--read
-      (format "%s in %s: " prompt (abbreviate-file-name default-directory))
-      (consult--grep-async cmd)
-      :lookup (consult--grep-marker open)
-      :preview (and consult-preview-grep (consult--preview-position))
-      :initial consult-async-default-split
-      :add-history (list (concat consult-async-default-split (thing-at-point 'symbol)))
-      :require-match t
-      :category 'xref-location
-      :history '(:input consult--grep-history)
-      :sort nil))))
+  (pcase-let ((`(,prompt . ,default-directory) (consult--directory-prompt prompt dir)))
+    (consult--with-preview-files (open)
+      (consult--jump
+       (consult--read
+        prompt
+        (consult--grep-async cmd)
+        :lookup (consult--grep-marker open)
+        :preview (and consult-preview-grep (consult--preview-position))
+        :initial consult-async-default-split
+        :add-history (list (concat consult-async-default-split (thing-at-point 'symbol)))
+        :require-match t
+        :category 'xref-location
+        :history '(:input consult--grep-history)
+        :sort nil)))))
 
 ;;;###autoload
 (defun consult-grep (&optional dir)
   "Search for regexp with grep in DIR."
   (interactive "P")
-  (let ((default-directory (consult--get-directory dir)))
-    (consult--grep "Grep" consult--grep-command)))
+  (consult--grep "Grep" consult--grep-command dir))
 
 ;;;###autoload
 (defun consult-git-grep (&optional dir)
   "Search for regexp with grep in DIR."
   (interactive "P")
-  (let ((default-directory (consult--get-directory dir)))
-    (consult--grep "Git Grep" consult--git-grep-command)))
+  (consult--grep "Git-grep" consult--git-grep-command dir))
 
 ;;;###autoload
 (defun consult-ripgrep (&optional dir)
   "Search for regexp with rg in DIR."
   (interactive "P")
-  (let ((default-directory (consult--get-directory dir)))
-    (consult--grep "Ripgrep" consult--ripgrep-command)))
+  (consult--grep "Ripgrep" consult--ripgrep-command dir))
 
 (defun consult--find-async (cmd)
   "Async function for `consult--find'.
@@ -2155,15 +2175,15 @@ CMD is the find argument list."
 (defun consult-find (&optional dir)
   "Search for regexp with find in DIR."
   (interactive "P")
-  (let ((default-directory (consult--get-directory dir)))
-    (consult--find (format "Find in %s: " default-directory) consult--find-cmd)))
+  (pcase-let ((`(,prompt . ,default-directory) (consult--directory-prompt "Find" dir)))
+    (consult--find prompt consult--find-cmd)))
 
 ;;;###autoload
 (defun consult-fd (&optional dir)
   "Search for regexp with fd in DIR."
   (interactive "P")
-  (let ((default-directory (consult--get-directory dir)))
-    (consult--find (format "Fd in %s: " default-directory) consult--fd-cmd)))
+  (pcase-let ((`(,prompt . ,default-directory) (consult--directory-prompt "Fd" dir)))
+    (consult--find prompt consult--fd-cmd)))
 
 ;;;###autoload
 (defun consult-locate ()
