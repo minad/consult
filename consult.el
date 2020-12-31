@@ -337,13 +337,14 @@ Size of private unicode plane b.")
   "Format PROMPT with directory DIR."
   (save-match-data
     (let ((edir (expand-file-name dir)))
-      (if (string= default-directory edir)
-          (cons (concat prompt ": ") default-directory)
-        (let ((adir (abbreviate-file-name edir)))
-          (cons (if (string-match "/\\([^/]+\\)/\\([^/]+\\)/$" adir)
-                    (format "%s in …/%s/%s/: " prompt (match-string 1 adir) (match-string 2 adir))
-                  (format "%s in %s: " prompt adir))
-                edir))))))
+      (cons
+       (if (string= (expand-file-name default-directory) edir)
+           (concat prompt ": ")
+         (let ((adir (abbreviate-file-name edir)))
+           (if (string-match "/\\([^/]+\\)/\\([^/]+\\)/$" adir)
+               (format "%s in …/%s/%s/: " prompt (match-string 1 adir) (match-string 2 adir))
+             (format "%s in %s: " prompt adir))))
+       edir))))
 
 (defun consult--directory-prompt (prompt dir)
   "Return prompt and directory.
@@ -2167,7 +2168,7 @@ CMD is the find argument list."
     :category 'file
     :history '(:input consult--find-history))))
 
-(defvar consult--find-cmd '("find" "-not" "(" "-wholename" "./.git" "-prune" ")" "-ipath"))
+(defvar consult--find-cmd '("find" "-not" "(" "-wholename" "*/.*" "-prune" ")" "-ipath"))
 (defvar consult--fd-cmd '("fdfind" "--color=never" "--full-path"))
 (defvar consult--locate-cmd '("locate" "--ignore-case" "--existing" "--regexp"))
 
