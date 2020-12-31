@@ -2181,9 +2181,9 @@ CMD is the find argument list."
 
 ;;;###autoload
 (defun consult-fdfind (&optional dir)
-  "Search for regexp with fd in DIR."
+  "Search for regexp with fdfind in DIR."
   (interactive "P")
-  (pcase-let ((`(,prompt . ,default-directory) (consult--directory-prompt "Fd" dir)))
+  (pcase-let ((`(,prompt . ,default-directory) (consult--directory-prompt "Fdfind" dir)))
     (consult--find prompt consult--fdfind-cmd)))
 
 ;;;###autoload
