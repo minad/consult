@@ -109,7 +109,7 @@ Most provided commands follow the naming scheme `consult-<thing>`.
     narrow down the list of matches. This is particularily useful if you are
     using an advanced completion style like orderless. `consult-grep` supports
     preview.
-  * `consult-find`, `consult-fd`, `consult-locate`: **EXPERIMENTAL** Find file
+  * `consult-find`, `consult-fdfind`, `consult-locate`: **EXPERIMENTAL** Find file
     by matching the path against a regexp. The input string is treated similarly
     to `consult-grep`, where the first part is passed to find, and the second
     part is used for Emacs filtering.
@@ -205,7 +205,7 @@ that the main package `consult.el` only depends on Emacs core components.
          ("M-g m" . consult-mark)        ;; I recommend to bind Consult navigation
          ("M-g k" . consult-global-mark) ;; commands under the "M-g" prefix.
          ("M-g r" . consult-git-grep)    ;; or consult-grep, consult-ripgrep
-         ("M-g f" . consult-find)        ;; or consult-fd, consult-locate
+         ("M-g f" . consult-find)        ;; or consult-fdfind, consult-locate
          ("M-g i" . consult-imenu)
          ("M-g e" . consult-error)
          ("M-s m" . consult-multi-occur)

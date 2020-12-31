@@ -2169,7 +2169,7 @@ CMD is the find argument list."
     :history '(:input consult--find-history))))
 
 (defvar consult--find-cmd '("find" "-not" "(" "-wholename" "*/.*" "-prune" ")" "-ipath"))
-(defvar consult--fd-cmd '("fdfind" "--color=never" "--full-path"))
+(defvar consult--fdfind-cmd '("fdfind" "--color=never" "--full-path"))
 (defvar consult--locate-cmd '("locate" "--ignore-case" "--existing" "--regexp"))
 
 ;;;###autoload
@@ -2180,14 +2180,14 @@ CMD is the find argument list."
     (consult--find prompt consult--find-cmd)))
 
 ;;;###autoload
-(defun consult-fd (&optional dir)
+(defun consult-fdfind (&optional dir)
   "Search for regexp with fd in DIR."
   (interactive "P")
-  ;; fd is either called fdfind or fd
-  (when (and (equal (car consult--fd-cmd) "fdfind") (not (executable-find "fdfind")))
-    (setcar consult--fd-cmd "fd"))
+  ;; fd-find is either called fdfind or fd
+  (when (and (equal (car consult--fdfind-cmd) "fdfind") (not (executable-find "fdfind")))
+    (setcar consult--fdfind-cmd "fd"))
   (pcase-let ((`(,prompt . ,default-directory) (consult--directory-prompt "Fd" dir)))
-    (consult--find prompt consult--fd-cmd)))
+    (consult--find prompt consult--fdfind-cmd)))
 
 ;;;###autoload
 (defun consult-locate ()
