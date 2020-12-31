@@ -2183,9 +2183,6 @@ CMD is the find argument list."
 (defun consult-fdfind (&optional dir)
   "Search for regexp with fd in DIR."
   (interactive "P")
-  ;; fd-find is either called fdfind or fd
-  (when (and (equal (car consult--fdfind-cmd) "fdfind") (not (executable-find "fdfind")))
-    (setcar consult--fdfind-cmd "fd"))
   (pcase-let ((`(,prompt . ,default-directory) (consult--directory-prompt "Fd" dir)))
     (consult--find prompt consult--fdfind-cmd)))
 
