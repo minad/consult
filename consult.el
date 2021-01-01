@@ -2120,8 +2120,8 @@ CMD is the grep argument list."
     (consult--async-throttle)
     (consult--async-split)))
 
-(defun consult--grep (prompt cmd dir)
-  "Run grep CMD in DIR.
+(defun consult--grep (prompt cmd dir initial)
+  "Run grep CMD in DIR with INITIAL input.
 
 PROMPT is the prompt string."
   (pcase-let ((`(,prompt . ,default-directory) (consult--directory-prompt prompt dir)))
@@ -2132,7 +2132,7 @@ PROMPT is the prompt string."
         (consult--grep-async cmd)
         :lookup (consult--grep-marker open)
         :preview (and consult-preview-grep (consult--preview-position))
-        :initial consult-async-default-split
+        :initial (concat consult-async-default-split initial)
         :add-history (concat consult-async-default-split (thing-at-point 'symbol))
         :require-match t
         :category 'xref-location
@@ -2140,22 +2140,22 @@ PROMPT is the prompt string."
         :sort nil)))))
 
 ;;;###autoload
-(defun consult-grep (&optional dir)
-  "Search for regexp with grep in DIR."
+(defun consult-grep (&optional dir initial)
+  "Search for regexp with grep in DIR with INITIAL input."
   (interactive "P")
-  (consult--grep "Grep" consult--grep-command dir))
+  (consult--grep "Grep" consult--grep-command dir initial))
 
 ;;;###autoload
-(defun consult-git-grep (&optional dir)
-  "Search for regexp with grep in DIR."
+(defun consult-git-grep (&optional dir initial)
+  "Search for regexp with grep in DIR with INITIAL input."
   (interactive "P")
-  (consult--grep "Git-grep" consult--git-grep-command dir))
+  (consult--grep "Git-grep" consult--git-grep-command dir initial))
 
 ;;;###autoload
-(defun consult-ripgrep (&optional dir)
-  "Search for regexp with rg in DIR."
+(defun consult-ripgrep (&optional dir initial)
+  "Search for regexp with rg in DIR with INITIAL input."
   (interactive "P")
-  (consult--grep "Ripgrep" consult--ripgrep-command dir))
+  (consult--grep "Ripgrep" consult--ripgrep-command dir initial))
 
 (defun consult--find-async (cmd)
   "Async function for `consult--find'.
