@@ -337,13 +337,15 @@ Size of private unicode plane b.")
 (defun consult--format-directory-prompt (prompt dir)
   "Format PROMPT with directory DIR."
   (save-match-data
-    (let ((edir (expand-file-name dir)))
+    (let ((edir (file-name-as-directory (expand-file-name dir)))
+          (ddir (file-name-as-directory (expand-file-name default-directory))))
       (cons
-       (if (string= (expand-file-name default-directory) edir)
+       (if (string= ddir edir)
            (concat prompt ": ")
          (let ((adir (abbreviate-file-name edir)))
            (if (string-match "/\\([^/]+\\)/\\([^/]+\\)/$" adir)
-               (format "%s in …/%s/%s/: " prompt (match-string 1 adir) (match-string 2 adir))
+               (format "%s in …/%s/%s/: " prompt
+                       (match-string 1 adir) (match-string 2 adir))
              (format "%s in %s: " prompt adir))))
        edir))))
 
