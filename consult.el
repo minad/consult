@@ -83,6 +83,14 @@ If this key is unset, defaults to 'consult-narrow-key SPC'."
   "Function which returns project root, used by `consult-buffer' and `consult-grep'."
   :type 'function)
 
+(defcustom consult-async-refresh-delay 0.2
+  "Refreshing delay of the completion ui for asynchronous commands."
+  :type 'float)
+
+(defcustom consult-async-input-delay 0.5
+  "Input delay of the completion ui for asynchronous commands."
+  :type 'float)
+
 (defcustom consult-async-min-input 3
   "Minimum number of letters needed, before asynchronous process is called.
 This applies for example to `consult-grep'."
@@ -1009,8 +1017,10 @@ CMD is the command argument list."
         (_ (funcall async action))))))
 
 (defun consult--async-throttle (async &optional delay)
-  "Create async function from ASYNC which limits the input rate by DELAY."
-  (let ((delay (or delay 0.5)) (input "") (timer))
+  "Create async function from ASYNC which limits the input rate by DELAY.
+
+The delay defaults to `consult-async-input-delay'."
+  (let ((delay (or delay consult-async-input-delay)) (input "") (timer))
     (lambda (action)
       (pcase action
         ('setup
@@ -1038,8 +1048,8 @@ The refresh happens immediately when candidates are pushed."
 (defun consult--async-refresh-timer (async &optional delay)
   "Create async function from ASYNC, which refreshes the display.
 
-The refresh happens after a DELAY, defaulting to 0.2."
-  (let ((timer) (refresh t) (delay (or delay 0.2)))
+The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
+  (let ((timer) (refresh t) (delay (or delay consult-async-refresh-delay)))
     (lambda (action)
       (pcase action
         ((or (pred listp) (pred stringp) 'refresh 'flush)
