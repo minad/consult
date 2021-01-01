@@ -25,10 +25,8 @@
 
 ;;; Commentary:
 
-;; The Selectrum integration for Consult ensures that previews work when using
-;; Selectrum. Furthermore, some minor Selectrum-specific `completing-read'
-;; tweaks are applied. This is an extra package, since the consult.el package
-;; only depends on Emacs core components.
+;; Selectrum integration for Consult. This is an extra package, since
+;; the consult.el package only depends on Emacs core components.
 
 ;;; Code:
 
@@ -40,34 +38,39 @@
   (when (eq completing-read-function #'selectrum-completing-read)
     selectrum-refine-candidates-function))
 
-(add-hook 'consult--completion-match-hook #'consult-selectrum--match)
-
 (defun consult-selectrum--candidate ()
   "Return current selectrum candidate."
   (when (eq completing-read-function #'selectrum-completing-read)
     (selectrum-get-current-candidate)))
-
-(add-hook 'consult--completion-candidate-hook #'consult-selectrum--candidate)
 
 (defun consult-selectrum--refresh ()
   "Refresh selectrum view."
   (when (eq completing-read-function #'selectrum-completing-read)
     (selectrum-exhibit)))
 
+(add-hook 'consult--completion-match-hook #'consult-selectrum--match)
+(add-hook 'consult--completion-candidate-hook #'consult-selectrum--candidate)
 (add-hook 'consult--completion-refresh-hook #'consult-selectrum--refresh)
 
 ;; HACK: Hopefully selectrum adds something like this to the official API.
 ;; https://github.com/raxod502/selectrum/issues/243
 ;; https://github.com/raxod502/selectrum/pull/244
-(advice-add #'consult--read :around
-            (lambda (fun prompt candidates &rest opts)
-              (minibuffer-with-setup-hook
-                  (lambda ()
-                    (setq-local selectrum--move-default-candidate-p (plist-get opts :default-top))
-                    ;; Fix height for async completion table
-                    (when (functionp candidates)
-                      (setq-local selectrum-fix-minibuffer-height t)))
-                (apply fun prompt candidates opts))))
+(defun consult-selectrum--read-setup (fun prompt candidates &rest opts)
+  "Advice, which configures `consult--read' for selectrum.
+
+FUN is the original function.
+PROMPT is the prompt.
+CANDIDATES is the candidate list.
+OPTS is the option plist."
+  (minibuffer-with-setup-hook
+      (lambda ()
+        (setq-local selectrum--move-default-candidate-p (plist-get opts :default-top))
+        ;; Fix height for async completion table
+        (when (functionp candidates)
+          (setq-local selectrum-fix-minibuffer-height t)))
+    (apply fun prompt candidates opts)))
+
+(advice-add #'consult--read :around #'consult-selectrum--read-setup)
 
 (defun consult-selectrum--async-split-wrap (orig)
   "Wrap selectrum candidates highlight/refinement ORIG function for `consult--async-split'."

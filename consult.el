@@ -25,20 +25,21 @@
 
 ;;; Commentary:
 
-;; Consult implements a set of commands which use `completing-read' to select
-;; from a list of candidates. Most provided commands follow the naming scheme
-;; `consult-<thing>'. Some commands are drop-in replacements for existing
-;; functions, e.g., `consult-apropos' or the enhanced buffer switcher
-;; `consult-buffer.' Other commands provide additional functionality, e.g.,
-;; `consult-line', to search for a line. Many commands support candidate
-;; preview. If a candidate is selected in the completion view, the buffer shows
-;; the candidate immediately.
+;; Consult implements a set of `consult-<thing>' commands which use
+;; `completing-read' to select from a list of candidates. Consult
+;; provides an enhanced buffer switcher `consult-buffer' and many
+;; search and navigation commands like `consult-line' and an
+;; asynchronous `consult-grep'. Many commands support candidate
+;; preview - if a candidate is selected in the completion view, the
+;; buffer shows the candidate immediately.
 
-;;; Acknowledgements:
+;; The Consult commands are compatible with completion systems based
+;; on the Emacs `completing-read' API, notably the default completion
+;; system, Icomplete, Selectrum and Embark's live-occur.
 
-;; This package took inspiration from Counsel by Oleh Krehel. Some of the
-;; commands found in this package originated in the Selectrum wiki. See the
-;; README for a full list of contributors.
+;; This package took inspiration from Counsel by Oleh Krehel. Some of
+;; the commands found in this package originated in the Selectrum
+;; wiki. See the README for a full list of contributors.
 
 ;;; Code:
 
@@ -2209,7 +2210,7 @@ CMD is the find argument list."
 
 ;;;; default completion-system support
 
-(defun consult--default-candidate ()
+(defun consult--default-completion-candidate ()
   "Return current candidate from default completion system."
   (when (and (not icomplete-mode) (eq completing-read-function #'completing-read-default))
     (let ((cand (minibuffer-contents-no-properties)))
@@ -2218,21 +2219,18 @@ CMD is the find argument list."
                              minibuffer-completion-predicate)
         cand))))
 
-(add-hook 'consult--completion-candidate-hook #'consult--default-candidate)
-
-(defun consult--default-match ()
+(defun consult--default-completion-match ()
   "Return default matching function."
   (lambda (str cands) (completion-all-completions str cands nil (length str))))
 
-(add-hook 'consult--completion-match-hook #'consult--default-match)
+(add-hook 'consult--completion-candidate-hook #'consult--default-completion-candidate)
+(add-hook 'consult--completion-match-hook #'consult--default-completion-match)
 
 ;;;; icomplete support
 
 (defun consult--icomplete-candidate ()
   "Return current icomplete candidate."
   (and icomplete-mode (car completion-all-sorted-completions)))
-
-(add-hook 'consult--completion-candidate-hook #'consult--icomplete-candidate)
 
 (declare-function icomplete-exhibit "icomplete")
 (declare-function icomplete--field-beg "icomplete")
@@ -2258,6 +2256,7 @@ CMD is the find argument list."
               (setq completions (cdr completions)))))))
     (icomplete-exhibit)))
 
+(add-hook 'consult--completion-candidate-hook #'consult--icomplete-candidate)
 (add-hook 'consult--completion-refresh-hook #'consult--icomplete-refresh)
 
 (provide 'consult)

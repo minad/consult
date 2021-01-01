@@ -17,7 +17,7 @@
 
 ;;; Commentary:
 
-;; Provides the command `consult-flymake'.  This is an extra package,
+;; Provides the command `consult-flymake'. This is an extra package,
 ;; to avoid loading Flymake.
 
 ;;; Code:
