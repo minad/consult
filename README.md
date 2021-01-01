@@ -9,10 +9,11 @@ Furthermore various search commands are provided, like `consult-grep` and
 `consult-line`, which resembles [Swiper](https://github.com/abo-abo/swiper#swiper).
 
 The commands are compatible with completion systems based on the standard Emacs
-API, e.g., the Emacs builtin
-[Icomplete](https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html)
-and [Selectrum](https://github.com/raxod502/selectrum). If Icomplete is used, it
-is recommended to install
+`completing-read` API, notably the default completion system,
+[Icomplete](https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html),
+[Selectrum](https://github.com/raxod502/selectrum) and
+[Embark's live-occur](https://github.com/oantolin/embark/).
+If Icomplete is used, it is recommended to install
 [Icomplete-vertical](https://github.com/oantolin/icomplete-vertical). The
 completion system specifics in this package are kept to a minimum.
 
@@ -315,13 +316,13 @@ that the main package `consult.el` only depends on Emacs core components.
 It is recommended to install the following package combination:
 
 * consult: This package
-* consult-flycheck: Provides the consult-flycheck command.
-* consult-selectrum: Provides integration with Selectrum.
+* consult-flycheck: Provides the consult-flycheck command
+* consult-selectrum: Provides integration with Selectrum
 * selectrum or icomplete-vertical: Vertical completion systems
 * marginalia: Annotations for the completion candidates
 * embark: Action commands, which can act on the completion candidates
-* orderless or prescient: Completion styles, candidate filtering, Prescient also
-  offers sorting.
+* orderless: Completion style, Flexible candidate filtering
+* prescient: Frecency-based candidate sorting, also offers filtering
 
 Note that all packages are independent and can potentially be exchanged with
 alternative components, since there exist no hard dependencies. Furthermore it
