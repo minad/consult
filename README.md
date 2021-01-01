@@ -160,7 +160,7 @@ Most provided commands follow the naming scheme `consult-<thing>`.
 
 ## Live previews
 
-Some of the commands support live previews. For example when you scroll through
+Some Consult commands support live previews. For example when you scroll through
 the items of `consult-line`, the buffer will scroll to the corresponding
 position. It is possible to jump back and forth between the minibuffer and the
 buffer to perform recursive editing while the search is ongoing. Previews must
@@ -175,6 +175,27 @@ be restricted such that only buffers are shown. If you press `DEL` afterwards,
 the full candidate list will be shown again. Furthermore a narrowing/widening
 key can be configured which can be pressed to achieve the same effect, see the
 configuration variables `consult-narrow-key` and `consult-widen-key`.
+
+## Asynchronous candidates and filtering
+
+Consult has support for asynchronous generation of candidate lists. This feature
+is used for example by `consult-grep`, where the list of matches is generated
+dynamically while the user is typing a grep regular expression. Furthermore the
+found matches can then be narrowed using the installed Emacs completion-style,
+which can be very powerful if you are using for example the `orderless`
+completion style. This is possible since part of the input string is treated as
+input to grep and part of the input is used for filtering. The input string is
+split at a punctuation character, using a similar syntax as Perl regular
+expressions.
+
+Examples:
+
+* `#defun`: Search for "defun" using grep.
+* `#defun#consult`: Search for "defun" using grep, filter with the word
+  "consult".
+* `/defun/consult`: It is also possible to use other punctuation characters.
+* `#to#`: Force searching for "to" using grep, since the grep pattern must be
+  longer than `consult-async-min-input` characters by default.
 
 ## Package configuration
 
