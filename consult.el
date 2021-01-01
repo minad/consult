@@ -777,7 +777,9 @@ NARROW is an alist of narrowing prefix strings and description."
   (minibuffer-with-setup-hook
       (:append
        (lambda ()
-         (consult--add-history (cons default add-history))
+         (consult--add-history (cons default (if (stringp add-history)
+                                                 (list add-history)
+                                               add-history)))
          (when narrow (consult--narrow-setup narrow))))
     (consult--with-async (async candidates)
       (let* ((metadata
@@ -1110,7 +1112,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                   :require-match t
                   :lookup #'consult--line-match
                   :history '(:input consult--line-history)
-                  :add-history (list (thing-at-point 'symbol))
+                  :add-history (thing-at-point 'symbol)
                   :preview (and consult-preview-outline (consult--preview-position)))))
 
 (defun consult--font-lock (str)
@@ -2040,7 +2042,7 @@ Prepend PREFIX in front of all items."
       :category 'imenu
       :lookup #'consult--lookup-cdr
       :history 'consult--imenu-history
-      :add-history (list (thing-at-point 'symbol))
+      :add-history (thing-at-point 'symbol)
       :sort nil))
     (run-hooks 'consult-after-jump-hook)))
 
@@ -2117,7 +2119,7 @@ PROMPT is the prompt string."
         :lookup (consult--grep-marker open)
         :preview (and consult-preview-grep (consult--preview-position))
         :initial consult-async-default-split
-        :add-history (list (concat consult-async-default-split (thing-at-point 'symbol)))
+        :add-history (concat consult-async-default-split (thing-at-point 'symbol))
         :require-match t
         :category 'xref-location
         :history '(:input consult--grep-history)
@@ -2164,7 +2166,7 @@ CMD is the find argument list."
     :sort nil
     :require-match t
     :initial consult-async-default-split
-    :add-history (list (concat consult-async-default-split (thing-at-point 'symbol)))
+    :add-history (concat consult-async-default-split (thing-at-point 'symbol))
     :category 'file
     :history '(:input consult--find-history))))
 
