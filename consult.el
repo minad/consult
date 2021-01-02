@@ -261,9 +261,17 @@ You may want to add a function which pulses the current line, e.g.,
   '((t :inherit warning))
   "Face used for the narrowing indicator.")
 
-(defface consult-async-indicator
+(defface consult-async-running
   '((t :inherit consult-narrow-indicator))
-  "Face used for the async indicator.")
+  "Face used if asynchronous process is running.")
+
+(defface consult-async-finished
+  '((t :inherit success))
+  "Face used if asynchronous process has finished.")
+
+(defface consult-async-failed
+  '((t :inherit error))
+  "Face used if asynchronous process has failed.")
 
 (defface consult-key
   '((t :inherit font-lock-keyword-face))
@@ -981,7 +989,7 @@ CMD is the command argument list."
              (setq last-args args)
              (ignore-errors (kill-process proc))
              (when args
-               (overlay-put indicator 'display (propertize "*" 'face 'consult-async-indicator))
+               (overlay-put indicator 'display (propertize "*" 'face 'consult-async-running))
                (with-current-buffer (get-buffer-create consult--async-stderr)
                  (goto-char (point-max))
                  (insert (format "consult--async-process: %S\n" args)))
@@ -1014,8 +1022,10 @@ CMD is the command argument list."
                    (when flush
                      (setq flush nil)
                      (funcall async 'flush))
-                   (when (string-match-p "finished\\|exited\\|failed" event)
-                     (overlay-put indicator 'display nil))
+                   (overlay-put indicator 'display
+                                (if (string-match-p "finished" event)
+                                    (propertize ":" 'face 'consult-async-finished)
+                                  (propertize "!" 'face 'consult-async-failed)))
                    (when (string-prefix-p "finished" event)
                      (unless (string= rest "")
                        (funcall async (list rest)))))))))))
