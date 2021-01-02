@@ -2082,12 +2082,18 @@ Prepend PREFIX in front of all items."
     (setq consult--imenu-cache (cons (buffer-modified-tick) (consult--imenu-compute))))
   (cdr consult--imenu-cache))
 
+(defun consult--imenu-jump (item)
+  (pcase item
+    (`(,_ . ,pos) (consult--jump pos))
+    (`(,name ,pos ,fn . ,args) (apply fn name pos args))
+    (_ (error "Unknown imenu item: %S" item))))
+
 ;;;###autoload
 (defun consult-imenu ()
   "Choose from flattened `imenu' using `completing-read'."
   (interactive)
   (let ((narrow (cdr (seq-find (lambda (x) (derived-mode-p (car x))) consult-imenu-narrow))))
-    (imenu
+    (consult--imenu-jump
      (consult--read
       "Go to item: "
       (or (consult--imenu-cached)
@@ -2113,8 +2119,7 @@ Prepend PREFIX in front of all items."
       :lookup #'consult--lookup-cdr
       :history 'consult--imenu-history
       :add-history (thing-at-point 'symbol)
-      :sort nil))
-    (run-hooks 'consult-after-jump-hook)))
+      :sort nil))))
 
 (defconst consult--grep-regexp "\\([^\0\n]+\\)\0\\([^:\0]+\\)[:\0]"
   "Regexp used to match file and line of grep output.")
