@@ -283,9 +283,10 @@ that the main package `consult.el` only depends on Emacs core components.
 |-------------------------------|------------------|---------------------------------------------------------|
 | consult-after-jump-hook       | '(recenter)      | Functions to call after jumping to a location           |
 | consult-async-default-split   | "#"              | Separator character used for splitting #async#filter    |
-| consult-async-input-delay     | 0.5              | Input delay for asynchronous commands                   |
+| consult-async-input-throttle  | 0.5              | Input throttle for asynchronous commands                |
+| consult-async-input-debounce  | 0.25             | Input debounce for asynchronous commands                |
 | consult-async-min-input       | 3                | Minimum numbers of letters needed for async process     |
-| consult-async-refresh-delay   | 0.2              | Refresh delay for asynchronous commands                 |
+| consult-async-refresh-delay   | 0.25             | Refresh delay for asynchronous commands                 |
 | consult-goto-line-numbers     | t                | Show line numbers for `consult-goto-line`               |
 | consult-imenu-narrow          | …                | Mode-specific narrowing keys for `consult-imenu`        |
 | consult-imenu-toplevel        | …                | Mode-specific toplevel names used by `consult-imenu`    |

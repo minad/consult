@@ -83,12 +83,24 @@ If this key is unset, defaults to 'consult-narrow-key SPC'."
   "Function which returns project root, used by `consult-buffer' and `consult-grep'."
   :type 'function)
 
-(defcustom consult-async-refresh-delay 0.2
-  "Refreshing delay of the completion ui for asynchronous commands."
+(defcustom consult-async-refresh-delay 0.25
+  "Refreshing delay of the completion ui for asynchronous commands.
+
+The ui is only updated every `consult-async-refresh-delay' seconds."
   :type 'float)
 
-(defcustom consult-async-input-delay 0.5
-  "Input delay of the completion ui for asynchronous commands."
+(defcustom consult-async-input-throttle 0.5
+  "Input throttle for asynchronous commands.
+
+The asynchronous process is started only every
+`consult-async-input-throttle' seconds."
+  :type 'float)
+
+(defcustom consult-async-input-debounce 0.25
+  "Input debounce for asynchronous commands.
+
+The asynchronous process is started only when there has not been new input for
+`consult-async-input-debounce' seconds."
   :type 'float)
 
 (defcustom consult-async-min-input 3
@@ -1016,22 +1028,36 @@ CMD is the command argument list."
          (funcall async 'setup))
         (_ (funcall async action))))))
 
-(defun consult--async-throttle (async &optional delay)
-  "Create async function from ASYNC which limits the input rate by DELAY.
+(defun consult--async-throttle (async &optional throttle debounce)
+  "Create async function from ASYNC which throttles input.
 
-The delay defaults to `consult-async-input-delay'."
-  (let ((delay (or delay consult-async-input-delay)) (input "") (timer))
+The THROTTLE delay defaults to `consult-async-input-throttle'.
+The DEBOUNCE delay defaults to `consult-async-input-debounce'."
+  (let* ((throttle (or throttle consult-async-input-throttle))
+         (debounce (or debounce consult-async-input-debounce))
+         (input "")
+         (throttle-timer)
+         (debounce-timer))
     (lambda (action)
       (pcase action
         ('setup
          (funcall async 'setup)
-         (setq timer (run-at-time delay delay
-                                  (lambda ()
-                                    (unless (string= input "")
-                                      (funcall async input))))))
-        ((pred stringp) (setq input action))
-        ('destroy (cancel-timer timer)
-                  (funcall async 'destroy))
+         (setq throttle-timer (run-at-time throttle throttle (lambda () (setq throttle t)))
+               throttle nil))
+        ((pred stringp)
+         (when debounce-timer
+           (cancel-timer debounce-timer))
+         (unless (or (string= action "") (string= action input))
+           (setq debounce-timer (run-at-time debounce nil
+                                             (lambda ()
+                                               (when throttle
+                                                 (setq throttle nil input action)
+                                                 (funcall async input)))))))
+        ('destroy
+         (cancel-timer throttle-timer)
+         (when debounce-timer
+           (cancel-timer debounce-timer))
+         (funcall async 'destroy))
         (_ (funcall async action))))))
 
 (defun consult--async-refresh-immediate (async)
