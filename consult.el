@@ -2055,7 +2055,7 @@ Prepend PREFIX in front of all items."
          (list (cons key (cons key
                                (cond
                                 ;; Semantic uses overlay for positions
-                                ((overlayp pos) (overlay-start pos))
+                                ((overlayp pos) (copy-marker (overlay-start pos)))
                                 ;; Replace integer positions with markers
                                 ((integerp pos) (copy-marker pos))
                                 (t pos))))))))
@@ -2067,14 +2067,13 @@ Prepend PREFIX in front of all items."
   (let* ((imenu-auto-rescan t)
          (imenu-use-markers t)
          (items (imenu--make-index-alist t)))
-    (setq items (remove (assoc "*Rescan*" items) items))
+    (setq items (remove imenu--rescan-item items))
     ;; Fix toplevel items, e.g., emacs-lisp-mode toplevel items are functions
     (when-let ((toplevel (cdr (seq-find (lambda (x) (derived-mode-p (car x))) consult-imenu-toplevel))))
       (let ((tops (seq-remove (lambda (x) (listp (cdr x))) items))
             (rest (seq-filter (lambda (x) (listp (cdr x))) items)))
         (setq items (append rest (list (cons toplevel tops))))))
-    (seq-sort-by #'car #'string<
-                 (consult--imenu-flatten nil items))))
+    (seq-sort-by #'car #'string< (consult--imenu-flatten nil items))))
 
 ;;;###autoload
 (defun consult-imenu ()
@@ -2090,7 +2089,7 @@ Prepend PREFIX in front of all items."
       (when consult-preview-imenu
         (let ((preview (consult--preview-position)))
           (lambda (cand restore)
-            ;; Only preview imenu items which are markers,
+            ;; Only preview simple menu items which are markers,
             ;; in order to avoid any bad side effects.
             (funcall preview (and (markerp (cdr cand)) (cdr cand)) restore))))
       :require-match t
