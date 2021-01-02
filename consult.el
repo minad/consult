@@ -64,24 +64,24 @@
 
 (defcustom consult-narrow-key nil
   "Prefix key for narrowing during completion."
-  :type 'vector)
+  :type '(choice vector (const nil)))
 
 (defcustom consult-widen-key nil
   "Key used for widening during completion.
 If this key is unset, defaults to 'consult-narrow-key SPC'."
-  :type 'vector)
+  :type '(choice vector (const nil)))
 
 (defcustom consult-view-list-function nil
   "Function which returns a list of view names as strings, used by `consult-buffer'."
-  :type 'function)
+  :type '(choice function (const nil)))
 
 (defcustom consult-view-open-function nil
   "Function which opens a view, used by `consult-buffer'."
-  :type 'function)
+  :type '(choice function (const nil)))
 
 (defcustom consult-project-root-function nil
   "Function which returns project root, used by `consult-buffer' and `consult-grep'."
-  :type 'function)
+  :type '(choice function (const nil)))
 
 (defcustom consult-async-refresh-delay 0.25
   "Refreshing delay of the completion ui for asynchronous commands.
