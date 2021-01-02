@@ -2061,8 +2061,10 @@ Prepend PREFIX in front of all items."
                                 (t pos))))))))
    list))
 
-(defun consult--imenu-candidates ()
-  "Return imenu candidates."
+(defvar-local consult--imenu-cache nil)
+
+(defun consult--imenu-compute ()
+  "Compute imenu candidates."
   (consult--forbid-minibuffer)
   (let* ((imenu-auto-rescan t)
          (imenu-use-markers t)
@@ -2075,6 +2077,11 @@ Prepend PREFIX in front of all items."
         (setq items (append rest (list (cons toplevel tops))))))
     (seq-sort-by #'car #'string< (consult--imenu-flatten nil items))))
 
+(defun consult--imenu-cached ()
+  (unless (equal (car consult--imenu-cache) (buffer-modified-tick))
+    (setq consult--imenu-cache (cons (buffer-modified-tick) (consult--imenu-compute))))
+  (cdr consult--imenu-cache))
+
 ;;;###autoload
 (defun consult-imenu ()
   "Choose from flattened `imenu' using `completing-read'."
@@ -2083,7 +2090,7 @@ Prepend PREFIX in front of all items."
     (imenu
      (consult--read
       "Go to item: "
-      (or (consult--imenu-candidates)
+      (or (consult--imenu-cached)
           (user-error "Imenu is empty"))
       :preview
       (when consult-preview-imenu
