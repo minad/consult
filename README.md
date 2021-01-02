@@ -99,21 +99,23 @@ Most provided commands follow the naming scheme `consult-<thing>`.
     pressing `M-n`.
   * `consult-multi-occur`: Replacement for `multi-occur` which uses
     `completing-read-multiple`.
-  * `consult-grep`, `consult-ripgrep`, `consult-git-grep`: **EXPERIMENTAL**
-    Search in current directory. Grep is invoked asynchronously, while you enter
-    the search term. You are required to enter at least
+  * `consult-grep`, `consult-ripgrep`, `consult-git-grep`: Search for regular
+    expression in current directory. Grep is invoked asynchronously, while you
+    enter the search term. You are required to enter at least
     `consult-async-min-input` characters in order for the search to get started.
     The input string is split into two parts, if the first character is a
     punctuation character, like `#`. For example `"#grep-regexp#filter-string`,
     is split at the second `#`. The string `"grep-regexp"` is passed to Grep,
-    the `"filter-string"` is passed to the **fast** Emacs filtering to further
+    the `"filter-string"` is passed to the *fast* Emacs filtering to further
     narrow down the list of matches. This is particularily useful if you are
     using an advanced completion style like orderless. `consult-grep` supports
     preview.
-  * `consult-find`, `consult-fdfind`, `consult-locate`: **EXPERIMENTAL** Find file
-    by matching the path against a regexp. The input string is treated similarly
-    to `consult-grep`, where the first part is passed to find, and the second
-    part is used for Emacs filtering.
+  * `consult-find`, `consult-fdfind`, `consult-locate`: Find file by matching
+    the path against a regexp. The input string is treated similarly to
+    `consult-grep`, where the first part is passed to find, and the second part
+    is used for Emacs filtering. Note that `find` uses wildcards, e.g. enter
+    `*consult*`, to find all files containing the string "consult". In contrast,
+    fdfind uses regular expressions.
 
 ### Compilation errors
 
