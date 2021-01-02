@@ -90,6 +90,10 @@ Most provided commands follow the naming scheme `consult-<thing>`.
     and recursive editing.
   * `consult-imenu`: Jump to imenu item. Supports live preview, recursive
     editing and narrowing.
+  * `consult-any-imenu`: Jump to imenu item from any buffer with the same major
+    mode as the current buffer. Supports live preview, recursive editing and
+    narrowing. This feature has been inspired by
+    [imenu-anywhere](https://github.com/vspinu/imenu-anywhere).
 
 ### Search
 
@@ -236,6 +240,7 @@ that the main package `consult.el` only depends on Emacs core components.
          ("M-g r" . consult-git-grep)    ;; or consult-grep, consult-ripgrep
          ("M-g f" . consult-find)        ;; or consult-fdfind, consult-locate
          ("M-g i" . consult-imenu)
+         ("M-g M-i" . consult-any-imenu)
          ("M-g e" . consult-error)
          ("M-s m" . consult-multi-occur)
          ("M-y" . consult-yank-pop)

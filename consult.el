@@ -317,7 +317,7 @@ You may want to add a function which pulses the current line, e.g.,
 (defvar consult--mode-command-history nil)
 (defvar consult--kmacro-history nil)
 (defvar consult--buffer-history nil)
-(defvar-local consult--imenu-history nil)
+(defvar consult--imenu-history nil)
 
 ;;;; Internal variables
 
@@ -359,6 +359,9 @@ Size of private unicode plane b.")
 (defvar consult--async-stderr
   " *consult-async-stderr*"
   "Buffer for stderr output used by `consult--async-process'.")
+
+(defvar-local consult--imenu-cache nil
+  "Buffer local cached imenu.")
 
 ;;;; Helper functions
 
@@ -447,6 +450,10 @@ KEY is the key function."
 (defsubst consult--in-range-p (pos)
   "Return t if position POS lies in range `point-min' to `point-max'."
   (and (>= pos (point-min)) (<= pos (point-max))))
+
+(defun consult--lookup-elem (_ candidates cand)
+  "Lookup CAND in CANDIDATES."
+  (assoc cand candidates))
 
 (defun consult--lookup-cdr (_ candidates cand)
   "Lookup CAND in CANDIDATES."
@@ -2037,6 +2044,17 @@ Macros containing mouse clicks aren't displayed."
                     kmacro-counter
                     kmacro-counter-format))))))
 
+(defun consult--imenu-special (_name pos buf name fn &rest args)
+  "Wrapper function for special imenu items.
+
+POS is the position.
+BUF is the buffer.
+NAME is the item name.
+FN is the original special item function.
+ARGS are the arguments to the special item function."
+  (switch-to-buffer buf)
+  (apply fn name pos args))
+
 (defun consult--imenu-flatten (prefix list)
   "Flatten imenu LIST.
 Prepend PREFIX in front of all items."
@@ -2045,23 +2063,26 @@ Prepend PREFIX in front of all items."
      (if (imenu--subalist-p item)
          (consult--imenu-flatten
           (concat prefix (and prefix "/") (car item))
-          (mapcar (pcase-lambda (`(,e . ,v))
-                    (cons e (if (integerp v) (copy-marker v) v)))
-                  (cdr item)))
+          (cdr item))
        (let ((key (concat
                    (and prefix (concat (propertize prefix 'face 'consult-imenu-prefix) " "))
                    (car item)))
-             (pos (cdr item)))
-         (list (cons key (cons key
-                               (cond
-                                ;; Semantic uses overlay for positions
-                                ((overlayp pos) (copy-marker (overlay-start pos)))
-                                ;; Replace integer positions with markers
-                                ((integerp pos) (copy-marker pos))
-                                (t pos))))))))
+             (payload (cdr item)))
+         (list (cons key
+                     (pcase payload
+                       ;; Simple marker item
+                       ((pred markerp) payload)
+                       ;; Simple integer item
+                       ((pred integerp) (copy-marker payload))
+                       ;; Semantic uses overlay for positions
+                       ((pred overlayp) (copy-marker (overlay-start payload)))
+                       ;; Wrap special item
+                       (`(,pos ,fn . ,args)
+                        (append
+                         (list pos #'consult--imenu-special (current-buffer) (car item) fn)
+                         args))
+                       (_ (error "Unknown imenu item: %S" item))))))))
    list))
-
-(defvar-local consult--imenu-cache nil)
 
 (defun consult--imenu-compute ()
   "Compute imenu candidates."
@@ -2077,36 +2098,46 @@ Prepend PREFIX in front of all items."
         (setq items (append rest (list (cons toplevel tops))))))
     (seq-sort-by #'car #'string< (consult--imenu-flatten nil items))))
 
-(defun consult--imenu-cached ()
+(defun consult--imenu-items ()
+  "Return cached imenu candidates."
   (unless (equal (car consult--imenu-cache) (buffer-modified-tick))
     (setq consult--imenu-cache (cons (buffer-modified-tick) (consult--imenu-compute))))
   (cdr consult--imenu-cache))
 
+(defun consult--any-imenu-items ()
+  "Return imenu items from every buffer with the same `major-mode'."
+  (mapcan (lambda (buf)
+            (when (eq (buffer-local-value 'major-mode buf) major-mode)
+              (with-current-buffer buf
+                (consult--imenu-items))))
+          (buffer-list)))
+
 (defun consult--imenu-jump (item)
+  "Jump to imenu ITEM via `consult--jump'.
+
+In contrast to the builtin `imenu' jump function,
+this function can jump across buffers."
   (pcase item
     (`(,_ . ,pos) (consult--jump pos))
     (`(,name ,pos ,fn . ,args) (apply fn name pos args))
     (_ (error "Unknown imenu item: %S" item))))
 
-;;;###autoload
-(defun consult-imenu ()
-  "Choose from flattened `imenu' using `completing-read'."
-  (interactive)
-  (let ((narrow (cdr (seq-find (lambda (x) (derived-mode-p (car x))) consult-imenu-narrow))))
-    (consult--imenu-jump
-     (consult--read
-      "Go to item: "
-      (or (consult--imenu-cached)
-          (user-error "Imenu is empty"))
-      :preview
-      (when consult-preview-imenu
-        (let ((preview (consult--preview-position)))
-          (lambda (cand restore)
-            ;; Only preview simple menu items which are markers,
-            ;; in order to avoid any bad side effects.
-            (funcall preview (and (markerp (cdr cand)) (cdr cand)) restore))))
-      :require-match t
-      :narrow
+(defun consult--imenu (items)
+  "Choose from imenu ITEMS with preview."
+  (consult--imenu-jump
+   (consult--read
+    "Go to item: "
+    (or items (user-error "Imenu is empty"))
+    :preview
+    (when consult-preview-imenu
+      (let ((preview (consult--preview-position)))
+        (lambda (cand restore)
+          ;; Only preview simple menu items which are markers,
+          ;; in order to avoid any bad side effects.
+          (funcall preview (and (markerp (cdr cand)) (cdr cand)) restore))))
+    :require-match t
+    :narrow
+    (let ((narrow (cdr (seq-find (lambda (x) (derived-mode-p (car x))) consult-imenu-narrow))))
       (cons (lambda (cand)
               (when-let (n (cdr (assoc consult--narrow narrow)))
                 (let* ((c (car cand))
@@ -2114,12 +2145,28 @@ Prepend PREFIX in front of all items."
                   (and (> (length c) l)
                        (eq t (compare-strings n 0 l c 0 l))
                        (= (elt c l) 32)))))
-            narrow)
-      :category 'imenu
-      :lookup #'consult--lookup-cdr
-      :history 'consult--imenu-history
-      :add-history (thing-at-point 'symbol)
-      :sort nil))))
+            narrow))
+    :category 'imenu
+    :lookup #'consult--lookup-elem
+    :history 'consult--imenu-history
+    :add-history (thing-at-point 'symbol)
+    :sort nil)))
+
+;;;###autoload
+(defun consult-imenu ()
+  "Choose item from flattened `imenu' using `completing-read' with preview.
+
+See also `consult-any-imenu'."
+  (interactive)
+  (consult--imenu (consult--imenu-items)))
+
+;;;###autoload
+(defun consult-any-imenu ()
+  "Choose item from the imenus of all buffers with the current major mode.
+
+See also `consult-imenu'."
+  (interactive)
+  (consult--imenu (consult--any-imenu-items)))
 
 (defconst consult--grep-regexp "\\([^\0\n]+\\)\0\\([^:\0]+\\)[:\0]"
   "Regexp used to match file and line of grep output.")
