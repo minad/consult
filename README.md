@@ -354,6 +354,7 @@ Code contributions:
 * [Tom Fitzhenry](https://github.com/tomfitzhenry/)
 * [jakanakaevangeli](https://github.com/jakanakaevangeli)
 * [inigoserna](https://github.com/inigoserna/)
+* [Adam Spiers](https://github.com/aspiers/)
 
 Advice and useful discussions:
 * [Clemens Radermacher](https://github.com/clemera/)
