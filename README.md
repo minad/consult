@@ -111,9 +111,11 @@ Most provided commands follow the naming scheme `consult-<thing>`.
     using an advanced completion style like orderless. `consult-grep` supports
     preview. If `consult-project-root-function` is configured and the function
     returns non-nil, `consult-grep` searches the current project directory.
-    Otherwise the `default-directory` is searched. If `consult-grep` is invoked
-    with prefix argument, you can specify the directory manually, i.e.,
-    `C-u M-g r`.
+    Otherwise the `default-directory` is searched.  For example, if you use
+    [projectile](https://github.com/bbatsov/projectile/), set
+    `consult-project-root-function` to `projectile-project-root`. If
+    `consult-grep` is invoked with prefix argument, you can specify the
+    directory manually, i.e., `C-u M-g r`.
   * `consult-find`, `consult-fdfind`, `consult-locate`: Find file by matching
     the path against a regexp. Like `consult-grep` either the project root or
     the current directory is used as root directory for the search. The input
