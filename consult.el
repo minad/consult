@@ -2092,7 +2092,7 @@ Prepend PREFIX in front of all items."
           (lambda (cand restore)
             ;; Only preview imenu items which are markers,
             ;; in order to avoid any bad side effects.
-            (funcall preview (and (consp cand) (markerp (cdr cand)) (cdr cand)) restore))))
+            (funcall preview (and (markerp (cdr cand)) (cdr cand)) restore))))
       :require-match t
       :narrow
       (cons (lambda (cand)
