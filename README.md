@@ -109,13 +109,18 @@ Most provided commands follow the naming scheme `consult-<thing>`.
     the `"filter-string"` is passed to the *fast* Emacs filtering to further
     narrow down the list of matches. This is particularily useful if you are
     using an advanced completion style like orderless. `consult-grep` supports
-    preview.
+    preview. If `consult-project-root-function` is configured and the function
+    returns non-nil, `consult-grep` searches the current project directory.
+    Otherwise the `default-directory` is searched. If `consult-grep` is invoked
+    with prefix argument, you can specify the directory manually, i.e.,
+    `C-u M-g r`.
   * `consult-find`, `consult-fdfind`, `consult-locate`: Find file by matching
-    the path against a regexp. The input string is treated similarly to
-    `consult-grep`, where the first part is passed to find, and the second part
-    is used for Emacs filtering. Note that `find` uses wildcards, e.g. enter
-    `*consult*`, to find all files containing the string "consult". In contrast,
-    fdfind uses regular expressions.
+    the path against a regexp. Like `consult-grep` either the project root or
+    the current directory is used as root directory for the search. The input
+    string is treated similarly to `consult-grep`, where the first part is
+    passed to find, and the second part is used for Emacs filtering. Note that
+    `find` uses wildcards, e.g. enter `*consult*`, to find all files containing
+    the string "consult". In contrast, fdfind uses regular expressions.
 
 ### Compilation errors
 
