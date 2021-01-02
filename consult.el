@@ -54,6 +54,7 @@
 (require 'recentf)
 (require 'ring)
 (require 'seq)
+(require 'url)
 
 (defgroup consult nil
   "Consulting `completing-read'."
@@ -299,6 +300,7 @@ You may want to add a function which pulses the current line, e.g.,
 
 ;;;; History variables
 
+(defvar consult--websearch-history nil)
 (defvar consult--error-history nil)
 (defvar consult--grep-history nil)
 (defvar consult--find-history nil)
@@ -966,6 +968,41 @@ the comma is passed to ASYNC, the second part is used for filtering."
                    (>= len consult-async-min-input))
            (funcall async (car pair)))))
       (_ (funcall async action)))))
+
+(defvar url-http-end-of-headers)
+(defun consult--async-url (async url candidates)
+  "Create async function from ASYNC which fetches from url.
+
+URL is a function which must return an url. It is called with the input.
+CANDIDATES is a function which is called with the result buffer
+and must return a list of candidates."
+  (let ((buffer) (last-url ""))
+    (lambda (action)
+      (if (stringp action)
+          (when-let (url-str (funcall url action))
+            (unless (string= url-str last-url)
+              (when buffer
+                (when-let (proc (get-buffer-process buffer))
+                  (ignore-errors
+                    (kill-process proc)
+                    (kill-buffer buffer))))
+              (setq last-url url-str
+                    buffer
+                    (url-retrieve
+                     url-str
+                     (lambda (&rest _)
+                       (unwind-protect
+                           (progn
+                             (delete-region (point-min) url-http-end-of-headers)
+                             (goto-char (point-min))
+                             (let ((candidates (funcall candidates)))
+                               (funcall async 'flush)
+                               (funcall async candidates)
+                               (funcall async 'refresh)))
+                         (kill-buffer buffer)
+                         (setq buffer nil)))
+                     nil t t))))
+        (funcall async action)))))
 
 (defun consult--async-process (async cmd)
   "Create process source async function.
@@ -2194,6 +2231,45 @@ PROMPT is the prompt string."
   "Search for regexp with rg in DIR with INITIAL input."
   (interactive "P")
   (consult--grep "Ripgrep" consult--ripgrep-command dir initial))
+
+(defvar consult--websearch-url "https://duckduckgo.com/html/?q=")
+(defun consult--websearch-candidates ()
+  "Parse candidates from websearch result."
+  (let ((candidates))
+    (save-match-data
+      (while (re-search-forward "<a.*?class=\"result[^\"]*\".*?href=\".+?\\(http[^\"]+\\)\">\\(.*?\\)</a>"
+                                nil 'noerror)
+        (let ((title (match-string 2))
+              (url (url-unhex-string (match-string 1))))
+          (push
+           (cons
+            (concat
+             url
+             " "
+             (replace-regexp-in-string "[^[:alnum:][:punct:] ]" "" (replace-regexp-in-string "<[^>]+>" "" title)))
+            url)
+           candidates)))
+      candidates)))
+
+(defun consult--websearch-async ()
+  "Async function for `consult-websearch'."
+  (thread-first (consult--async-sink)
+    (consult--async-url
+     (lambda (input) (concat consult--websearch-url (url-hexify-string input)))
+     #'consult--websearch-candidates)
+    (consult--async-throttle)
+    (consult--async-split)))
+
+;;;###autoload
+(defun consult-websearch ()
+  "Search in the web with completion."
+  (interactive)
+  (browse-url
+   (consult--read
+    "Web search: "
+    (consult--websearch-async)
+    :lookup #'consult--lookup-cdr
+    :history '(:input consult--websearch-history))))
 
 (defun consult--find-async (cmd)
   "Async function for `consult--find'.
