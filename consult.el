@@ -808,9 +808,9 @@ NARROW is an alist of narrowing prefix strings and description."
   (minibuffer-with-setup-hook
       (:append
        (lambda ()
-         (consult--add-history (cons default (if (stringp add-history)
-                                                 (list add-history)
-                                               add-history)))
+         (consult--add-history (if (stringp add-history)
+                                   (list add-history)
+                                 add-history))
          (when narrow (consult--narrow-setup narrow))))
     (consult--with-async (async candidates)
       (let* ((metadata
@@ -1700,14 +1700,16 @@ Otherwise replace the just-yanked text with the selected text."
 (defun consult-apropos ()
   "Select pattern and call `apropos'."
   (interactive)
-  (let ((pattern
-         (consult--read
-          "Apropos: "
-          obarray
-          :predicate (lambda (x) (or (fboundp x) (boundp x) (facep x) (symbol-plist x)))
-          :history 'consult--apropos-history
-          :category 'symbol
-          :default (thing-at-point 'symbol))))
+  (let* ((sym (thing-at-point 'symbol))
+         (pattern
+          (consult--read
+           "Apropos: "
+           obarray
+           :predicate (lambda (x) (or (fboundp x) (boundp x) (facep x) (symbol-plist x)))
+           :history 'consult--apropos-history
+           :category 'symbol
+           :add-history (list sym)
+           :default sym)))
     (when (string= pattern "")
       (user-error "No pattern given"))
     (apropos pattern)))
