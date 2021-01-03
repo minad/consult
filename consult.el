@@ -1098,7 +1098,7 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
          (setq refresh t))
         ('destroy (cancel-timer timer))
         ('setup
-         (setq timer (run-with-timer
+         (setq timer (run-at-time
                       delay delay
                       (lambda ()
                         (when refresh
