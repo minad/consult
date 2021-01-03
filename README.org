@@ -6,8 +6,6 @@
 #+TEXINFO_DIR_TITLE: Consult: (consult).
 #+TEXINFO_DIR_DESC: Useful commands built on completing-read.
 
-* consult.el - Consulting completing-read
-
 [[https://melpa.org/#/consult][file:https://melpa.org/packages/consult-badge.svg]]
 
 This package provides various commands based on the Emacs completion
