@@ -1,0 +1,646 @@
+\input texinfo    @c -*- texinfo -*-
+@c %**start of header
+@setfilename README.info
+@settitle
+@documentencoding UTF-8
+@documentlanguage en
+@c %**end of header
+
+@finalout
+@titlepage
+@title
+@end titlepage
+
+@contents
+
+@ifnottex
+@node Top
+@top
+@end ifnottex
+
+@menu
+* consult.el - Consulting completing-read: consultel - Consulting completing-read.
+
+@detailmenu
+--- The Detailed Node Listing ---
+
+consult.el - Consulting completing-read
+
+* Screenshots::
+* Available commands::
+* Live previews::
+* Narrowing to subsets::
+* Asynchronous candidates and filtering::
+* Package configuration::
+* Related packages::
+* Acknowledgements::
+
+Available commands
+
+* Virtual Buffers::
+* Editing::
+* Navigation::
+* Search::
+* Compilation errors::
+* Histories::
+* Minor and Major modes::
+* Miscellaneous::
+
+Package configuration
+
+* Configuration settings::
+
+@end detailmenu
+@end menu
+
+@node consultel - Consulting completing-read
+@chapter consult.el - Consulting completing-read
+
+@uref{https://melpa.org/#/consult, file:https://melpa.org/packages/consult-badge.svg}
+
+This package provides various commands based on the Emacs completion
+function @samp{completing-read}, in particular a more advanced buffer
+switching command @samp{consult-buffer} which allows to select from buffers,
+recent files and more. Furthermore various search commands are provided,
+like @samp{consult-grep} and @samp{consult-line}, which resembles
+@uref{https://github.com/abo-abo/swiper#swiper, Swiper}.
+
+The commands are compatible with completion systems based on the
+standard Emacs @samp{completing-read} API, notably the default completion
+system,
+@uref{https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html, Icomplete},
+@uref{https://github.com/raxod502/selectrum, Selectrum} and
+@uref{https://github.com/oantolin/embark/, Embark's live-occur}. If
+Icomplete is used, it is recommended to install
+@uref{https://github.com/oantolin/icomplete-vertical, Icomplete-vertical}.
+The completion system specifics in this package are kept to a minimum.
+
+There are the @uref{https://github.com/minad/marginalia/, Marginalia} and
+@uref{https://github.com/oantolin/embark/, Embark} packages, which can be
+combined with Consult. The @samp{marginalia-mode} enriches the completion
+display with annotations. The annotations show for example documentation
+strings or file information. Embark provides local actions (like a
+context menu), which can be executed while selecting a candidate in the
+minibuffer. For example, when selecting a file, an action to delete the
+file is offered.
+
+@emph{Note}: If you use @uref{https://github.com/abo-abo/swiper#ivy, Ivy} or
+@uref{https://github.com/emacs-helm/helm, Helm}, you probably don't need
+Consult, since both packages already bring their own rich set of
+additional commands.
+
+@menu
+* Screenshots::
+* Available commands::
+* Live previews::
+* Narrowing to subsets::
+* Asynchronous candidates and filtering::
+* Package configuration::
+* Related packages::
+* Acknowledgements::
+@end menu
+
+@node Screenshots
+@section Screenshots
+
+consult-mark
+
+@uref{https://github.com/minad/consult/blob/main/images/consult-mark.png?raw=true}
+
+consult-line
+
+@uref{https://github.com/minad/consult/blob/main/images/consult-line.png?raw=true}
+
+consult-outline
+
+@uref{https://github.com/minad/consult/blob/main/images/consult-outline.png?raw=true}
+
+marginalia-mode
+
+@uref{https://github.com/minad/marginalia/blob/main/marginalia-mode.png?raw=true}
+
+@node Available commands
+@section Available commands
+
+Most provided commands follow the naming scheme @samp{consult-<thing>}.
+
+@menu
+* Virtual Buffers::
+* Editing::
+* Navigation::
+* Search::
+* Compilation errors::
+* Histories::
+* Minor and Major modes::
+* Miscellaneous::
+@end menu
+
+@node Virtual Buffers
+@subsection Virtual Buffers
+
+@itemize
+@item
+@samp{consult-buffer} (@samp{-other-window}, @samp{-other-frame}): Enhanced version
+of @samp{switch-to-buffer} with support for virtual buffers. Supports live
+preview and recursive editing while previewing. The command supports
+narrowing. You can type @samp{f SPC} in order to narrow to recent files.
+Ephemeral buffers can be shown by pressing @samp{SPC} - it works the same
+way as @samp{switch-buffer}. Supported narrowing keys:
+
+@itemize
+@item
+b Buffers
+@item
+f Files
+@item
+m Bookmarks
+@item
+p Project (only available if @samp{consult-project-root-function} is
+configured)
+@item
+v Views (only available if =consult-view-*-function=s are
+configured)
+@end itemize
+
+@item
+@samp{consult-bookmark}: Select or create bookmark. You might prefer the
+more powerful @samp{consult-buffer} instead, which includes bookmarks.
+@item
+@samp{consult-recent-file} (@samp{-other-window}, @samp{-other-frame}): Select a
+recent files. You might prefer the more powerful @samp{consult-buffer}
+instead, which includes recent files.
+@end itemize
+
+@node Editing
+@subsection Editing
+
+@itemize
+@item
+@samp{consult-register}: Select from list of registers.
+@item
+@samp{consult-yank}, @samp{consult-yank-pop}: Enhanced version of @samp{yank} and
+@samp{yank-pop} which allows selecting from the kill-ring. Live preview is
+supported when selecting from the kill-ring.
+@item
+@samp{consult-kmacro}: Select macro from the macro ring and execute it.
+@end itemize
+
+@node Navigation
+@subsection Navigation
+
+@itemize
+@item
+@samp{consult-goto-line}: Jump to line number enhanced with live preview.
+This is a drop-in replacement for @samp{goto-line}.
+@item
+@samp{consult-mark}: Jump to a marker in the @samp{mark-ring}. Supports live
+preview and recursive editing.
+@item
+@samp{consult-global-mark}: Jump to a marker in the @samp{global-mark-ring}.
+Supports live preview and recursive editing.
+@item
+@samp{consult-outline}: Jump to a heading of the outline. Supports live
+preview and recursive editing.
+@item
+@samp{consult-imenu}: Jump to imenu item in the current buffer. Supports
+live preview, recursive editing and narrowing.
+@item
+@samp{consult-project-imenu}: Jump to imenu item in project buffers, with
+the same major mode as the current buffer. Supports live preview,
+recursive editing and narrowing. This feature has been inspired by
+@uref{https://github.com/vspinu/imenu-anywhere, imenu-anywhere}.
+@end itemize
+
+@node Search
+@subsection Search
+
+@itemize
+@item
+@samp{consult-line}: Enter search string and select from matching lines.
+Supports live preview and recursive editing. The symbol at point and
+the recent isearch string are added to the "future history" and can be
+accessed by pressing @samp{M-n}.
+@item
+@samp{consult-multi-occur}: Replacement for @samp{multi-occur} which uses
+@samp{completing-read-multiple}.
+@item
+@samp{consult-grep}, @samp{consult-ripgrep}, @samp{consult-git-grep}: Search for
+regular expression in current directory. Grep is invoked
+asynchronously, while you enter the search term. You are required to
+enter at least @samp{consult-async-min-input} characters in order for the
+search to get started. The input string is split into two parts, if
+the first character is a punctuation character, like @samp{#}. For example
+@samp{"#grep-regexp#filter-string}, is split at the second @samp{#}. The string
+@samp{"grep-regexp"} is passed to Grep, the @samp{"filter-string"} is passed to
+the @emph{fast} Emacs filtering to further narrow down the list of matches.
+This is particularily useful if you are using an advanced completion
+style like orderless. @samp{consult-grep} supports preview. If
+@samp{consult-project-root-function} is configured and the function returns
+non-nil, @samp{consult-grep} searches the current project directory.
+Otherwise the @samp{default-directory} is searched. If @samp{consult-grep} is
+invoked with prefix argument, you can specify the directory manually,
+i.e., @samp{C-u M-g r}.
+@item
+@samp{consult-find}, @samp{consult-fdfind}, @samp{consult-locate}: Find file by
+matching the path against a regexp. Like @samp{consult-grep} either the
+project root or the current directory is used as root directory for
+the search. The input string is treated similarly to @samp{consult-grep},
+where the first part is passed to find, and the second part is used
+for Emacs filtering. Note that @samp{find} uses wildcards, e.g. enter
+@samp{*consult*}, to find all files containing the string "consult". In
+contrast, fdfind uses regular expressions.
+@end itemize
+
+@node Compilation errors
+@subsection Compilation errors
+
+@itemize
+@item
+@samp{consult-error}: Jump to an error. Supports live preview and recursive
+editing. In contrast to @samp{consult-flycheck} it shows the line and is
+more general since it is not tied to a specific backend.
+@item
+@samp{consult-flycheck}: Jump to flycheck error. Supports live preview and
+recursive editing. The command supports narrowing. Press @samp{e SPC},
+@samp{w SPC}, @samp{i SPC} to only show errors, warnings and infos respectively.
+This command requires to install the additional @samp{consult-flycheck.el}
+package since the main @samp{consult.el} package only depends on Emacs core
+components.
+@item
+@samp{consult-flymake}: Jump to Flymake diagnostic, like
+@samp{consult-flycheck}.
+@end itemize
+
+@node Histories
+@subsection Histories
+
+@itemize
+@item
+@samp{consult-complex-command}: Select a command from the
+@samp{command-history}. This command is a @samp{completing-read} version of
+@samp{repeat-complex-command} and can also be considered a replacement for
+the @samp{command-history} command from chistory.el.
+@item
+@samp{consult-history}: Insert a string from the current buffer history.
+This command can be invoked from the minibuffer. In that case the
+history stored in the minibuffer-history-variable is used.
+@end itemize
+
+@node Minor and Major modes
+@subsection Minor and Major modes
+
+@itemize
+@item
+@samp{consult-minor-mode-menu}: Enable/disable minor mode. Supports
+narrowing to on/off/local/global modes by pressing @samp{i/o/l/g SPC}
+respectively.
+@item
+@samp{consult-mode-command}: Run a command from the currently active minor
+or major modes. Supports narrowing to local-minor/global-minor/major
+mode via the keys @samp{l/g/m}.
+@end itemize
+
+@node Miscellaneous
+@subsection Miscellaneous
+
+@itemize
+@item
+@samp{consult-apropos}: Replacement for @samp{apropos} with completion.
+@item
+@samp{consult-file-externally}: Select a file and open it externally,
+e.g. using @samp{xdg-open} on Linux.
+@item
+@samp{consult-completion-in-region}: Function which can be used as
+@samp{completion-in-region-function}. This way, the minibuffer completion
+UI will be used for @samp{completion-at-point}. This function is
+particularily useful in combination with Icomplete-vertical, since
+Icomplete does not provide its own @samp{completion-in-region-function}. In
+contrast, Selectrum already comes with its own function.
+@item
+@samp{consult-theme}: Select a theme and disable all currently enabled
+themes. Supports live preview of the theme while scrolling through the
+candidates.
+@end itemize
+
+@node Live previews
+@section Live previews
+
+Some Consult commands support live previews. For example when you scroll
+through the items of @samp{consult-line}, the buffer will scroll to the
+corresponding position. It is possible to jump back and forth between
+the minibuffer and the buffer to perform recursive editing while the
+search is ongoing. Previews must be explicitly enabled via
+@samp{consult-preview-mode}. Furthermore for each command, a customizable
+variable is offered to selectively enable/disable preview.
+
+@node Narrowing to subsets
+@section Narrowing to subsets
+
+Consult has special support to narrow to candidate subsets. When you use
+the @samp{consult-buffer} command, you can press @samp{b SPC} and the list of
+candidates will be restricted such that only buffers are shown. If you
+press @samp{DEL} afterwards, the full candidate list will be shown again.
+Furthermore a narrowing/widening key can be configured which can be
+pressed to achieve the same effect, see the configuration variables
+@samp{consult-narrow-key} and @samp{consult-widen-key}.
+
+@node Asynchronous candidates and filtering
+@section Asynchronous candidates and filtering
+
+Consult has support for asynchronous generation of candidate lists. This
+feature is used for example by @samp{consult-grep}, where the list of matches
+is generated dynamically while the user is typing a grep regular
+expression. Furthermore the found matches can then be narrowed using the
+installed Emacs completion-style, which can be very powerful if you are
+using for example the @samp{orderless} completion style. This is possible
+since part of the input string is treated as input to grep and part of
+the input is used for filtering. The input string is split at a
+punctuation character, using a similar syntax as Perl regular
+expressions.
+
+Examples:
+
+@itemize
+@item
+@samp{#defun}: Search for "defun" using grep.
+@item
+@samp{#defun#consult}: Search for "defun" using grep, filter with the word
+"consult".
+@item
+@samp{/defun/consult}: It is also possible to use other punctuation
+characters.
+@item
+@samp{#to#}: Force searching for "to" using grep, since the grep pattern
+must be longer than @samp{consult-async-min-input} characters by default.
+@end itemize
+
+@node Package configuration
+@section Package configuration
+
+It is recommended to manage package configurations with @samp{use-package}.
+The Consult package only provides commands and does not add any
+keybindings. In order to use the enhanced commands, you must configure
+the keybindings yourself.
+
+Note that there are three packages as of now: @samp{consult.el},
+@samp{consult-selectrum.el} and @samp{consult-flycheck.el}. Consult has been split
+such that the main package @samp{consult.el} only depends on Emacs core
+components.
+
+@lisp
+;; Example configuration for Consult
+(use-package consult
+  ;; Replace bindings. Lazily loaded due by `use-package'.
+  :bind (("C-x M-:" . consult-complex-command)
+         ("C-c h" . consult-history)
+         ("C-c m" . consult-mode-command)
+         ("C-x b" . consult-buffer)
+         ("C-x 4 b" . consult-buffer-other-window)
+         ("C-x 5 b" . consult-buffer-other-frame)
+         ("C-x r x" . consult-register)
+         ("C-x r b" . consult-bookmark)
+         ("M-g g" . consult-goto-line)
+         ("M-g M-g" . consult-goto-line)
+         ("M-g o" . consult-outline)       ;; "M-s o" is a good alternative.
+         ("M-g l" . consult-line)          ;; "M-s l" is a good alternative.
+         ("M-g m" . consult-mark)          ;; I recommend to bind Consult navigation
+         ("M-g k" . consult-global-mark)   ;; commands under the "M-g" prefix.
+         ("M-g r" . consult-git-grep)      ;; or consult-grep, consult-ripgrep
+         ("M-g f" . consult-find)          ;; or consult-fdfind, consult-locate
+         ("M-g i" . consult-project-imenu) ;; or consult-imenu
+         ("M-g e" . consult-error)
+         ("M-s m" . consult-multi-occur)
+         ("M-y" . consult-yank-pop)
+         ("<help> a" . consult-apropos))
+
+  ;; The :init configuration is always executed (Not lazy!)
+  :init
+
+  ;; Replace `multi-occur' with `consult-multi-occur', which is a drop-in replacement.
+  (fset 'multi-occur #'consult-multi-occur)
+
+  ;; Configure other variables and modes in the :config section, after lazily loading the package
+  :config
+
+  ;; Optionally configure a function which returns the project root directory
+  (autoload 'projectile-project-root "projectile")
+  (setq consult-project-root-function #'projectile-project-root)
+
+  ;; Optionally configure narrowing key.
+  ;; Both < and C-+ work reasonably well.
+  (setq consult-narrow-key "<") ;; (kbd "C-+")
+  ;; Optionally make narrowing help available in the minibuffer.
+  ;; Probably not needed if you are using which-key.
+  ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
+
+  ;; Optional configure a view library to be used by `consult-buffer'.
+  ;; The view library must provide two functions, one to open the view by name,
+  ;; and one function which must return a list of views as strings.
+  ;; Example: https://github.com/minad/bookmark-view/
+  ;; (setq consult-view-open-function #'bookmark-jump
+  ;;       consult-view-list-function #'bookmark-view-names)
+
+  ;; Optionally enable previews. Note that individual previews can be disabled
+  ;; via customization variables.
+  (consult-preview-mode))
+
+;; Enable Consult-Selectrum integration.
+;; This package should be installed if Selectrum is used.
+(use-package consult-selectrum
+  :after selectrum
+  :demand t)
+
+;; Optionally add the `consult-flycheck' command.
+(use-package consult-flycheck
+  :bind (:map flycheck-command-map
+              ("!" . consult-flycheck)))
+@end lisp
+
+@menu
+* Configuration settings::
+@end menu
+
+@node Configuration settings
+@subsection Configuration settings
+
+@multitable {aaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+@headitem Variable
+@tab Default
+@tab Description
+@item consult-after-jump-hook
+@tab '(recenter)
+@tab Functions to call after jumping to a location
+@item consult-async-default-split
+@tab "#"
+@tab Separator character used for splitting #async#filter
+@item consult-async-input-throttle
+@tab 0.5
+@tab Input throttle for asynchronous commands
+@item consult-async-input-debounce
+@tab 0.25
+@tab Input debounce for asynchronous commands
+@item consult-async-min-input
+@tab 3
+@tab Minimum numbers of letters needed for async process
+@item consult-async-refresh-delay
+@tab 0.25
+@tab Refresh delay for asynchronous commands
+@item consult-goto-line-numbers
+@tab t
+@tab Show line numbers for @samp{consult-goto-line}
+@item consult-imenu-narrow
+@tab @dots{}
+@tab Mode-specific narrowing keys for @samp{consult-imenu}
+@item consult-imenu-toplevel
+@tab @dots{}
+@tab Mode-specific toplevel names used by @samp{consult-imenu}
+@item consult-line-numbers-widen
+@tab t
+@tab Show absolute line numbers when narrowing is active.
+@item consult-line-point-placement
+@tab 'match-beginning
+@tab Placement of the point used by @samp{consult-line}
+@item consult-mode-command-filter
+@tab "-mode$\
+@tab --"
+@item consult-mode-histories
+@tab @dots{}
+@tab Mode-specific history variables
+@item consult-narrow-key
+@tab nil
+@tab Narrowing prefix key during completion
+@item consult-widen-key
+@tab nil
+@tab Widening key during completion
+@item consult-preview-buffer
+@tab t
+@tab Enable buffer preview during selection
+@item consult-preview-error
+@tab t
+@tab Enable error preview during selection
+@item consult-preview-flycheck
+@tab t
+@tab Enable flycheck error preview during selection
+@item consult-preview-flymake
+@tab t
+@tab Enable flymake diagnostic preview during selection
+@item consult-preview-global-mark
+@tab t
+@tab Enable global mark preview during selection
+@item consult-preview-grep
+@tab t
+@tab Enable grep preview during selection
+@item consult-preview-line
+@tab t
+@tab Enable line preview during selection
+@item consult-preview-mark
+@tab t
+@tab Enable mark preview during selection
+@item consult-preview-outline
+@tab t
+@tab Enable outline preview during selection
+@item consult-preview-theme
+@tab t
+@tab Enable theme preview during selection
+@item consult-preview-yank
+@tab t
+@tab Enable yank preview during selection
+@item consult-preview-max-count
+@tab 10
+@tab Maximum number of files to keep open during preview
+@item consult-preview-max-size
+@tab 102400
+@tab Size limit for previewed files
+@item consult-project-root-function
+@tab nil
+@tab Function which returns current project root
+@item consult-themes
+@tab nil
+@tab List of themes to be presented for selection
+@item consult-view-list-function
+@tab nil
+@tab Function which returns a list of view names as strings
+@item consult-view-open-function
+@tab nil
+@tab Function to open a view by name
+@end multitable
+
+@node Related packages
+@section Related packages
+
+It is recommended to install the following package combination:
+
+@itemize
+@item
+consult: This package
+@item
+consult-flycheck: Provides the consult-flycheck command
+@item
+consult-selectrum: Provides integration with Selectrum
+@item
+selectrum or icomplete-vertical: Vertical completion systems
+@item
+marginalia: Annotations for the completion candidates
+@item
+embark: Action commands, which can act on the completion candidates
+@item
+orderless: Completion style, Flexible candidate filtering
+@item
+prescient: Frecency-based candidate sorting, also offers filtering
+@end itemize
+
+Note that all packages are independent and can potentially be exchanged
+with alternative components, since there exist no hard dependencies.
+Furthermore it is possible to get started with only Selectrum and
+Consult and add more components later to the mix.
+
+@node Acknowledgements
+@section Acknowledgements
+
+You probably guessed from the name that this package took inspiration
+from @uref{https://github.com/abo-abo/swiper#counsel, Counsel} by Oleh
+Krehel. Some of the commands found in this package originated in the
+@uref{https://github.com/raxod502/selectrum/wiki/Useful-Commands, Selectrum
+wiki}.
+
+Code contributions:
+@itemize
+@item
+@uref{https://github.com/oantolin/, Omar Antolín Camarena}
+@item
+@uref{https://github.com/s-kostyaev/, Sergey Kostyaev}
+@item
+@uref{https://github.com/okamsn/, okamsn}
+@item
+@uref{https://github.com/clemera/, Clemens Radermacher}
+@item
+@uref{https://github.com/tomfitzhenry/, Tom Fitzhenry}
+@item
+@uref{https://github.com/jakanakaevangeli, jakanakaevangeli}
+@item
+@uref{https://github.com/inigoserna/, inigoserna}
+@item
+@uref{https://github.com/aspiers/, Adam Spiers}
+@end itemize
+
+Advice and useful discussions:
+@itemize
+@item
+@uref{https://github.com/clemera/, Clemens Radermacher}
+@item
+@uref{https://github.com/oantolin/, Omar Antolín Camarena}
+@item
+@uref{https://gitlab.com/protesilaos/, Protesilaos Stavrou}
+@item
+@uref{https://github.com/purcell/, Steve Purcell}
+@item
+@uref{https://github.com/alphapapa/, Adam Porter}
+@item
+@uref{https://github.com/manuel-uberti/, Manuel Uberti}
+@item
+@uref{https://github.com/tomfitzhenry/, Tom Fitzhenry}
+@item
+@uref{https://github.com/hmelman/, Howard Melman}
+@end itemize
+
+@bye
