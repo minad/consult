@@ -1,9 +1,6 @@
 * consult.el - Consulting completing-read
-  :PROPERTIES:
-  :CUSTOM_ID: consult.el---consulting-completing-read
-  :END:
 
-[[https://melpa.org/#/consult][[[https://melpa.org/packages/consult-badge.svg]]]]
+[[https://melpa.org/#/consult][file:https://melpa.org/packages/consult-badge.svg]]
 
 This package provides various commands based on the Emacs completion
 function =completing-read=, in particular a more advanced buffer
@@ -37,9 +34,6 @@ Consult, since both packages already bring their own rich set of
 additional commands.
 
 ** Screenshots
-   :PROPERTIES:
-   :CUSTOM_ID: screenshots
-   :END:
 
 consult-mark
 
@@ -62,16 +56,10 @@ marginalia-mode
 [[https://github.com/minad/marginalia/blob/main/marginalia-mode.png?raw=true]]
 
 ** Available commands
-   :PROPERTIES:
-   :CUSTOM_ID: available-commands
-   :END:
 
 Most provided commands follow the naming scheme =consult-<thing>=.
 
 *** Virtual Buffers
-    :PROPERTIES:
-    :CUSTOM_ID: virtual-buffers
-    :END:
 
 - =consult-buffer= (=-other-window=, =-other-frame=): Enhanced version
   of =switch-to-buffer= with support for virtual buffers. Supports live
@@ -95,9 +83,6 @@ Most provided commands follow the naming scheme =consult-<thing>=.
   instead, which includes recent files.
 
 *** Editing
-    :PROPERTIES:
-    :CUSTOM_ID: editing
-    :END:
 
 - =consult-register=: Select from list of registers.
 - =consult-yank=, =consult-yank-pop=: Enhanced version of =yank= and
@@ -106,9 +91,6 @@ Most provided commands follow the naming scheme =consult-<thing>=.
 - =consult-kmacro=: Select macro from the macro ring and execute it.
 
 *** Navigation
-    :PROPERTIES:
-    :CUSTOM_ID: navigation
-    :END:
 
 - =consult-goto-line=: Jump to line number enhanced with live preview.
   This is a drop-in replacement for =goto-line=.
@@ -126,9 +108,6 @@ Most provided commands follow the naming scheme =consult-<thing>=.
   [[https://github.com/vspinu/imenu-anywhere][imenu-anywhere]].
 
 *** Search
-    :PROPERTIES:
-    :CUSTOM_ID: search
-    :END:
 
 - =consult-line=: Enter search string and select from matching lines.
   Supports live preview and recursive editing. The symbol at point and
@@ -162,9 +141,6 @@ Most provided commands follow the naming scheme =consult-<thing>=.
   contrast, fdfind uses regular expressions.
 
 *** Compilation errors
-    :PROPERTIES:
-    :CUSTOM_ID: compilation-errors
-    :END:
 
 - =consult-error=: Jump to an error. Supports live preview and recursive
   editing. In contrast to =consult-flycheck= it shows the line and is
@@ -179,9 +155,6 @@ Most provided commands follow the naming scheme =consult-<thing>=.
   =consult-flycheck=.
 
 *** Histories
-    :PROPERTIES:
-    :CUSTOM_ID: histories
-    :END:
 
 - =consult-complex-command=: Select a command from the
   =command-history=. This command is a =completing-read= version of
@@ -192,9 +165,6 @@ Most provided commands follow the naming scheme =consult-<thing>=.
   history stored in the minibuffer-history-variable is used.
 
 *** Minor and Major modes
-    :PROPERTIES:
-    :CUSTOM_ID: minor-and-major-modes
-    :END:
 
 - =consult-minor-mode-menu=: Enable/disable minor mode. Supports
   narrowing to on/off/local/global modes by pressing =i/o/l/g SPC=
@@ -204,9 +174,6 @@ Most provided commands follow the naming scheme =consult-<thing>=.
   mode via the keys =l/g/m=.
 
 *** Miscellaneous
-    :PROPERTIES:
-    :CUSTOM_ID: miscellaneous
-    :END:
 
 - =consult-apropos=: Replacement for =apropos= with completion.
 - =consult-file-externally=: Select a file and open it externally,
@@ -222,9 +189,6 @@ Most provided commands follow the naming scheme =consult-<thing>=.
   candidates.
 
 ** Live previews
-   :PROPERTIES:
-   :CUSTOM_ID: live-previews
-   :END:
 
 Some Consult commands support live previews. For example when you scroll
 through the items of =consult-line=, the buffer will scroll to the
@@ -235,9 +199,6 @@ search is ongoing. Previews must be explicitly enabled via
 variable is offered to selectively enable/disable preview.
 
 ** Narrowing to subsets
-   :PROPERTIES:
-   :CUSTOM_ID: narrowing-to-subsets
-   :END:
 
 Consult has special support to narrow to candidate subsets. When you use
 the =consult-buffer= command, you can press =b SPC= and the list of
@@ -248,9 +209,6 @@ pressed to achieve the same effect, see the configuration variables
 =consult-narrow-key= and =consult-widen-key=.
 
 ** Asynchronous candidates and filtering
-   :PROPERTIES:
-   :CUSTOM_ID: asynchronous-candidates-and-filtering
-   :END:
 
 Consult has support for asynchronous generation of candidate lists. This
 feature is used for example by =consult-grep=, where the list of matches
@@ -274,9 +232,6 @@ Examples:
   must be longer than =consult-async-min-input= characters by default.
 
 ** Package configuration
-   :PROPERTIES:
-   :CUSTOM_ID: package-configuration
-   :END:
 
 It is recommended to manage package configurations with =use-package=.
 The Consult package only provides commands and does not add any
@@ -288,79 +243,76 @@ Note that there are three packages as of now: =consult.el=,
 such that the main package =consult.el= only depends on Emacs core
 components.
 
-#+BEGIN_EXAMPLE
-    ;; Example configuration for Consult
-    (use-package consult
-      ;; Replace bindings. Lazily loaded due by `use-package'.
-      :bind (("C-x M-:" . consult-complex-command)
-             ("C-c h" . consult-history)
-             ("C-c m" . consult-mode-command)
-             ("C-x b" . consult-buffer)
-             ("C-x 4 b" . consult-buffer-other-window)
-             ("C-x 5 b" . consult-buffer-other-frame)
-             ("C-x r x" . consult-register)
-             ("C-x r b" . consult-bookmark)
-             ("M-g g" . consult-goto-line)
-             ("M-g M-g" . consult-goto-line)
-             ("M-g o" . consult-outline)       ;; "M-s o" is a good alternative.
-             ("M-g l" . consult-line)          ;; "M-s l" is a good alternative.
-             ("M-g m" . consult-mark)          ;; I recommend to bind Consult navigation
-             ("M-g k" . consult-global-mark)   ;; commands under the "M-g" prefix.
-             ("M-g r" . consult-git-grep)      ;; or consult-grep, consult-ripgrep
-             ("M-g f" . consult-find)          ;; or consult-fdfind, consult-locate
-             ("M-g i" . consult-project-imenu) ;; or consult-imenu
-             ("M-g e" . consult-error)
-             ("M-s m" . consult-multi-occur)
-             ("M-y" . consult-yank-pop)
-             ("<help> a" . consult-apropos))
+#+BEGIN_SRC emacs-lisp
+;; Example configuration for Consult
+(use-package consult
+  ;; Replace bindings. Lazily loaded due by `use-package'.
+  :bind (("C-x M-:" . consult-complex-command)
+         ("C-c h" . consult-history)
+         ("C-c m" . consult-mode-command)
+         ("C-x b" . consult-buffer)
+         ("C-x 4 b" . consult-buffer-other-window)
+         ("C-x 5 b" . consult-buffer-other-frame)
+         ("C-x r x" . consult-register)
+         ("C-x r b" . consult-bookmark)
+         ("M-g g" . consult-goto-line)
+         ("M-g M-g" . consult-goto-line)
+         ("M-g o" . consult-outline)       ;; "M-s o" is a good alternative.
+         ("M-g l" . consult-line)          ;; "M-s l" is a good alternative.
+         ("M-g m" . consult-mark)          ;; I recommend to bind Consult navigation
+         ("M-g k" . consult-global-mark)   ;; commands under the "M-g" prefix.
+         ("M-g r" . consult-git-grep)      ;; or consult-grep, consult-ripgrep
+         ("M-g f" . consult-find)          ;; or consult-fdfind, consult-locate
+         ("M-g i" . consult-project-imenu) ;; or consult-imenu
+         ("M-g e" . consult-error)
+         ("M-s m" . consult-multi-occur)
+         ("M-y" . consult-yank-pop)
+         ("<help> a" . consult-apropos))
 
-      ;; The :init configuration is always executed (Not lazy!)
-      :init
+  ;; The :init configuration is always executed (Not lazy!)
+  :init
 
-      ;; Replace `multi-occur' with `consult-multi-occur', which is a drop-in replacement.
-      (fset 'multi-occur #'consult-multi-occur)
+  ;; Replace `multi-occur' with `consult-multi-occur', which is a drop-in replacement.
+  (fset 'multi-occur #'consult-multi-occur)
 
-      ;; Configure other variables and modes in the :config section, after lazily loading the package
-      :config
+  ;; Configure other variables and modes in the :config section, after lazily loading the package
+  :config
 
-      ;; Optionally configure a function which returns the project root directory
-      (autoload 'projectile-project-root "projectile")
-      (setq consult-project-root-function #'projectile-project-root)
+  ;; Optionally configure a function which returns the project root directory
+  (autoload 'projectile-project-root "projectile")
+  (setq consult-project-root-function #'projectile-project-root)
 
-      ;; Optionally configure narrowing key.
-      ;; Both < and C-+ work reasonably well.
-      (setq consult-narrow-key "<") ;; (kbd "C-+")
-      ;; Optionally make narrowing help available in the minibuffer.
-      ;; Probably not needed if you are using which-key.
-      ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
+  ;; Optionally configure narrowing key.
+  ;; Both < and C-+ work reasonably well.
+  (setq consult-narrow-key "<") ;; (kbd "C-+")
+  ;; Optionally make narrowing help available in the minibuffer.
+  ;; Probably not needed if you are using which-key.
+  ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
 
-      ;; Optional configure a view library to be used by `consult-buffer'.
-      ;; The view library must provide two functions, one to open the view by name,
-      ;; and one function which must return a list of views as strings.
-      ;; Example: https://github.com/minad/bookmark-view/
-      ;; (setq consult-view-open-function #'bookmark-jump
-      ;;       consult-view-list-function #'bookmark-view-names)
+  ;; Optional configure a view library to be used by `consult-buffer'.
+  ;; The view library must provide two functions, one to open the view by name,
+  ;; and one function which must return a list of views as strings.
+  ;; Example: https://github.com/minad/bookmark-view/
+  ;; (setq consult-view-open-function #'bookmark-jump
+  ;;       consult-view-list-function #'bookmark-view-names)
 
-      ;; Optionally enable previews. Note that individual previews can be disabled
-      ;; via customization variables.
-      (consult-preview-mode))
+  ;; Optionally enable previews. Note that individual previews can be disabled
+  ;; via customization variables.
+  (consult-preview-mode))
 
-    ;; Enable Consult-Selectrum integration.
-    ;; This package should be installed if Selectrum is used.
-    (use-package consult-selectrum
-      :after selectrum
-      :demand t)
+;; Enable Consult-Selectrum integration.
+;; This package should be installed if Selectrum is used.
+(use-package consult-selectrum
+  :after selectrum
+  :demand t)
 
-    ;; Optionally add the `consult-flycheck' command.
-    (use-package consult-flycheck
-      :bind (:map flycheck-command-map
-             ("!" . consult-flycheck)))
-#+END_EXAMPLE
+;; Optionally add the `consult-flycheck' command.
+(use-package consult-flycheck
+  :bind (:map flycheck-command-map
+              ("!" . consult-flycheck)))
+#+END_SRC
 
 *** Configuration settings
-    :PROPERTIES:
-    :CUSTOM_ID: configuration-settings
-    :END:
 
 | Variable                        | Default            | Description                                              |
 |---------------------------------+--------------------+----------------------------------------------------------|
@@ -398,9 +350,6 @@ components.
 | consult-view-open-function      | nil                | Function to open a view by name                          |
 
 ** Related packages
-   :PROPERTIES:
-   :CUSTOM_ID: related-packages
-   :END:
 
 It is recommended to install the following package combination:
 
@@ -419,9 +368,6 @@ Furthermore it is possible to get started with only Selectrum and
 Consult and add more components later to the mix.
 
 ** Acknowledgements
-   :PROPERTIES:
-   :CUSTOM_ID: acknowledgements
-   :END:
 
 You probably guessed from the name that this package took inspiration
 from [[https://github.com/abo-abo/swiper#counsel][Counsel]] by Oleh
@@ -429,20 +375,22 @@ Krehel. Some of the commands found in this package originated in the
 [[https://github.com/raxod502/selectrum/wiki/Useful-Commands][Selectrum
 wiki]].
 
-Code contributions: * [[https://github.com/oantolin/][Omar Antolín
-Camarena]] * [[https://github.com/s-kostyaev/][Sergey Kostyaev]] *
-[[https://github.com/okamsn/][okamsn]] *
-[[https://github.com/clemera/][Clemens Radermacher]] *
-[[https://github.com/tomfitzhenry/][Tom Fitzhenry]] *
-[[https://github.com/jakanakaevangeli][jakanakaevangeli]] *
-[[https://github.com/inigoserna/][inigoserna]] *
-[[https://github.com/aspiers/][Adam Spiers]]
+Code contributions:
+- [[https://github.com/oantolin/][Omar Antolín Camarena]]
+- [[https://github.com/s-kostyaev/][Sergey Kostyaev]]
+- [[https://github.com/okamsn/][okamsn]]
+- [[https://github.com/clemera/][Clemens Radermacher]]
+- [[https://github.com/tomfitzhenry/][Tom Fitzhenry]]
+- [[https://github.com/jakanakaevangeli][jakanakaevangeli]]
+- [[https://github.com/inigoserna/][inigoserna]]
+- [[https://github.com/aspiers/][Adam Spiers]]
 
-Advice and useful discussions: * [[https://github.com/clemera/][Clemens
-Radermacher]] * [[https://github.com/oantolin/][Omar Antolín Camarena]]
-* [[https://gitlab.com/protesilaos/][Protesilaos Stavrou]] *
-[[https://github.com/purcell/][Steve Purcell]] *
-[[https://github.com/alphapapa/][Adam Porter]] *
-[[https://github.com/manuel-uberti/][Manuel Uberti]] *
-[[https://github.com/tomfitzhenry/][Tom Fitzhenry]] *
-[[https://github.com/hmelman/][Howard Melman]]
+Advice and useful discussions:
+- [[https://github.com/clemera/][Clemens Radermacher]]
+- [[https://github.com/oantolin/][Omar Antolín Camarena]]
+- [[https://gitlab.com/protesilaos/][Protesilaos Stavrou]]
+- [[https://github.com/purcell/][Steve Purcell]]
+- [[https://github.com/alphapapa/][Adam Porter]]
+- [[https://github.com/manuel-uberti/][Manuel Uberti]]
+- [[https://github.com/tomfitzhenry/][Tom Fitzhenry]]
+- [[https://github.com/hmelman/][Howard Melman]]
