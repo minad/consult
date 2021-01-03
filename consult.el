@@ -2095,8 +2095,8 @@ Prepend PREFIX in front of all items."
     (when-let ((toplevel (cdr (seq-find (lambda (x) (derived-mode-p (car x))) consult-imenu-toplevel))))
       (let ((tops (seq-remove (lambda (x) (listp (cdr x))) items))
             (rest (seq-filter (lambda (x) (listp (cdr x))) items)))
-        (setq items (append rest (list (cons toplevel tops))))))
-    (seq-sort-by #'car #'string< (consult--imenu-flatten nil items))))
+        (setq items (append rest (and tops (list (cons toplevel tops)))))))
+    (consult--imenu-flatten nil items)))
 
 (defun consult--imenu-items ()
   "Return cached imenu candidates."
@@ -2108,9 +2108,9 @@ Prepend PREFIX in front of all items."
   "Return imenu items from every buffer with the same `major-mode'."
   (let ((proj-root (and consult-project-root-function (funcall consult-project-root-function))))
     (mapcan (lambda (buf)
-              (let ((file (buffer-file-name buf)))
+              (when-let (file (buffer-file-name buf))
                 (when (and (eq (buffer-local-value 'major-mode buf) major-mode)
-                           (or (not proj-root) (not file) (string-prefix-p proj-root file)))
+                           (or (not proj-root) (string-prefix-p proj-root file)))
                   (with-current-buffer buf
                     (consult--imenu-items)))))
             (buffer-list))))
@@ -2130,7 +2130,7 @@ this function can jump across buffers."
   (consult--imenu-jump
    (consult--read
     "Go to item: "
-    (or items (user-error "Imenu is empty"))
+    (or (seq-sort-by #'car #'string< items) (user-error "Imenu is empty"))
     :preview
     (when consult-preview-imenu
       (let ((preview (consult--preview-position)))
