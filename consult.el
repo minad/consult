@@ -1059,8 +1059,7 @@ The DEBOUNCE delay defaults to `consult-async-input-debounce'."
       (pcase action
         ('setup
          (funcall async 'setup)
-         (setq throttle-timer (run-at-time throttle throttle (lambda () (setq throttle t)))
-               throttle nil))
+         (setq throttle-timer (run-at-time throttle throttle (lambda () (setq throttle t)))))
         ((pred stringp)
          (when debounce-timer
            (cancel-timer debounce-timer))
