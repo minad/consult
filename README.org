@@ -1,3 +1,4 @@
+#+EXPORT_FILE_NAME: consult.texi
 * consult.el - Consulting completing-read
 
 [[https://melpa.org/#/consult][file:https://melpa.org/packages/consult-badge.svg]]
@@ -78,7 +79,7 @@ Most provided commands follow the naming scheme =consult-<thing>=.
   - m Bookmarks
   - p Project (only available if =consult-project-root-function= is
     configured)
-  - v Views (only available if =consult-view-*-function=s are
+  - v Views (only available if =consult-view-*-function= is
     configured)
 
 - =consult-bookmark=: Select or create bookmark. You might prefer the
@@ -126,8 +127,8 @@ Most provided commands follow the naming scheme =consult-<thing>=.
   enter at least =consult-async-min-input= characters in order for the
   search to get started. The input string is split into two parts, if
   the first character is a punctuation character, like =#=. For example
-  ="#grep-regexp#filter-string=, is split at the second =#=. The string
-  ="grep-regexp"= is passed to Grep, the ="filter-string"= is passed to
+  =#grep-regexp#filter-string=, is split at the second =#=. The string
+  "grep-regexp" is passed to Grep, the "filter-string" is passed to
   the /fast/ Emacs filtering to further narrow down the list of matches.
   This is particularily useful if you are using an advanced completion
   style like orderless. =consult-grep= supports preview. If

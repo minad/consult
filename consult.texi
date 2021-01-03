@@ -1,6 +1,6 @@
 \input texinfo    @c -*- texinfo -*-
 @c %**start of header
-@setfilename README.info
+@setfilename consult.info
 @settitle
 @documentencoding UTF-8
 @documentlanguage en
@@ -103,6 +103,10 @@ additional commands.
 @node Screenshots
 @section Screenshots
 
+consult-grep
+
+@uref{https://github.com/minad/consult/blob/main/images/consult-grep.gif?raw=true}
+
 consult-mark
 
 @uref{https://github.com/minad/consult/blob/main/images/consult-mark.png?raw=true}
@@ -158,7 +162,7 @@ m Bookmarks
 p Project (only available if @samp{consult-project-root-function} is
 configured)
 @item
-v Views (only available if =consult-view-*-function=s are
+v Views (only available if @samp{consult-view-*-function} is
 configured)
 @end itemize
 
@@ -230,8 +234,8 @@ asynchronously, while you enter the search term. You are required to
 enter at least @samp{consult-async-min-input} characters in order for the
 search to get started. The input string is split into two parts, if
 the first character is a punctuation character, like @samp{#}. For example
-@samp{"#grep-regexp#filter-string}, is split at the second @samp{#}. The string
-@samp{"grep-regexp"} is passed to Grep, the @samp{"filter-string"} is passed to
+@samp{#grep-regexp#filter-string}, is split at the second @samp{#}. The string
+"grep-regexp" is passed to Grep, the "filter-string" is passed to
 the @emph{fast} Emacs filtering to further narrow down the list of matches.
 This is particularily useful if you are using an advanced completion
 style like orderless. @samp{consult-grep} supports preview. If
