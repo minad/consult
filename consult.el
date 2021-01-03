@@ -2104,13 +2104,16 @@ Prepend PREFIX in front of all items."
     (setq consult--imenu-cache (cons (buffer-modified-tick) (consult--imenu-compute))))
   (cdr consult--imenu-cache))
 
-(defun consult--any-imenu-items ()
+(defun consult--project-imenu-items ()
   "Return imenu items from every buffer with the same `major-mode'."
-  (mapcan (lambda (buf)
-            (when (eq (buffer-local-value 'major-mode buf) major-mode)
-              (with-current-buffer buf
-                (consult--imenu-items))))
-          (buffer-list)))
+  (let ((proj-root (and consult-project-root-function (funcall consult-project-root-function))))
+    (mapcan (lambda (buf)
+              (let ((file (buffer-file-name buf)))
+                (when (and (eq (buffer-local-value 'major-mode buf) major-mode)
+                           (or (not proj-root) (not file) (string-prefix-p proj-root file)))
+                  (with-current-buffer buf
+                    (consult--imenu-items)))))
+            (buffer-list))))
 
 (defun consult--imenu-jump (item)
   "Jump to imenu ITEM via `consult--jump'.
@@ -2156,17 +2159,18 @@ this function can jump across buffers."
 (defun consult-imenu ()
   "Choose item from flattened `imenu' using `completing-read' with preview.
 
-See also `consult-any-imenu'."
+See also `consult-project-imenu'."
   (interactive)
   (consult--imenu (consult--imenu-items)))
 
 ;;;###autoload
-(defun consult-any-imenu ()
-  "Choose item from the imenus of all buffers with the current major mode.
+(defun consult-project-imenu ()
+  "Choose item from the imenus of all buffers from the same project.
 
-See also `consult-imenu'."
+Only the buffers with the same major mode as the current buffer are
+used. See also `consult-imenu'."
   (interactive)
-  (consult--imenu (consult--any-imenu-items)))
+  (consult--imenu (consult--project-imenu-items)))
 
 (defconst consult--grep-regexp "\\([^\0\n]+\\)\0\\([^:\0]+\\)[:\0]"
   "Regexp used to match file and line of grep output.")

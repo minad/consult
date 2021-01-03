@@ -88,11 +88,11 @@ Most provided commands follow the naming scheme `consult-<thing>`.
     live preview and recursive editing.
   * `consult-outline`: Jump to a heading of the outline. Supports live preview
     and recursive editing.
-  * `consult-imenu`: Jump to imenu item. Supports live preview, recursive
-    editing and narrowing.
-  * `consult-any-imenu`: Jump to imenu item from any buffer with the same major
-    mode as the current buffer. Supports live preview, recursive editing and
-    narrowing. This feature has been inspired by
+  * `consult-imenu`: Jump to imenu item in the current buffer. Supports live
+    preview, recursive editing and narrowing.
+  * `consult-project-imenu`: Jump to imenu item in project buffers, with the
+    same major mode as the current buffer. Supports live preview, recursive
+    editing and narrowing. This feature has been inspired by
     [imenu-anywhere](https://github.com/vspinu/imenu-anywhere).
 
 ### Search
@@ -233,14 +233,13 @@ that the main package `consult.el` only depends on Emacs core components.
          ("C-x r b" . consult-bookmark)
          ("M-g g" . consult-goto-line)
          ("M-g M-g" . consult-goto-line)
-         ("M-g o" . consult-outline)     ;; "M-s o" is a good alternative.
-         ("M-g l" . consult-line)        ;; "M-s l" is a good alternative.
-         ("M-g m" . consult-mark)        ;; I recommend to bind Consult navigation
-         ("M-g k" . consult-global-mark) ;; commands under the "M-g" prefix.
-         ("M-g r" . consult-git-grep)    ;; or consult-grep, consult-ripgrep
-         ("M-g f" . consult-find)        ;; or consult-fdfind, consult-locate
-         ("M-g i" . consult-imenu)
-         ("M-g M-i" . consult-any-imenu)
+         ("M-g o" . consult-outline)       ;; "M-s o" is a good alternative.
+         ("M-g l" . consult-line)          ;; "M-s l" is a good alternative.
+         ("M-g m" . consult-mark)          ;; I recommend to bind Consult navigation
+         ("M-g k" . consult-global-mark)   ;; commands under the "M-g" prefix.
+         ("M-g r" . consult-git-grep)      ;; or consult-grep, consult-ripgrep
+         ("M-g f" . consult-find)          ;; or consult-fdfind, consult-locate
+         ("M-g i" . consult-project-imenu) ;; or consult-imenu
          ("M-g e" . consult-error)
          ("M-s m" . consult-multi-occur)
          ("M-y" . consult-yank-pop)
