@@ -230,6 +230,7 @@ Examples:
   characters.
 - =#to#=: Force searching for "to" using grep, since the grep pattern
   must be longer than =consult-async-min-input= characters by default.
+- =#defun -- --invert-match#=: Pass argument =--invert-match= to grep.
 
 ** Package configuration
 

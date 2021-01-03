@@ -372,6 +372,8 @@ characters.
 @item
 @samp{#to#}: Force searching for "to" using grep, since the grep pattern
 must be longer than @samp{consult-async-min-input} characters by default.
+@item
+@samp{#defun -- --invert-match#}: Pass argument @samp{--invert-match} to grep.
 @end itemize
 
 @node Package configuration
