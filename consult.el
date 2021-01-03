@@ -2170,23 +2170,25 @@ used. See also `consult-imenu'."
   (interactive)
   (consult--imenu (consult--project-imenu-items)))
 
-(defconst consult--grep-regexp "\\([^\0\n]+\\)\0\\([^:\0]+\\)[:\0]"
-  "Regexp used to match file and line of grep output.")
+(defcustom consult-grep-regexp "\\([^\0\n]+\\)\0\\([^:\0]+\\)[:\0]"
+  "Regexp used to match file and line of grep output."
+  :type 'regexp)
 
-(defconst consult--grep-match-regexp "\e\\[[0-9;]+m\\(.*?\\)\e\\[[0-9;]*m"
-  "Regexp used to find matches in grep output.")
+(defcustom consult-grep-match-regexp "\e\\[[0-9;]+m\\(.*?\\)\e\\[[0-9;]*m"
+  "Regexp used to find matches in grep output."
+  :type 'regexp)
 
 (defun consult--grep-matches (lines)
   "Find grep match for REGEXP in LINES."
   (let ((candidates))
     (save-match-data
       (dolist (str lines)
-        (when (string-match consult--grep-regexp str)
+        (when (string-match consult-grep-regexp str)
           (let* ((file (expand-file-name (consult--strip-ansi-escape (match-string 1 str))))
                  (line (string-to-number (consult--strip-ansi-escape (match-string 2 str))))
                  (str (substring str (match-end 0)))
                  (loc (consult--format-location (file-relative-name file) line)))
-            (while (string-match consult--grep-match-regexp str)
+            (while (string-match consult-grep-match-regexp str)
               (setq str (concat (substring str 0 (match-beginning 0))
                                 (propertize (substring (match-string 1 str)) 'face 'consult-preview-match)
                                 (substring str (match-end 0)))))
@@ -2215,9 +2217,25 @@ OPEN is the function to open new files."
               (forward-char (caddr loc)))
             (point-marker)))))))
 
-(defvar consult--git-grep-command '("git" "--no-pager" "grep" "--null" "--color=always" "--extended-regexp" "--line-number" "-I" "-e"))
-(defvar consult--grep-command '("grep" "--null" "--line-buffered" "--color=always" "--extended-regexp" "--exclude-dir=.git" "--line-number" "-I" "-r" "." "-e"))
-(defvar consult--ripgrep-command '("rg" "--null" "--line-buffered" "--color=always" "--max-columns=500" "--no-heading" "--line-number" "." "-e"))
+(defcustom consult-git-grep-command '("git" "--no-pager" "grep"
+                                      "--null" "--color=always"
+                                      "--extended-regexp" "--line-number"
+                                      "-I" "-e")
+  "Command and arguments for git grep."
+  :type '(repeat :tag "Argument List" string))
+
+(defcustom consult-grep-command '("grep" "--null" "--line-buffered"
+                                  "--color=always" "--extended-regexp"
+                                  "--exclude-dir=.git" "--line-number"
+                                  "-I" "-r" "." "-e")
+  "Command and arguments for grep."
+  :type '(repeat :tag "Argument List" string))
+
+(defcustom consult-ripgrep-command '("rg" "--null" "--line-buffered"
+                                     "--color=always" "--max-columns=500"
+                                     "--no-heading" "--line-number" "." "-e")
+  "Command and arguments for rg."
+  :type '(repeat :tag "Argument List" string))
 
 (defun consult--command-args (cmd)
   "Split command arguments and append to CMD."
@@ -2259,19 +2277,19 @@ PROMPT is the prompt string."
 (defun consult-grep (&optional dir initial)
   "Search for regexp with grep in DIR with INITIAL input."
   (interactive "P")
-  (consult--grep "Grep" consult--grep-command dir initial))
+  (consult--grep "Grep" consult-grep-command dir initial))
 
 ;;;###autoload
 (defun consult-git-grep (&optional dir initial)
   "Search for regexp with grep in DIR with INITIAL input."
   (interactive "P")
-  (consult--grep "Git-grep" consult--git-grep-command dir initial))
+  (consult--grep "Git-grep" consult-git-grep-command dir initial))
 
 ;;;###autoload
 (defun consult-ripgrep (&optional dir initial)
   "Search for regexp with rg in DIR with INITIAL input."
   (interactive "P")
-  (consult--grep "Ripgrep" consult--ripgrep-command dir initial))
+  (consult--grep "Ripgrep" consult-ripgrep-command dir initial))
 
 (defun consult--find-async (cmd)
   "Async function for `consult--find'.
