@@ -35,6 +35,11 @@ additional commands.
 
 ** Screenshots
 
+consult-grep
+
+#+CAPTION: consult-grep
+[[https://github.com/minad/consult/blob/main/images/consult-grep.gif?raw=true]]
+
 consult-mark
 
 #+CAPTION: consult-mark
