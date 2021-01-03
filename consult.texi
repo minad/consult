@@ -1,21 +1,27 @@
 \input texinfo    @c -*- texinfo -*-
 @c %**start of header
 @setfilename consult.info
-@settitle
+@settitle consult.el - Consulting completing-read
 @documentencoding UTF-8
 @documentlanguage en
 @c %**end of header
 
+@dircategory Emacs
+@direntry
+* Consult: (consult).   Useful commands built on completing-read.
+@end direntry
+
 @finalout
 @titlepage
-@title
+@title consult.el - Consulting completing-read
+@author Daniel Mendler
 @end titlepage
 
 @contents
 
 @ifnottex
 @node Top
-@top
+@top consult.el - Consulting completing-read
 @end ifnottex
 
 @menu
