@@ -2221,6 +2221,12 @@ OPEN is the function to open new files."
 (defvar consult--grep-command '("grep" "--null" "--line-buffered" "--color=always" "--extended-regexp" "--exclude-dir=.git" "--line-number" "-I" "-r" "." "-e"))
 (defvar consult--ripgrep-command '("rg" "--null" "--line-buffered" "--color=always" "--max-columns=500" "--no-heading" "--line-number" "." "-e"))
 
+(defun consult--command-args (cmd)
+  "Split command arguments and append to CMD."
+  (lambda (input)
+    (let ((args (split-string input " +-- +")))
+      (append cmd (list (car args)) (mapcan #'split-string (cdr args))))))
+
 (defun consult--grep-async (cmd)
   "Async function for `consult-grep'.
 
@@ -2228,10 +2234,7 @@ CMD is the grep argument list."
   (thread-first (consult--async-sink)
     (consult--async-refresh-timer)
     (consult--async-transform consult--grep-matches)
-    (consult--async-process
-     (lambda (input)
-       (let ((args (split-string input " -- ")))
-         (append cmd (list (car args)) (mapcan #'split-string (cdr args))))))
+    (consult--async-process (consult--command-args cmd))
     (consult--async-throttle)
     (consult--async-split)))
 
@@ -2279,10 +2282,7 @@ CMD is the find argument list."
   (thread-first (consult--async-sink)
     (consult--async-refresh-timer)
     (consult--async-map (lambda (x) (string-remove-prefix "./" x)))
-    (consult--async-process
-     (lambda (input)
-       (let ((args (split-string input " -- ")))
-         (append cmd (list (car args)) (mapcan #'split-string (cdr args))))))
+    (consult--async-process (consult--command-args cmd))
     (consult--async-throttle)
     (consult--async-split)))
 
