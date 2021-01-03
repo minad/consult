@@ -22,45 +22,6 @@
 @ifnottex
 @node Top
 @top consult.el - Consulting completing-read
-@end ifnottex
-
-@menu
-* consult.el - Consulting completing-read: consultel - Consulting completing-read.
-
-@detailmenu
---- The Detailed Node Listing ---
-
-consult.el - Consulting completing-read
-
-* Screenshots::
-* Available commands::
-* Live previews::
-* Narrowing to subsets::
-* Asynchronous candidates and filtering::
-* Package configuration::
-* Related packages::
-* Acknowledgements::
-
-Available commands
-
-* Virtual Buffers::
-* Editing::
-* Navigation::
-* Search::
-* Compilation errors::
-* Histories::
-* Minor and Major modes::
-* Miscellaneous::
-
-Package configuration
-
-* Configuration settings::
-
-@end detailmenu
-@end menu
-
-@node consultel - Consulting completing-read
-@chapter consult.el - Consulting completing-read
 
 @uref{https://melpa.org/#/consult, file:https://melpa.org/packages/consult-badge.svg}
 
@@ -94,6 +55,7 @@ file is offered.
 @uref{https://github.com/emacs-helm/helm, Helm}, you probably don't need
 Consult, since both packages already bring their own rich set of
 additional commands.
+@end ifnottex
 
 @menu
 * Screenshots::
@@ -104,10 +66,30 @@ additional commands.
 * Package configuration::
 * Related packages::
 * Acknowledgements::
+
+@detailmenu
+--- The Detailed Node Listing ---
+
+Available commands
+
+* Virtual Buffers::
+* Editing::
+* Navigation::
+* Search::
+* Compilation errors::
+* Histories::
+* Minor and Major modes::
+* Miscellaneous::
+
+Package configuration
+
+* Configuration settings::
+
+@end detailmenu
 @end menu
 
 @node Screenshots
-@section Screenshots
+@chapter Screenshots
 
 consult-grep
 
@@ -130,7 +112,7 @@ marginalia-mode
 @uref{https://github.com/minad/marginalia/blob/main/marginalia-mode.png?raw=true}
 
 @node Available commands
-@section Available commands
+@chapter Available commands
 
 Most provided commands follow the naming scheme @samp{consult-<thing>}.
 
@@ -146,7 +128,7 @@ Most provided commands follow the naming scheme @samp{consult-<thing>}.
 @end menu
 
 @node Virtual Buffers
-@subsection Virtual Buffers
+@section Virtual Buffers
 
 @itemize
 @item
@@ -182,7 +164,7 @@ instead, which includes recent files.
 @end itemize
 
 @node Editing
-@subsection Editing
+@section Editing
 
 @itemize
 @item
@@ -196,7 +178,7 @@ supported when selecting from the kill-ring.
 @end itemize
 
 @node Navigation
-@subsection Navigation
+@section Navigation
 
 @itemize
 @item
@@ -222,7 +204,7 @@ recursive editing and narrowing. This feature has been inspired by
 @end itemize
 
 @node Search
-@subsection Search
+@section Search
 
 @itemize
 @item
@@ -262,7 +244,7 @@ contrast, fdfind uses regular expressions.
 @end itemize
 
 @node Compilation errors
-@subsection Compilation errors
+@section Compilation errors
 
 @itemize
 @item
@@ -282,7 +264,7 @@ components.
 @end itemize
 
 @node Histories
-@subsection Histories
+@section Histories
 
 @itemize
 @item
@@ -297,7 +279,7 @@ history stored in the minibuffer-history-variable is used.
 @end itemize
 
 @node Minor and Major modes
-@subsection Minor and Major modes
+@section Minor and Major modes
 
 @itemize
 @item
@@ -311,7 +293,7 @@ mode via the keys @samp{l/g/m}.
 @end itemize
 
 @node Miscellaneous
-@subsection Miscellaneous
+@section Miscellaneous
 
 @itemize
 @item
@@ -333,7 +315,7 @@ candidates.
 @end itemize
 
 @node Live previews
-@section Live previews
+@chapter Live previews
 
 Some Consult commands support live previews. For example when you scroll
 through the items of @samp{consult-line}, the buffer will scroll to the
@@ -344,7 +326,7 @@ search is ongoing. Previews must be explicitly enabled via
 variable is offered to selectively enable/disable preview.
 
 @node Narrowing to subsets
-@section Narrowing to subsets
+@chapter Narrowing to subsets
 
 Consult has special support to narrow to candidate subsets. When you use
 the @samp{consult-buffer} command, you can press @samp{b SPC} and the list of
@@ -355,7 +337,7 @@ pressed to achieve the same effect, see the configuration variables
 @samp{consult-narrow-key} and @samp{consult-widen-key}.
 
 @node Asynchronous candidates and filtering
-@section Asynchronous candidates and filtering
+@chapter Asynchronous candidates and filtering
 
 Consult has support for asynchronous generation of candidate lists. This
 feature is used for example by @samp{consult-grep}, where the list of matches
@@ -387,7 +369,7 @@ must be longer than @samp{consult-async-min-input} characters by default.
 @end itemize
 
 @node Package configuration
-@section Package configuration
+@chapter Package configuration
 
 It is recommended to manage package configurations with @samp{use-package}.
 The Consult package only provides commands and does not add any
@@ -473,7 +455,7 @@ components.
 @end menu
 
 @node Configuration settings
-@subsection Configuration settings
+@section Configuration settings
 
 @multitable {aaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
 @headitem Variable
@@ -578,7 +560,7 @@ components.
 @end multitable
 
 @node Related packages
-@section Related packages
+@chapter Related packages
 
 It is recommended to install the following package combination:
 
@@ -607,7 +589,7 @@ Furthermore it is possible to get started with only Selectrum and
 Consult and add more components later to the mix.
 
 @node Acknowledgements
-@section Acknowledgements
+@chapter Acknowledgements
 
 You probably guessed from the name that this package took inspiration
 from @uref{https://github.com/abo-abo/swiper#counsel, Counsel} by Oleh
