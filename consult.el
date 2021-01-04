@@ -396,8 +396,18 @@ Size of private unicode plane b.")
 
 ;;;; Helper functions
 
+(defun consult--font-lock (str)
+  "Apply `font-lock' faces in STR, copy them to `face'."
+  (let ((pos 0) (len (length str)))
+    (while (< pos len)
+      (let* ((face (get-text-property pos 'font-lock-face str))
+             (end (or (text-property-not-all pos len 'font-lock-face face str) len)))
+        (put-text-property pos end 'face face str)
+        (setq pos end)))
+    str))
+
 (defun consult--format-directory-prompt (prompt dir)
-  "Format PROMPT with directory DIR."
+  "Format PROMPT, expand directory DIR and return them as a pair."
   (save-match-data
     (let ((edir (file-name-as-directory (expand-file-name dir)))
           (ddir (file-name-as-directory (expand-file-name default-directory))))
@@ -436,7 +446,7 @@ Otherwise the `default-directory' is returned."
    (t (consult--format-directory-prompt prompt default-directory))))
 
 (defsubst consult--strip-ansi-escape (str)
-  "Strip ansi escape sequences from STR."
+  "Strip ANSI escape sequences from STR."
   (replace-regexp-in-string "\e\\[[0-9;]*[mK]" "" str))
 
 (defsubst consult--format-location (file line)
@@ -446,7 +456,7 @@ Otherwise the `default-directory' is returned."
    (propertize (number-to-string line) 'face 'consult-line-number) ":"))
 
 (defun consult--line-position (line)
-  "Compute position from LINE number."
+  "Compute character position from LINE number."
   (save-excursion
     (save-restriction
       (when consult-line-numbers-widen
@@ -468,6 +478,7 @@ Otherwise the `default-directory' is returned."
 
 (defun consult--remove-dups (list &optional key)
   "Remove duplicate strings from LIST. Keep first occurrence of a key.
+
 KEY is the key function."
   (let ((ht (make-hash-table :test #'equal :size (length list)))
         (accum)
@@ -483,15 +494,15 @@ KEY is the key function."
   (and (>= pos (point-min)) (<= pos (point-max))))
 
 (defun consult--lookup-elem (_ candidates cand)
-  "Lookup CAND in CANDIDATES."
+  "Lookup CAND in CANDIDATES alist, return element."
   (assoc cand candidates))
 
 (defun consult--lookup-cdr (_ candidates cand)
-  "Lookup CAND in CANDIDATES."
+  "Lookup CAND in CANDIDATES alist, return cdr of element."
   (cdr (assoc cand candidates)))
 
 (defun consult--lookup-cadr (_ candidates cand)
-  "Lookup CAND in CANDIDATES."
+  "Lookup CAND in CANDIDATES alist, return cadr of element."
   (cadr (assoc cand candidates)))
 
 (defun consult--forbid-minibuffer ()
@@ -572,7 +583,9 @@ DISPLAY is the string to display instead of the unique string."
   (or consult-widen-key (and consult-narrow-key (vconcat consult-narrow-key " "))))
 
 (defun consult-narrow (key)
-  "Narrow current completion with KEY."
+  "Narrow current completion with KEY.
+
+This command is used internally by the narrowing system of `consult--read'."
   (interactive
    (list (unless (equal (this-single-command-keys) (consult--widen-key))
            last-command-event)))
@@ -611,6 +624,7 @@ DISPLAY is the string to display instead of the unique string."
 
 (defun consult-narrow-help ()
   "Print narrowing help as `minibuffer-message'.
+
 This command can be bound in `consult-narrow-map'."
   (interactive)
   (minibuffer-message
@@ -1160,6 +1174,7 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
 ;;;###autoload
 (defun consult-multi-occur (bufs regexp &optional nlines)
   "Improved version of `multi-occur' based on `completing-read-multiple'.
+
 See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
   (interactive (cons
                 (mapcar #'get-buffer
@@ -1190,7 +1205,9 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
 
 ;;;###autoload
 (defun consult-outline ()
-  "Jump to an outline heading."
+  "Jump to an outline heading.
+
+This command supports candidate preview."
   (interactive)
   (consult--jump
    (consult--read
@@ -1203,16 +1220,6 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
     :history '(:input consult--line-history)
     :add-history (thing-at-point 'symbol)
     :preview (and consult-preview-outline (consult--preview-position)))))
-
-(defun consult--font-lock (str)
-  "Apply `font-lock' faces in STR."
-  (let ((pos 0) (len (length str)))
-    (while (< pos len)
-      (let* ((face (get-text-property pos 'font-lock-face str))
-             (end (or (text-property-not-all pos len 'font-lock-face face str) len)))
-        (put-text-property pos end 'face face str)
-        (setq pos end)))
-    str))
 
 (defun consult--error-candidates ()
   "Return alist of errors and positions."
@@ -1248,7 +1255,10 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
 
 ;;;###autoload
 (defun consult-error ()
-  "Jump to an error in the current buffer."
+  "Jump to a compliation error in the current buffer.
+
+This command works in compilation buffers and grep buffers.
+The command supports preview of the currently selected error."
   (interactive)
   (unless (compilation-buffer-p (current-buffer))
     (user-error "Not a compilation buffer"))
@@ -1292,7 +1302,9 @@ The alist contains (string . position) pairs."
 
 ;;;###autoload
 (defun consult-mark ()
-  "Jump to a marker in `mark-ring'."
+  "Jump to a marker in the buffer-local `mark-ring'.
+
+The command supports preview of the currently selected marker position."
   (interactive)
   (consult--jump
    (consult--read
@@ -1307,6 +1319,7 @@ The alist contains (string . position) pairs."
 
 (defun consult--global-mark-candidates ()
   "Return alist of lines containing markers.
+
 The alist contains (string . position) pairs."
   (consult--forbid-minibuffer)
   (let ((candidates))
@@ -1335,7 +1348,9 @@ The alist contains (string . position) pairs."
 
 ;;;###autoload
 (defun consult-global-mark ()
-  "Jump to a marker in `global-mark-ring'."
+  "Jump to a marker in `global-mark-ring'.
+
+The command supports preview of the currently selected marker position."
   (interactive)
   (consult--jump
    (consult--read
@@ -1421,6 +1436,7 @@ CAND is the currently selected candidate."
 ;;;###autoload
 (defun consult-line (&optional initial)
   "Search for a matching line and jump to the line beginning.
+
 The default candidate is a non-empty line closest to point.
 This command obeys narrowing. Optionally INITIAL input can be provided."
   (interactive)
@@ -1448,7 +1464,7 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
 (defun consult-goto-line ()
   "Read line number and jump to the line with preview.
 
-Respects narrowing and the settings
+The command respects narrowing and the settings
 `consult-goto-line-numbers' and `consult-line-numbers-widen'."
   (interactive)
   (consult--forbid-minibuffer)
@@ -1511,7 +1527,7 @@ Respects narrowing and the settings
 
 ;;;###autoload
 (defun consult-file-externally (file)
-  "Open FILE using system's default application."
+  "Open FILE externally using the default application of the system."
   (interactive "fOpen externally: ")
   (if (and (eq system-type 'windows-nt)
            (fboundp 'w32-shell-execute))
@@ -1565,7 +1581,10 @@ The arguments and expected return value are as specified for
       t)))
 
 (defun consult--mode-commands (mode)
-  "Extract commands from MODE."
+  "Extract commands from MODE.
+
+The list of features is searched for files belonging to MODE.
+From these files, the commands are extracted."
   (let ((library-path (symbol-file mode))
         (key (if (memq mode minor-mode-list)
                  (if (local-variable-if-set-p mode) ?l ?g)
@@ -1594,9 +1613,9 @@ The arguments and expected return value are as specified for
 
 ;;;###autoload
 (defun consult-mode-command (&rest modes)
-  "Run a command from the MODES.
+  "Run a command from any of the given MODES.
 
-If no modes are specified, use currently active major and minor modes."
+If no MODES are specified, use currently active major and minor modes."
   (interactive)
   (unless modes
     (setq modes (cons major-mode
@@ -1660,6 +1679,7 @@ If no modes are specified, use currently active major and minor modes."
 ;;;###autoload
 (defun consult-yank-pop (&optional arg)
   "If there is a recent yank act like `yank-pop'.
+
 Otherwise select text from the kill ring and insert it.
 See `yank-pop' for the meaning of ARG."
   (interactive "*p")
@@ -1672,6 +1692,7 @@ See `yank-pop' for the meaning of ARG."
 ;;;###autoload
 (defun consult-yank-replace ()
   "Select text from the kill ring.
+
 If there was no recent yank, insert the text.
 Otherwise replace the just-yanked text with the selected text."
   (interactive)
@@ -1708,7 +1729,7 @@ Otherwise replace the just-yanked text with the selected text."
 
 ;;;###autoload
 (defun consult-register (reg)
-  "Use register REG. Either jump to location or insert the stored text."
+  "Use register REG and either jump to location or insert the stored text."
   (interactive
    (list
     (consult--read
@@ -1754,7 +1775,9 @@ Otherwise replace the just-yanked text with the selected text."
 
 ;;;###autoload
 (defun consult-complex-command ()
-  "Select and evaluate command from the command history."
+  "Select and evaluate command from the command history.
+
+This command can act as a drop-in replacement for `repeat-complex-command'."
   (interactive)
   (let* ((history (or (consult--remove-dups (mapcar #'prin1-to-string command-history))
                       (user-error "There are no previous complex commands")))
@@ -1802,7 +1825,9 @@ for which the command history is used."
 ;; This command has been adopted from https://github.com/oantolin/completing-history/.
 ;;;###autoload
 (defun consult-history (&optional history)
-  "Insert string from buffer HISTORY."
+  "Insert string from HISTORY of current buffer.
+
+In order to select from a specific HISTORY, pass the history variable as argument."
   (interactive)
   (let* ((enable-recursive-minibuffers t)
          (str (consult--read
@@ -1847,6 +1872,7 @@ for which the command history is used."
 ;;;###autoload
 (defun consult-minor-mode-menu ()
   "Enable or disable minor mode.
+
 This is an alternative to `minor-mode-menu-from-indicator'."
   (interactive)
   (call-interactively
@@ -1865,7 +1891,9 @@ This is an alternative to `minor-mode-menu-from-indicator'."
 
 ;;;###autoload
 (defun consult-theme (theme)
-  "Disable current themes and enable THEME from `consult-themes'."
+  "Disable current themes and enable THEME from `consult-themes'.
+
+The command supports previewing the currently selected theme."
   (interactive
    (list
     (let ((avail-themes (seq-filter (lambda (x) (or (not consult-themes)
@@ -1903,6 +1931,7 @@ FACE is the face for the candidate."
 
 (defun consult--buffer (open-buffer open-file open-bookmark)
   "Backend implementation of `consult-buffer'.
+
 Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be used to display the item."
   (let* ((curr-buf (current-buffer))
          (all-bufs-list (buffer-list))
@@ -1992,7 +2021,9 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
 
 ;;;###autoload
 (defun consult-buffer-other-frame ()
-  "Enhanced `switch-to-buffer-other-frame' command with support for virtual buffers."
+  "Enhanced `switch-to-buffer-other-frame' with support for virtual buffers.
+
+See `consult-buffer'."
   (interactive)
   ;; bookmark-jump-other-frame is supported on Emacs >= 27.1, we want to support at least 26
   (consult--buffer #'switch-to-buffer-other-frame #'find-file-other-frame
@@ -2000,13 +2031,20 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
 
 ;;;###autoload
 (defun consult-buffer-other-window ()
-  "Enhanced `switch-to-buffer-other-window' command with support for virtual buffers."
+  "Enhanced `switch-to-buffer-other-window' with support for virtual buffers.
+
+See `consult-buffer'."
   (interactive)
   (consult--buffer #'switch-to-buffer-other-window #'find-file-other-window #'bookmark-jump-other-window))
 
 ;;;###autoload
 (defun consult-buffer ()
-  "Enhanced `switch-to-buffer' command with support for virtual buffers."
+  "Enhanced `switch-to-buffer' command with support for virtual buffers.
+
+The command supports recent files, bookmarks, views and project files
+as virtual buffers. Buffers are previewed. Furthermore narrowing
+to buffers (b), files (f), bookmarks (m), views (v) and project files (p)
+is supported via the corresponding keys."
   (interactive)
   (consult--buffer #'switch-to-buffer #'find-file #'bookmark-jump))
 
