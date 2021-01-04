@@ -469,6 +469,9 @@ components.
 @node Configuration settings
 @section Configuration settings
 
+@strong{Tip:} If you have Marginalia installed, type @samp{M-x customize-variable RET consult} to see all Consult-specific
+customizable variables with their current values and abbreviated description!
+
 @multitable {aaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
 @headitem Variable
 @tab Default

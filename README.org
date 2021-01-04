@@ -338,6 +338,9 @@ components.
 
 *** Configuration settings
 
+*Tip:* If you have Marginalia installed, type =M-x customize-variable RET consult= to see all Consult-specific
+customizable variables with their current values and abbreviated description!
+
 | Variable                        | Default            | Description                                              |
 |---------------------------------+--------------------+----------------------------------------------------------|
 | consult-after-jump-hook         | '(recenter)        | Functions to call after jumping to a location            |
