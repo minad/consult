@@ -31,7 +31,6 @@
 * Available commands::
 * Special features::
 * Installation::
-* Related packages::
 * Acknowledgements::
 
 @detailmenu
@@ -62,6 +61,7 @@ Installation
 
 * Example configuration::
 * Customizable variables::
+* Related packages::
 
 @end detailmenu
 @end menu
@@ -412,6 +412,7 @@ components.
 @menu
 * Example configuration::
 * Customizable variables::
+* Related packages::
 @end menu
 
 @node Example configuration
@@ -619,7 +620,7 @@ customizable variables with their current values and abbreviated description!
 @end multitable
 
 @node Related packages
-@chapter Related packages
+@section Related packages
 
 @strong{NOTE: If you are using Selectrum, you MUST install the packages selectrum, consult and consult-selectrum!}
 

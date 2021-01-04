@@ -386,25 +386,25 @@ components.
  | consult-view-open-function      | nil                | Function to open a view by name                          |
  | consult-widen-key               | nil                | Widening key during completion                           |
 
-* Related packages
+** Related packages
 
-*NOTE: If you are using Selectrum, you MUST install the packages selectrum, consult and consult-selectrum!*
+ *NOTE: If you are using Selectrum, you MUST install the packages selectrum, consult and consult-selectrum!*
 
-It is recommended to install the following package combination:
+ It is recommended to install the following package combination:
 
-- consult: This package
-- consult-flycheck: Provides the consult-flycheck command
-- consult-selectrum: Provides integration with Selectrum
-- selectrum or icomplete-vertical: Vertical completion systems
-- marginalia: Annotations for the completion candidates
-- embark: Action commands, which can act on the completion candidates
-- orderless: Completion style, Flexible candidate filtering
-- prescient: Frecency-based candidate sorting, also offers filtering
+ - consult: This package
+ - consult-flycheck: Provides the consult-flycheck command
+ - consult-selectrum: Provides integration with Selectrum
+ - selectrum or icomplete-vertical: Vertical completion systems
+ - marginalia: Annotations for the completion candidates
+ - embark: Action commands, which can act on the completion candidates
+ - orderless: Completion style, Flexible candidate filtering
+ - prescient: Frecency-based candidate sorting, also offers filtering
 
-Note that all packages are independent and can potentially be exchanged
-with alternative components, since there exist no hard dependencies.
-Furthermore it is possible to get started with only Selectrum and
-Consult and add more components later to the mix.
+ Note that all packages are independent and can potentially be exchanged
+ with alternative components, since there exist no hard dependencies.
+ Furthermore it is possible to get started with only Selectrum and
+ Consult and add more components later to the mix.
 
 * Acknowledgements
 
