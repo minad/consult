@@ -1059,10 +1059,11 @@ CMD is the command argument list."
                    (when flush
                      (setq flush nil)
                      (funcall async 'flush))
-                   (overlay-put indicator 'display
-                                (if (string-match-p "finished" event)
-                                    (propertize ":" 'face 'consult-async-finished)
-                                  (propertize "!" 'face 'consult-async-failed)))
+                   (unless (string-match-p "killed" event)
+                     (overlay-put indicator 'display
+                                  (if (string-match-p "finished" event)
+                                      (propertize ":" 'face 'consult-async-finished)
+                                    (propertize "!" 'face 'consult-async-failed))))
                    (when (string-prefix-p "finished" event)
                      (unless (string= rest "")
                        (funcall async (list rest)))))))))))
