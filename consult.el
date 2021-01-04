@@ -242,7 +242,7 @@ You may want to add a function which pulses the current line, e.g.,
   "Enable grep preview during selection."
   :type 'boolean)
 
-(defcustom consult-preview-max-size 102400
+(defcustom consult-preview-max-size 10485760
   "Files larger than this limit are not previewed."
   :type 'integer)
 
