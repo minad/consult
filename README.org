@@ -291,7 +291,7 @@ components.
   ;; locally in a let-binding.
   (defun my-fdfind (&optional dir)
     (interactive "P")
-    (let ((consult--find-cmd '("fdfind" "--color=never" "--full-path")))
+    (let ((consult-find-command '("fdfind" "--color=never" "--full-path")))
       (consult-find dir)))
 
   ;; Replace `multi-occur' with `consult-multi-occur', which is a drop-in replacement.
