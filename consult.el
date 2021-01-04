@@ -759,7 +759,8 @@ FUN receives the open function as argument."
           (lambda (name)
             (or (get-file-buffer name)
                 (when-let (attrs (file-attributes name))
-                  (when (<= (file-attribute-size attrs) consult-preview-max-size)
+                  (if (> (file-attribute-size attrs) consult-preview-max-size)
+                      (and (message "File `%s' too large for preview" name) nil)
                     (let ((buf (find-file-noselect name 'nowarn)))
                       (push buf new-buffers)
                       ;; Only keep a few buffers alive
