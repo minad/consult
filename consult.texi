@@ -233,14 +233,15 @@ Otherwise the @samp{default-directory} is searched. If @samp{consult-grep} is
 invoked with prefix argument, you can specify the directory manually,
 i.e., @samp{C-u M-g r}.
 @item
-@samp{consult-find}, @samp{consult-fdfind}, @samp{consult-locate}: Find file by
+@samp{consult-find}, @samp{consult-locate}: Find file by
 matching the path against a regexp. Like @samp{consult-grep} either the
 project root or the current directory is used as root directory for
 the search. The input string is treated similarly to @samp{consult-grep},
 where the first part is passed to find, and the second part is used
 for Emacs filtering. Note that @samp{find} uses wildcards, e.g. enter
 @samp{*consult*}, to find all files containing the string "consult". In
-contrast, fdfind uses regular expressions.
+case you want to use another search utility like `fd`, you can write
+wrapper command `my-fdfind` (see below in the configuration example).
 @end itemize
 
 @node Compilation errors
@@ -400,7 +401,7 @@ components.
          ("M-g m" . consult-mark)          ;; I recommend to bind Consult navigation
          ("M-g k" . consult-global-mark)   ;; commands under the "M-g" prefix.
          ("M-g r" . consult-git-grep)      ;; or consult-grep, consult-ripgrep
-         ("M-g f" . consult-find)          ;; or consult-fdfind, consult-locate
+         ("M-g f" . consult-find)          ;; or consult-locate, my-fdfind
          ("M-g i" . consult-project-imenu) ;; or consult-imenu
          ("M-g e" . consult-error)
          ("M-s m" . consult-multi-occur)
@@ -409,6 +410,15 @@ components.
 
   ;; The :init configuration is always executed (Not lazy!)
   :init
+
+  ;; Custom command wrappers. It is generally encouraged to write your own
+  ;; commands based on the Consult commands. Some commands have arguments which
+  ;; allow tweaking. Furthermore global configuration variables can be set
+  ;; locally in a let-binding.
+  (defun my-fdfind (&optional dir)
+    (interactive "P")
+    (let ((consult--find-cmd '("fdfind" "--color=never" "--full-path")))
+      (consult-find dir)))
 
   ;; Replace `multi-occur' with `consult-multi-occur', which is a drop-in replacement.
   (fset 'multi-occur #'consult-multi-occur)
