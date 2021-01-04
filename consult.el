@@ -2152,8 +2152,8 @@ Prepend PREFIX in front of all items."
 In contrast to the builtin `imenu' jump function,
 this function can jump across buffers."
   (pcase item
-    (`(,_ . ,pos) (consult--jump pos))
     (`(,name ,pos ,fn . ,args) (apply fn name pos args))
+    (`(,_ . ,pos) (consult--jump pos))
     (_ (error "Unknown imenu item: %S" item))))
 
 (defun consult--imenu (items)
