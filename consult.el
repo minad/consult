@@ -2161,7 +2161,7 @@ this function can jump across buffers."
   (consult--imenu-jump
    (consult--read
     "Go to item: "
-    (or (seq-sort-by #'car #'string< items) (user-error "Imenu is empty"))
+    (or items (user-error "Imenu is empty"))
     :preview
     (when consult-preview-imenu
       (let ((preview (consult--preview-position)))
