@@ -142,14 +142,15 @@ Most provided commands follow the naming scheme =consult-<thing>=.
   Otherwise the =default-directory= is searched. If =consult-grep= is
   invoked with prefix argument, you can specify the directory manually,
   i.e., =C-u M-g r=.
-- =consult-find=, =consult-fdfind=, =consult-locate=: Find file by
+- =consult-find=, =consult-locate=: Find file by
   matching the path against a regexp. Like =consult-grep= either the
   project root or the current directory is used as root directory for
   the search. The input string is treated similarly to =consult-grep=,
   where the first part is passed to find, and the second part is used
   for Emacs filtering. Note that =find= uses wildcards, e.g. enter
   =*consult*=, to find all files containing the string "consult". In
-  contrast, fdfind uses regular expressions.
+  case you want to use another search utility like `fd`, you can write
+  wrapper command `my-fdfind` (see below in the configuration example).
 
 *** Compilation errors
 
@@ -274,7 +275,7 @@ components.
          ("M-g m" . consult-mark)          ;; I recommend to bind Consult navigation
          ("M-g k" . consult-global-mark)   ;; commands under the "M-g" prefix.
          ("M-g r" . consult-git-grep)      ;; or consult-grep, consult-ripgrep
-         ("M-g f" . consult-find)          ;; or consult-fdfind, consult-locate
+         ("M-g f" . consult-find)          ;; or consult-locate, my-fdfind
          ("M-g i" . consult-project-imenu) ;; or consult-imenu
          ("M-g e" . consult-error)
          ("M-s m" . consult-multi-occur)
@@ -283,6 +284,15 @@ components.
 
   ;; The :init configuration is always executed (Not lazy!)
   :init
+
+  ;; Custom command wrappers. It is generally encouraged to write your own
+  ;; commands based on the Consult commands. Some commands have arguments which
+  ;; allow tweaking. Furthermore global configuration variables can be set
+  ;; locally in a let-binding.
+  (defun my-fdfind ()
+    (interactive)
+    (let ((consult--find-cmd '("fdfind" "--color=never" "--full-path")))
+      (call-interactively #'consult-find)))
 
   ;; Replace `multi-occur' with `consult-multi-occur', which is a drop-in replacement.
   (fset 'multi-occur #'consult-multi-occur)
