@@ -477,21 +477,30 @@ components.
 @item consult-async-default-split
 @tab "#"
 @tab Separator character used for splitting #async#filter
-@item consult-async-input-throttle
-@tab 0.5
-@tab Input throttle for asynchronous commands
 @item consult-async-input-debounce
 @tab 0.25
 @tab Input debounce for asynchronous commands
+@item consult-async-input-throttle
+@tab 0.5
+@tab Input throttle for asynchronous commands
 @item consult-async-min-input
 @tab 3
 @tab Minimum numbers of letters needed for async process
 @item consult-async-refresh-delay
 @tab 0.25
 @tab Refresh delay for asynchronous commands
+@item consult-find-command
+@tab '(@dots{})
+@tab Command line arguments for find
+@item consult-git-grep-command
+@tab '(@dots{})
+@tab Command line arguments for git-grep
 @item consult-goto-line-numbers
 @tab t
 @tab Show line numbers for @samp{consult-goto-line}
+@item consult-grep-command
+@tab '(@dots{})
+@tab Command line arguments for grep
 @item consult-imenu-narrow
 @tab @dots{}
 @tab Mode-specific narrowing keys for @samp{consult-imenu}
@@ -504,6 +513,9 @@ components.
 @item consult-line-point-placement
 @tab 'match-beginning
 @tab Placement of the point used by @samp{consult-line}
+@item consult-locate-command
+@tab '(@dots{})
+@tab Command line arguments for locate
 @item consult-mode-command-filter
 @tab "-mode$\
 @tab --"
@@ -513,9 +525,6 @@ components.
 @item consult-narrow-key
 @tab nil
 @tab Narrowing prefix key during completion
-@item consult-widen-key
-@tab nil
-@tab Widening key during completion
 @item consult-preview-buffer
 @tab t
 @tab Enable buffer preview during selection
@@ -540,6 +549,12 @@ components.
 @item consult-preview-mark
 @tab t
 @tab Enable mark preview during selection
+@item consult-preview-max-count
+@tab 10
+@tab Maximum number of files to keep open during preview
+@item consult-preview-max-size
+@tab 102400
+@tab Size limit for previewed files
 @item consult-preview-outline
 @tab t
 @tab Enable outline preview during selection
@@ -549,15 +564,12 @@ components.
 @item consult-preview-yank
 @tab t
 @tab Enable yank preview during selection
-@item consult-preview-max-count
-@tab 10
-@tab Maximum number of files to keep open during preview
-@item consult-preview-max-size
-@tab 102400
-@tab Size limit for previewed files
 @item consult-project-root-function
 @tab nil
 @tab Function which returns current project root
+@item consult-ripgrep-command
+@tab '(@dots{})
+@tab Command line arguments for ripgrep
 @item consult-themes
 @tab nil
 @tab List of themes to be presented for selection
@@ -567,6 +579,9 @@ components.
 @item consult-view-open-function
 @tab nil
 @tab Function to open a view by name
+@item consult-widen-key
+@tab nil
+@tab Widening key during completion
 @end multitable
 
 @node Related packages

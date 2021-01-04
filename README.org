@@ -340,19 +340,22 @@ components.
 |---------------------------------+--------------------+----------------------------------------------------------|
 | consult-after-jump-hook         | '(recenter)        | Functions to call after jumping to a location            |
 | consult-async-default-split     | "#"                | Separator character used for splitting #async#filter     |
-| consult-async-input-throttle    | 0.5                | Input throttle for asynchronous commands                 |
 | consult-async-input-debounce    | 0.25               | Input debounce for asynchronous commands                 |
+| consult-async-input-throttle    | 0.5                | Input throttle for asynchronous commands                 |
 | consult-async-min-input         | 3                  | Minimum numbers of letters needed for async process      |
 | consult-async-refresh-delay     | 0.25               | Refresh delay for asynchronous commands                  |
+| consult-find-command            | '(...)             | Command line arguments for find                          |
+| consult-git-grep-command        | '(...)             | Command line arguments for git-grep                      |
 | consult-goto-line-numbers       | t                  | Show line numbers for =consult-goto-line=                |
+| consult-grep-command            | '(...)             | Command line arguments for grep                          |
 | consult-imenu-narrow            | ...                | Mode-specific narrowing keys for =consult-imenu=         |
 | consult-imenu-toplevel          | ...                | Mode-specific toplevel names used by =consult-imenu=     |
 | consult-line-numbers-widen      | t                  | Show absolute line numbers when narrowing is active.     |
 | consult-line-point-placement    | 'match-beginning   | Placement of the point used by =consult-line=            |
+| consult-locate-command          | '(...)             | Command line arguments for locate                        |
 | consult-mode-command-filter     | "-mode$\           | --"                                                      |
 | consult-mode-histories          | ...                | Mode-specific history variables                          |
 | consult-narrow-key              | nil                | Narrowing prefix key during completion                   |
-| consult-widen-key               | nil                | Widening key during completion                           |
 | consult-preview-buffer          | t                  | Enable buffer preview during selection                   |
 | consult-preview-error           | t                  | Enable error preview during selection                    |
 | consult-preview-flycheck        | t                  | Enable flycheck error preview during selection           |
@@ -361,15 +364,17 @@ components.
 | consult-preview-grep            | t                  | Enable grep preview during selection                     |
 | consult-preview-line            | t                  | Enable line preview during selection                     |
 | consult-preview-mark            | t                  | Enable mark preview during selection                     |
+| consult-preview-max-count       | 10                 | Maximum number of files to keep open during preview      |
+| consult-preview-max-size        | 102400             | Size limit for previewed files                           |
 | consult-preview-outline         | t                  | Enable outline preview during selection                  |
 | consult-preview-theme           | t                  | Enable theme preview during selection                    |
 | consult-preview-yank            | t                  | Enable yank preview during selection                     |
-| consult-preview-max-count       | 10                 | Maximum number of files to keep open during preview      |
-| consult-preview-max-size        | 102400             | Size limit for previewed files                           |
 | consult-project-root-function   | nil                | Function which returns current project root              |
+| consult-ripgrep-command         | '(...)             | Command line arguments for ripgrep                       |
 | consult-themes                  | nil                | List of themes to be presented for selection             |
 | consult-view-list-function      | nil                | Function which returns a list of view names as strings   |
 | consult-view-open-function      | nil                | Function to open a view by name                          |
+| consult-widen-key               | nil                | Widening key during completion                           |
 
 ** Related packages
 

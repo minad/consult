@@ -171,6 +171,31 @@ You may want to add a function which pulses the current line, e.g.,
   "Filter regexp for `consult-mode-command'."
   :type 'regexp)
 
+(defcustom consult-git-grep-command
+  '("git" "--no-pager" "grep" "--null" "--color=always" "--extended-regexp" "--line-number" "-I" "-e")
+  "Command line arguments for git-grep."
+  :type '(repeat string))
+
+(defcustom consult-grep-command
+  '("grep" "--null" "--line-buffered" "--color=always" "--extended-regexp" "--exclude-dir=.git" "--line-number" "-I" "-r" "." "-e")
+  "Command line arguments for grep."
+  :type '(repeat string))
+
+(defcustom consult-ripgrep-command
+  '("rg" "--null" "--line-buffered" "--color=always" "--max-columns=500" "--no-heading" "--line-number" "." "-e")
+  "Command line arguments for ripgrep."
+  :type '(repeat string))
+
+(defcustom consult-find-command
+  '("find" "-not" "(" "-wholename" "*/.*" "-prune" ")" "-ipath")
+  "Command line arguments for find."
+  :type '(repeat string))
+
+(defcustom consult-locate-command
+  '("locate" "--ignore-case" "--existing" "--regexp")
+  "Command line arguments for locate."
+  :type '(repeat string))
+
 ;;;; Preview customization
 
 (defgroup consult-preview nil
@@ -362,6 +387,12 @@ Size of private unicode plane b.")
 
 (defvar-local consult--imenu-cache nil
   "Buffer local cached imenu.")
+
+(defconst consult--grep-regexp "\\([^\0\n]+\\)\0\\([^:\0]+\\)[:\0]"
+  "Regexp used to match file and line of grep output.")
+
+(defconst consult--grep-match-regexp "\e\\[[0-9;]+m\\(.*?\\)\e\\[[0-9;]*m"
+  "Regexp used to find matches in grep output.")
 
 ;;;; Helper functions
 
@@ -2170,12 +2201,6 @@ used. See also `consult-imenu'."
   (interactive)
   (consult--imenu (consult--project-imenu-items)))
 
-(defconst consult--grep-regexp "\\([^\0\n]+\\)\0\\([^:\0]+\\)[:\0]"
-  "Regexp used to match file and line of grep output.")
-
-(defconst consult--grep-match-regexp "\e\\[[0-9;]+m\\(.*?\\)\e\\[[0-9;]*m"
-  "Regexp used to find matches in grep output.")
-
 (defun consult--grep-matches (lines)
   "Find grep match for REGEXP in LINES."
   (let ((candidates))
@@ -2214,10 +2239,6 @@ OPEN is the function to open new files."
               (forward-line (- (cadr loc) 1))
               (forward-char (caddr loc)))
             (point-marker)))))))
-
-(defvar consult--git-grep-command '("git" "--no-pager" "grep" "--null" "--color=always" "--extended-regexp" "--line-number" "-I" "-e"))
-(defvar consult--grep-command '("grep" "--null" "--line-buffered" "--color=always" "--extended-regexp" "--exclude-dir=.git" "--line-number" "-I" "-r" "." "-e"))
-(defvar consult--ripgrep-command '("rg" "--null" "--line-buffered" "--color=always" "--max-columns=500" "--no-heading" "--line-number" "." "-e"))
 
 (defun consult--command-args (cmd)
   "Split command arguments and append to CMD."
@@ -2259,19 +2280,19 @@ PROMPT is the prompt string."
 (defun consult-grep (&optional dir initial)
   "Search for regexp with grep in DIR with INITIAL input."
   (interactive "P")
-  (consult--grep "Grep" consult--grep-command dir initial))
+  (consult--grep "Grep" consult-grep-command dir initial))
 
 ;;;###autoload
 (defun consult-git-grep (&optional dir initial)
   "Search for regexp with grep in DIR with INITIAL input."
   (interactive "P")
-  (consult--grep "Git-grep" consult--git-grep-command dir initial))
+  (consult--grep "Git-grep" consult-git-grep-command dir initial))
 
 ;;;###autoload
 (defun consult-ripgrep (&optional dir initial)
   "Search for regexp with rg in DIR with INITIAL input."
   (interactive "P")
-  (consult--grep "Ripgrep" consult--ripgrep-command dir initial))
+  (consult--grep "Ripgrep" consult-ripgrep-command dir initial))
 
 (defun consult--find-async (cmd)
   "Async function for `consult--find'.
@@ -2300,21 +2321,18 @@ CMD is the find argument list."
     :category 'file
     :history '(:input consult--find-history))))
 
-(defvar consult--find-cmd '("find" "-not" "(" "-wholename" "*/.*" "-prune" ")" "-ipath"))
-(defvar consult--locate-cmd '("locate" "--ignore-case" "--existing" "--regexp"))
-
 ;;;###autoload
 (defun consult-find (&optional dir)
   "Search for regexp with find in DIR."
   (interactive "P")
   (pcase-let ((`(,prompt . ,default-directory) (consult--directory-prompt "Find" dir)))
-    (consult--find prompt consult--find-cmd)))
+    (consult--find prompt consult-find-command)))
 
 ;;;###autoload
 (defun consult-locate ()
   "Search for regexp with locate."
   (interactive)
-  (consult--find "Locate: " consult--locate-cmd))
+  (consult--find "Locate: " consult-locate-command))
 
 ;;;; default completion-system support
 
