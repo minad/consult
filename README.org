@@ -246,6 +246,8 @@ Examples:
 
 ** Package configuration
 
+*NOTE: If you are using Selectrum, you MUST install the packages selectrum, consult and consult-selectrum!*
+
 It is recommended to manage package configurations with =use-package=.
 The Consult package only provides commands and does not add any
 keybindings. In order to use the enhanced commands, you must configure
@@ -377,6 +379,8 @@ components.
 | consult-widen-key               | nil                | Widening key during completion                           |
 
 ** Related packages
+
+*NOTE: If you are using Selectrum, you MUST install the packages selectrum, consult and consult-selectrum!*
 
 It is recommended to install the following package combination:
 
