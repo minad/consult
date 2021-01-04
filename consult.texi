@@ -24,6 +24,50 @@
 @top consult.el - Consulting completing-read
 
 @uref{https://melpa.org/#/consult, file:https://melpa.org/packages/consult-badge.svg}
+@end ifnottex
+
+@menu
+* Introduction::
+* Available commands::
+* Special features::
+* Installation::
+* Related packages::
+* Acknowledgements::
+
+@detailmenu
+--- The Detailed Node Listing ---
+
+Introduction
+
+* Screenshots::
+
+Available commands
+
+* Virtual Buffers::
+* Editing::
+* Navigation::
+* Search::
+* Compilation errors::
+* Histories::
+* Minor and Major modes::
+* Miscellaneous::
+
+Special features
+
+* Live previews::
+* Narrowing to subsets::
+* Asynchronous candidates and filtering::
+
+Installation
+
+* Example configuration::
+* Customizable variables::
+
+@end detailmenu
+@end menu
+
+@node Introduction
+@chapter Introduction
 
 This package provides various commands based on the Emacs completion
 function @samp{completing-read}, in particular a more advanced buffer
@@ -55,41 +99,13 @@ file is offered.
 @uref{https://github.com/emacs-helm/helm, Helm}, you probably don't need
 Consult, since both packages already bring their own rich set of
 additional commands.
-@end ifnottex
 
 @menu
 * Screenshots::
-* Available commands::
-* Live previews::
-* Narrowing to subsets::
-* Asynchronous candidates and filtering::
-* Package configuration::
-* Related packages::
-* Acknowledgements::
-
-@detailmenu
---- The Detailed Node Listing ---
-
-Available commands
-
-* Virtual Buffers::
-* Editing::
-* Navigation::
-* Search::
-* Compilation errors::
-* Histories::
-* Minor and Major modes::
-* Miscellaneous::
-
-Package configuration
-
-* Configuration settings::
-
-@end detailmenu
 @end menu
 
 @node Screenshots
-@chapter Screenshots
+@section Screenshots
 
 consult-grep
 
@@ -315,8 +331,17 @@ themes. Supports live preview of the theme while scrolling through the
 candidates.
 @end itemize
 
+@node Special features
+@chapter Special features
+
+@menu
+* Live previews::
+* Narrowing to subsets::
+* Asynchronous candidates and filtering::
+@end menu
+
 @node Live previews
-@chapter Live previews
+@section Live previews
 
 Some Consult commands support live previews. For example when you scroll
 through the items of @samp{consult-line}, the buffer will scroll to the
@@ -327,7 +352,7 @@ search is ongoing. Previews must be explicitly enabled via
 variable is offered to selectively enable/disable preview.
 
 @node Narrowing to subsets
-@chapter Narrowing to subsets
+@section Narrowing to subsets
 
 Consult has special support to narrow to candidate subsets. When you use
 the @samp{consult-buffer} command, you can press @samp{b SPC} and the list of
@@ -338,7 +363,7 @@ pressed to achieve the same effect, see the configuration variables
 @samp{consult-narrow-key} and @samp{consult-widen-key}.
 
 @node Asynchronous candidates and filtering
-@chapter Asynchronous candidates and filtering
+@section Asynchronous candidates and filtering
 
 Consult has support for asynchronous generation of candidate lists. This
 feature is used for example by @samp{consult-grep}, where the list of matches
@@ -369,8 +394,8 @@ must be longer than @samp{consult-async-min-input} characters by default.
 @samp{#defun -- --invert-match#}: Pass argument @samp{--invert-match} to grep.
 @end itemize
 
-@node Package configuration
-@chapter Package configuration
+@node Installation
+@chapter Installation
 
 @strong{NOTE: If you are using Selectrum, you MUST install the packages selectrum, consult and consult-selectrum!}
 
@@ -383,6 +408,14 @@ Note that there are three packages as of now: @samp{consult.el},
 @samp{consult-selectrum.el} and @samp{consult-flycheck.el}. Consult has been split
 such that the main package @samp{consult.el} only depends on Emacs core
 components.
+
+@menu
+* Example configuration::
+* Customizable variables::
+@end menu
+
+@node Example configuration
+@section Example configuration
 
 @lisp
 ;; Example configuration for Consult
@@ -462,12 +495,8 @@ components.
               ("!" . consult-flycheck)))
 @end lisp
 
-@menu
-* Configuration settings::
-@end menu
-
-@node Configuration settings
-@section Configuration settings
+@node Customizable variables
+@section Customizable variables
 
 @strong{Tip:} If you have Marginalia installed, type @samp{M-x customize-variable RET consult} to see all Consult-specific
 customizable variables with their current values and abbreviated description!

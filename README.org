@@ -8,6 +8,8 @@
 
 [[https://melpa.org/#/consult][file:https://melpa.org/packages/consult-badge.svg]]
 
+* Introduction
+
 This package provides various commands based on the Emacs completion
 function =completing-read=, in particular a more advanced buffer
 switching command =consult-buffer= which allows to select from buffers,
@@ -66,11 +68,11 @@ marginalia-mode
 #+CAPTION: marginalia-mode
 [[https://github.com/minad/marginalia/blob/main/marginalia-mode.png?raw=true]]
 
-** Available commands
+* Available commands
 
 Most provided commands follow the naming scheme =consult-<thing>=.
 
-*** Virtual Buffers
+** Virtual Buffers
 
 - =consult-buffer= (=-other-window=, =-other-frame=): Enhanced version
   of =switch-to-buffer= with support for virtual buffers. Supports live
@@ -93,7 +95,7 @@ Most provided commands follow the naming scheme =consult-<thing>=.
   recent files. You might prefer the more powerful =consult-buffer=
   instead, which includes recent files.
 
-*** Editing
+** Editing
 
 - =consult-register=: Select from list of registers.
 - =consult-yank=, =consult-yank-pop=: Enhanced version of =yank= and
@@ -101,7 +103,7 @@ Most provided commands follow the naming scheme =consult-<thing>=.
   supported when selecting from the kill-ring.
 - =consult-kmacro=: Select macro from the macro ring and execute it.
 
-*** Navigation
+** Navigation
 
 - =consult-goto-line=: Jump to line number enhanced with live preview.
   This is a drop-in replacement for =goto-line=.
@@ -118,7 +120,7 @@ Most provided commands follow the naming scheme =consult-<thing>=.
   recursive editing and narrowing. This feature has been inspired by
   [[https://github.com/vspinu/imenu-anywhere][imenu-anywhere]].
 
-*** Search
+** Search
 
 - =consult-line=: Enter search string and select from matching lines.
   Supports live preview and recursive editing. The symbol at point and
@@ -152,7 +154,7 @@ Most provided commands follow the naming scheme =consult-<thing>=.
   case you want to use another search utility like =fd=, you can write
   wrapper command =my-fdfind= (see below in the configuration example).
 
-*** Compilation errors
+** Compilation errors
 
 - =consult-error=: Jump to an error. Supports live preview and recursive
   editing. In contrast to =consult-flycheck= it shows the line and is
@@ -166,7 +168,7 @@ Most provided commands follow the naming scheme =consult-<thing>=.
 - =consult-flymake=: Jump to Flymake diagnostic, like
   =consult-flycheck=.
 
-*** Histories
+** Histories
 
 - =consult-complex-command=: Select a command from the
   =command-history=. This command is a =completing-read= version of
@@ -176,7 +178,7 @@ Most provided commands follow the naming scheme =consult-<thing>=.
   This command can be invoked from the minibuffer. In that case the
   history stored in the minibuffer-history-variable is used.
 
-*** Minor and Major modes
+** Minor and Major modes
 
 - =consult-minor-mode-menu=: Enable/disable minor mode. Supports
   narrowing to on/off/local/global modes by pressing =i/o/l/g SPC=
@@ -185,7 +187,7 @@ Most provided commands follow the naming scheme =consult-<thing>=.
   or major modes. Supports narrowing to local-minor/global-minor/major
   mode via the keys =l/g/m=.
 
-*** Miscellaneous
+** Miscellaneous
 
 - =consult-apropos=: Replacement for =apropos= with completion.
 - =consult-file-externally=: Select a file and open it externally,
@@ -200,51 +202,52 @@ Most provided commands follow the naming scheme =consult-<thing>=.
   themes. Supports live preview of the theme while scrolling through the
   candidates.
 
+* Special features
 ** Live previews
 
-Some Consult commands support live previews. For example when you scroll
-through the items of =consult-line=, the buffer will scroll to the
-corresponding position. It is possible to jump back and forth between
-the minibuffer and the buffer to perform recursive editing while the
-search is ongoing. Previews must be explicitly enabled via
-=consult-preview-mode=. Furthermore for each command, a customizable
-variable is offered to selectively enable/disable preview.
+ Some Consult commands support live previews. For example when you scroll
+ through the items of =consult-line=, the buffer will scroll to the
+ corresponding position. It is possible to jump back and forth between
+ the minibuffer and the buffer to perform recursive editing while the
+ search is ongoing. Previews must be explicitly enabled via
+ =consult-preview-mode=. Furthermore for each command, a customizable
+ variable is offered to selectively enable/disable preview.
 
 ** Narrowing to subsets
 
-Consult has special support to narrow to candidate subsets. When you use
-the =consult-buffer= command, you can press =b SPC= and the list of
-candidates will be restricted such that only buffers are shown. If you
-press =DEL= afterwards, the full candidate list will be shown again.
-Furthermore a narrowing/widening key can be configured which can be
-pressed to achieve the same effect, see the configuration variables
-=consult-narrow-key= and =consult-widen-key=.
+ Consult has special support to narrow to candidate subsets. When you use
+ the =consult-buffer= command, you can press =b SPC= and the list of
+ candidates will be restricted such that only buffers are shown. If you
+ press =DEL= afterwards, the full candidate list will be shown again.
+ Furthermore a narrowing/widening key can be configured which can be
+ pressed to achieve the same effect, see the configuration variables
+ =consult-narrow-key= and =consult-widen-key=.
 
 ** Asynchronous candidates and filtering
 
-Consult has support for asynchronous generation of candidate lists. This
-feature is used for example by =consult-grep=, where the list of matches
-is generated dynamically while the user is typing a grep regular
-expression. Furthermore the found matches can then be narrowed using the
-installed Emacs completion-style, which can be very powerful if you are
-using for example the =orderless= completion style. This is possible
-since part of the input string is treated as input to grep and part of
-the input is used for filtering. The input string is split at a
-punctuation character, using a similar syntax as Perl regular
-expressions.
+ Consult has support for asynchronous generation of candidate lists. This
+ feature is used for example by =consult-grep=, where the list of matches
+ is generated dynamically while the user is typing a grep regular
+ expression. Furthermore the found matches can then be narrowed using the
+ installed Emacs completion-style, which can be very powerful if you are
+ using for example the =orderless= completion style. This is possible
+ since part of the input string is treated as input to grep and part of
+ the input is used for filtering. The input string is split at a
+ punctuation character, using a similar syntax as Perl regular
+ expressions.
 
-Examples:
+ Examples:
 
-- =#defun=: Search for "defun" using grep.
-- =#defun#consult=: Search for "defun" using grep, filter with the word
-  "consult".
-- =/defun/consult=: It is also possible to use other punctuation
-  characters.
-- =#to#=: Force searching for "to" using grep, since the grep pattern
-  must be longer than =consult-async-min-input= characters by default.
-- =#defun -- --invert-match#=: Pass argument =--invert-match= to grep.
+ - =#defun=: Search for "defun" using grep.
+ - =#defun#consult=: Search for "defun" using grep, filter with the word
+   "consult".
+ - =/defun/consult=: It is also possible to use other punctuation
+   characters.
+ - =#to#=: Force searching for "to" using grep, since the grep pattern
+   must be longer than =consult-async-min-input= characters by default.
+ - =#defun -- --invert-match#=: Pass argument =--invert-match= to grep.
 
-** Package configuration
+* Installation
 
 *NOTE: If you are using Selectrum, you MUST install the packages selectrum, consult and consult-selectrum!*
 
@@ -258,130 +261,132 @@ Note that there are three packages as of now: =consult.el=,
 such that the main package =consult.el= only depends on Emacs core
 components.
 
-#+BEGIN_SRC emacs-lisp
-;; Example configuration for Consult
-(use-package consult
-  ;; Replace bindings. Lazily loaded due by `use-package'.
-  :bind (("C-x M-:" . consult-complex-command)
-         ("C-c h" . consult-history)
-         ("C-c m" . consult-mode-command)
-         ("C-x b" . consult-buffer)
-         ("C-x 4 b" . consult-buffer-other-window)
-         ("C-x 5 b" . consult-buffer-other-frame)
-         ("C-x r x" . consult-register)
-         ("C-x r b" . consult-bookmark)
-         ("M-g g" . consult-goto-line)
-         ("M-g M-g" . consult-goto-line)
-         ("M-g o" . consult-outline)       ;; "M-s o" is a good alternative.
-         ("M-g l" . consult-line)          ;; "M-s l" is a good alternative.
-         ("M-g m" . consult-mark)          ;; I recommend to bind Consult navigation
-         ("M-g k" . consult-global-mark)   ;; commands under the "M-g" prefix.
-         ("M-g r" . consult-git-grep)      ;; or consult-grep, consult-ripgrep
-         ("M-g f" . consult-find)          ;; or consult-locate, my-fdfind
-         ("M-g i" . consult-project-imenu) ;; or consult-imenu
-         ("M-g e" . consult-error)
-         ("M-s m" . consult-multi-occur)
-         ("M-y" . consult-yank-pop)
-         ("<help> a" . consult-apropos))
+** Example configuration
 
-  ;; The :init configuration is always executed (Not lazy!)
-  :init
+ #+BEGIN_SRC emacs-lisp
+ ;; Example configuration for Consult
+ (use-package consult
+   ;; Replace bindings. Lazily loaded due by `use-package'.
+   :bind (("C-x M-:" . consult-complex-command)
+          ("C-c h" . consult-history)
+          ("C-c m" . consult-mode-command)
+          ("C-x b" . consult-buffer)
+          ("C-x 4 b" . consult-buffer-other-window)
+          ("C-x 5 b" . consult-buffer-other-frame)
+          ("C-x r x" . consult-register)
+          ("C-x r b" . consult-bookmark)
+          ("M-g g" . consult-goto-line)
+          ("M-g M-g" . consult-goto-line)
+          ("M-g o" . consult-outline)       ;; "M-s o" is a good alternative.
+          ("M-g l" . consult-line)          ;; "M-s l" is a good alternative.
+          ("M-g m" . consult-mark)          ;; I recommend to bind Consult navigation
+          ("M-g k" . consult-global-mark)   ;; commands under the "M-g" prefix.
+          ("M-g r" . consult-git-grep)      ;; or consult-grep, consult-ripgrep
+          ("M-g f" . consult-find)          ;; or consult-locate, my-fdfind
+          ("M-g i" . consult-project-imenu) ;; or consult-imenu
+          ("M-g e" . consult-error)
+          ("M-s m" . consult-multi-occur)
+          ("M-y" . consult-yank-pop)
+          ("<help> a" . consult-apropos))
 
-  ;; Custom command wrappers. It is generally encouraged to write your own
-  ;; commands based on the Consult commands. Some commands have arguments which
-  ;; allow tweaking. Furthermore global configuration variables can be set
-  ;; locally in a let-binding.
-  (defun my-fdfind (&optional dir)
-    (interactive "P")
-    (let ((consult-find-command '("fdfind" "--color=never" "--full-path")))
-      (consult-find dir)))
+   ;; The :init configuration is always executed (Not lazy!)
+   :init
 
-  ;; Replace `multi-occur' with `consult-multi-occur', which is a drop-in replacement.
-  (fset 'multi-occur #'consult-multi-occur)
+   ;; Custom command wrappers. It is generally encouraged to write your own
+   ;; commands based on the Consult commands. Some commands have arguments which
+   ;; allow tweaking. Furthermore global configuration variables can be set
+   ;; locally in a let-binding.
+   (defun my-fdfind (&optional dir)
+     (interactive "P")
+     (let ((consult-find-command '("fdfind" "--color=never" "--full-path")))
+       (consult-find dir)))
 
-  ;; Configure other variables and modes in the :config section, after lazily loading the package
-  :config
+   ;; Replace `multi-occur' with `consult-multi-occur', which is a drop-in replacement.
+   (fset 'multi-occur #'consult-multi-occur)
 
-  ;; Optionally configure a function which returns the project root directory
-  (autoload 'projectile-project-root "projectile")
-  (setq consult-project-root-function #'projectile-project-root)
+   ;; Configure other variables and modes in the :config section, after lazily loading the package
+   :config
 
-  ;; Optionally configure narrowing key.
-  ;; Both < and C-+ work reasonably well.
-  (setq consult-narrow-key "<") ;; (kbd "C-+")
-  ;; Optionally make narrowing help available in the minibuffer.
-  ;; Probably not needed if you are using which-key.
-  ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
+   ;; Optionally configure a function which returns the project root directory
+   (autoload 'projectile-project-root "projectile")
+   (setq consult-project-root-function #'projectile-project-root)
 
-  ;; Optional configure a view library to be used by `consult-buffer'.
-  ;; The view library must provide two functions, one to open the view by name,
-  ;; and one function which must return a list of views as strings.
-  ;; Example: https://github.com/minad/bookmark-view/
-  ;; (setq consult-view-open-function #'bookmark-jump
-  ;;       consult-view-list-function #'bookmark-view-names)
+   ;; Optionally configure narrowing key.
+   ;; Both < and C-+ work reasonably well.
+   (setq consult-narrow-key "<") ;; (kbd "C-+")
+   ;; Optionally make narrowing help available in the minibuffer.
+   ;; Probably not needed if you are using which-key.
+   ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
 
-  ;; Optionally enable previews. Note that individual previews can be disabled
-  ;; via customization variables.
-  (consult-preview-mode))
+   ;; Optional configure a view library to be used by `consult-buffer'.
+   ;; The view library must provide two functions, one to open the view by name,
+   ;; and one function which must return a list of views as strings.
+   ;; Example: https://github.com/minad/bookmark-view/
+   ;; (setq consult-view-open-function #'bookmark-jump
+   ;;       consult-view-list-function #'bookmark-view-names)
 
-;; Enable Consult-Selectrum integration.
-;; This package should be installed if Selectrum is used.
-(use-package consult-selectrum
-  :after selectrum
-  :demand t)
+   ;; Optionally enable previews. Note that individual previews can be disabled
+   ;; via customization variables.
+   (consult-preview-mode))
 
-;; Optionally add the `consult-flycheck' command.
-(use-package consult-flycheck
-  :bind (:map flycheck-command-map
-              ("!" . consult-flycheck)))
-#+END_SRC
+ ;; Enable Consult-Selectrum integration.
+ ;; This package should be installed if Selectrum is used.
+ (use-package consult-selectrum
+   :after selectrum
+   :demand t)
 
-*** Configuration settings
+ ;; Optionally add the `consult-flycheck' command.
+ (use-package consult-flycheck
+   :bind (:map flycheck-command-map
+               ("!" . consult-flycheck)))
+ #+END_SRC
 
-*Tip:* If you have Marginalia installed, type =M-x customize-variable RET consult= to see all Consult-specific
-customizable variables with their current values and abbreviated description!
+** Customizable variables
 
-| Variable                        | Default            | Description                                              |
-|---------------------------------+--------------------+----------------------------------------------------------|
-| consult-after-jump-hook         | '(recenter)        | Functions to call after jumping to a location            |
-| consult-async-default-split     | "#"                | Separator character used for splitting #async#filter     |
-| consult-async-input-debounce    | 0.25               | Input debounce for asynchronous commands                 |
-| consult-async-input-throttle    | 0.5                | Input throttle for asynchronous commands                 |
-| consult-async-min-input         | 3                  | Minimum numbers of letters needed for async process      |
-| consult-async-refresh-delay     | 0.25               | Refresh delay for asynchronous commands                  |
-| consult-find-command            | '(...)             | Command line arguments for find                          |
-| consult-git-grep-command        | '(...)             | Command line arguments for git-grep                      |
-| consult-goto-line-numbers       | t                  | Show line numbers for =consult-goto-line=                |
-| consult-grep-command            | '(...)             | Command line arguments for grep                          |
-| consult-imenu-narrow            | ...                | Mode-specific narrowing keys for =consult-imenu=         |
-| consult-imenu-toplevel          | ...                | Mode-specific toplevel names used by =consult-imenu=     |
-| consult-line-numbers-widen      | t                  | Show absolute line numbers when narrowing is active.     |
-| consult-line-point-placement    | 'match-beginning   | Placement of the point used by =consult-line=            |
-| consult-locate-command          | '(...)             | Command line arguments for locate                        |
-| consult-mode-command-filter     | "-mode$\           | --"                                                      |
-| consult-mode-histories          | ...                | Mode-specific history variables                          |
-| consult-narrow-key              | nil                | Narrowing prefix key during completion                   |
-| consult-preview-buffer          | t                  | Enable buffer preview during selection                   |
-| consult-preview-error           | t                  | Enable error preview during selection                    |
-| consult-preview-flycheck        | t                  | Enable flycheck error preview during selection           |
-| consult-preview-flymake         | t                  | Enable flymake diagnostic preview during selection       |
-| consult-preview-global-mark     | t                  | Enable global mark preview during selection              |
-| consult-preview-grep            | t                  | Enable grep preview during selection                     |
-| consult-preview-line            | t                  | Enable line preview during selection                     |
-| consult-preview-mark            | t                  | Enable mark preview during selection                     |
-| consult-preview-max-count       | 10                 | Maximum number of files to keep open during preview      |
-| consult-preview-max-size        | 102400             | Size limit for previewed files                           |
-| consult-preview-outline         | t                  | Enable outline preview during selection                  |
-| consult-preview-theme           | t                  | Enable theme preview during selection                    |
-| consult-preview-yank            | t                  | Enable yank preview during selection                     |
-| consult-project-root-function   | nil                | Function which returns current project root              |
-| consult-ripgrep-command         | '(...)             | Command line arguments for ripgrep                       |
-| consult-themes                  | nil                | List of themes to be presented for selection             |
-| consult-view-list-function      | nil                | Function which returns a list of view names as strings   |
-| consult-view-open-function      | nil                | Function to open a view by name                          |
-| consult-widen-key               | nil                | Widening key during completion                           |
+ *Tip:* If you have Marginalia installed, type =M-x customize-variable RET consult= to see all Consult-specific
+ customizable variables with their current values and abbreviated description!
 
-** Related packages
+ | Variable                        | Default            | Description                                              |
+ |---------------------------------+--------------------+----------------------------------------------------------|
+ | consult-after-jump-hook         | '(recenter)        | Functions to call after jumping to a location            |
+ | consult-async-default-split     | "#"                | Separator character used for splitting #async#filter     |
+ | consult-async-input-debounce    | 0.25               | Input debounce for asynchronous commands                 |
+ | consult-async-input-throttle    | 0.5                | Input throttle for asynchronous commands                 |
+ | consult-async-min-input         | 3                  | Minimum numbers of letters needed for async process      |
+ | consult-async-refresh-delay     | 0.25               | Refresh delay for asynchronous commands                  |
+ | consult-find-command            | '(...)             | Command line arguments for find                          |
+ | consult-git-grep-command        | '(...)             | Command line arguments for git-grep                      |
+ | consult-goto-line-numbers       | t                  | Show line numbers for =consult-goto-line=                |
+ | consult-grep-command            | '(...)             | Command line arguments for grep                          |
+ | consult-imenu-narrow            | ...                | Mode-specific narrowing keys for =consult-imenu=         |
+ | consult-imenu-toplevel          | ...                | Mode-specific toplevel names used by =consult-imenu=     |
+ | consult-line-numbers-widen      | t                  | Show absolute line numbers when narrowing is active.     |
+ | consult-line-point-placement    | 'match-beginning   | Placement of the point used by =consult-line=            |
+ | consult-locate-command          | '(...)             | Command line arguments for locate                        |
+ | consult-mode-command-filter     | "-mode$\           | --"                                                      |
+ | consult-mode-histories          | ...                | Mode-specific history variables                          |
+ | consult-narrow-key              | nil                | Narrowing prefix key during completion                   |
+ | consult-preview-buffer          | t                  | Enable buffer preview during selection                   |
+ | consult-preview-error           | t                  | Enable error preview during selection                    |
+ | consult-preview-flycheck        | t                  | Enable flycheck error preview during selection           |
+ | consult-preview-flymake         | t                  | Enable flymake diagnostic preview during selection       |
+ | consult-preview-global-mark     | t                  | Enable global mark preview during selection              |
+ | consult-preview-grep            | t                  | Enable grep preview during selection                     |
+ | consult-preview-line            | t                  | Enable line preview during selection                     |
+ | consult-preview-mark            | t                  | Enable mark preview during selection                     |
+ | consult-preview-max-count       | 10                 | Maximum number of files to keep open during preview      |
+ | consult-preview-max-size        | 102400             | Size limit for previewed files                           |
+ | consult-preview-outline         | t                  | Enable outline preview during selection                  |
+ | consult-preview-theme           | t                  | Enable theme preview during selection                    |
+ | consult-preview-yank            | t                  | Enable yank preview during selection                     |
+ | consult-project-root-function   | nil                | Function which returns current project root              |
+ | consult-ripgrep-command         | '(...)             | Command line arguments for ripgrep                       |
+ | consult-themes                  | nil                | List of themes to be presented for selection             |
+ | consult-view-list-function      | nil                | Function which returns a list of view names as strings   |
+ | consult-view-open-function      | nil                | Function to open a view by name                          |
+ | consult-widen-key               | nil                | Widening key during completion                           |
+
+* Related packages
 
 *NOTE: If you are using Selectrum, you MUST install the packages selectrum, consult and consult-selectrum!*
 
@@ -401,7 +406,7 @@ with alternative components, since there exist no hard dependencies.
 Furthermore it is possible to get started with only Selectrum and
 Consult and add more components later to the mix.
 
-** Acknowledgements
+* Acknowledgements
 
 You probably guessed from the name that this package took inspiration
 from [[https://github.com/abo-abo/swiper#counsel][Counsel]] by Oleh
