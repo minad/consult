@@ -46,7 +46,7 @@
 (defun consult-selectrum--refresh ()
   "Refresh selectrum view."
   (when (eq completing-read-function #'selectrum-completing-read)
-    (selectrum-exhibit)))
+    (selectrum-exhibit 'keep-selected)))
 
 (add-hook 'consult--completion-match-hook #'consult-selectrum--match)
 (add-hook 'consult--completion-candidate-hook #'consult-selectrum--candidate)
