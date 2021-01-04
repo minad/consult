@@ -149,8 +149,8 @@ Most provided commands follow the naming scheme =consult-<thing>=.
   where the first part is passed to find, and the second part is used
   for Emacs filtering. Note that =find= uses wildcards, e.g. enter
   =*consult*=, to find all files containing the string "consult". In
-  case you want to use another search utility like `fd`, you can write
-  wrapper command `my-fdfind` (see below in the configuration example).
+  case you want to use another search utility like =fd=, you can write
+  wrapper command =my-fdfind= (see below in the configuration example).
 
 *** Compilation errors
 

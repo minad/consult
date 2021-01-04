@@ -240,8 +240,8 @@ the search. The input string is treated similarly to @samp{consult-grep},
 where the first part is passed to find, and the second part is used
 for Emacs filtering. Note that @samp{find} uses wildcards, e.g. enter
 @samp{*consult*}, to find all files containing the string "consult". In
-case you want to use another search utility like `fd`, you can write
-wrapper command `my-fdfind` (see below in the configuration example).
+case you want to use another search utility like @samp{fd}, you can write
+wrapper command @samp{my-fdfind} (see below in the configuration example).
 @end itemize
 
 @node Compilation errors
