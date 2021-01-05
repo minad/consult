@@ -36,10 +36,6 @@
 @detailmenu
 --- The Detailed Node Listing ---
 
-Introduction
-
-* Screenshots::
-
 Available commands
 
 * Virtual Buffers::
@@ -99,33 +95,6 @@ file is offered.
 @uref{https://github.com/emacs-helm/helm, Helm}, you probably don't need
 Consult, since both packages already bring their own rich set of
 additional commands.
-
-@menu
-* Screenshots::
-@end menu
-
-@node Screenshots
-@section Screenshots
-
-consult-grep
-
-@uref{https://github.com/minad/consult/blob/main/images/consult-grep.gif?raw=true}
-
-consult-mark
-
-@uref{https://github.com/minad/consult/blob/main/images/consult-mark.png?raw=true}
-
-consult-line
-
-@uref{https://github.com/minad/consult/blob/main/images/consult-line.png?raw=true}
-
-consult-outline
-
-@uref{https://github.com/minad/consult/blob/main/images/consult-outline.png?raw=true}
-
-marginalia-mode
-
-@uref{https://github.com/minad/marginalia/blob/main/marginalia-mode.png?raw=true}
 
 @node Available commands
 @chapter Available commands

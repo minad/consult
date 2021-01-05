@@ -41,7 +41,7 @@ file is offered.
 Consult, since both packages already bring their own rich set of
 additional commands.
 
-** Screenshots
+** Screenshots :noexport:
 
 consult-grep
 
