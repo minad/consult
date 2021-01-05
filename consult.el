@@ -2148,13 +2148,13 @@ Prepend PREFIX in front of all items."
 (defun consult--project-imenu-items ()
   "Return imenu items from every buffer with the same `major-mode'."
   (let ((proj-root (and consult-project-root-function (funcall consult-project-root-function))))
-    (mapcan (lambda (buf)
-              (when-let (file (buffer-file-name buf))
-                (when (and (eq (buffer-local-value 'major-mode buf) major-mode)
-                           (or (not proj-root) (string-prefix-p proj-root file)))
-                  (with-current-buffer buf
-                    (consult--imenu-items)))))
-            (buffer-list))))
+    (seq-mapcat (lambda (buf)
+                  (when-let (file (buffer-file-name buf))
+                    (when (and (eq (buffer-local-value 'major-mode buf) major-mode)
+                               (or (not proj-root) (string-prefix-p proj-root file)))
+                      (with-current-buffer buf
+                        (consult--imenu-items)))))
+                (buffer-list))))
 
 (defun consult--imenu-jump (item)
   "Jump to imenu ITEM via `consult--jump'.
