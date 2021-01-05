@@ -317,8 +317,8 @@ through the items of @samp{consult-line}, the buffer will scroll to the
 corresponding position. It is possible to jump back and forth between
 the minibuffer and the buffer to perform recursive editing while the
 search is ongoing. Previews must be explicitly enabled via
-@samp{consult-preview-mode}. Furthermore for each command, a customizable
-variable is offered to selectively enable/disable preview.
+@samp{consult-preview-mode}. Furthermore each command can be configured
+individually to selectively enable/disable preview.
 
 @node Narrowing to subsets
 @section Narrowing to subsets
@@ -493,9 +493,15 @@ customizable variables with their current values and abbreviated description!
 @item consult-async-refresh-delay
 @tab 0.25
 @tab Refresh delay for asynchronous commands
+@item consult-config
+@tab nil
+@tab Invididual command option configuration
 @item consult-find-command
 @tab '(@dots{})
 @tab Command line arguments for find
+@item consult-fontify-limit
+@tab 1048576
+@tab Buffers larger than this limit are not fontified
 @item consult-git-grep-command
 @tab '(@dots{})
 @tab Command line arguments for git-grep
@@ -521,53 +527,20 @@ customizable variables with their current values and abbreviated description!
 @tab '(@dots{})
 @tab Command line arguments for locate
 @item consult-mode-command-filter
-@tab "-mode$\
-@tab --"
+@tab @dots{}
+@tab Filter for @samp{consult-mode-command}
 @item consult-mode-histories
 @tab @dots{}
 @tab Mode-specific history variables
 @item consult-narrow-key
 @tab nil
 @tab Narrowing prefix key during completion
-@item consult-preview-buffer
-@tab t
-@tab Enable buffer preview during selection
-@item consult-preview-error
-@tab t
-@tab Enable error preview during selection
-@item consult-preview-flycheck
-@tab t
-@tab Enable flycheck error preview during selection
-@item consult-preview-flymake
-@tab t
-@tab Enable flymake diagnostic preview during selection
-@item consult-preview-global-mark
-@tab t
-@tab Enable global mark preview during selection
-@item consult-preview-grep
-@tab t
-@tab Enable grep preview during selection
-@item consult-preview-line
-@tab t
-@tab Enable line preview during selection
-@item consult-preview-mark
-@tab t
-@tab Enable mark preview during selection
 @item consult-preview-max-count
 @tab 10
 @tab Maximum number of files to keep open during preview
 @item consult-preview-max-size
-@tab 102400
+@tab 10485760
 @tab Size limit for previewed files
-@item consult-preview-outline
-@tab t
-@tab Enable outline preview during selection
-@item consult-preview-theme
-@tab t
-@tab Enable theme preview during selection
-@item consult-preview-yank
-@tab t
-@tab Enable yank preview during selection
 @item consult-project-root-function
 @tab nil
 @tab Function which returns current project root
@@ -587,6 +560,18 @@ customizable variables with their current values and abbreviated description!
 @tab nil
 @tab Widening key during completion
 @end multitable
+
+Commands allow flexible, individual customization by setting the
+@samp{consult-config} list. You can set override any option passed to
+@samp{consult--read}, for example @samp{:preview}, @samp{:initial}, @samp{:default}, @samp{:history} or
+@samp{:sort}. Note that `consult--read` is part of the internal API as of now.
+Options could be removed, replaced or renamed at any time.
+
+@lisp
+;; Disable preview for `consult-buffer' and `consult-theme'.
+(setq consult-config '((consult-theme :preview nil)
+                       (consult-buffer :preview nil)))
+@end lisp
 
 @node Related packages
 @section Related packages

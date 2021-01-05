@@ -60,7 +60,12 @@
   :group 'convenience
   :prefix "consult-")
 
-;;;; General customization
+;;;; Customization
+
+;;;###autoload
+(define-minor-mode consult-preview-mode
+  "Enable preview for consult commands."
+  :global t)
 
 (defcustom consult-narrow-key nil
   "Prefix key for narrowing during completion."
@@ -196,52 +201,6 @@ You may want to add a function which pulses the current line, e.g.,
   "Command line arguments for locate."
   :type '(repeat string))
 
-;;;; Preview customization
-
-(defgroup consult-preview nil
-  "Preview settings of consult."
-  :group 'consult)
-
-(defcustom consult-preview-buffer t
-  "Enable buffer preview during selection."
-  :type 'boolean)
-
-(defcustom consult-preview-imenu t
-  "Enable imenu item preview during selection."
-  :type 'boolean)
-
-(defcustom consult-preview-theme t
-  "Enable theme preview during selection."
-  :type 'boolean)
-
-(defcustom consult-preview-yank t
-  "Enable yank preview during selection."
-  :type 'boolean)
-
-(defcustom consult-preview-global-mark t
-  "Enable global mark preview during selection."
-  :type 'boolean)
-
-(defcustom consult-preview-mark t
-  "Enable mark preview during selection."
-  :type 'boolean)
-
-(defcustom consult-preview-line t
-  "Enable line preview during selection."
-  :type 'boolean)
-
-(defcustom consult-preview-error t
-  "Enable error preview during selection."
-  :type 'boolean)
-
-(defcustom consult-preview-outline t
-  "Enable outline preview during selection."
-  :type 'boolean)
-
-(defcustom consult-preview-grep t
-  "Enable grep preview during selection."
-  :type 'boolean)
-
 (defcustom consult-preview-max-size 10485760
   "Files larger than this limit are not previewed."
   :type 'integer)
@@ -250,10 +209,9 @@ You may want to add a function which pulses the current line, e.g.,
   "Number of files to keep open at once during preview."
   :type 'integer)
 
-;;;###autoload
-(define-minor-mode consult-preview-mode
-  "Enable preview for consult commands."
-  :global t)
+(defcustom consult-config nil
+  "Command configuration alists."
+  :type '(list (cons symbol plist)))
 
 ;;;; Faces
 
@@ -835,8 +793,13 @@ ARGS is the open function argument for BODY."
                                 (sort t) (default-top t) (lookup (lambda (_input _cands x) x)))
   "Simplified completing read function.
 
+Arguments:
+
 PROMPT is the string to prompt with.
 CANDIDATES is the candidate list or alist.
+
+Options:
+
 PREDICATE is a filter function for the candidates.
 REQUIRE-MATCH equals t means that an exact match is required.
 HISTORY is the symbol of the history variable.
@@ -890,6 +853,18 @@ NARROW is an alist of narrowing prefix strings and description."
            (add-to-history var (cdr result)))
           ((pred symbolp)))
         (car result)))))
+
+(defun consult--read-config (args)
+  "Advice for `consult--read' which adjusts ARGS, merging the command configuration."
+  (when-let (config (alist-get this-command consult-config))
+    (setq args (copy-sequence args))
+    (let ((options (cddr args)))
+      (while config
+        (setq options (plist-put options (car config) (cadr config))
+              config (cddr config)))
+      (setf (cddr args) options)))
+  args)
+(advice-add #'consult--read :filter-args #'consult--read-config)
 
 (defun consult--count-lines (pos)
   "Move to position POS and return number of lines."
@@ -1219,7 +1194,7 @@ This command supports candidate preview."
     :lookup #'consult--line-match
     :history '(:input consult--line-history)
     :add-history (thing-at-point 'symbol)
-    :preview (and consult-preview-outline (consult--preview-position)))))
+    :preview (consult--preview-position))))
 
 (defun consult--error-candidates ()
   "Return alist of errors and positions."
@@ -1276,7 +1251,7 @@ The command supports preview of the currently selected error."
               (?i . "Info"))
     :history '(:input consult--error-history)
     :preview
-    (and consult-preview-error (consult--preview-position 'consult-preview-error)))))
+    (consult--preview-position 'consult-preview-error))))
 
 (defun consult--mark-candidates ()
   "Return alist of lines containing markers.
@@ -1315,7 +1290,7 @@ The command supports preview of the currently selected marker position."
     :require-match t
     :lookup #'consult--lookup-cdr
     :history '(:input consult--line-history)
-    :preview (and consult-preview-mark (consult--preview-position)))))
+    :preview (consult--preview-position))))
 
 (defun consult--global-mark-candidates ()
   "Return alist of lines containing markers.
@@ -1361,7 +1336,7 @@ The command supports preview of the currently selected marker position."
     :require-match t
     :lookup #'consult--lookup-cdr
     :history '(:input consult--line-history)
-    :preview (and consult-preview-global-mark (consult--preview-position)))))
+    :preview (consult--preview-position))))
 
 (defun consult--line-candidates ()
   "Return alist of lines and positions."
@@ -1458,7 +1433,7 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
       :lookup #'consult--line-match
       :default (car candidates)
       :initial initial
-      :preview (and consult-preview-line (consult--preview-position))))))
+      :preview (consult--preview-position)))))
 
 ;;;###autoload
 (defun consult-goto-line ()
@@ -1649,19 +1624,18 @@ If no MODES are specified, use currently active major and minor modes."
    :sort nil
    :category 'kill-ring
    :require-match t
-   :preview (when consult-preview-yank
-              (let* ((pt (point))
-                     ;; If previous command is yank, hide previously yanked text
-                     (mk (or (and (eq last-command 'yank) (mark t)) pt))
-                     (ov (consult--overlay (min pt mk) (max pt mk) 'invisible t)))
-                (lambda (cand restore)
-                  (if restore
-                      (delete-overlay ov)
-                    ;; Use `add-face-text-property' on a copy of "cand in order to merge face properties
-                    (setq cand (copy-sequence cand))
-                    (add-face-text-property 0 (length cand) 'consult-preview-yank t cand)
-                    ;; Use the `before-string' property since the overlay might be empty.
-                    (overlay-put ov 'before-string cand)))))))
+   :preview
+   ;; If previous command is yank, hide previously yanked text
+   (let* ((ov) (pt (point)) (mk (or (and (eq last-command 'yank) (mark t)) pt)))
+     (lambda (cand restore)
+       (if restore
+           (when ov (delete-overlay ov))
+         (unless ov (setq ov (consult--overlay (min pt mk) (max pt mk) 'invisible t)))
+         ;; Use `add-face-text-property' on a copy of "cand in order to merge face properties
+         (setq cand (copy-sequence cand))
+         (add-face-text-property 0 (length cand) 'consult-preview-yank t cand)
+         ;; Use the `before-string' property since the overlay might be empty.
+         (overlay-put ov 'before-string cand))))))
 
 ;; Insert selected text.
 ;; Adapted from the Emacs yank function.
@@ -1908,11 +1882,10 @@ The command supports previewing the currently selected theme."
        :history 'consult--theme-history
        :lookup (lambda (_input _cands x)
                  (and x (not (string= x "default")) (intern-soft x)))
-       :preview (when consult-preview-theme
-                  (lambda (cand restore)
-                    (cond
-                     ((and restore (not cand)) (consult-theme saved-theme))
-                     ((memq cand avail-themes) (consult-theme cand)))))
+       :preview (lambda (cand restore)
+                  (cond
+                   ((and restore (not cand)) (consult-theme saved-theme))
+                   ((memq cand avail-themes) (consult-theme cand))))
        :default (symbol-name (or saved-theme 'default))))))
   (unless (eq theme (car custom-enabled-themes))
     (mapc #'disable-theme custom-enabled-themes)
@@ -2006,17 +1979,16 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                ;; default to creating a new buffer.
                (and (not (string-blank-p cand)) (cons open-buffer cand))))
            :preview
-           (when consult-preview-buffer
-             (lambda (cand restore)
-               (cond
-                (restore
-                 (when (buffer-live-p saved-buf)
-                   (set-buffer saved-buf)))
-                ;; In order to avoid slowness and unnecessary complexity, we
-                ;; only preview buffers. Loading recent files, bookmarks or
-                ;; views can result in expensive operations.
-                ((and (eq (car cand) open-buffer) (get-buffer (cdr cand)))
-                 (funcall open-buffer (cdr cand) 'norecord))))))))
+           (lambda (cand restore)
+             (cond
+              (restore
+               (when (buffer-live-p saved-buf)
+                 (set-buffer saved-buf)))
+              ;; In order to avoid slowness and unnecessary complexity, we
+              ;; only preview buffers. Loading recent files, bookmarks or
+              ;; views can result in expensive operations.
+              ((and (eq (car cand) open-buffer) (get-buffer (cdr cand)))
+               (funcall open-buffer (cdr cand) 'norecord)))))))
     (when selected (funcall (car selected) (cdr selected)))))
 
 ;;;###autoload
@@ -2201,12 +2173,11 @@ this function can jump across buffers."
     "Go to item: "
     (or items (user-error "Imenu is empty"))
     :preview
-    (when consult-preview-imenu
-      (let ((preview (consult--preview-position)))
-        (lambda (cand restore)
-          ;; Only preview simple menu items which are markers,
-          ;; in order to avoid any bad side effects.
-          (funcall preview (and (markerp (cdr cand)) (cdr cand)) restore))))
+    (let ((preview (consult--preview-position)))
+      (lambda (cand restore)
+        ;; Only preview simple menu items which are markers,
+        ;; in order to avoid any bad side effects.
+        (funcall preview (and (markerp (cdr cand)) (cdr cand)) restore)))
     :require-match t
     :narrow
     (let ((narrow (cdr (seq-find (lambda (x) (derived-mode-p (car x))) consult-imenu-narrow))))
@@ -2308,7 +2279,7 @@ PROMPT is the prompt string."
         prompt
         (consult--grep-async cmd)
         :lookup (consult--grep-marker open)
-        :preview (and consult-preview-grep (consult--preview-position))
+        :preview (consult--preview-position)
         :initial (concat consult-async-default-split initial)
         :add-history (concat consult-async-default-split (thing-at-point 'symbol))
         :require-match t
