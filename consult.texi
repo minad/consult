@@ -22,8 +22,6 @@
 @ifnottex
 @node Top
 @top consult.el - Consulting completing-read
-
-@uref{https://melpa.org/#/consult, file:https://melpa.org/packages/consult-badge.svg}
 @end ifnottex
 
 @menu
