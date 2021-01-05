@@ -2406,6 +2406,8 @@ CMD is the find argument list."
   (when icomplete-mode
     (let ((top (car completion-all-sorted-completions)))
       (completion--flush-all-sorted-completions)
+      ;; force flushing, otherwise narrowing is broken!
+      (setq completion-all-sorted-completions nil)
       (when top
         (let* ((completions (completion-all-sorted-completions
                              (icomplete--field-beg) (icomplete--field-end)))
