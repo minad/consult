@@ -35,18 +35,15 @@
 
 (defun consult-selectrum--match ()
   "Return selectrum matching function."
-  (when (eq completing-read-function #'selectrum-completing-read)
-    selectrum-refine-candidates-function))
+  (and selectrum-active-p selectrum-refine-candidates-function))
 
 (defun consult-selectrum--candidate ()
   "Return current selectrum candidate."
-  (when (eq completing-read-function #'selectrum-completing-read)
-    (selectrum-get-current-candidate)))
+  (and selectrum-active-p (selectrum-get-current-candidate)))
 
 (defun consult-selectrum--refresh ()
   "Refresh selectrum view."
-  (when (eq completing-read-function #'selectrum-completing-read)
-    (selectrum-exhibit 'keep-selected)))
+  (and selectrum-active-p (selectrum-exhibit 'keep-selected)))
 
 (add-hook 'consult--completion-match-hook #'consult-selectrum--match)
 (add-hook 'consult--completion-candidate-hook #'consult-selectrum--candidate)
