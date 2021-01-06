@@ -585,11 +585,15 @@ This command is used internally by the narrowing system of `consult--read'."
 
 This command can be bound in `consult-narrow-map'."
   (interactive)
+  (unless (minibufferp)
+    (user-error "Narrow help must be called in the minibuffer"))
   (minibuffer-message
    (string-join
     (thread-last consult--narrow-prefixes
       (seq-filter (lambda (x) (/= (car x) 32)))
-      (mapcar (lambda (x) (format "%c %s" (car x) (cdr x)))))
+      (mapcar (lambda (x) (concat
+                           (propertize (char-to-string (car x)) 'face 'consult-key)
+                           " " (cdr x)))))
     " ")))
 
 (defvar consult-narrow-map
