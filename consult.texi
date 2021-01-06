@@ -499,6 +499,9 @@ an overview of all Consult variables and functions with their descriptions.
 @item consult-async-refresh-delay
 @tab 0.25
 @tab Refresh delay for asynchronous commands
+@item consult-buffer-filter
+@tab @dots{}
+@tab Filter for @samp{consult-buffer}
 @item consult-config
 @tab nil
 @tab Invididual command option configuration

@@ -171,10 +171,15 @@ You may want to add a function which pulses the current line, e.g.,
   "Names of toplevel items, used by `consult-imenu'."
   :type 'alist)
 
+(defcustom consult-buffer-filter
+  '("^ ")
+  "Filter regexps for `consult-buffer'."
+  :type '(repeat regexp))
+
 (defcustom consult-mode-command-filter
-  "-mode$\\|--"
-  "Filter regexp for `consult-mode-command'."
-  :type 'regexp)
+  '("-mode$" "--")
+  "Filter regexps for `consult-mode-command'."
+  :type '(repeat regexp))
 
 (defcustom consult-git-grep-command
   '("git" "--no-pager" "grep" "--null" "--color=always" "--extended-regexp" "--line-number" "-I" "-e")
@@ -353,6 +358,10 @@ Size of private unicode plane b.")
   "Regexp used to find matches in grep output.")
 
 ;;;; Helper functions
+
+(defun consult--regexp-filter (regexps)
+  "Create filter regexp from REGEXPS."
+  (string-join (mapcar (lambda (x) (concat "\\(?:" x "\\)")) regexps) "\\|"))
 
 (defun consult--font-lock (str)
   "Apply `font-lock' faces in STR, copy them to `face'."
@@ -1566,6 +1575,7 @@ The arguments and expected return value are as specified for
 The list of features is searched for files belonging to MODE.
 From these files, the commands are extracted."
   (let ((library-path (symbol-file mode))
+        (filter (consult--regexp-filter consult-mode-command-filter))
         (key (if (memq mode minor-mode-list)
                  (if (local-variable-if-set-p mode) ?l ?g)
                ?m))
@@ -1586,8 +1596,7 @@ From these files, the commands are extracted."
                (and (consp cmd)
                     (eq (car cmd) 'defun)
                     (commandp (cdr cmd))
-                    (not (string-match-p consult-mode-command-filter
-                                         (symbol-name (cdr cmd))))))
+                    (not (string-match-p filter (symbol-name (cdr cmd))))))
              (cdr feature))))))
      load-history)))
 
@@ -1918,8 +1927,12 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                             (when-let (file (buffer-file-name buf))
                               (puthash file t ht)))))
          (all-bufs (append (delq curr-buf all-bufs-list) (list curr-buf)))
+         (buf-filter (consult--regexp-filter consult-buffer-filter))
          (bufs (mapcar (lambda (x)
-                         (consult--buffer-candidate ?b (buffer-name x) 'consult-buffer))
+                         (let ((name (buffer-name x)))
+                           (consult--buffer-candidate
+                            (if (string-match-p buf-filter name) ?h ?b)
+                            name 'consult-buffer)))
                        all-bufs))
          (views (when consult-view-list-function
                   (mapcar (lambda (x)
@@ -1954,15 +1967,13 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
            (lambda (cand)
              (let ((type (- (elt cand 0) consult--special-char)))
                (when (= type ?q) (setq type ?p)) ;; q=project files
-               (if (eq consult--narrow 32) ;; narrowed to ephemeral
-                   (and (= type ?b)
-                        (= (elt cand 1) 32))
+               (if (eq consult--narrow 32) ;; narrowed to hidden buffers
+                   (= type ?h)
                  (and
-                  (or (/= type ?b) ;; non-ephemeral
-                      (/= (elt cand 1) 32))
+                  (/= type ?h) ;; non-hidden buffers
                   (or (not consult--narrow) ;; narrowed
                       (= type consult--narrow))))))
-           :narrow `((32 . "Ephemeral")
+           :narrow `((32 . "Hidden")
                      (?b . "Buffer")
                      (?f . "File")
                      (?m . "Bookmark")
@@ -1974,6 +1985,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
              (if (member cand candidates)
                  (cons (pcase-exhaustive (- (elt cand 0) consult--special-char)
                          (?b open-buffer)
+                         (?h open-buffer)
                          (?m open-bookmark)
                          (?v consult-view-open-function)
                          (?p open-buffer)

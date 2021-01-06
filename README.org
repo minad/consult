@@ -365,6 +365,7 @@ components.
  | consult-async-input-throttle    | 0.5                | Input throttle for asynchronous commands                 |
  | consult-async-min-input         | 3                  | Minimum numbers of letters needed for async process      |
  | consult-async-refresh-delay     | 0.25               | Refresh delay for asynchronous commands                  |
+ | consult-buffer-filter           | ...                | Filter for =consult-buffer=                              |
  | consult-config                  | nil                | Invididual command option configuration                  |
  | consult-find-command            | '(...)             | Command line arguments for find                          |
  | consult-fontify-limit           | 1048576            | Buffers larger than this limit are not fontified         |
