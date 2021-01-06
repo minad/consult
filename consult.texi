@@ -99,6 +99,11 @@ additional commands.
 
 Most provided commands follow the naming scheme @samp{consult-<thing>}.
 
+@strong{Tip:} If you have Marginalia installed and heavy annotators enabled, type @samp{M-x
+ ^consult} to see all Consult commands with their abbreviated description!
+Alternatively, type @samp{C-h a ^consult} to get an overview of all Consult
+variables and functions with their descriptions.
+
 @menu
 * Virtual Buffers::
 * Editing::
@@ -466,8 +471,10 @@ components.
 @node Customizable variables
 @section Customizable variables
 
-@strong{Tip:} If you have Marginalia installed, type @samp{M-x customize-variable RET consult} to see all Consult-specific
-customizable variables with their current values and abbreviated description!
+@strong{Tip:} If you have Marginalia installed, type @samp{M-x customize-variable RET
+ ^consult} to see all Consult-specific customizable variables with their current
+values and abbreviated description! Alternatively, type @samp{C-h a ^consult} to get
+an overview of all Consult variables and functions with their descriptions.
 
 @multitable {aaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
 @headitem Variable
