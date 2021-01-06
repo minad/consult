@@ -1747,7 +1747,7 @@ Otherwise replace the just-yanked text with the selected text."
          (lambda (cand restore)
            (funcall
             preview
-            (if-let (bm (ignore-errors (bookmark-get-bookmark-record cand)))
+            (if-let (bm (bookmark-get-bookmark-record (bookmark-get-bookmark cand 'noerror)))
               (if-let* ((file (alist-get 'filename bm))
                         (pos (alist-get 'position bm))
                         ;; Only preview bookmarks without a handler
@@ -1757,7 +1757,8 @@ Otherwise replace the just-yanked text with the selected text."
                   (set-marker (make-marker) pos buf)
                 (unless restore
                   (minibuffer-message "No preview for special bookmark")
-                  nil)))
+                  nil))
+              orig-pos)
             restore)))
        :history 'bookmark-history
        :category 'bookmark))))
