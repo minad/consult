@@ -75,6 +75,11 @@ marginalia-mode
 
 Most provided commands follow the naming scheme =consult-<thing>=.
 
+ *Tip:* If you have Marginalia installed and heavy annotators enabled, type =M-x
+ ^consult= to see all Consult commands with their abbreviated description!
+ Alternatively, type =C-h a ^consult= to get an overview of all Consult
+ variables and functions with their descriptions.
+
 ** Virtual Buffers
 
 - =consult-buffer= (=-other-window=, =-other-frame=): Enhanced version
@@ -346,8 +351,10 @@ components.
 
 ** Customizable variables
 
- *Tip:* If you have Marginalia installed, type =M-x customize-variable RET consult= to see all Consult-specific
- customizable variables with their current values and abbreviated description!
+ *Tip:* If you have Marginalia installed, type =M-x customize-variable RET
+ ^consult= to see all Consult-specific customizable variables with their current
+ values and abbreviated description! Alternatively, type =C-h a ^consult= to get
+ an overview of all Consult variables and functions with their descriptions.
 
  | Variable                        | Default            | Description                                              |
  |---------------------------------+--------------------+----------------------------------------------------------|
