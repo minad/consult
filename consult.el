@@ -734,7 +734,7 @@ FACE is the cursor face."
   (unless (or (eq buf (current-buffer)) (buffer-modified-p buf))
     (kill-buffer buf)))
 
-(defun consult--with-preview-files-1 (fun)
+(defun consult--with-file-preview-1 (fun)
   "Provide a function to open files temporarily.
 The files are closed automatically in the end.
 
@@ -746,7 +746,7 @@ FUN receives the open function as argument."
             (or (get-file-buffer name)
                 (when-let (attrs (file-attributes name))
                   (if (> (file-attribute-size attrs) consult-preview-max-size)
-                      (and (message "File `%s' too large for preview" name) nil)
+                      (and (minibuffer-message "File `%s' too large for preview" name) nil)
                     (let ((buf (find-file-noselect name 'nowarn)))
                       (push buf new-buffers)
                       ;; Only keep a few buffers alive
@@ -763,13 +763,13 @@ FUN receives the open function as argument."
       (when (member (current-buffer) new-buffers)
         (recentf-add-file (buffer-file-name (current-buffer)))))))
 
-(defmacro consult--with-preview-files (args &rest body)
+(defmacro consult--with-file-preview (args &rest body)
   "Provide a function to open files temporarily.
 The files are closed automatically in the end.
 
 ARGS is the open function argument for BODY."
   (declare (indent 1))
-  `(consult--with-preview-files-1 (lambda ,args ,@body)))
+  `(consult--with-file-preview-1 (lambda ,args ,@body)))
 
 (defun consult--with-async-1 (async fun)
   "Setup ASYNC for FUN."
@@ -1735,11 +1735,33 @@ Otherwise replace the just-yanked text with the selected text."
 ;;;###autoload
 (defun consult-bookmark (name)
   "If bookmark NAME exists, open it, otherwise set bookmark under the given NAME."
-  (interactive (list (consult--read
-                      "Bookmark: " (bookmark-all-names)
-                      :history 'bookmark-history
-                      :category 'bookmark)))
-  (if (assoc name bookmark-alist)
+  (interactive
+   (list
+    (consult--with-file-preview (open)
+      (consult--read
+       "Bookmark: "
+       (bookmark-all-names)
+       :preview
+       (let ((orig-pos (point))
+             (preview (consult--preview-position)))
+         (lambda (cand restore)
+           (funcall
+            preview
+            (if-let (bm (ignore-errors (bookmark-get-bookmark-record cand)))
+              (if-let* ((file (alist-get 'filename bm))
+                        (pos (alist-get 'position bm))
+                        ;; Only preview bookmarks without a handler
+                        ;; aka `bookmark-default-handler'!
+                        (buf (and (not (alist-get 'handler bm))
+                                  (funcall open file))))
+                  (set-marker (make-marker) pos buf)
+                (unless restore
+                  (minibuffer-message "No preview for special bookmark")
+                  nil)))
+            restore)))
+       :history 'bookmark-history
+       :category 'bookmark))))
+  (if (memq name bookmark-alist)
       (bookmark-jump name)
     (bookmark-set name)))
 
@@ -2290,7 +2312,7 @@ CMD is the grep argument list."
 
 PROMPT is the prompt string."
   (pcase-let ((`(,prompt . ,default-directory) (consult--directory-prompt prompt dir)))
-    (consult--with-preview-files (open)
+    (consult--with-file-preview (open)
       (consult--jump
        (consult--read
         prompt
