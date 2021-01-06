@@ -369,7 +369,8 @@ must be longer than @samp{consult-async-min-input} characters by default.
 @node Installation
 @chapter Installation
 
-@strong{NOTE: If you are using Selectrum, you MUST install the packages selectrum, consult and consult-selectrum!}
+@strong{NOTE: If you are using Selectrum, you MUST install the packages selectrum,
+consult and consult-selectrum!}
 
 It is recommended to manage package configurations with @samp{use-package}.
 The Consult package only provides commands and does not add any
@@ -581,7 +582,8 @@ Options could be removed, replaced or renamed at any time.
 @node Related packages
 @section Related packages
 
-@strong{NOTE: If you are using Selectrum, you MUST install the packages selectrum, consult and consult-selectrum!}
+@strong{NOTE: If you are using Selectrum, you MUST install the packages selectrum,
+consult and consult-selectrum!}
 
 It is recommended to install the following package combination:
 

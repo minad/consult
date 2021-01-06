@@ -257,7 +257,8 @@ Most provided commands follow the naming scheme =consult-<thing>=.
 
 * Installation
 
-*NOTE: If you are using Selectrum, you MUST install the packages selectrum, consult and consult-selectrum!*
+*NOTE: If you are using Selectrum, you MUST install the packages selectrum,
+consult and consult-selectrum!*
 
 It is recommended to manage package configurations with =use-package=.
 The Consult package only provides commands and does not add any
@@ -401,7 +402,8 @@ components.
 
 ** Related packages
 
- *NOTE: If you are using Selectrum, you MUST install the packages selectrum, consult and consult-selectrum!*
+ *NOTE: If you are using Selectrum, you MUST install the packages selectrum,
+ consult and consult-selectrum!*
 
  It is recommended to install the following package combination:
 
