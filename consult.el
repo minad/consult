@@ -2356,11 +2356,12 @@ CMD is the grep argument list."
   "Run grep CMD in DIR with INITIAL input.
 
 PROMPT is the prompt string."
-  (pcase-let ((`(,prompt . ,default-directory) (consult--directory-prompt prompt dir)))
+  (let* ((prompt-dir (consult--directory-prompt prompt dir))
+         (default-directory (cdr prompt-dir)))
     (consult--with-file-preview (open)
       (consult--jump
        (consult--read
-        prompt
+        (car prompt-dir)
         (consult--grep-async cmd)
         :lookup (consult--grep-marker open)
         :preview (consult--preview-position)
@@ -2420,8 +2421,9 @@ CMD is the find argument list."
 (defun consult-find (&optional dir initial)
   "Search for regexp with find in DIR with INITIAL input."
   (interactive "P")
-  (pcase-let ((`(,prompt . ,default-directory) (consult--directory-prompt "Find" dir)))
-    (consult--find prompt consult-find-command initial)))
+  (let* ((prompt-dir (consult--directory-prompt "Find" dir))
+         (default-directory (cdr prompt-dir)))
+    (consult--find (car prompt-dir) consult-find-command initial)))
 
 ;;;###autoload
 (defun consult-locate (&optional initial)
