@@ -216,11 +216,13 @@ Most provided commands follow the naming scheme =consult-<thing>=.
 
  Some Consult commands support live previews. For example when you scroll
  through the items of =consult-line=, the buffer will scroll to the
- corresponding position. It is possible to jump back and forth between
- the minibuffer and the buffer to perform recursive editing while the
- search is ongoing. Previews must be explicitly enabled via
- =consult-preview-mode=. Furthermore each command can be configured
- individually to selectively enable/disable preview.
+ corresponding position. It is possible to jump back and forth between the
+ minibuffer and the buffer to perform recursive editing while the search is
+ ongoing. Previews are enabled by default but can be disabled via the
+ =consult-preview-key= option. Furthermore it is possible to define a keybinding
+ to trigger the preview manually. Each command can be configured individually
+ with its own =:preview-key=, such that for some commands preview is manual, for
+ some automatic and for some completely disabled.
 
 ** Narrowing to subsets
 
@@ -317,9 +319,9 @@ components.
    ;; Configure other variables and modes in the :config section, after lazily loading the package
    :config
 
-   ;; Optionally configure a function which returns the project root directory
-   (autoload 'projectile-project-root "projectile")
-   (setq consult-project-root-function #'projectile-project-root)
+   ;; Configure preview. Note that the preview-key can also be configured on a
+   ;; per-command basis via `consult-config'.
+   ;; (setq consult-preview-key 'any) ;; any key triggers preview, the default
 
    ;; Optionally configure narrowing key.
    ;; Both < and C-+ work reasonably well.
@@ -335,9 +337,9 @@ components.
    ;; (setq consult-view-open-function #'bookmark-jump
    ;;       consult-view-list-function #'bookmark-view-names)
 
-   ;; Optionally enable previews. Note that individual previews can be disabled
-   ;; via customization variables.
-   (consult-preview-mode))
+   ;; Optionally configure a function which returns the project root directory
+   (autoload 'projectile-project-root "projectile")
+   (setq consult-project-root-function #'projectile-project-root))
 
  ;; Enable Consult-Selectrum integration.
  ;; This package should be installed if Selectrum is used.
@@ -382,6 +384,7 @@ components.
  | consult-mode-command-filter     | ...                | Filter for =consult-mode-command=                        |
  | consult-mode-histories          | ...                | Mode-specific history variables                          |
  | consult-narrow-key              | nil                | Narrowing prefix key during completion                   |
+ | consult-preview-key             | 'any               | Key which triggers preview                               |
  | consult-preview-max-count       | 10                 | Maximum number of files to keep open during preview      |
  | consult-preview-max-size        | 10485760           | Size limit for previewed files                           |
  | consult-project-root-function   | nil                | Function which returns current project root              |
@@ -393,14 +396,15 @@ components.
 
  Commands allow flexible, individual customization by setting the
  =consult-config= list. You can set override any option passed to
- =consult--read=, for example =:preview=, =:initial=, =:default=, =:history= or
- =:sort=. Note that `consult--read` is part of the internal API as of now.
+ =consult--read=, for example =:preview-key=, =:initial=, =:default=, =:history=
+ or =:sort=. Note that `consult--read` is part of the internal API as of now.
  Options could be removed, replaced or renamed at any time.
 
  #+BEGIN_SRC emacs-lisp
- ;; Disable preview for `consult-buffer' and `consult-theme'.
- (setq consult-config '((consult-theme :preview nil)
-                        (consult-buffer :preview nil)))
+ ;; Set preview for `consult-buffer' to key `M-p'
+ ;; and disable preview for `consult-theme' completely.
+ (setq consult-config `((consult-theme :preview-key nil)
+                        (consult-buffer :preview-key ,(kbd "M-p"))))
  #+END_SRC
 
 ** Related packages

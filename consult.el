@@ -201,6 +201,10 @@ You may want to add a function which pulses the current line, e.g.,
   "Command line arguments for locate."
   :type '(repeat string))
 
+(defcustom consult-preview-key 'any
+  "Preview trigger, can be nil, 'any or a key."
+  :type '(choice (const nil) (const any) vector))
+
 (defcustom consult-preview-max-size 10485760
   "Files larger than this limit are not previewed."
   :type 'integer)
@@ -515,9 +519,13 @@ DISPLAY is the string to display instead of the unique string."
              (and (>= n consult--special-range) (setq n (/ n consult--special-range)))))
     (propertize str 'display display)))
 
-(defun consult--with-preview-1 (transform preview fun)
+(defun consult-preview-action ()
+  "Preview trigger action used if `consult-preview-key' is a key."
+  (interactive))
+
+(defun consult--with-preview-1 (transform preview preview-key fun)
   "Install TRANSFORM and PREVIEW function for FUN."
-  (if preview
+  (if (and preview preview-key)
       (let ((orig-window (selected-window))
             (selected)
             (input ""))
@@ -526,11 +534,13 @@ DISPLAY is the string to display instead of the unique string."
              #'add-hook 'post-command-hook
              (lambda ()
                (setq input (minibuffer-contents-no-properties))
-               (when-let (cand (run-hook-with-args-until-success 'consult--completion-candidate-hook))
-                 (with-selected-window (if (window-live-p orig-window)
-                                           orig-window
-                                         (selected-window))
-                   (funcall preview (and cand (funcall transform input cand)) nil))))
+               (when (or (eq preview-key 'any)
+                         (eq this-command #'consult-preview-action))
+                 (when-let (cand (run-hook-with-args-until-success 'consult--completion-candidate-hook))
+                   (with-selected-window (if (window-live-p orig-window)
+                                             orig-window
+                                           (selected-window))
+                     (funcall preview (and cand (funcall transform input cand)) nil)))))
              nil t)
           (unwind-protect
               (save-excursion
@@ -549,10 +559,10 @@ DISPLAY is the string to display instead of the unique string."
                 (funcall transform input result))
               input)))))
 
-(defmacro consult--with-preview (transform preview &rest body)
+(defmacro consult--with-preview (transform preview preview-key &rest body)
   "Install TRANSFORM and PREVIEW in BODY."
   (declare (indent 2))
-  `(consult--with-preview-1 ,transform ,preview (lambda () ,@body)))
+  `(consult--with-preview-1 ,transform ,preview ,preview-key (lambda () ,@body)))
 
 (defun consult--widen-key ()
   "Return widening key, if `consult-widen-key' is not set, default to 'consult-narrow-key SPC'."
@@ -635,23 +645,22 @@ Note that `consult-narrow-key' and `consult-widen-key' are bound dynamically.")
     (define-key map (vconcat (seq-take key idx) (vector 'which-key (elt key idx)))
       `(which-key (,desc)))))
 
-(defun consult--narrow-setup (settings)
-  "Setup narrowing with SETTINGS."
+(defun consult--narrow-setup (settings map)
+  "Setup narrowing with SETTINGS and keymap MAP."
   (if (functionp (car settings))
       (setq consult--narrow-predicate (car settings)
             consult--narrow-prefixes (cdr settings))
     (setq consult--narrow-predicate nil
           consult--narrow-prefixes settings))
-  (let ((map (make-composed-keymap consult-narrow-map (current-local-map))))
-    (when consult-narrow-key
-      (dolist (pair consult--narrow-prefixes)
-        (when (/= (car pair) 32)
-          (consult--define-key map
-                               (vconcat consult-narrow-key (vector (car pair)))
-                               #'consult-narrow (cdr pair)))))
-    (when-let (widen (consult--widen-key))
-      (consult--define-key map widen #'consult-narrow "All"))
-    (use-local-map map)))
+  (setcdr map (cons consult-narrow-map (cdr map)))
+  (when consult-narrow-key
+    (dolist (pair consult--narrow-prefixes)
+      (when (/= (car pair) 32)
+        (consult--define-key map
+                             (vconcat consult-narrow-key (vector (car pair)))
+                             #'consult-narrow (cdr pair)))))
+  (when-let (widen (consult--widen-key))
+    (consult--define-key map widen #'consult-narrow "All")))
 
 (defmacro consult--with-increased-gc (&rest body)
   "Temporarily increase the gc limit in BODY to optimize for throughput."
@@ -812,7 +821,8 @@ ARGS is the open function argument for BODY."
 
 (cl-defun consult--read (prompt candidates &key
                                 predicate require-match history default
-                                category initial preview narrow add-history
+                                category initial narrow add-history
+                                preview (preview-key consult-preview-key)
                                 (sort t) (default-top t) (lookup (lambda (_input _cands x) x)))
   "Simplified completing read function.
 
@@ -834,6 +844,7 @@ LOOKUP is a function which is applied to the result.
 INITIAL is initial input.
 DEFAULT-TOP must be nil if the default candidate should not be moved to the top.
 PREVIEW is a preview function.
+PREVIEW-KEY is the preview key (nil, 'any or a key).
 NARROW is an alist of narrowing prefix strings and description."
   (ignore default-top)
   ;; supported types
@@ -849,7 +860,12 @@ NARROW is an alist of narrowing prefix strings and description."
          (consult--add-history (if (stringp add-history)
                                    (list add-history)
                                  add-history))
-         (when narrow (consult--narrow-setup narrow))))
+         (let ((map (make-composed-keymap nil (current-local-map))))
+           (when narrow
+             (consult--narrow-setup narrow map))
+           (unless (symbolp preview-key)
+             (consult--define-key map preview-key #'consult-preview-action "Preview"))
+           (use-local-map map))))
     (consult--with-async (async candidates)
       (let* ((metadata
               `(metadata
@@ -865,7 +881,7 @@ NARROW is an alist of narrowing prefix strings and description."
               (lambda (input cand)
                 (funcall lookup input (funcall async 'get) cand)))
              (result
-              (consult--with-preview transform preview
+              (consult--with-preview transform preview preview-key
                 (completing-read prompt table
                                  predicate require-match initial
                                  (if (symbolp history) history (cadr history))
