@@ -192,7 +192,7 @@ You may want to add a function which pulses the current line, e.g.,
   :type '(repeat string))
 
 (defcustom consult-find-command
-  '("find" "-not" "(" "-wholename" "*/.*" "-prune" ")" "-ipath")
+  '("find" "." "-not" "(" "-wholename" "*/.*" "-prune" ")" "-ipath")
   "Command line arguments for find."
   :type '(repeat string))
 
