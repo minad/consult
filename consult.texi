@@ -606,7 +606,7 @@ following techniques:
 @item
 Create your own wrapper function which passes modified arguments to the Consult functions.
 @item
-Modify @samp{consult-config} in order to change the `consult--read` settings.
+Modify @samp{consult-config} in order to change the @samp{consult--read} settings.
 @item
 Create advices to modify some internal behavior.
 @item

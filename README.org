@@ -416,7 +416,7 @@ components.
  following techniques:
 
  1. Create your own wrapper function which passes modified arguments to the Consult functions.
- 2. Modify =consult-config= in order to change the `consult--read` settings.
+ 2. Modify =consult-config= in order to change the =consult--read= settings.
  3. Create advices to modify some internal behavior.
  4. Write or propose a patch!
 
