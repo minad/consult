@@ -201,6 +201,11 @@ You may want to add a function which pulses the current line, e.g.,
   "Command line arguments for locate."
   :type '(repeat string))
 
+(defcustom consult-man-command
+  '("man" "-k")
+  "Command line arguments for man apropos."
+  :type '(repeat string))
+
 (defcustom consult-preview-key 'any
   "Preview trigger, can be nil, 'any or a key."
   :type '(choice (const nil) (const any) vector))
@@ -311,6 +316,7 @@ Each element of the list must have the form '(handler char name)."
 (defvar consult--error-history nil)
 (defvar consult--grep-history nil)
 (defvar consult--find-history nil)
+(defvar consult--man-history nil)
 (defvar consult--line-history nil)
 (defvar consult--apropos-history nil)
 (defvar consult--theme-history nil)
@@ -2418,6 +2424,33 @@ CMD is the find argument list."
     :category 'file
     :history '(:input consult--find-history))))
 
+(defun consult--man-async (cmd)
+  "Async function for `consult--man'.
+
+CMD is the man argument list."
+  (thread-first (consult--async-sink)
+    (consult--async-refresh-timer)
+    (consult--async-process (consult--command-args cmd))
+    (consult--async-throttle)
+    (consult--async-split)))
+
+(defun consult--man (prompt cmd initial)
+  "Run man CMD with INITIAL input.
+
+PROMPT is the prompt.
+CMD is the man argument list."
+  (let ((match (consult--read
+                prompt
+                (consult--man-async cmd)
+                :sort nil
+                :require-match t
+                :initial (concat consult-async-default-split initial)
+                :add-history (concat consult-async-default-split (thing-at-point 'symbol))
+                ;; XXX: category?
+                :history '(:input consult--man-history))))
+    (string-match "\\([^[:blank:]]+\\) - " match)
+    (man (match-string 1 match))))
+
 ;;;###autoload
 (defun consult-find (&optional dir initial)
   "Search for regexp with find in DIR with INITIAL input."
@@ -2431,6 +2464,12 @@ CMD is the find argument list."
   "Search for regexp with locate with INITIAL input."
   (interactive)
   (consult--find "Locate: " consult-locate-command initial))
+
+;;;##autoload
+(defun consult-man (&optional initial)
+  "Search for regexp with apropos with INITIAL input."
+  (interactive)
+  (consult--man "Man: " consult-man-command initial))
 
 ;;;; default completion-system support
 
