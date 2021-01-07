@@ -1765,6 +1765,7 @@ The command supports preview of file bookmarks and narrowing."
   (interactive
    (list
     (consult--with-file-preview (open)
+      (bookmark-maybe-load-default-file)
       (consult--read
        "Bookmark: "
        (bookmark-all-names)
@@ -1773,7 +1774,7 @@ The command supports preview of file bookmarks and narrowing."
         (lambda (cand)
           (if-let ((n consult--narrow)
                    (bm (bookmark-get-bookmark-record
-                        (bookmark-get-bookmark cand 'noerror))))
+                        (assoc cand bookmark-alist))))
               (eq n (car (alist-get
                           (or (bookmark-get-handler bm) #'bookmark-default-handler)
                           consult-bookmark-narrow)))
@@ -1787,7 +1788,7 @@ The command supports preview of file bookmarks and narrowing."
            (funcall
             preview
             (if-let (bm (bookmark-get-bookmark-record
-                         (bookmark-get-bookmark cand 'noerror)))
+                         (assoc cand bookmark-alist)))
               (if-let* ((file (alist-get 'filename bm))
                         (pos (alist-get 'position bm))
                         ;; Only preview bookmarks without a handler
@@ -1802,6 +1803,7 @@ The command supports preview of file bookmarks and narrowing."
             restore)))
        :history 'bookmark-history
        :category 'bookmark))))
+  (bookmark-maybe-load-default-file)
   (if (assoc name bookmark-alist)
       (bookmark-jump name)
     (bookmark-set name)))
