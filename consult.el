@@ -524,7 +524,9 @@ DISPLAY is the string to display instead of the unique string."
   (interactive))
 
 (defun consult--with-preview-1 (transform preview preview-key fun)
-  "Install TRANSFORM and PREVIEW function for FUN."
+  "Install TRANSFORM and PREVIEW function for FUN.
+
+PREVIEW-KEY is the key which triggers the preview."
   (if (and preview preview-key)
       (let ((orig-window (selected-window))
             (selected)
@@ -560,7 +562,9 @@ DISPLAY is the string to display instead of the unique string."
               input)))))
 
 (defmacro consult--with-preview (transform preview preview-key &rest body)
-  "Install TRANSFORM and PREVIEW in BODY."
+  "Install TRANSFORM and PREVIEW in BODY.
+
+PREVIEW-KEY is the key which triggers the preview."
   (declare (indent 2))
   `(consult--with-preview-1 ,transform ,preview ,preview-key (lambda () ,@body)))
 
