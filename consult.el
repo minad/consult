@@ -2398,8 +2398,8 @@ CMD is the find argument list."
     (consult--async-throttle)
     (consult--async-split)))
 
-(defun consult--find (prompt cmd)
-  "Generalized function for `consult-find' and similar functions.
+(defun consult--find (prompt cmd initial)
+  "Run find CMD in current directory with INITIAL input.
 
 PROMPT is the prompt.
 CMD is the find argument list."
@@ -2409,23 +2409,23 @@ CMD is the find argument list."
     (consult--find-async cmd)
     :sort nil
     :require-match t
-    :initial consult-async-default-split
+    :initial (concat consult-async-default-split initial)
     :add-history (concat consult-async-default-split (thing-at-point 'symbol))
     :category 'file
     :history '(:input consult--find-history))))
 
 ;;;###autoload
-(defun consult-find (&optional dir)
-  "Search for regexp with find in DIR."
+(defun consult-find (&optional dir initial)
+  "Search for regexp with find in DIR with INITIAL input."
   (interactive "P")
   (pcase-let ((`(,prompt . ,default-directory) (consult--directory-prompt "Find" dir)))
-    (consult--find prompt consult-find-command)))
+    (consult--find prompt consult-find-command initial)))
 
 ;;;###autoload
-(defun consult-locate ()
-  "Search for regexp with locate."
+(defun consult-locate (&optional initial)
+  "Search for regexp with locate with INITIAL input."
   (interactive)
-  (consult--find "Locate: " consult-locate-command))
+  (consult--find "Locate: " consult-locate-command initial))
 
 ;;;; default completion-system support
 
