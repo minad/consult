@@ -143,8 +143,9 @@ configured)
 @end itemize
 
 @item
-@samp{consult-bookmark}: Select or create bookmark. You might prefer the
-more powerful @samp{consult-buffer} instead, which includes bookmarks.
+@samp{consult-bookmark}: Select or create bookmark. You might consider the
+powerful @samp{consult-buffer} instead as an alternative, which includes bookmarks.
+However @samp{consult-bookmark} supports preview of bookmarks and narrowing.
 @item
 @samp{consult-recent-file} (@samp{-other-window}, @samp{-other-frame}): Select a
 recent files. You might prefer the more powerful @samp{consult-buffer}
@@ -499,6 +500,9 @@ an overview of all Consult variables and functions with their descriptions.
 @item consult-async-refresh-delay
 @tab 0.25
 @tab Refresh delay for asynchronous commands
+@item consult-bookmark-narrow
+@tab @dots{}
+@tab Narrowing configuration for @samp{consult-bookmark}
 @item consult-buffer-filter
 @tab @dots{}
 @tab Filter for @samp{consult-buffer}

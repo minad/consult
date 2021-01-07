@@ -214,6 +214,13 @@ You may want to add a function which pulses the current line, e.g.,
   "Number of files to keep open at once during preview."
   :type 'integer)
 
+(defcustom consult-bookmark-narrow
+  '((bookmark-default-handler ?f "File"))
+  "Bookmark narrowing list.
+
+Each element of the list must have the form '(handler char name)."
+  :type 'list)
+
 (defcustom consult-config nil
   "Command configuration alists."
   :type '(list (cons symbol plist)))
@@ -1734,20 +1741,35 @@ Otherwise replace the just-yanked text with the selected text."
 
 ;;;###autoload
 (defun consult-bookmark (name)
-  "If bookmark NAME exists, open it, otherwise set bookmark under the given NAME."
+  "If bookmark NAME exists, open it, otherwise create a new bookmark with NAME.
+
+The command supports preview of file bookmarks and narrowing."
   (interactive
    (list
     (consult--with-file-preview (open)
       (consult--read
        "Bookmark: "
        (bookmark-all-names)
+       :narrow
+       (cons
+        (lambda (cand)
+          (if-let ((n consult--narrow)
+                   (bm (bookmark-get-bookmark-record
+                        (bookmark-get-bookmark cand 'noerror))))
+              (eq n (car (alist-get
+                          (or (bookmark-get-handler bm) #'bookmark-default-handler)
+                          consult-bookmark-narrow)))
+            t))
+        (mapcar (pcase-lambda (`(_ ,x ,y)) (cons x y))
+                consult-bookmark-narrow))
        :preview
        (let ((orig-pos (point))
              (preview (consult--preview-position)))
          (lambda (cand restore)
            (funcall
             preview
-            (if-let (bm (bookmark-get-bookmark-record (bookmark-get-bookmark cand 'noerror)))
+            (if-let (bm (bookmark-get-bookmark-record
+                         (bookmark-get-bookmark cand 'noerror)))
               (if-let* ((file (alist-get 'filename bm))
                         (pos (alist-get 'position bm))
                         ;; Only preview bookmarks without a handler

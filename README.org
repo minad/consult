@@ -97,8 +97,9 @@ Most provided commands follow the naming scheme =consult-<thing>=.
   - v Views (only available if =consult-view-*-function= is
     configured)
 
-- =consult-bookmark=: Select or create bookmark. You might prefer the
-  more powerful =consult-buffer= instead, which includes bookmarks.
+- =consult-bookmark=: Select or create bookmark. You might consider the
+  powerful =consult-buffer= instead as an alternative, which includes bookmarks.
+  However =consult-bookmark= supports preview of bookmarks and narrowing.
 - =consult-recent-file= (=-other-window=, =-other-frame=): Select a
   recent files. You might prefer the more powerful =consult-buffer=
   instead, which includes recent files.
@@ -365,6 +366,7 @@ components.
  | consult-async-input-throttle    | 0.5                | Input throttle for asynchronous commands                 |
  | consult-async-min-input         | 3                  | Minimum numbers of letters needed for async process      |
  | consult-async-refresh-delay     | 0.25               | Refresh delay for asynchronous commands                  |
+ | consult-bookmark-narrow         | ...                | Narrowing configuration for =consult-bookmark=           |
  | consult-buffer-filter           | ...                | Filter for =consult-buffer=                              |
  | consult-config                  | nil                | Invididual command option configuration                  |
  | consult-find-command            | '(...)             | Command line arguments for find                          |
