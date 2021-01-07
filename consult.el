@@ -215,7 +215,14 @@ You may want to add a function which pulses the current line, e.g.,
   :type 'integer)
 
 (defcustom consult-bookmark-narrow
-  '((bookmark-default-handler ?f "File"))
+  '((bookmark-default-handler ?f "File")
+    (help-bookmark-jump ?h "Help")
+    (Info-bookmark-jump ?i "Info")
+    (image-bookmark-jump ?p "Picture")
+    (doc-view-bookmark-jump ?d "Docview")
+    (Man-bookmark-jump ?m "Man")
+    (woman-bookmark-jump ?w "Woman")
+    (gnus-summary-bookmark-jump ?g "Gnus"))
   "Bookmark narrowing list.
 
 Each element of the list must have the form '(handler char name)."
@@ -1784,7 +1791,7 @@ The command supports preview of file bookmarks and narrowing."
             restore)))
        :history 'bookmark-history
        :category 'bookmark))))
-  (if (memq name bookmark-alist)
+  (if (assoc name bookmark-alist)
       (bookmark-jump name)
     (bookmark-set name)))
 
