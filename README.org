@@ -394,11 +394,16 @@ components.
  | consult-view-open-function      | nil                | Function to open a view by name                          |
  | consult-widen-key               | nil                | Widening key during completion                           |
 
+** Configuration of individual commands
+
+ *Note:* This configuration feature is made available for experienced users,
+ in case fine-grained control for each individual command is needed.
+
  Commands allow flexible, individual customization by setting the
- =consult-config= list. You can set override any option passed to
- =consult--read=, for example =:preview-key=, =:initial=, =:default=, =:history=
- or =:sort=. Note that `consult--read` is part of the internal API as of now.
- Options could be removed, replaced or renamed at any time.
+ =consult-config= list. You can override any option passed to the internal
+ =consult--read= API, for example =:preview-key=, =:initial=, =:default=,
+ =:history= or =:sort=. Note that since =consult--read= is part of the internal
+ API, options could be removed, replaced or renamed at any time.
 
  #+BEGIN_SRC emacs-lisp
  ;; Set preview for `consult-buffer' to key `M-p'
@@ -407,26 +412,34 @@ components.
                         (consult-buffer :preview-key ,(kbd "M-p"))))
  #+END_SRC
 
-** Related packages
+ Generally it is possible to modify commands for your individual needs by the
+ following techniques:
 
- *NOTE: If you are using Selectrum, you MUST install the packages selectrum,
- consult and consult-selectrum!*
+ 1. Create your own wrapper function which passes modified arguments to the Consult functions.
+ 2. Modify =consult-config= in order to change the `consult--read` settings.
+ 3. Create advices to modify some internal behavior.
+ 4. Write or propose a patch!
 
- It is recommended to install the following package combination:
+* Related packages
 
- - consult: This package
- - consult-flycheck: Provides the consult-flycheck command
- - consult-selectrum: Provides integration with Selectrum
- - selectrum or icomplete-vertical: Vertical completion systems
- - marginalia: Annotations for the completion candidates
- - embark: Action commands, which can act on the completion candidates
- - orderless: Completion style, Flexible candidate filtering
- - prescient: Frecency-based candidate sorting, also offers filtering
+*NOTE: If you are using Selectrum, you MUST install the packages selectrum,
+consult and consult-selectrum!*
 
- Note that all packages are independent and can potentially be exchanged
- with alternative components, since there exist no hard dependencies.
- Furthermore it is possible to get started with only Selectrum and
- Consult and add more components later to the mix.
+It is recommended to install the following package combination:
+
+- consult: This package
+- consult-flycheck: Provides the consult-flycheck command
+- consult-selectrum: Provides integration with Selectrum
+- selectrum or icomplete-vertical: Vertical completion systems
+- marginalia: Annotations for the completion candidates
+- embark: Action commands, which can act on the completion candidates
+- orderless: Completion style, Flexible candidate filtering
+- prescient: Frecency-based candidate sorting, also offers filtering
+
+Note that all packages are independent and can potentially be exchanged
+with alternative components, since there exist no hard dependencies.
+Furthermore it is possible to get started with only Selectrum and
+Consult and add more components later to the mix.
 
 * Acknowledgements
 

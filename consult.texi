@@ -29,6 +29,7 @@
 * Available commands::
 * Special features::
 * Installation::
+* Related packages::
 * Acknowledgements::
 
 @detailmenu
@@ -55,7 +56,7 @@ Installation
 
 * Example configuration::
 * Customizable variables::
-* Related packages::
+* Configuration of individual commands::
 
 @end detailmenu
 @end menu
@@ -388,7 +389,7 @@ components.
 @menu
 * Example configuration::
 * Customizable variables::
-* Related packages::
+* Configuration of individual commands::
 @end menu
 
 @node Example configuration
@@ -579,11 +580,17 @@ an overview of all Consult variables and functions with their descriptions.
 @tab Widening key during completion
 @end multitable
 
+@node Configuration of individual commands
+@section Configuration of individual commands
+
+@strong{Note:} This configuration feature is made available for experienced users,
+in case fine-grained control for each individual command is needed.
+
 Commands allow flexible, individual customization by setting the
-@samp{consult-config} list. You can set override any option passed to
-@samp{consult--read}, for example @samp{:preview-key}, @samp{:initial}, @samp{:default}, @samp{:history}
-or @samp{:sort}. Note that `consult--read` is part of the internal API as of now.
-Options could be removed, replaced or renamed at any time.
+@samp{consult-config} list. You can override any option passed to the internal
+@samp{consult--read} API, for example @samp{:preview-key}, @samp{:initial}, @samp{:default},
+@samp{:history} or @samp{:sort}. Note that since @samp{consult--read} is part of the internal
+API, options could be removed, replaced or renamed at any time.
 
 @lisp
 ;; Set preview for `consult-buffer' to key `M-p'
@@ -592,8 +599,22 @@ Options could be removed, replaced or renamed at any time.
                        (consult-buffer :preview-key ,(kbd "M-p"))))
 @end lisp
 
+Generally it is possible to modify commands for your individual needs by the
+following techniques:
+
+@enumerate
+@item
+Create your own wrapper function which passes modified arguments to the Consult functions.
+@item
+Modify @samp{consult-config} in order to change the `consult--read` settings.
+@item
+Create advices to modify some internal behavior.
+@item
+Write or propose a patch!
+@end enumerate
+
 @node Related packages
-@section Related packages
+@chapter Related packages
 
 @strong{NOTE: If you are using Selectrum, you MUST install the packages selectrum,
 consult and consult-selectrum!}
