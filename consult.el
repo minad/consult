@@ -62,11 +62,6 @@
 
 ;;;; Customization
 
-;;;###autoload
-(define-minor-mode consult-preview-mode
-  "Enable preview for consult commands."
-  :global t)
-
 (defcustom consult-narrow-key nil
   "Prefix key for narrowing during completion."
   :type '(choice vector (const nil)))
@@ -522,37 +517,37 @@ DISPLAY is the string to display instead of the unique string."
 
 (defun consult--with-preview-1 (transform preview fun)
   "Install TRANSFORM and PREVIEW function for FUN."
-  (if (or (not consult-preview-mode) (not preview))
-      (let ((input ""))
+  (if preview
+      (let ((orig-window (selected-window))
+            (selected)
+            (input ""))
         (minibuffer-with-setup-hook
             (apply-partially
              #'add-hook 'post-command-hook
-             (lambda () (setq input (minibuffer-contents-no-properties)))
+             (lambda ()
+               (setq input (minibuffer-contents-no-properties))
+               (when-let (cand (run-hook-with-args-until-success 'consult--completion-candidate-hook))
+                 (with-selected-window (if (window-live-p orig-window)
+                                           orig-window
+                                         (selected-window))
+                   (funcall preview (and cand (funcall transform input cand)) nil))))
              nil t)
-          (cons (when-let (result (funcall fun))
-                  (funcall transform input result))
-                input)))
-    (let ((orig-window (selected-window))
-          (selected)
-          (input ""))
+          (unwind-protect
+              (save-excursion
+                (save-restriction
+                  (setq selected (when-let (result (funcall fun))
+                                   (funcall transform input result)))
+                  (cons selected input)))
+            (funcall preview selected t))))
+    (let ((input ""))
       (minibuffer-with-setup-hook
           (apply-partially
            #'add-hook 'post-command-hook
-           (lambda ()
-             (setq input (minibuffer-contents-no-properties))
-             (when-let (cand (run-hook-with-args-until-success 'consult--completion-candidate-hook))
-               (with-selected-window (if (window-live-p orig-window)
-                                         orig-window
-                                       (selected-window))
-                 (funcall preview (and cand (funcall transform input cand)) nil))))
+           (lambda () (setq input (minibuffer-contents-no-properties)))
            nil t)
-        (unwind-protect
-            (save-excursion
-              (save-restriction
-                (setq selected (when-let (result (funcall fun))
-                                 (funcall transform input result)))
-                (cons selected input)))
-          (funcall preview selected t))))))
+        (cons (when-let (result (funcall fun))
+                (funcall transform input result))
+              input)))))
 
 (defmacro consult--with-preview (transform preview &rest body)
   "Install TRANSFORM and PREVIEW in BODY."
