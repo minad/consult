@@ -1035,7 +1035,8 @@ the comma is passed to ASYNC, the second part is used for filtering."
 
 ASYNC is the async function which receives the candidates.
 CMD is the command argument list."
-  (let* ((rest) (proc) (flush) (last-args) (indicator))
+  (let ((dir default-directory)
+        (rest) (proc) (flush) (last-args) (indicator))
     (lambda (action)
       (pcase action
         ((pred stringp)
@@ -1048,43 +1049,44 @@ CMD is the command argument list."
                (with-current-buffer (get-buffer-create consult--async-stderr)
                  (goto-char (point-max))
                  (insert (format "consult--async-process: %S\n" args)))
-               (setq
-                rest ""
-                flush t
-                proc
-                (make-process
-                 :name (car args)
-                 :stderr consult--async-stderr
-                 :noquery t
-                 :command args
-                 :filter
-                 (lambda (_ out)
-                   (when flush
-                     (setq flush nil)
-                     (funcall async 'flush))
-                   (let ((lines (split-string out "\n")))
-                     (if (cdr lines)
-                         (progn
-                           (setcar lines (concat rest (car lines)))
-                           (setq rest (car (last lines)))
-                           (funcall async (nbutlast lines)))
-                       (setq rest (concat rest (car lines))))))
-                 :sentinel
-                 (lambda (_ event)
-                   (with-current-buffer (get-buffer-create consult--async-stderr)
-                     (goto-char (point-max))
-                     (insert (format "consult--async-process sentinel: %s\n" event)))
-                   (when flush
-                     (setq flush nil)
-                     (funcall async 'flush))
-                   (unless (string-match-p "killed" event)
-                     (overlay-put indicator 'display
-                                  (if (string-match-p "finished" event)
-                                      (propertize ":" 'face 'consult-async-finished)
-                                    (propertize "!" 'face 'consult-async-failed))))
-                   (when (string-prefix-p "finished" event)
-                     (unless (string= rest "")
-                       (funcall async (list rest)))))))))))
+               (let ((default-directory dir))
+                 (setq
+                  rest ""
+                  flush t
+                  proc
+                  (make-process
+                   :name (car args)
+                   :stderr consult--async-stderr
+                   :noquery t
+                   :command args
+                   :filter
+                   (lambda (_ out)
+                     (when flush
+                       (setq flush nil)
+                       (funcall async 'flush))
+                     (let ((lines (split-string out "\n")))
+                       (if (cdr lines)
+                           (progn
+                             (setcar lines (concat rest (car lines)))
+                             (setq rest (car (last lines)))
+                             (funcall async (nbutlast lines)))
+                         (setq rest (concat rest (car lines))))))
+                   :sentinel
+                   (lambda (_ event)
+                     (with-current-buffer (get-buffer-create consult--async-stderr)
+                       (goto-char (point-max))
+                       (insert (format "consult--async-process sentinel: %s\n" event)))
+                     (when flush
+                       (setq flush nil)
+                       (funcall async 'flush))
+                     (unless (string-match-p "killed" event)
+                       (overlay-put indicator 'display
+                                    (if (string-match-p "finished" event)
+                                        (propertize ":" 'face 'consult-async-finished)
+                                      (propertize "!" 'face 'consult-async-failed))))
+                     (when (string-prefix-p "finished" event)
+                       (unless (string= rest "")
+                         (funcall async (list rest))))))))))))
         ('destroy
          (ignore-errors (kill-process proc))
          (delete-overlay indicator)
@@ -2283,13 +2285,13 @@ used. See also `consult-imenu'."
   (interactive)
   (consult--imenu (consult--project-imenu-items)))
 
-(defun consult--grep-matches (lines)
+(defun consult--grep-matches (dir lines)
   "Find grep match for REGEXP in LINES."
   (let ((candidates))
     (save-match-data
       (dolist (str lines)
         (when (string-match consult--grep-regexp str)
-          (let* ((file (expand-file-name (consult--strip-ansi-escape (match-string 1 str))))
+          (let* ((file (expand-file-name (consult--strip-ansi-escape (match-string 1 str)) dir))
                  (line (string-to-number (consult--strip-ansi-escape (match-string 2 str))))
                  (str (substring str (match-end 0)))
                  (loc (consult--format-location (file-relative-name file) line)))
@@ -2299,8 +2301,8 @@ used. See also `consult-imenu'."
                                 (substring str (match-end 0)))))
             (setq str (consult--strip-ansi-escape str))
             (push (list (concat loc str)
-                  file line
-                  (next-single-char-property-change 0 'face str))
+                        file line
+                        (next-single-char-property-change 0 'face str))
                   candidates)))))
     (nreverse candidates)))
 
@@ -2328,27 +2330,28 @@ OPEN is the function to open new files."
     (let ((args (split-string input " +-- +")))
       (append cmd (list (car args)) (mapcan #'split-string (cdr args))))))
 
-(defun consult--grep-async (cmd)
+(defun consult--grep-async (dir cmd)
   "Async function for `consult-grep'.
 
 CMD is the grep argument list."
-  (thread-first (consult--async-sink)
-    (consult--async-refresh-timer)
-    (consult--async-transform consult--grep-matches)
-    (consult--async-process (consult--command-args cmd))
-    (consult--async-throttle)
-    (consult--async-split)))
+  (let ((default-directory dir))
+    (thread-first (consult--async-sink)
+      (consult--async-refresh-timer)
+      (consult--async-transform consult--grep-matches dir)
+      (consult--async-process (consult--command-args cmd))
+      (consult--async-throttle)
+      (consult--async-split))))
 
 (defun consult--grep (prompt cmd dir initial)
   "Run grep CMD in DIR with INITIAL input.
 
 PROMPT is the prompt string."
-  (pcase-let ((`(,prompt . ,default-directory) (consult--directory-prompt prompt dir)))
+  (pcase-let ((`(,prompt . ,dir) (consult--directory-prompt prompt dir)))
     (consult--with-file-preview (open)
       (consult--jump
        (consult--read
         prompt
-        (consult--grep-async cmd)
+        (consult--grep-async dir cmd)
         :lookup (consult--grep-marker open)
         :preview (consult--preview-position)
         :initial (concat consult-async-default-split initial)
