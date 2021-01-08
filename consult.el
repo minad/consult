@@ -565,7 +565,7 @@ PREVIEW-KEY is the key which triggers the preview."
   "Install TRANSFORM and PREVIEW in BODY.
 
 PREVIEW-KEY is the key which triggers the preview."
-  (declare (indent 2))
+  (declare (indent 3))
   `(consult--with-preview-1 ,transform ,preview ,preview-key (lambda () ,@body)))
 
 (defun consult--widen-key ()
@@ -1502,6 +1502,10 @@ The command respects narrowing and the settings
                                          (when-let (pos (and cand (consult--line-position cand)))
                                            (and (consult--in-range-p pos) pos))
                                          restore)))
+                            (let ((config (alist-get 'consult-goto-line consult-config)))
+                              (if (plist-member config 'preview-key)
+                                  (plist-get config 'preview-key)
+                                consult-preview-key))
                           (read-from-minibuffer "Go to line: ")))))
              (if (car ret)
                  (let ((pos (consult--line-position (car ret))))
