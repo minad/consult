@@ -649,22 +649,23 @@ Note that `consult-narrow-key' and `consult-widen-key' are bound dynamically.")
     (define-key map (vconcat (seq-take key idx) (vector 'which-key (elt key idx)))
       `(which-key (,desc)))))
 
-(defun consult--narrow-setup (settings map)
-  "Setup narrowing with SETTINGS and keymap MAP."
+(defun consult--narrow-setup (settings)
+  "Setup narrowing with SETTINGS."
   (if (functionp (car settings))
       (setq consult--narrow-predicate (car settings)
             consult--narrow-prefixes (cdr settings))
     (setq consult--narrow-predicate nil
           consult--narrow-prefixes settings))
-  (setcdr map (cons consult-narrow-map (cdr map)))
-  (when consult-narrow-key
-    (dolist (pair consult--narrow-prefixes)
-      (when (/= (car pair) 32)
-        (consult--define-key map
-                             (vconcat consult-narrow-key (vector (car pair)))
-                             #'consult-narrow (cdr pair)))))
-  (when-let (widen (consult--widen-key))
-    (consult--define-key map widen #'consult-narrow "All")))
+  (let ((map (make-composed-keymap nil consult-narrow-map)))
+    (when consult-narrow-key
+      (dolist (pair consult--narrow-prefixes)
+        (when (/= (car pair) 32)
+          (consult--define-key map
+                               (vconcat consult-narrow-key (vector (car pair)))
+                               #'consult-narrow (cdr pair)))))
+    (when-let (widen (consult--widen-key))
+      (consult--define-key map widen #'consult-narrow "All"))
+    map))
 
 (defmacro consult--with-increased-gc (&rest body)
   "Temporarily increase the gc limit in BODY to optimize for throughput."
@@ -864,12 +865,16 @@ NARROW is an alist of narrowing prefix strings and description."
          (consult--add-history (if (stringp add-history)
                                    (list add-history)
                                  add-history))
-         (let ((map (make-composed-keymap nil (current-local-map))))
-           (when narrow
-             (consult--narrow-setup narrow map))
-           (unless (symbolp preview-key)
-             (consult--define-key map preview-key #'consult-preview-action "Preview"))
-           (use-local-map map))))
+         (use-local-map
+          (make-composed-keymap
+           (append
+            (when narrow
+              (list (consult--narrow-setup narrow)))
+            (unless (symbolp preview-key)
+              (let ((map (make-sparse-keymap)))
+                (consult--define-key map preview-key #'consult-preview-action "Preview")
+                (list map))))
+           (current-local-map)))))
     (consult--with-async (async candidates)
       (let* ((metadata
               `(metadata
