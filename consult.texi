@@ -145,10 +145,10 @@ f Files
 m Bookmarks
 @item
 p Project (only available if @samp{consult-project-root-function} is
-configured)
+configured as shown in the @ref{Example configuration, , example configuration})
 @item
 v Views (only available if @samp{consult-view-*-function} is
-configured)
+configured as shown in the @ref{Example configuration, , example configuration})
 @end itemize
 @item
 @samp{consult-bookmark}: Select or create bookmark. You might consider the
@@ -246,7 +246,7 @@ the first character is a punctuation character, like @samp{#}. For example
 the @emph{fast} Emacs filtering to further narrow down the list of matches.
 This is particularily useful if you are using an advanced completion
 style like orderless. @samp{consult-grep} supports preview. If
-@samp{consult-project-root-function} is configured and the function returns
+@samp{consult-project-root-function} is @ref{Example configuration, , configured} and the function returns
 non-nil, @samp{consult-grep} searches the current project directory.
 Otherwise the @samp{default-directory} is searched. If @samp{consult-grep} is
 invoked with prefix argument, you can specify the directory manually,
@@ -260,7 +260,7 @@ where the first part is passed to find, and the second part is used
 for Emacs filtering. Note that @samp{find} uses wildcards, e.g. enter
 @samp{*consult*}, to find all files containing the string "consult". In
 case you want to use another search utility like @samp{fd}, you can write
-wrapper command @samp{my-fdfind} (see below in the configuration example).
+wrapper command @samp{my-fdfind} as shown in the @ref{Example configuration, , example configuration}.
 @end itemize
 
 @node Compilation errors
@@ -304,7 +304,7 @@ the @samp{command-history} command from chistory.el.
 @item
 @samp{consult-history}: Insert a string from the current buffer history.
 This command can be invoked from the minibuffer. In that case the
-history stored in the minibuffer-history-variable is used.
+history stored in the @samp{minibuffer-history-variable} is used.
 @end itemize
 
 @node Minor and Major modes
@@ -394,12 +394,20 @@ on any keypress when the selected candidate changes.
 Consult has special support to narrow to candidate subsets. This functionality
 is useful if the list of candidates consists of candidates of multiple types or
 candidates from multiple sources, like the @samp{consult-buffer} command, which
-shows both buffers and recently opened files. When you use the @samp{consult-buffer}
-command, you can press @samp{b SPC} and the list of candidates will be restricted
-such that only buffers are shown. If you press @samp{DEL} afterwards, the full
-candidate list will be shown again. Furthermore a narrowing/widening key can be
-configured which can be pressed to achieve the same effect, see the
-configuration variables @samp{consult-narrow-key} and @samp{consult-widen-key}.
+shows both buffers and recently opened files.
+
+When you use the @samp{consult-buffer} command, you can press @samp{b SPC} and the list
+of candidates will be restricted such that only buffers are shown. If you press
+@samp{DEL} afterwards, the full candidate list will be shown again. Furthermore a
+narrowing prefix key and a widening key can be configured which can be pressed
+to achieve the same effect, see the configuration variables
+@samp{consult-narrow-key} and @samp{consult-widen-key}.
+
+If @uref{https://github.com/justbur/emacs-which-key, which-key} is installed, the possible narrowing keys are shown in the
+which-key window after pressing the prefix key @samp{consult-narrow-key}.
+Furthermore there is the @samp{consult-narrow-help} command which can be bound to a
+key in the @samp{consult-narrow-map} if this is desired, as shown in the @ref{Example configuration, , example
+configuration}.
 
 @node Asynchronous candidates and filtering
 @section Asynchronous candidates and filtering
@@ -709,15 +717,15 @@ consult-flycheck: Provides the consult-flycheck command
 @item
 consult-selectrum: Provides integration with Selectrum
 @item
-selectrum or icomplete-vertical: Vertical completion systems
+@uref{https://github.com/raxod502/selectrum, selectrum} or @uref{https://github.com/oantolin/icomplete-vertical, icomplete-vertical}: Vertical completion systems
 @item
-marginalia: Annotations for the completion candidates
+@uref{https://github.com/minad/marginalia, marginalia}: Annotations for the completion candidates
 @item
-embark: Action commands, which can act on the completion candidates
+@uref{https://github.com/oantolin/embark, embark}: Action commands, which can act on the completion candidates
 @item
-orderless: Completion style, Flexible candidate filtering
+@uref{https://github.com/oantolin/orderless, orderless}: Completion style, Flexible candidate filtering
 @item
-prescient: Frecency-based candidate sorting, also offers filtering
+@uref{https://github.com/raxod502/prescient.el, prescient}: Frecency-based candidate sorting, also offers filtering
 @end itemize
 
 Note that all packages are independent and can potentially be exchanged

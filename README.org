@@ -96,9 +96,9 @@ variables and functions with their descriptions.
    - f Files
    - m Bookmarks
    - p Project (only available if =consult-project-root-function= is
-     configured)
+     configured as shown in the [[#example-configuration][example configuration]])
    - v Views (only available if =consult-view-*-function= is
-     configured)
+     configured as shown in the [[#example-configuration][example configuration]])
  - =consult-bookmark=: Select or create bookmark. You might consider the
    powerful =consult-buffer= instead as an alternative, which includes bookmarks.
    However =consult-bookmark= supports preview of bookmarks and narrowing.
@@ -169,7 +169,7 @@ variables and functions with their descriptions.
    the /fast/ Emacs filtering to further narrow down the list of matches.
    This is particularily useful if you are using an advanced completion
    style like orderless. =consult-grep= supports preview. If
-   =consult-project-root-function= is configured and the function returns
+   =consult-project-root-function= is [[#example-configuration][configured]] and the function returns
    non-nil, =consult-grep= searches the current project directory.
    Otherwise the =default-directory= is searched. If =consult-grep= is
    invoked with prefix argument, you can specify the directory manually,
@@ -182,7 +182,7 @@ variables and functions with their descriptions.
    for Emacs filtering. Note that =find= uses wildcards, e.g. enter
    =*consult*=, to find all files containing the string "consult". In
    case you want to use another search utility like =fd=, you can write
-   wrapper command =my-fdfind= (see below in the configuration example).
+   wrapper command =my-fdfind= as shown in the [[#example-configuration][example configuration]].
 
 ** Compilation errors
  #+cindex: compilation errors
@@ -213,7 +213,7 @@ variables and functions with their descriptions.
    the =command-history= command from chistory.el.
  - =consult-history=: Insert a string from the current buffer history.
    This command can be invoked from the minibuffer. In that case the
-   history stored in the minibuffer-history-variable is used.
+   history stored in the =minibuffer-history-variable= is used.
 
 ** Minor and Major modes
  #+cindex: minor mode
@@ -278,12 +278,20 @@ variables and functions with their descriptions.
  Consult has special support to narrow to candidate subsets. This functionality
  is useful if the list of candidates consists of candidates of multiple types or
  candidates from multiple sources, like the =consult-buffer= command, which
- shows both buffers and recently opened files. When you use the =consult-buffer=
- command, you can press =b SPC= and the list of candidates will be restricted
- such that only buffers are shown. If you press =DEL= afterwards, the full
- candidate list will be shown again. Furthermore a narrowing/widening key can be
- configured which can be pressed to achieve the same effect, see the
- configuration variables =consult-narrow-key= and =consult-widen-key=.
+ shows both buffers and recently opened files.
+
+ When you use the =consult-buffer= command, you can press =b SPC= and the list
+ of candidates will be restricted such that only buffers are shown. If you press
+ =DEL= afterwards, the full candidate list will be shown again. Furthermore a
+ narrowing prefix key and a widening key can be configured which can be pressed
+ to achieve the same effect, see the configuration variables
+ =consult-narrow-key= and =consult-widen-key=.
+
+ If [[https://github.com/justbur/emacs-which-key][which-key]] is installed, the possible narrowing keys are shown in the
+ which-key window after pressing the prefix key =consult-narrow-key=.
+ Furthermore there is the =consult-narrow-help= command which can be bound to a
+ key in the =consult-narrow-map= if this is desired, as shown in the [[#example-configuration][example
+ configuration]].
 
 ** Asynchronous candidates and filtering
  #+cindex: asynchronous candidates
@@ -332,6 +340,9 @@ such that the main package =consult.el= only depends on Emacs core
 components.
 
 ** Example configuration
+ :properties:
+ :custom_id: example-configuration
+ :end:
  #+cindex: configuration
  #+cindex: use-package
 
@@ -493,11 +504,11 @@ It is recommended to install the following package combination:
 - consult: This package
 - consult-flycheck: Provides the consult-flycheck command
 - consult-selectrum: Provides integration with Selectrum
-- selectrum or icomplete-vertical: Vertical completion systems
-- marginalia: Annotations for the completion candidates
-- embark: Action commands, which can act on the completion candidates
-- orderless: Completion style, Flexible candidate filtering
-- prescient: Frecency-based candidate sorting, also offers filtering
+- [[https://github.com/raxod502/selectrum][selectrum]] or [[https://github.com/oantolin/icomplete-vertical][icomplete-vertical]]: Vertical completion systems
+- [[https://github.com/minad/marginalia][marginalia]]: Annotations for the completion candidates
+- [[https://github.com/oantolin/embark][embark]]: Action commands, which can act on the completion candidates
+- [[https://github.com/oantolin/orderless][orderless]]: Completion style, Flexible candidate filtering
+- [[https://github.com/raxod502/prescient.el][prescient]]: Frecency-based candidate sorting, also offers filtering
 
 Note that all packages are independent and can potentially be exchanged
 with alternative components, since there exist no hard dependencies.
