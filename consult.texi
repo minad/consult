@@ -73,39 +73,33 @@ recent files and more. Furthermore various search commands are provided,
 like @samp{consult-grep} and @samp{consult-line}, which resembles
 @uref{https://github.com/abo-abo/swiper#swiper, Swiper}.
 
-The commands are compatible with completion systems based on the
-standard Emacs @samp{completing-read} API, notably the default completion
-system,
-@uref{https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html, Icomplete},
-@uref{https://github.com/raxod502/selectrum, Selectrum} and
-@uref{https://github.com/oantolin/embark/, Embark's live-occur}. If
-Icomplete is used, it is recommended to install
-@uref{https://github.com/oantolin/icomplete-vertical, Icomplete-vertical}.
-The completion system specifics in this package are kept to a minimum.
+The commands are compatible with completion systems based on the standard Emacs
+@samp{completing-read} API, notably the default completion system, @uref{https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html, Icomplete},
+@uref{https://github.com/raxod502/selectrum, Selectrum} and @uref{https://github.com/oantolin/embark/, Embark}. If Icomplete is used, it is recommended to install
+@uref{https://github.com/oantolin/icomplete-vertical, Icomplete-vertical}. The completion system specifics in this package are kept to
+a minimum.
 
-There are the @uref{https://github.com/minad/marginalia/, Marginalia} and
-@uref{https://github.com/oantolin/embark/, Embark} packages, which can be
-combined with Consult. The @samp{marginalia-mode} enriches the completion
-display with annotations. The annotations show for example documentation
-strings or file information. Embark provides local actions (like a
-context menu), which can be executed while selecting a candidate in the
-minibuffer. For example, when selecting a file, an action to delete the
-file is offered.
+There are the @uref{https://github.com/minad/marginalia/, Marginalia} and @uref{https://github.com/oantolin/embark/, Embark} packages, which can be combined with
+Consult. The @samp{marginalia-mode} enriches the completion display with annotations.
+The annotations show for example documentation strings or file information. The
+versatile Embark packages provides local actions (like a context menu), which
+can be executed while selecting a candidate in the minibuffer or in other
+contexts. For example, when selecting a file, an action to delete the file is
+offered. Embark offers more than local actions and can also be used as a
+completion system through its live-updating candidate collect buffer.
 
-@emph{Note}: If you use @uref{https://github.com/abo-abo/swiper#ivy, Ivy} or
-@uref{https://github.com/emacs-helm/helm, Helm}, you probably don't need
-Consult, since both packages already bring their own rich set of
-additional commands.
+@emph{Note}: If you use @uref{https://github.com/abo-abo/swiper#ivy, Ivy} or @uref{https://github.com/emacs-helm/helm, Helm}, you probably don't need Consult, since both
+packages already bring their own rich set of additional commands.
 
 @node Available commands
 @chapter Available commands
 
 @cindex commands
 
-Most provided commands follow the naming scheme @samp{consult-<thing>}.
+Most provided commands follow the meaningful naming scheme @samp{consult-<thing>}.
 
 @strong{Tip:} If you have Marginalia installed and heavy annotators enabled, type @samp{M-x
- ^consult} to see all Consult commands with their abbreviated description!
+^consult} to see all Consult commands with their abbreviated description!
 Alternatively, type @samp{C-h a ^consult} to get an overview of all Consult
 variables and functions with their descriptions.
 
@@ -360,6 +354,14 @@ candidates.
 @node Special features
 @chapter Special features
 
+Consult enhances @samp{completing-read} with live previews of candidates, additional
+narrowing capabilities to candidate subsets and asynchronously generated
+candidate lists. This functionality is provided by the internal @samp{consult--read}
+function, which is used by most Consult commands. The @samp{consult--read} function
+is a thin wrapper around @samp{completing-read}. This allows Consult to work with
+different completion systems in the backend, while still offering more advanced
+features.
+
 @menu
 * Live previews::
 * Narrowing to subsets::
@@ -379,20 +381,24 @@ ongoing. Previews are enabled by default but can be disabled via the
 @samp{consult-preview-key} option. Furthermore it is possible to define a keybinding
 to trigger the preview manually. Each command can be configured individually
 with its own @samp{:preview-key}, such that for some commands preview is manual, for
-some automatic and for some completely disabled.
+some automatic and for some completely disabled. The default setting of
+@samp{consult-preview-key} is @samp{'any} which means that the preview will be triggered
+on any keypress when the selected candidate changes.
 
 @node Narrowing to subsets
 @section Narrowing to subsets
 
 @cindex narrowing
 
-Consult has special support to narrow to candidate subsets. When you use
-the @samp{consult-buffer} command, you can press @samp{b SPC} and the list of
-candidates will be restricted such that only buffers are shown. If you
-press @samp{DEL} afterwards, the full candidate list will be shown again.
-Furthermore a narrowing/widening key can be configured which can be
-pressed to achieve the same effect, see the configuration variables
-@samp{consult-narrow-key} and @samp{consult-widen-key}.
+Consult has special support to narrow to candidate subsets. This functionality
+is useful if the list of candidates consists of candidates of multiple types or
+candidates from multiple sources, like the @samp{consult-buffer} command, which
+shows both buffers and recently opened files. When you use the @samp{consult-buffer}
+command, you can press @samp{b SPC} and the list of candidates will be restricted
+such that only buffers are shown. If you press @samp{DEL} afterwards, the full
+candidate list will be shown again. Furthermore a narrowing/widening key can be
+configured which can be pressed to achieve the same effect, see the
+configuration variables @samp{consult-narrow-key} and @samp{consult-widen-key}.
 
 @node Asynchronous candidates and filtering
 @section Asynchronous candidates and filtering
@@ -400,15 +406,20 @@ pressed to achieve the same effect, see the configuration variables
 @cindex asynchronous candidates
 
 Consult has support for asynchronous generation of candidate lists. This
-feature is used for example by @samp{consult-grep}, where the list of matches
-is generated dynamically while the user is typing a grep regular
-expression. Furthermore the found matches can then be narrowed using the
-installed Emacs completion-style, which can be very powerful if you are
-using for example the @samp{orderless} completion style. This is possible
-since part of the input string is treated as input to grep and part of
-the input is used for filtering. The input string is split at a
-punctuation character, using a similar syntax as Perl regular
-expressions.
+feature is used for example by @samp{consult-grep}, where the list of matches is
+generated dynamically while the user is typing a grep regular expression. The
+grep process is executed in the background. When modifying the grep regular
+expression, the background process is terminated and a new process is started
+with the modified regular expression.
+
+The matches, which have been found, can then be narrowed using the installed
+Emacs completion-style. This can be very powerful if you are using for example
+the @samp{orderless} completion style.
+
+This two-level filtering is possible by splitting the input string. Part of the
+input string is treated as input to grep and part of the input is used for
+filtering. The input string is split at a punctuation character, using a
+similar syntax as Perl regular expressions.
 
 Examples:
 
@@ -436,10 +447,10 @@ must be longer than @samp{consult-async-min-input} characters by default.
 @strong{NOTE: If you are using Selectrum, you MUST install the packages selectrum,
 consult and consult-selectrum!}
 
-It is recommended to manage package configurations with @samp{use-package}.
-The Consult package only provides commands and does not add any
-keybindings. In order to use the enhanced commands, you must configure
-the keybindings yourself.
+It is recommended to manage package configurations with the excellent
+@samp{use-package} macro. The Consult package only provides commands and does not add
+any keybindings. In order to use the Consult commands, you must configure the
+keybindings yourself.
 
 Note that there are three packages as of now: @samp{consult.el},
 @samp{consult-selectrum.el} and @samp{consult-flycheck.el}. Consult has been split
