@@ -1782,6 +1782,8 @@ The command supports preview of file bookmarks and narrowing."
       (consult--read
        "Bookmark: "
        (bookmark-all-names)
+       ;; add default names to future history
+       :add-history (bookmark-prop-get (bookmark-make-record) 'defaults)
        :narrow
        (cons
         (lambda (cand)
