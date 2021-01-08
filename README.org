@@ -302,17 +302,13 @@ Most provided commands follow the naming scheme =consult-<thing>=.
 * Installation
 #+cindex: installation
 
-*NOTE: If you are using Selectrum, you MUST install the packages selectrum,
-consult and consult-selectrum!*
-
 It is recommended to manage package configurations with =use-package=.
 The Consult package only provides commands and does not add any
 keybindings. In order to use the enhanced commands, you must configure
 the keybindings yourself.
 
-Note that there are three packages as of now: =consult.el=,
-=consult-selectrum.el= and =consult-flycheck.el=. Consult has been split
-such that the main package =consult.el= only depends on Emacs core
+Note that there are two packages as of now: =consult.el= and =consult-flycheck.el=.
+Consult has been split such that the main package =consult.el= only depends on Emacs core
 components.
 
 ** Example configuration
@@ -469,14 +465,10 @@ components.
 
 * Related packages
 
-*NOTE: If you are using Selectrum, you MUST install the packages selectrum,
-consult and consult-selectrum!*
-
 It is recommended to install the following package combination:
 
 - consult: This package
 - consult-flycheck: Provides the consult-flycheck command
-- consult-selectrum: Provides integration with Selectrum
 - selectrum or icomplete-vertical: Vertical completion systems
 - marginalia: Annotations for the completion candidates
 - embark: Action commands, which can act on the completion candidates
