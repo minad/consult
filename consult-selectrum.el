@@ -39,7 +39,7 @@
 
 (defun consult-selectrum--candidate ()
   "Return current selectrum candidate."
-  (and selectrum-active-p (selectrum-get-current-candidate)))
+  (and selectrum-active-p (ignore-errors (selectrum-get-current-candidate))))
 
 (defun consult-selectrum--refresh ()
   "Refresh selectrum view."
