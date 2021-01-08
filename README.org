@@ -67,11 +67,6 @@ consult-outline
 #+caption: consult-outline
 [[https://github.com/minad/consult/blob/main/images/consult-outline.png?raw=true]]
 
-marginalia-mode
-
-#+caption: marginalia-mode
-[[https://github.com/minad/marginalia/blob/main/marginalia-mode.png?raw=true]]
-
 * Available commands
 #+cindex: commands
 
