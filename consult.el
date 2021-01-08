@@ -2491,10 +2491,9 @@ CMD is the find argument list."
               (setq completions (cdr completions)))))))
     (icomplete-exhibit)))
 
-(eval-after-load 'icomplete
-  (progn
-    (add-hook 'consult--completion-candidate-hook #'consult--icomplete-candidate)
-    (add-hook 'consult--completion-refresh-hook #'consult--icomplete-refresh)))
+(with-eval-after-load 'icomplete
+  (add-hook 'consult--completion-candidate-hook #'consult--icomplete-candidate)
+  (add-hook 'consult--completion-refresh-hook #'consult--icomplete-refresh))
 
 (provide 'consult)
 ;;; consult.el ends here
