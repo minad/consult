@@ -1,17 +1,18 @@
-#+TITLE: consult.el - Consulting completing-read
-#+AUTHOR: Daniel Mendler
-#+LANGUAGE: en
-#+EXPORT_FILE_NAME: consult.texi
-#+TEXINFO_DIR_CATEGORY: Emacs
-#+TEXINFO_DIR_TITLE: Consult: (consult).
-#+TEXINFO_DIR_DESC: Useful commands built on completing-read.
-#+OPTIONS: d:nil
+#+title: consult.el - Consulting completing-read
+#+author: Daniel Mendler
+#+language: en
+#+export_file_name: consult.texi
+#+texinfo_dir_category: Emacs
+#+texinfo_dir_title: Consult: (consult).
+#+texinfo_dir_desc: Useful commands built on completing-read.
+#+options: d:nil
 
-:BADGE:
+:badge:
 [[https://melpa.org/#/consult][file:https://melpa.org/packages/consult-badge.svg]]
-:END:
+:end:
 
 * Introduction
+#+cindex: introduction
 
 This package provides various commands based on the Emacs completion
 function =completing-read=, in particular a more advanced buffer
@@ -48,30 +49,31 @@ additional commands.
 
 consult-grep
 
-#+CAPTION: consult-grep
+#+caption: consult-grep
 [[https://github.com/minad/consult/blob/main/images/consult-grep.gif?raw=true]]
 
 consult-mark
 
-#+CAPTION: consult-mark
+#+caption: consult-mark
 [[https://github.com/minad/consult/blob/main/images/consult-mark.png?raw=true]]
 
 consult-line
 
-#+CAPTION: consult-line
+#+caption: consult-line
 [[https://github.com/minad/consult/blob/main/images/consult-line.png?raw=true]]
 
 consult-outline
 
-#+CAPTION: consult-outline
+#+caption: consult-outline
 [[https://github.com/minad/consult/blob/main/images/consult-outline.png?raw=true]]
 
 marginalia-mode
 
-#+CAPTION: marginalia-mode
+#+caption: marginalia-mode
 [[https://github.com/minad/marginalia/blob/main/marginalia-mode.png?raw=true]]
 
 * Available commands
+#+cindex: commands
 
 Most provided commands follow the naming scheme =consult-<thing>=.
 
@@ -81,90 +83,120 @@ Most provided commands follow the naming scheme =consult-<thing>=.
  variables and functions with their descriptions.
 
 ** Virtual Buffers
+ #+cindex: virtual buffers
 
-- =consult-buffer= (=-other-window=, =-other-frame=): Enhanced version
-  of =switch-to-buffer= with support for virtual buffers. Supports live
-  preview and recursive editing while previewing. The command supports
-  narrowing. You can type =f SPC= in order to narrow to recent files.
-  Ephemeral buffers can be shown by pressing =SPC= - it works the same
-  way as =switch-buffer=. Supported narrowing keys:
+ #+findex: consult-buffer
+ #+findex: consult-buffer-other-window
+ #+findex: consult-buffer-other-frame
+ #+findex: consult-recent-file
+ #+findex: consult-recent-file-other-window
+ #+findex: consult-recent-file-other-frame
+ #+findex: consult-bookmark
+ - =consult-buffer= (=-other-window=, =-other-frame=): Enhanced version
+   of =switch-to-buffer= with support for virtual buffers. Supports live
+   preview and recursive editing while previewing. The command supports
+   narrowing. You can type =f SPC= in order to narrow to recent files.
+   Ephemeral buffers can be shown by pressing =SPC= - it works the same
+   way as =switch-buffer=. Supported narrowing keys:
 
-  - b Buffers
-  - f Files
-  - m Bookmarks
-  - p Project (only available if =consult-project-root-function= is
-    configured)
-  - v Views (only available if =consult-view-*-function= is
-    configured)
-
-- =consult-bookmark=: Select or create bookmark. You might consider the
-  powerful =consult-buffer= instead as an alternative, which includes bookmarks.
-  However =consult-bookmark= supports preview of bookmarks and narrowing.
-- =consult-recent-file= (=-other-window=, =-other-frame=): Select a
-  recent files. You might prefer the more powerful =consult-buffer=
-  instead, which includes recent files.
+   - b Buffers
+   - f Files
+   - m Bookmarks
+   - p Project (only available if =consult-project-root-function= is
+     configured)
+   - v Views (only available if =consult-view-*-function= is
+     configured)
+ - =consult-bookmark=: Select or create bookmark. You might consider the
+   powerful =consult-buffer= instead as an alternative, which includes bookmarks.
+   However =consult-bookmark= supports preview of bookmarks and narrowing.
+ - =consult-recent-file= (=-other-window=, =-other-frame=): Select a
+   recent files. You might prefer the more powerful =consult-buffer=
+   instead, which includes recent files.
 
 ** Editing
+ #+cindex: editing
 
-- =consult-register=: Select from list of registers.
-- =consult-yank=, =consult-yank-pop=: Enhanced version of =yank= and
-  =yank-pop= which allows selecting from the kill-ring. Live preview is
-  supported when selecting from the kill-ring.
-- =consult-kmacro=: Select macro from the macro ring and execute it.
+ #+findex: consult-register
+ #+findex: consult-yank
+ #+findex: consult-kmacro
+ - =consult-register=: Select from list of registers.
+ - =consult-yank=, =consult-yank-pop=: Enhanced version of =yank= and
+   =yank-pop= which allows selecting from the kill-ring. Live preview is
+   supported when selecting from the kill-ring.
+ - =consult-kmacro=: Select macro from the macro ring and execute it.
 
 ** Navigation
+ #+cindex: navigation
 
-- =consult-goto-line=: Jump to line number enhanced with live preview.
-  This is a drop-in replacement for =goto-line=.
-- =consult-mark=: Jump to a marker in the =mark-ring=. Supports live
-  preview and recursive editing.
-- =consult-global-mark=: Jump to a marker in the =global-mark-ring=.
-  Supports live preview and recursive editing.
-- =consult-outline=: Jump to a heading of the outline. Supports live
-  preview and recursive editing.
-- =consult-imenu=: Jump to imenu item in the current buffer. Supports
-  live preview, recursive editing and narrowing.
-- =consult-project-imenu=: Jump to imenu item in project buffers, with
-  the same major mode as the current buffer. Supports live preview,
-  recursive editing and narrowing. This feature has been inspired by
-  [[https://github.com/vspinu/imenu-anywhere][imenu-anywhere]].
+ #+findex: consult-goto-line
+ #+findex: consult-mark
+ #+findex: consult-global-mark
+ #+findex: consult-outline
+ #+findex: consult-imenu
+ #+findex: consult-project-imenu
+ - =consult-goto-line=: Jump to line number enhanced with live preview.
+   This is a drop-in replacement for =goto-line=.
+ - =consult-mark=: Jump to a marker in the =mark-ring=. Supports live
+   preview and recursive editing.
+ - =consult-global-mark=: Jump to a marker in the =global-mark-ring=.
+   Supports live preview and recursive editing.
+ - =consult-outline=: Jump to a heading of the outline. Supports live
+   preview and recursive editing.
+ - =consult-imenu=: Jump to imenu item in the current buffer. Supports
+   live preview, recursive editing and narrowing.
+ - =consult-project-imenu=: Jump to imenu item in project buffers, with
+   the same major mode as the current buffer. Supports live preview,
+   recursive editing and narrowing. This feature has been inspired by
+   [[https://github.com/vspinu/imenu-anywhere][imenu-anywhere]].
 
 ** Search
+ #+cindex: search
 
-- =consult-line=: Enter search string and select from matching lines.
-  Supports live preview and recursive editing. The symbol at point and
-  the recent isearch string are added to the "future history" and can be
-  accessed by pressing =M-n=.
-- =consult-multi-occur=: Replacement for =multi-occur= which uses
-  =completing-read-multiple=.
-- =consult-grep=, =consult-ripgrep=, =consult-git-grep=: Search for
-  regular expression in current directory. Grep is invoked
-  asynchronously, while you enter the search term. You are required to
-  enter at least =consult-async-min-input= characters in order for the
-  search to get started. The input string is split into two parts, if
-  the first character is a punctuation character, like =#=. For example
-  =#grep-regexp#filter-string=, is split at the second =#=. The string
-  "grep-regexp" is passed to Grep, the "filter-string" is passed to
-  the /fast/ Emacs filtering to further narrow down the list of matches.
-  This is particularily useful if you are using an advanced completion
-  style like orderless. =consult-grep= supports preview. If
-  =consult-project-root-function= is configured and the function returns
-  non-nil, =consult-grep= searches the current project directory.
-  Otherwise the =default-directory= is searched. If =consult-grep= is
-  invoked with prefix argument, you can specify the directory manually,
-  i.e., =C-u M-g r=.
-- =consult-find=, =consult-locate=: Find file by
-  matching the path against a regexp. Like =consult-grep= either the
-  project root or the current directory is used as root directory for
-  the search. The input string is treated similarly to =consult-grep=,
-  where the first part is passed to find, and the second part is used
-  for Emacs filtering. Note that =find= uses wildcards, e.g. enter
-  =*consult*=, to find all files containing the string "consult". In
-  case you want to use another search utility like =fd=, you can write
-  wrapper command =my-fdfind= (see below in the configuration example).
+ #+findex: consult-line
+ #+findex: consult-multi-occur
+ #+findex: consult-grep
+ #+findex: consult-ripgrep
+ #+findex: consult-git-grep
+ #+findex: consult-find
+ #+findex: consult-locate
+ - =consult-line=: Enter search string and select from matching lines.
+   Supports live preview and recursive editing. The symbol at point and
+   the recent isearch string are added to the "future history" and can be
+   accessed by pressing =M-n=.
+ - =consult-multi-occur=: Replacement for =multi-occur= which uses
+   =completing-read-multiple=.
+ - =consult-grep=, =consult-ripgrep=, =consult-git-grep=: Search for
+   regular expression in current directory. Grep is invoked
+   asynchronously, while you enter the search term. You are required to
+   enter at least =consult-async-min-input= characters in order for the
+   search to get started. The input string is split into two parts, if
+   the first character is a punctuation character, like =#=. For example
+   =#grep-regexp#filter-string=, is split at the second =#=. The string
+   "grep-regexp" is passed to Grep, the "filter-string" is passed to
+   the /fast/ Emacs filtering to further narrow down the list of matches.
+   This is particularily useful if you are using an advanced completion
+   style like orderless. =consult-grep= supports preview. If
+   =consult-project-root-function= is configured and the function returns
+   non-nil, =consult-grep= searches the current project directory.
+   Otherwise the =default-directory= is searched. If =consult-grep= is
+   invoked with prefix argument, you can specify the directory manually,
+   i.e., =C-u M-g r=.
+ - =consult-find=, =consult-locate=: Find file by
+   matching the path against a regexp. Like =consult-grep= either the
+   project root or the current directory is used as root directory for
+   the search. The input string is treated similarly to =consult-grep=,
+   where the first part is passed to find, and the second part is used
+   for Emacs filtering. Note that =find= uses wildcards, e.g. enter
+   =*consult*=, to find all files containing the string "consult". In
+   case you want to use another search utility like =fd=, you can write
+   wrapper command =my-fdfind= (see below in the configuration example).
 
 ** Compilation errors
+ #+cindex: compilation errors
 
+#+findex: consult-error
+#+findex: consult-flycheck
+#+findex: consult-flymake
 - =consult-error=: Jump to an error. Supports live preview and recursive
   editing. In contrast to =consult-flycheck= it shows the line and is
   more general since it is not tied to a specific backend.
@@ -178,41 +210,53 @@ Most provided commands follow the naming scheme =consult-<thing>=.
   =consult-flycheck=.
 
 ** Histories
+ #+cindex: history
 
-- =consult-complex-command=: Select a command from the
-  =command-history=. This command is a =completing-read= version of
-  =repeat-complex-command= and can also be considered a replacement for
-  the =command-history= command from chistory.el.
-- =consult-history=: Insert a string from the current buffer history.
-  This command can be invoked from the minibuffer. In that case the
-  history stored in the minibuffer-history-variable is used.
+ #+findex: consult-complex-command
+ #+findex: consult-history
+ - =consult-complex-command=: Select a command from the
+   =command-history=. This command is a =completing-read= version of
+   =repeat-complex-command= and can also be considered a replacement for
+   the =command-history= command from chistory.el.
+ - =consult-history=: Insert a string from the current buffer history.
+   This command can be invoked from the minibuffer. In that case the
+   history stored in the minibuffer-history-variable is used.
 
 ** Minor and Major modes
+ #+cindex: minor mode
+ #+cindex: major mode
 
-- =consult-minor-mode-menu=: Enable/disable minor mode. Supports
-  narrowing to on/off/local/global modes by pressing =i/o/l/g SPC=
-  respectively.
-- =consult-mode-command=: Run a command from the currently active minor
-  or major modes. Supports narrowing to local-minor/global-minor/major
-  mode via the keys =l/g/m=.
+ #+findex: consult-minor-mode-menu
+ #+findex: consult-mode-command
+ - =consult-minor-mode-menu=: Enable/disable minor mode. Supports
+   narrowing to on/off/local/global modes by pressing =i/o/l/g SPC=
+   respectively.
+ - =consult-mode-command=: Run a command from the currently active minor
+   or major modes. Supports narrowing to local-minor/global-minor/major
+   mode via the keys =l/g/m=.
 
 ** Miscellaneous
 
-- =consult-apropos=: Replacement for =apropos= with completion.
-- =consult-file-externally=: Select a file and open it externally,
-  e.g. using =xdg-open= on Linux.
-- =consult-completion-in-region=: Function which can be used as
-  =completion-in-region-function=. This way, the minibuffer completion
-  UI will be used for =completion-at-point=. This function is
-  particularily useful in combination with Icomplete-vertical, since
-  Icomplete does not provide its own =completion-in-region-function=. In
-  contrast, Selectrum already comes with its own function.
-- =consult-theme=: Select a theme and disable all currently enabled
-  themes. Supports live preview of the theme while scrolling through the
-  candidates.
+ #+findex: consult-apropos
+ #+findex: consult-file-externally
+ #+findex: consult-completion-in-region
+ #+findex: consult-theme
+ - =consult-apropos=: Replacement for =apropos= with completion.
+ - =consult-file-externally=: Select a file and open it externally,
+   e.g. using =xdg-open= on Linux.
+ - =consult-completion-in-region=: Function which can be used as
+   =completion-in-region-function=. This way, the minibuffer completion
+   UI will be used for =completion-at-point=. This function is
+   particularily useful in combination with Icomplete-vertical, since
+   Icomplete does not provide its own =completion-in-region-function=. In
+   contrast, Selectrum already comes with its own function.
+ - =consult-theme=: Select a theme and disable all currently enabled
+   themes. Supports live preview of the theme while scrolling through the
+   candidates.
 
 * Special features
 ** Live previews
+ #+cindex: preview
 
  Some Consult commands support live previews. For example when you scroll
  through the items of =consult-line=, the buffer will scroll to the
@@ -225,6 +269,7 @@ Most provided commands follow the naming scheme =consult-<thing>=.
  some automatic and for some completely disabled.
 
 ** Narrowing to subsets
+ #+cindex: narrowing
 
  Consult has special support to narrow to candidate subsets. When you use
  the =consult-buffer= command, you can press =b SPC= and the list of
@@ -235,6 +280,7 @@ Most provided commands follow the naming scheme =consult-<thing>=.
  =consult-narrow-key= and =consult-widen-key=.
 
 ** Asynchronous candidates and filtering
+ #+cindex: asynchronous candidates
 
  Consult has support for asynchronous generation of candidate lists. This
  feature is used for example by =consult-grep=, where the list of matches
@@ -259,6 +305,7 @@ Most provided commands follow the naming scheme =consult-<thing>=.
  - =#defun -- --invert-match#=: Pass argument =--invert-match= to grep.
 
 * Installation
+#+cindex: installation
 
 *NOTE: If you are using Selectrum, you MUST install the packages selectrum,
 consult and consult-selectrum!*
@@ -274,8 +321,10 @@ such that the main package =consult.el= only depends on Emacs core
 components.
 
 ** Example configuration
+ #+cindex: configuration
+ #+cindex: use-package
 
- #+BEGIN_SRC emacs-lisp
+ #+begin_src emacs-lisp
  ;; Example configuration for Consult
  (use-package consult
    ;; Replace bindings. Lazily loaded due by `use-package'.
@@ -351,9 +400,11 @@ components.
  (use-package consult-flycheck
    :bind (:map flycheck-command-map
                ("!" . consult-flycheck)))
- #+END_SRC
+ #+end_src
 
 ** Customizable variables
+ #+cindex: customization
+ #+cindex: configuration
 
  *Tip:* If you have Marginalia installed, type =M-x customize-variable RET
  ^consult= to see all Consult-specific customizable variables with their current
@@ -395,6 +446,7 @@ components.
  | consult-widen-key               | nil                | Widening key during completion                           |
 
 ** Configuration of individual commands
+ #+cindex: configuration
 
  *Note:* This configuration feature is made available for experienced users,
  in case fine-grained control for each individual command is needed.
@@ -405,12 +457,12 @@ components.
  =:history= or =:sort=. Note that since =consult--read= is part of the internal
  API, options could be removed, replaced or renamed at any time.
 
- #+BEGIN_SRC emacs-lisp
+ #+begin_src emacs-lisp
  ;; Set preview for `consult-buffer' to key `M-p'
  ;; and disable preview for `consult-theme' completely.
  (setq consult-config `((consult-theme :preview-key nil)
                         (consult-buffer :preview-key ,(kbd "M-p"))))
- #+END_SRC
+ #+end_src
 
  Generally it is possible to modify commands for your individual needs by the
  following techniques:

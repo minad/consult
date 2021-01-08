@@ -64,6 +64,8 @@ Installation
 @node Introduction
 @chapter Introduction
 
+@cindex introduction
+
 This package provides various commands based on the Emacs completion
 function @samp{completing-read}, in particular a more advanced buffer
 switching command @samp{consult-buffer} which allows to select from buffers,
@@ -98,6 +100,8 @@ additional commands.
 @node Available commands
 @chapter Available commands
 
+@cindex commands
+
 Most provided commands follow the naming scheme @samp{consult-<thing>}.
 
 @strong{Tip:} If you have Marginalia installed and heavy annotators enabled, type @samp{M-x
@@ -119,6 +123,15 @@ variables and functions with their descriptions.
 @node Virtual Buffers
 @section Virtual Buffers
 
+@cindex virtual buffers
+
+@findex consult-buffer
+@findex consult-buffer-other-window
+@findex consult-buffer-other-frame
+@findex consult-recent-file
+@findex consult-recent-file-other-window
+@findex consult-recent-file-other-frame
+@findex consult-bookmark
 @itemize
 @item
 @samp{consult-buffer} (@samp{-other-window}, @samp{-other-frame}): Enhanced version
@@ -142,7 +155,6 @@ configured)
 v Views (only available if @samp{consult-view-*-function} is
 configured)
 @end itemize
-
 @item
 @samp{consult-bookmark}: Select or create bookmark. You might consider the
 powerful @samp{consult-buffer} instead as an alternative, which includes bookmarks.
@@ -156,6 +168,11 @@ instead, which includes recent files.
 @node Editing
 @section Editing
 
+@cindex editing
+
+@findex consult-register
+@findex consult-yank
+@findex consult-kmacro
 @itemize
 @item
 @samp{consult-register}: Select from list of registers.
@@ -170,6 +187,14 @@ supported when selecting from the kill-ring.
 @node Navigation
 @section Navigation
 
+@cindex navigation
+
+@findex consult-goto-line
+@findex consult-mark
+@findex consult-global-mark
+@findex consult-outline
+@findex consult-imenu
+@findex consult-project-imenu
 @itemize
 @item
 @samp{consult-goto-line}: Jump to line number enhanced with live preview.
@@ -196,6 +221,15 @@ recursive editing and narrowing. This feature has been inspired by
 @node Search
 @section Search
 
+@cindex search
+
+@findex consult-line
+@findex consult-multi-occur
+@findex consult-grep
+@findex consult-ripgrep
+@findex consult-git-grep
+@findex consult-find
+@findex consult-locate
 @itemize
 @item
 @samp{consult-line}: Enter search string and select from matching lines.
@@ -237,6 +271,11 @@ wrapper command @samp{my-fdfind} (see below in the configuration example).
 @node Compilation errors
 @section Compilation errors
 
+@cindex compilation errors
+
+@findex consult-error
+@findex consult-flycheck
+@findex consult-flymake
 @itemize
 @item
 @samp{consult-error}: Jump to an error. Supports live preview and recursive
@@ -257,6 +296,10 @@ components.
 @node Histories
 @section Histories
 
+@cindex history
+
+@findex consult-complex-command
+@findex consult-history
 @itemize
 @item
 @samp{consult-complex-command}: Select a command from the
@@ -272,6 +315,11 @@ history stored in the minibuffer-history-variable is used.
 @node Minor and Major modes
 @section Minor and Major modes
 
+@cindex minor mode
+@cindex major mode
+
+@findex consult-minor-mode-menu
+@findex consult-mode-command
 @itemize
 @item
 @samp{consult-minor-mode-menu}: Enable/disable minor mode. Supports
@@ -286,6 +334,10 @@ mode via the keys @samp{l/g/m}.
 @node Miscellaneous
 @section Miscellaneous
 
+@findex consult-apropos
+@findex consult-file-externally
+@findex consult-completion-in-region
+@findex consult-theme
 @itemize
 @item
 @samp{consult-apropos}: Replacement for @samp{apropos} with completion.
@@ -317,6 +369,8 @@ candidates.
 @node Live previews
 @section Live previews
 
+@cindex preview
+
 Some Consult commands support live previews. For example when you scroll
 through the items of @samp{consult-line}, the buffer will scroll to the
 corresponding position. It is possible to jump back and forth between the
@@ -330,6 +384,8 @@ some automatic and for some completely disabled.
 @node Narrowing to subsets
 @section Narrowing to subsets
 
+@cindex narrowing
+
 Consult has special support to narrow to candidate subsets. When you use
 the @samp{consult-buffer} command, you can press @samp{b SPC} and the list of
 candidates will be restricted such that only buffers are shown. If you
@@ -340,6 +396,8 @@ pressed to achieve the same effect, see the configuration variables
 
 @node Asynchronous candidates and filtering
 @section Asynchronous candidates and filtering
+
+@cindex asynchronous candidates
 
 Consult has support for asynchronous generation of candidate lists. This
 feature is used for example by @samp{consult-grep}, where the list of matches
@@ -373,6 +431,8 @@ must be longer than @samp{consult-async-min-input} characters by default.
 @node Installation
 @chapter Installation
 
+@cindex installation
+
 @strong{NOTE: If you are using Selectrum, you MUST install the packages selectrum,
 consult and consult-selectrum!}
 
@@ -394,6 +454,9 @@ components.
 
 @node Example configuration
 @section Example configuration
+
+@cindex configuration
+@cindex use-package
 
 @lisp
 ;; Example configuration for Consult
@@ -475,6 +538,9 @@ components.
 
 @node Customizable variables
 @section Customizable variables
+
+@cindex customization
+@cindex configuration
 
 @strong{Tip:} If you have Marginalia installed, type @samp{M-x customize-variable RET
  ^consult} to see all Consult-specific customizable variables with their current
@@ -582,6 +648,8 @@ an overview of all Consult variables and functions with their descriptions.
 
 @node Configuration of individual commands
 @section Configuration of individual commands
+
+@cindex configuration
 
 @strong{Note:} This configuration feature is made available for experienced users,
 in case fine-grained control for each individual command is needed.
