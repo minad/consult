@@ -14,27 +14,28 @@
 * Introduction
 #+cindex: introduction
 
-This package provides various commands based on the Emacs completion
-function =completing-read=, in particular a more advanced buffer
-switching command =consult-buffer= which allows to select from buffers,
-recent files and more. Furthermore various search commands are provided,
-like =consult-grep= and =consult-line=, which resembles
-[[https://github.com/abo-abo/swiper#swiper][Swiper]].
+This package provides various handy commands based on the Emacs completion
+function =completing-read=, which allows to quickly select from a list of
+candidates. Consult offers in particular a more advanced buffer switching
+command =consult-buffer= which allows to select from buffers, recent files and
+more. Various search commands are provided, like an asynchronous =consult-grep=,
+and =consult-line=, which resembles [[https://github.com/abo-abo/swiper#swiper][Swiper]] or [[https://github.com/emacsorphanage/helm-swoop][Helm-Swoop]]. Please take a look at
+the [[#available-commands][full list of commands]]!
 
-The commands are compatible with completion systems based on the standard Emacs
-=completing-read= API, notably the default completion system, [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html][Icomplete]],
-[[https://github.com/raxod502/selectrum][Selectrum]] and [[https://github.com/oantolin/embark/][Embark]]. If Icomplete is used, it is recommended to install
-[[https://github.com/oantolin/icomplete-vertical][Icomplete-vertical]]. The completion system specifics in this package are kept to
-a minimum.
+All Consult commands are compatible with completion systems based on the
+standard Emacs =completing-read= API, notably the default completion system,
+[[https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html][Icomplete]], [[https://github.com/raxod502/selectrum][Selectrum]] and [[https://github.com/oantolin/embark/][Embark]]. If Icomplete is used, it is recommended to
+install [[https://github.com/oantolin/icomplete-vertical][Icomplete-vertical]]. The completion system specifics in this package are
+kept to a minimum.
 
 There are the [[https://github.com/minad/marginalia/][Marginalia]] and [[https://github.com/oantolin/embark/][Embark]] packages, which can be combined with
 Consult. The =marginalia-mode= enriches the completion display with annotations.
 The annotations show for example documentation strings or file information. The
-versatile Embark packages provides local actions (like a context menu), which
-can be executed while selecting a candidate in the minibuffer or in other
-contexts. For example, when selecting a file, an action to delete the file is
-offered. Embark offers more than local actions and can also be used as a
-completion system through its live-updating candidate collect buffer.
+versatile Embark packages provides local actions, comparable to a context menu,
+which can be executed while selecting a candidate in the minibuffer or in other
+contexts. For example, when selecting from a list of files, an action to delete
+the file is offered. Embark offers more than local actions and can also be used
+as a completion system through its live-updating candidate collect buffer.
 
 /Note/: If you use [[https://github.com/abo-abo/swiper#ivy][Ivy]] or [[https://github.com/emacs-helm/helm][Helm]], you probably don't need Consult, since both
 packages already bring their own rich set of additional commands.
@@ -62,6 +63,9 @@ consult-outline
 [[https://github.com/minad/consult/blob/main/images/consult-outline.png?raw=true]]
 
 * Available commands
+:properties:
+:custom_id: available-commands
+:end:
 #+cindex: commands
 
 Most provided commands follow the meaningful naming scheme =consult-<thing>=.
