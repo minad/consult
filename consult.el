@@ -2464,8 +2464,6 @@ CMD is the find argument list."
   (and icomplete-mode (car completion-all-sorted-completions)))
 
 (declare-function icomplete-exhibit "icomplete")
-(declare-function icomplete--field-beg "icomplete")
-(declare-function icomplete--field-end "icomplete")
 (defun consult--icomplete-refresh ()
   "Refresh icomplete view, keep current candidate selected if possible."
   (when icomplete-mode
@@ -2474,8 +2472,7 @@ CMD is the find argument list."
       ;; force flushing, otherwise narrowing is broken!
       (setq completion-all-sorted-completions nil)
       (when top
-        (let* ((completions (completion-all-sorted-completions
-                             (icomplete--field-beg) (icomplete--field-end)))
+        (let* ((completions (completion-all-sorted-completions))
                (last (last completions))
                (before)) ;; completions before top
           ;; warning: completions is an improper list
@@ -2489,8 +2486,10 @@ CMD is the find argument list."
               (setq completions (cdr completions)))))))
     (icomplete-exhibit)))
 
-(add-hook 'consult--completion-candidate-hook #'consult--icomplete-candidate)
-(add-hook 'consult--completion-refresh-hook #'consult--icomplete-refresh)
+(eval-after-load 'icomplete
+  (progn
+    (add-hook 'consult--completion-candidate-hook #'consult--icomplete-candidate)
+    (add-hook 'consult--completion-refresh-hook #'consult--icomplete-refresh)))
 
 (provide 'consult)
 ;;; consult.el ends here
