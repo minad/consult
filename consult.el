@@ -1784,7 +1784,7 @@ The command supports preview of file bookmarks and narrowing."
                    (bm (bookmark-get-bookmark-record
                         (assoc cand bookmark-alist))))
               (eq n (car (alist-get
-                          (or (bookmark-get-handler bm) #'bookmark-default-handler)
+                          (or (alist-get 'handler bm) #'bookmark-default-handler)
                           consult-bookmark-narrow)))
             t))
         (mapcar (pcase-lambda (`(_ ,x ,y)) (cons x y))
