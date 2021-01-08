@@ -35,11 +35,11 @@
 
 ;; The Consult commands are compatible with completion systems based
 ;; on the Emacs `completing-read' API, notably the default completion
-;; system, Icomplete, Selectrum and Embark's live-occur.
+;; system, Icomplete, Selectrum and Embark.
 
-;; This package took inspiration from Counsel by Oleh Krehel. Some of
-;; the commands found in this package originated in the Selectrum
-;; wiki. See the README for a full list of contributors.
+;; Consult took inspiration from Counsel by Oleh Krehel. Some of the
+;; commands found in this package originated in the Selectrum wiki.
+;; See the README for a full list of contributors.
 
 ;;; Code:
 
