@@ -1778,7 +1778,6 @@ The command supports preview of file bookmarks and narrowing."
   (interactive
    (list
     (consult--with-file-preview (open)
-      (bookmark-maybe-load-default-file)
       (consult--read
        "Bookmark: "
        (bookmark-all-names)
