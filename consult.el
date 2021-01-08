@@ -1802,16 +1802,15 @@ The command supports preview of file bookmarks and narrowing."
             preview
             (if-let (bm (bookmark-get-bookmark-record
                          (assoc cand bookmark-alist)))
-              (if-let* ((file (alist-get 'filename bm))
-                        (pos (alist-get 'position bm))
-                        ;; Only preview bookmarks without a handler
-                        ;; aka `bookmark-default-handler'!
-                        (buf (and (not (alist-get 'handler bm))
-                                  (funcall open file))))
-                  (set-marker (make-marker) pos buf)
-                (unless restore
-                  (minibuffer-message "No preview for special bookmark")
-                  nil))
+                (if-let* ((file (alist-get 'filename bm))
+                          (pos (alist-get 'position bm))
+                          ;; Only preview bookmarks without a handler
+                          ;; aka `bookmark-default-handler'!
+                          (buf (and (not (alist-get 'handler bm))
+                                    (funcall open file))))
+                    (set-marker (make-marker) pos buf)
+                  (unless restore (minibuffer-message "No preview for special bookmark"))
+                  nil)
               orig-pos)
             restore)))
        :history 'bookmark-history
