@@ -49,9 +49,6 @@
 (add-hook 'consult--completion-candidate-hook #'consult-selectrum--candidate)
 (add-hook 'consult--completion-refresh-hook #'consult-selectrum--refresh)
 
-;; HACK: Hopefully selectrum adds something like this to the official API.
-;; https://github.com/raxod502/selectrum/issues/243
-;; https://github.com/raxod502/selectrum/pull/244
 (defun consult-selectrum--read-setup (fun prompt candidates &rest opts)
   "Advice, which configures `consult--read' for selectrum.
 
@@ -61,10 +58,10 @@ CANDIDATES is the candidate list.
 OPTS is the option plist."
   (minibuffer-with-setup-hook
       (lambda ()
+        ;; Set mode-default-candidate selectrum option according to :default-top
         (setq-local selectrum--move-default-candidate-p (plist-get opts :default-top))
-        ;; Fix height for async completion table
-        (when (functionp candidates)
-          (setq-local selectrum-fix-minibuffer-height t)))
+        ;; Fix selectrum height for async completion table
+        (when (functionp candidates) (setq-local selectrum-fix-minibuffer-height t)))
     (apply fun prompt candidates opts)))
 
 (advice-add #'consult--read :around #'consult-selectrum--read-setup)
