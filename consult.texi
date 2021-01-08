@@ -99,7 +99,7 @@ packages already bring their own rich set of additional commands.
 
 Most provided commands follow the meaningful naming scheme @samp{consult-<thing>}.
 
-@strong{Tip:} If you have Marginalia installed and heavy annotators enabled, type @samp{M-x
+@strong{Tip:} If you have @uref{https://github.com/minad/marginalia, Marginalia} installed and heavy annotators enabled, type @samp{M-x
 ^consult} to see all Consult commands with their abbreviated description!
 Alternatively, type @samp{C-h a ^consult} to get an overview of all Consult
 variables and functions with their descriptions.
@@ -378,13 +378,16 @@ Some Consult commands support live previews. For example when you scroll
 through the items of @samp{consult-line}, the buffer will scroll to the
 corresponding position. It is possible to jump back and forth between the
 minibuffer and the buffer to perform recursive editing while the search is
-ongoing. Previews are enabled by default but can be disabled via the
-@samp{consult-preview-key} option. Furthermore it is possible to define a keybinding
-to trigger the preview manually. Each command can be configured individually
-with its own @samp{:preview-key}, such that for some commands preview is manual, for
-some automatic and for some completely disabled. The default setting of
-@samp{consult-preview-key} is @samp{'any} which means that the preview will be triggered
-on any keypress when the selected candidate changes.
+ongoing.
+
+Previews are enabled by default but can be disabled via the
+@samp{consult-preview-key} variable. Furthermore it is possible to define a
+keybinding to trigger the preview manually as shown in the @ref{Example configuration, , example
+configuration}. The default setting of @samp{consult-preview-key} is @samp{'any} which
+means that the preview will be triggered on any keypress when the selected
+candidate changes. Each command can be configured individually with its own
+@samp{:preview-key}, such that preview can be manual for some commands, for some
+commands automatic and for some commands completely disabled.
 
 @node Narrowing to subsets
 @section Narrowing to subsets
@@ -453,7 +456,7 @@ must be longer than @samp{consult-async-min-input} characters by default.
 
 @cindex installation
 
-@strong{NOTE: If you are using Selectrum, you MUST install the packages selectrum,
+@strong{NOTE: If you are using @uref{https://github.com/raxod502/selectrum, Selectrum}, you MUST install the packages selectrum,
 consult and consult-selectrum!}
 
 It is recommended to manage package configurations with the excellent
@@ -524,7 +527,8 @@ components.
 
   ;; Configure preview. Note that the preview-key can also be configured on a
   ;; per-command basis via `consult-config'.
-  ;; (setq consult-preview-key 'any) ;; any key triggers preview, the default
+  ;; The default value is 'any, such that any key triggers the preview.
+  ;; (setq consult-preview-key (kbd "M-p"))
 
   ;; Optionally configure narrowing key.
   ;; Both < and C-+ work reasonably well.
@@ -562,7 +566,7 @@ components.
 @cindex customization
 @cindex configuration
 
-@strong{Tip:} If you have Marginalia installed, type @samp{M-x customize-variable RET
+@strong{Tip:} If you have @uref{https://github.com/minad/marginalia, Marginalia} installed, type @samp{M-x customize-variable RET
  ^consult} to see all Consult-specific customizable variables with their current
 values and abbreviated description! Alternatively, type @samp{C-h a ^consult} to get
 an overview of all Consult variables and functions with their descriptions.
@@ -704,7 +708,7 @@ Write or propose a patch!
 @node Related packages
 @chapter Related packages
 
-@strong{NOTE: If you are using Selectrum, you MUST install the packages selectrum,
+@strong{NOTE: If you are using @uref{https://github.com/raxod502/selectrum, Selectrum}, you MUST install the packages selectrum,
 consult and consult-selectrum!}
 
 It is recommended to install the following package combination:
