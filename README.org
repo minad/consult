@@ -43,7 +43,8 @@ versatile Embark packages provides local actions, comparable to a context menu,
 which can be executed while selecting a candidate in the minibuffer or in other
 contexts. For example, when selecting from a list of files, an action to delete
 the file is offered. Embark offers more than local actions and can also be used
-as a completion system through its live-updating candidate collect buffer.
+as a completion system through its live-updating candidate collect buffer. The
+[[#embark-integration][Embark integration]] is described later in greater detail.
 
 ** Screenshots :noexport:
 
@@ -370,6 +371,38 @@ variables and functions with their descriptions.
    must be longer than =consult-async-min-input= characters by default.
  - =#defun -- --invert-match#=: Pass argument =--invert-match= to grep.
 
+** Integration with Embark
+ :properties:
+ :description: Actions, Grep/Occur-buffer export
+ :custom_id: embark-integration
+ :end:
+ #+cindex: embark
+
+ *(WORK IN PROGRESS, NOT YET COMPLETELY IMPLEMENTED)*
+
+ Embark is a versatile package which offers context dependent actions,
+ comparable to a context menu. See the [[https://github.com/oantolin/embark][Embark manual]] for an extensive
+ description of its capabilities.
+
+ Actions are commands which can operate on the currently selected command.
+ When completing files, for example the command to delete a file is offered.
+ Embark also offers the option to execute arbitrary commands on the currently
+ selected candidate via =M-x=.
+
+ Furthermore Embark provides the command =embark-collect-snapshot= to collect
+ candidates and present them in an Embark collect buffer, where further actions
+ can be applied to them. Then there is a special export feature, which allows to
+ export candidate lists to a buffer of a special type via the =embark-export=
+ command. For example in the case of file completion, a Dired buffer is opened.
+
+ In the context of Consult, particularily exciting is the possibility to export
+ the matching lines from =consult-line=, =consult-outline=, =consult-mark= and
+ =consult-global-mark=. The matching lines are exported to an Occur buffer where
+ the they can be edited via the =occur-edit-mode= (press key =e=). Similarily,
+ Embark supports exporting the matches found by =consult-grep=,
+ =consult-ripgrep= and =consult-git-grep= to a Grep buffer, where the matches
+ across files can be edited, if the [[https://github.com/mhayashi1120/Emacs-wgrep][wgrep]] package is installed.
+
 * Configuration
 :properties:
 :description: Example configuration and customization variables
@@ -578,6 +611,11 @@ It is recommended to install the following package combination:
 - [[https://github.com/oantolin/embark][embark]]: Action commands, which can act on the completion candidates
 - [[https://github.com/oantolin/orderless][orderless]]: Completion style, Flexible candidate filtering
 - [[https://github.com/raxod502/prescient.el][prescient]]: Frecency-based candidate sorting, also offers filtering
+
+Additional recommended packages for wider integration:
+
+- [[https://github.com/justbur/emacs-which-key][which-key]]: Helpful mode showing keybindings, also shows the Consult narrowing keys
+- [[https://github.com/mhayashi1120/Emacs-wgrep][wgrep]]: Editing of grep buffers, can be used together with =consult-grep= via Embark
 
 Note that all packages are independent and can potentially be exchanged
 with alternative components, since there exist no hard dependencies.

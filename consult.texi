@@ -51,6 +51,7 @@ Special features
 * Live previews::                Preview the currently selected candidate
 * Narrowing to subsets::         Restricting the completion to a candidate subset
 * Asynchronous candidate lists:: Filtering asynchronously generated candidate lists
+* Integration with Embark::      Actions, Grep/Occur-buffer export
 
 Configuration
 
@@ -92,7 +93,8 @@ versatile Embark packages provides local actions, comparable to a context menu,
 which can be executed while selecting a candidate in the minibuffer or in other
 contexts. For example, when selecting from a list of files, an action to delete
 the file is offered. Embark offers more than local actions and can also be used
-as a completion system through its live-updating candidate collect buffer.
+as a completion system through its live-updating candidate collect buffer. The
+@ref{Integration with Embark, , Embark integration} is described later in greater detail.
 
 @node Available commands
 @chapter Available commands
@@ -372,6 +374,7 @@ features.
 * Live previews::                Preview the currently selected candidate
 * Narrowing to subsets::         Restricting the completion to a candidate subset
 * Asynchronous candidate lists:: Filtering asynchronously generated candidate lists
+* Integration with Embark::      Actions, Grep/Occur-buffer export
 @end menu
 
 @node Live previews
@@ -455,6 +458,36 @@ must be longer than @samp{consult-async-min-input} characters by default.
 @item
 @samp{#defun -- --invert-match#}: Pass argument @samp{--invert-match} to grep.
 @end itemize
+
+@node Integration with Embark
+@section Integration with Embark
+
+@cindex embark
+
+@strong{(WORK IN PROGRESS, NOT YET COMPLETELY IMPLEMENTED)}
+
+Embark is a versatile package which offers context dependent actions,
+comparable to a context menu. See the @uref{https://github.com/oantolin/embark, Embark manual} for an extensive
+description of its capabilities.
+
+Actions are commands which can operate on the currently selected command.
+When completing files, for example the command to delete a file is offered.
+Embark also offers the option to execute arbitrary commands on the currently
+selected candidate via @samp{M-x}.
+
+Furthermore Embark provides the command @samp{embark-collect-snapshot} to collect
+candidates and present them in an Embark collect buffer, where further actions
+can be applied to them. Then there is a special export feature, which allows to
+export candidate lists to a buffer of a special type via the @samp{embark-export}
+command. For example in the case of file completion, a Dired buffer is opened.
+
+In the context of Consult, particularily exciting is the possibility to export
+the matching lines from @samp{consult-line}, @samp{consult-outline}, @samp{consult-mark} and
+@samp{consult-global-mark}. The matching lines are exported to an Occur buffer where
+the they can be edited via the @samp{occur-edit-mode} (press key @samp{e}). Similarily,
+Embark supports exporting the matches found by @samp{consult-grep},
+@samp{consult-ripgrep} and @samp{consult-git-grep} to a Grep buffer, where the matches
+across files can be edited, if the @uref{https://github.com/mhayashi1120/Emacs-wgrep, wgrep} package is installed.
 
 @node Configuration
 @chapter Configuration
@@ -744,6 +777,15 @@ consult-selectrum: Provides integration with Selectrum
 @uref{https://github.com/raxod502/prescient.el, prescient}: Frecency-based candidate sorting, also offers filtering
 @end itemize
 
+Additional recommended packages for wider integration:
+
+@itemize
+@item
+@uref{https://github.com/justbur/emacs-which-key, which-key}: Helpful mode showing keybindings, also shows the Consult narrowing keys
+@item
+@uref{https://github.com/mhayashi1120/Emacs-wgrep, wgrep}: Editing of grep buffers, can be used together with @samp{consult-grep} via Embark
+@end itemize
+
 Note that all packages are independent and can potentially be exchanged
 with alternative components, since there exist no hard dependencies.
 Furthermore it is possible to get started with only Selectrum and
@@ -774,6 +816,8 @@ Code contributions:
 @uref{https://github.com/inigoserna/, inigoserna}
 @item
 @uref{https://github.com/aspiers/, Adam Spiers}
+@item
+@uref{https://github.com/omar-polo, Omar Polo}
 @end itemize
 
 Advice and useful discussions:
