@@ -1048,10 +1048,16 @@ the comma is passed to ASYNC, the second part is used for filtering."
        (funcall async 'setup))
       ((pred stringp)
        (let* ((pair (consult--async-split-string action))
-              (len (length (car pair))))
-         (when (or (>= (length action) (+ 2 len))
-                   (>= len consult-async-min-input))
-           (funcall async (car pair)))))
+              (async-str (car pair))
+              (async-len (length async-str)))
+         (funcall async
+                  ;; Pass through if forced by two punctuation characters
+                  ;; or if the input is long enough!
+                  (if (or (>= (length action) (+ 2 async-len))
+                          (>= async-len consult-async-min-input))
+                      async-str
+                    ;; Pretend that there is no input
+                    ""))))
       (_ (funcall async action)))))
 
 (defun consult--async-process (async cmd)
@@ -1062,6 +1068,10 @@ CMD is the command argument list."
   (let* ((rest) (proc) (flush) (last-args) (indicator))
     (lambda (action)
       (pcase action
+        (""
+         ;; If no input is provided kill current process
+         (ignore-errors (kill-process proc))
+         (setq last-args nil))
         ((pred stringp)
          (let ((args (funcall cmd action)))
            (unless (equal args last-args)
@@ -1101,11 +1111,12 @@ CMD is the command argument list."
                    (when flush
                      (setq flush nil)
                      (funcall async 'flush))
-                   (unless (string-match-p "killed" event)
-                     (overlay-put indicator 'display
-                                  (if (string-match-p "finished" event)
-                                      (propertize ":" 'face 'consult-async-finished)
-                                    (propertize "!" 'face 'consult-async-failed))))
+                   (overlay-put indicator 'display
+                                (cond
+                                 ((string-prefix-p "killed" event) nil)
+                                 ((string-prefix-p "finished" event)
+                                  (propertize ":" 'face 'consult-async-finished))
+                                 (_ (propertize "!" 'face 'consult-async-failed))))
                    (when (string-prefix-p "finished" event)
                      (unless (string= rest "")
                        (funcall async (list rest)))))))))))
@@ -1136,12 +1147,14 @@ The DEBOUNCE delay defaults to `consult-async-input-debounce'."
         ((pred stringp)
          (when debounce-timer
            (cancel-timer debounce-timer))
-         (unless (or (string= action "") (string= action input))
-           (setq debounce-timer (run-at-time debounce nil
-                                             (lambda ()
-                                               (when throttle
-                                                 (setq throttle nil input action)
-                                                 (funcall async input)))))))
+         (unless (string= action input)
+           (funcall async "") ;; cancel running process
+           (unless (string= action "")
+             (setq debounce-timer (run-at-time debounce nil
+                                               (lambda ()
+                                                 (when throttle
+                                                   (setq throttle nil input action)
+                                                   (funcall async input))))))))
         ('destroy
          (cancel-timer throttle-timer)
          (when debounce-timer
