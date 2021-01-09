@@ -929,9 +929,8 @@ NARROW is an alist of narrowing prefix strings and description."
 DISPLAY is the string to display instead of the unique string."
   (let ((str "") (n marker))
     (while (progn
-             (setq str (concat
-                        (string (+ consult--special-char (% n consult--special-range)))
-                        str))
+             (setq str (concat str
+                               (char-to-string (+ consult--special-char (% n consult--special-range)))))
              (and (>= n consult--special-range) (setq n (/ n consult--special-range)))))
     str))
 
@@ -2011,7 +2010,7 @@ The command supports previewing the currently selected theme."
 CAND is the candidate string.
 TYPE is the type character.
 FACE is the face for the candidate."
-  (concat (propertize (string (+ consult--special-char type)) 'display "") (propertize cand 'face face)))
+  (concat (propertize (char-to-string (+ consult--special-char type)) 'display "") (propertize cand 'face face)))
 
 (defun consult--buffer (open-buffer open-file open-bookmark)
   "Backend implementation of `consult-buffer'.
