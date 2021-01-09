@@ -1385,6 +1385,14 @@ The command supports preview of the currently selected marker position."
    (consult--read
     "Go to global mark: "
     (consult--with-increased-gc (consult--global-mark-candidates))
+    ;; While `consult-global-mark' formats the candidates in grep-like
+    ;; style, we are still not using the 'xref-location category,
+    ;; since the locations are formatted using abbreviated buffer
+    ;; names instead of file paths. If the 'xref-location category
+    ;; would be used, Embark would embark-export to a broken grep-mode
+    ;; buffer. By using the 'line category, Embark will export to an
+    ;; occur buffer instead!
+    ;; See also https://github.com/minad/consult/issues/107.
     :category 'line
     :sort nil
     :require-match t
