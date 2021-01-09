@@ -602,6 +602,7 @@ Code contributions:
 - [[https://github.com/jakanakaevangeli][jakanakaevangeli]]
 - [[https://github.com/inigoserna/][inigoserna]]
 - [[https://github.com/aspiers/][Adam Spiers]]
+- [[https://github.com/omar-polo][Omar Polo]]
 
 Advice and useful discussions:
 - [[https://github.com/clemera/][Clemens Radermacher]]
