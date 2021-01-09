@@ -1195,6 +1195,22 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
   "Filter candidates of ASYNC by FUN."
   (consult--async-transform async seq-filter fun))
 
+(defun consult--command-args (cmd)
+  "Split command arguments and append to CMD."
+  (lambda (input)
+    (let ((args (split-string input " +-- +")))
+      (append cmd (list (car args)) (mapcan #'split-string (cdr args))))))
+
+(defmacro consult--async-command (cmd &rest transforms)
+  "Asynchronous CMD pipeline with TRANSFORMS."
+  (declare (indent 1))
+  `(thread-first (consult--async-sink)
+    (consult--async-refresh-timer)
+    ,@transforms
+    (consult--async-process (consult--command-args ,cmd))
+    (consult--async-throttle)
+    (consult--async-split)))
+
 ;;;; Commands
 
 ;; see https://github.com/raxod502/selectrum/issues/226
@@ -2366,12 +2382,6 @@ OPEN is the function to open new files."
               (forward-char (caddr loc)))
             (point-marker)))))))
 
-(defun consult--command-args (cmd)
-  "Split command arguments and append to CMD."
-  (lambda (input)
-    (let ((args (split-string input " +-- +")))
-      (append cmd (list (car args)) (mapcan #'split-string (cdr args))))))
-
 (defun consult--grep (prompt cmd dir initial)
   "Run grep CMD in DIR with INITIAL input.
 
@@ -2382,12 +2392,8 @@ PROMPT is the prompt string."
       (consult--jump
        (consult--read
         (car prompt-dir)
-        (thread-first (consult--async-sink)
-          (consult--async-refresh-timer)
-          (consult--async-transform consult--grep-matches)
-          (consult--async-process (consult--command-args cmd))
-          (consult--async-throttle)
-          (consult--async-split))
+        (consult--async-command cmd
+          (consult--async-transform consult--grep-matches))
         :lookup (consult--grep-marker open)
         :preview (consult--preview-position)
         :initial (concat consult-async-default-split initial)
@@ -2423,12 +2429,8 @@ CMD is the find argument list."
   (find-file
    (consult--read
     prompt
-    (thread-first (consult--async-sink)
-      (consult--async-refresh-timer)
-      (consult--async-map (lambda (x) (string-remove-prefix "./" x)))
-      (consult--async-process (consult--command-args cmd))
-      (consult--async-throttle)
-      (consult--async-split))
+    (consult--async-command cmd
+      (consult--async-map (lambda (x) (string-remove-prefix "./" x))))
     :sort nil
     :require-match t
     :initial (concat consult-async-default-split initial)
@@ -2472,12 +2474,8 @@ CMD is the find argument list."
   (interactive)
   (man (consult--read
         "Manual entry: "
-        (thread-first (consult--async-sink)
-          (consult--async-refresh-timer)
-          (consult--async-transform consult--man-format)
-          (consult--async-process (consult--command-args consult-man-command))
-          (consult--async-throttle)
-          (consult--async-split))
+        (consult--async-command consult-man-command
+          (consult--async-transform consult--man-format))
         :require-match t
         :lookup #'consult--lookup-cdr
         :initial (concat consult-async-default-split initial)
