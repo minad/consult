@@ -12,6 +12,9 @@
 :end:
 
 * Introduction
+:properties:
+:description: Why Consult?
+:end:
 #+cindex: introduction
 
 This package provides various handy commands based on the Emacs completion
@@ -26,7 +29,10 @@ All Consult commands are compatible with completion systems based on the
 standard Emacs =completing-read= API, notably the default completion system,
 [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html][Icomplete]], [[https://github.com/raxod502/selectrum][Selectrum]] and [[https://github.com/oantolin/embark/][Embark]]. If Icomplete is used, it is recommended to
 install [[https://github.com/oantolin/icomplete-vertical][Icomplete-vertical]]. The completion system specifics in this package are
-kept to a minimum.
+kept to a minimum. The ability of Consult to work well with arbitrary completion
+systems is the main advantage over other related packages. This property allows
+Consult to fit well into existing setups and it helps you to create a full
+completion environment out of small and independent components.
 
 There are the [[https://github.com/minad/marginalia/][Marginalia]] and [[https://github.com/oantolin/embark/][Embark]] packages, which can be combined with
 Consult. The =marginalia-mode= enriches the completion display with annotations.
@@ -65,6 +71,7 @@ consult-outline
 * Available commands
 :properties:
 :custom_id: available-commands
+:description: Navigation, search, editing commands and more
 :end:
 #+cindex: commands
 
@@ -76,6 +83,9 @@ Alternatively, type =C-h a ^consult= to get an overview of all Consult
 variables and functions with their descriptions.
 
 ** Virtual Buffers
+ :properties:
+ :description: Buffers, bookmarks and recent files
+ :end:
  #+cindex: virtual buffers
 
  #+findex: consult-buffer
@@ -107,6 +117,9 @@ variables and functions with their descriptions.
    instead, which includes recent files.
 
 ** Editing
+ :properties:
+ :description: Commands useful for editing
+ :end:
  #+cindex: editing
 
  #+findex: consult-register
@@ -119,6 +132,9 @@ variables and functions with their descriptions.
  - =consult-kmacro=: Select macro from the macro ring and execute it.
 
 ** Navigation
+ :properties:
+ :description: Mark rings, outlines and imenu
+ :end:
  #+cindex: navigation
 
  #+findex: consult-goto-line
@@ -143,6 +159,9 @@ variables and functions with their descriptions.
    [[https://github.com/vspinu/imenu-anywhere][imenu-anywhere]].
 
 ** Search
+ :properties:
+ :description: Line search, grep and file search
+ :end:
  #+cindex: search
 
  #+findex: consult-line
@@ -185,6 +204,9 @@ variables and functions with their descriptions.
    wrapper command =my-fdfind= as shown in the [[#example-configuration][example configuration]].
 
 ** Compilation errors
+ :properties:
+ :description: Jumping to compilation errors
+ :end:
  #+cindex: compilation errors
 
 #+findex: consult-error
@@ -203,6 +225,9 @@ variables and functions with their descriptions.
   =consult-flycheck=.
 
 ** Histories
+ :properties:
+ :description: Navigating histories
+ :end:
  #+cindex: history
 
  #+findex: consult-complex-command
@@ -215,7 +240,10 @@ variables and functions with their descriptions.
    This command can be invoked from the minibuffer. In that case the
    history stored in the =minibuffer-history-variable= is used.
 
-** Minor and Major modes
+** Major and minor modes
+ :properties:
+ :description: Toggling minor modes and executing commands
+ :end:
  #+cindex: minor mode
  #+cindex: major mode
 
@@ -229,6 +257,9 @@ variables and functions with their descriptions.
    mode via the keys =l/g/m=.
 
 ** Miscellaneous
+ :properties:
+ :description: Various other useful commands
+ :end:
 
  #+findex: consult-apropos
  #+findex: consult-file-externally
@@ -248,6 +279,9 @@ variables and functions with their descriptions.
    candidates.
 
 * Special features
+:properties:
+:description: Enhancements over built-in `completing-read'
+:end:
 
  Consult enhances =completing-read= with live previews of candidates, additional
  narrowing capabilities to candidate subsets and asynchronously generated
@@ -258,6 +292,9 @@ variables and functions with their descriptions.
  features.
 
 ** Live previews
+ :properties:
+ :description: Preview the currently selected candidate
+ :end:
  #+cindex: preview
 
  Some Consult commands support live previews. For example when you scroll
@@ -276,6 +313,9 @@ variables and functions with their descriptions.
  commands automatic and for some commands completely disabled.
 
 ** Narrowing to subsets
+ :properties:
+ :description: Restricting the completion to a candidate subset
+ :end:
  #+cindex: narrowing
 
  Consult has special support to narrow to candidate subsets. This functionality
@@ -296,7 +336,10 @@ variables and functions with their descriptions.
  key in the =consult-narrow-map= if this is desired, as shown in the [[#example-configuration][example
  configuration]].
 
-** Asynchronous candidates and filtering
+** Asynchronous candidate lists
+ :properties:
+ :description: Filtering asynchronously generated candidate lists
+ :end:
  #+cindex: asynchronous candidates
 
  Consult has support for asynchronous generation of candidate lists. This
@@ -326,16 +369,25 @@ variables and functions with their descriptions.
    must be longer than =consult-async-min-input= characters by default.
  - =#defun -- --invert-match#=: Pass argument =--invert-match= to grep.
 
-* Installation
+* Configuration
+:properties:
+:description: Example configuration and customization variables
+:end:
 #+cindex: installation
 
 *NOTE: If you are using [[https://github.com/raxod502/selectrum][Selectrum]], you MUST install the packages selectrum,
 consult and consult-selectrum!*
 
+Consult can be installed from [[https://melpa.org/][MELPA]] via the Emacs built-in package manager.
+Alternatively it can be directly installed from the development repository via
+other non-standard package managers.
+
 It is recommended to manage package configurations with the excellent
 =use-package= macro. The Consult package only provides commands and does not add
-any keybindings. In order to use the Consult commands, you must configure the
-keybindings yourself.
+any keybindings or modes. In order to use the Consult commands, you must
+configure the keybindings yourself. As a result, the package is not intrusive
+but requires a little setup effort. Feel free to only bind the commands you
+consider useful to your workflow!
 
 Note that there are three packages as of now: =consult.el=,
 =consult-selectrum.el= and =consult-flycheck.el=. Consult has been split
@@ -344,6 +396,7 @@ components.
 
 ** Example configuration
  :properties:
+ :description: Configuration proposal based on use-package
  :custom_id: example-configuration
  :end:
  #+cindex: configuration
@@ -429,6 +482,9 @@ components.
  #+end_src
 
 ** Customizable variables
+ :properties:
+ :description: Short description of all customization settings
+ :end:
  #+cindex: customization
  #+cindex: configuration
 
@@ -471,11 +527,15 @@ components.
  | consult-view-open-function      | nil                | Function to open a view by name                          |
  | consult-widen-key               | nil                | Widening key during completion                           |
 
-** Configuration of individual commands
+** Fine-tuning
+ :properties:
+ :description: Fine-grained configuration for special requirements
+ :end:
  #+cindex: configuration
 
- *Note:* This configuration feature is made available for experienced users,
- in case fine-grained control for each individual command is needed.
+ *Note:* Consult allows fine-grained customization of individual commands. This
+ configuration feature is made available for experienced users with special
+ requirements.
 
  Commands allow flexible, individual customization by setting the
  =consult-config= list. You can override any option passed to the internal
@@ -498,7 +558,10 @@ components.
  3. Create advices to modify some internal behavior.
  4. Write or propose a patch!
 
-* Related packages
+* Recommended packages
+:properties:
+:description: Related packages recommended for installation
+:end:
 
 *NOTE: If you are using [[https://github.com/raxod502/selectrum][Selectrum]], you MUST install the packages selectrum,
 consult and consult-selectrum!*
@@ -520,12 +583,13 @@ Furthermore it is possible to get started with only Selectrum and
 Consult and add more components later to the mix.
 
 * Acknowledgements
+:properties:
+:description: Contributors and Sources of Inspiration
+:end:
 
-You probably guessed from the name that this package took inspiration
-from [[https://github.com/abo-abo/swiper#counsel][Counsel]] by Oleh
-Krehel. Some of the commands found in this package originated in the
-[[https://github.com/raxod502/selectrum/wiki/Useful-Commands][Selectrum
-wiki]].
+You probably guessed from the name that this package took inspiration from
+[[https://github.com/abo-abo/swiper#counsel][Counsel]] by Oleh Krehel. Some of the commands found in this package originated in
+the [[https://github.com/raxod502/selectrum/wiki/Useful-Commands][Selectrum wiki]].
 
 Code contributions:
 - [[https://github.com/oantolin/][Omar Antolín Camarena]]

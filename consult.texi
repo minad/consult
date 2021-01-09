@@ -25,38 +25,38 @@
 @end ifnottex
 
 @menu
-* Introduction::
-* Available commands::
-* Special features::
-* Installation::
-* Related packages::
-* Acknowledgements::
+* Introduction::                 Why Consult?
+* Available commands::           Navigation, search, editing commands and more
+* Special features::             Enhancements over built-in `completing-read'
+* Configuration::                Example configuration and customization variables
+* Recommended packages::         Related packages recommended for installation
+* Acknowledgements::             Contributors and Sources of Inspiration
 
 @detailmenu
 --- The Detailed Node Listing ---
 
 Available commands
 
-* Virtual Buffers::
-* Editing::
-* Navigation::
-* Search::
-* Compilation errors::
-* Histories::
-* Minor and Major modes::
-* Miscellaneous::
+* Virtual Buffers::              Buffers, bookmarks and recent files
+* Editing::                      Commands useful for editing
+* Navigation::                   Mark rings, outlines and imenu
+* Search::                       Line search, grep and file search
+* Compilation errors::           Jumping to compilation errors
+* Histories::                    Navigating histories
+* Major and minor modes::        Toggling minor modes and executing commands
+* Miscellaneous::                Various other useful commands
 
 Special features
 
-* Live previews::
-* Narrowing to subsets::
-* Asynchronous candidates and filtering::
+* Live previews::                Preview the currently selected candidate
+* Narrowing to subsets::         Restricting the completion to a candidate subset
+* Asynchronous candidate lists:: Filtering asynchronously generated candidate lists
 
-Installation
+Configuration
 
-* Example configuration::
-* Customizable variables::
-* Configuration of individual commands::
+* Example configuration::        Configuration proposal based on use-package
+* Customizable variables::       Short description of all customization settings
+* Fine-tuning::                  Fine-grained configuration for special requirements
 
 @end detailmenu
 @end menu
@@ -78,7 +78,10 @@ All Consult commands are compatible with completion systems based on the
 standard Emacs @samp{completing-read} API, notably the default completion system,
 @uref{https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html, Icomplete}, @uref{https://github.com/raxod502/selectrum, Selectrum} and @uref{https://github.com/oantolin/embark/, Embark}. If Icomplete is used, it is recommended to
 install @uref{https://github.com/oantolin/icomplete-vertical, Icomplete-vertical}. The completion system specifics in this package are
-kept to a minimum.
+kept to a minimum. The ability of Consult to work well with arbitrary completion
+systems is the main advantage over other related packages. This property allows
+Consult to fit well into existing setups and it helps you to create a full
+completion environment out of small and independent components.
 
 There are the @uref{https://github.com/minad/marginalia/, Marginalia} and @uref{https://github.com/oantolin/embark/, Embark} packages, which can be combined with
 Consult. The @samp{marginalia-mode} enriches the completion display with annotations.
@@ -105,14 +108,14 @@ Alternatively, type @samp{C-h a ^consult} to get an overview of all Consult
 variables and functions with their descriptions.
 
 @menu
-* Virtual Buffers::
-* Editing::
-* Navigation::
-* Search::
-* Compilation errors::
-* Histories::
-* Minor and Major modes::
-* Miscellaneous::
+* Virtual Buffers::              Buffers, bookmarks and recent files
+* Editing::                      Commands useful for editing
+* Navigation::                   Mark rings, outlines and imenu
+* Search::                       Line search, grep and file search
+* Compilation errors::           Jumping to compilation errors
+* Histories::                    Navigating histories
+* Major and minor modes::        Toggling minor modes and executing commands
+* Miscellaneous::                Various other useful commands
 @end menu
 
 @node Virtual Buffers
@@ -307,8 +310,8 @@ This command can be invoked from the minibuffer. In that case the
 history stored in the @samp{minibuffer-history-variable} is used.
 @end itemize
 
-@node Minor and Major modes
-@section Minor and Major modes
+@node Major and minor modes
+@section Major and minor modes
 
 @cindex minor mode
 @cindex major mode
@@ -364,9 +367,9 @@ different completion systems in the backend, while still offering more advanced
 features.
 
 @menu
-* Live previews::
-* Narrowing to subsets::
-* Asynchronous candidates and filtering::
+* Live previews::                Preview the currently selected candidate
+* Narrowing to subsets::         Restricting the completion to a candidate subset
+* Asynchronous candidate lists:: Filtering asynchronously generated candidate lists
 @end menu
 
 @node Live previews
@@ -412,8 +415,8 @@ Furthermore there is the @samp{consult-narrow-help} command which can be bound t
 key in the @samp{consult-narrow-map} if this is desired, as shown in the @ref{Example configuration, , example
 configuration}.
 
-@node Asynchronous candidates and filtering
-@section Asynchronous candidates and filtering
+@node Asynchronous candidate lists
+@section Asynchronous candidate lists
 
 @cindex asynchronous candidates
 
@@ -451,18 +454,24 @@ must be longer than @samp{consult-async-min-input} characters by default.
 @samp{#defun -- --invert-match#}: Pass argument @samp{--invert-match} to grep.
 @end itemize
 
-@node Installation
-@chapter Installation
+@node Configuration
+@chapter Configuration
 
 @cindex installation
 
 @strong{NOTE: If you are using @uref{https://github.com/raxod502/selectrum, Selectrum}, you MUST install the packages selectrum,
 consult and consult-selectrum!}
 
+Consult can be installed from @uref{https://melpa.org/, MELPA} via the Emacs built-in package manager.
+Alternatively it can be directly installed from the development repository via
+other non-standard package managers.
+
 It is recommended to manage package configurations with the excellent
 @samp{use-package} macro. The Consult package only provides commands and does not add
-any keybindings. In order to use the Consult commands, you must configure the
-keybindings yourself.
+any keybindings or modes. In order to use the Consult commands, you must
+configure the keybindings yourself. As a result, the package is not intrusive
+but requires a little setup effort. Feel free to only bind the commands you
+consider useful to your workflow!
 
 Note that there are three packages as of now: @samp{consult.el},
 @samp{consult-selectrum.el} and @samp{consult-flycheck.el}. Consult has been split
@@ -470,9 +479,9 @@ such that the main package @samp{consult.el} only depends on Emacs core
 components.
 
 @menu
-* Example configuration::
-* Customizable variables::
-* Configuration of individual commands::
+* Example configuration::        Configuration proposal based on use-package
+* Customizable variables::       Short description of all customization settings
+* Fine-tuning::                  Fine-grained configuration for special requirements
 @end menu
 
 @node Example configuration
@@ -670,13 +679,14 @@ an overview of all Consult variables and functions with their descriptions.
 @tab Widening key during completion
 @end multitable
 
-@node Configuration of individual commands
-@section Configuration of individual commands
+@node Fine-tuning
+@section Fine-tuning
 
 @cindex configuration
 
-@strong{Note:} This configuration feature is made available for experienced users,
-in case fine-grained control for each individual command is needed.
+@strong{Note:} Consult allows fine-grained customization of individual commands. This
+configuration feature is made available for experienced users with special
+requirements.
 
 Commands allow flexible, individual customization by setting the
 @samp{consult-config} list. You can override any option passed to the internal
@@ -705,8 +715,8 @@ Create advices to modify some internal behavior.
 Write or propose a patch!
 @end enumerate
 
-@node Related packages
-@chapter Related packages
+@node Recommended packages
+@chapter Recommended packages
 
 @strong{NOTE: If you are using @uref{https://github.com/raxod502/selectrum, Selectrum}, you MUST install the packages selectrum,
 consult and consult-selectrum!}
@@ -740,11 +750,9 @@ Consult and add more components later to the mix.
 @node Acknowledgements
 @chapter Acknowledgements
 
-You probably guessed from the name that this package took inspiration
-from @uref{https://github.com/abo-abo/swiper#counsel, Counsel} by Oleh
-Krehel. Some of the commands found in this package originated in the
-@uref{https://github.com/raxod502/selectrum/wiki/Useful-Commands, Selectrum
-wiki}.
+You probably guessed from the name that this package took inspiration from
+@uref{https://github.com/abo-abo/swiper#counsel, Counsel} by Oleh Krehel. Some of the commands found in this package originated in
+the @uref{https://github.com/raxod502/selectrum/wiki/Useful-Commands, Selectrum wiki}.
 
 Code contributions:
 @itemize
