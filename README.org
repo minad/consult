@@ -29,10 +29,12 @@ All Consult commands are compatible with completion systems based on the
 standard Emacs =completing-read= API, notably the default completion system,
 [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html][Icomplete]], [[https://github.com/raxod502/selectrum][Selectrum]] and [[https://github.com/oantolin/embark/][Embark]]. If Icomplete is used, it is recommended to
 install [[https://github.com/oantolin/icomplete-vertical][Icomplete-vertical]]. The completion system specifics in this package are
-kept to a minimum. The ability of Consult to work well with arbitrary completion
-systems is the main advantage over other related packages. This property allows
-Consult to fit well into existing setups and it helps you to create a full
-completion environment out of small and independent components.
+kept to a minimum. The ability of the Consult commands to work well with
+arbitrary completion systems is one main advantage of the package. This property
+allows Consult to fit well into existing setups and it helps you to create a
+full completion environment out of small and independent components. Note that,
+if you use [[https://github.com/abo-abo/swiper#ivy][Ivy]] or [[https://github.com/emacs-helm/helm][Helm]], you probably don't need Consult, since both packages
+already bring their own rich set of additional commands.
 
 There are the [[https://github.com/minad/marginalia/][Marginalia]] and [[https://github.com/oantolin/embark/][Embark]] packages, which can be combined with
 Consult. The =marginalia-mode= enriches the completion display with annotations.
@@ -42,9 +44,6 @@ which can be executed while selecting a candidate in the minibuffer or in other
 contexts. For example, when selecting from a list of files, an action to delete
 the file is offered. Embark offers more than local actions and can also be used
 as a completion system through its live-updating candidate collect buffer.
-
-/Note/: If you use [[https://github.com/abo-abo/swiper#ivy][Ivy]] or [[https://github.com/emacs-helm/helm][Helm]], you probably don't need Consult, since both
-packages already bring their own rich set of additional commands.
 
 ** Screenshots :noexport:
 
@@ -77,7 +76,7 @@ consult-outline
 
 Most provided commands follow the meaningful naming scheme =consult-<thing>=.
 
-*Tip:* If you have [[https://github.com/minad/marginalia][Marginalia]] installed and heavy annotators enabled, type =M-x
+*TIP:* If you have [[https://github.com/minad/marginalia][Marginalia]] installed and heavy annotators enabled, type =M-x
 ^consult= to see all Consult commands with their abbreviated description!
 Alternatively, type =C-h a ^consult= to get an overview of all Consult
 variables and functions with their descriptions.
@@ -488,7 +487,7 @@ components.
  #+cindex: customization
  #+cindex: configuration
 
- *Tip:* If you have [[https://github.com/minad/marginalia][Marginalia]] installed, type =M-x customize-variable RET
+ *TIP:* If you have [[https://github.com/minad/marginalia][Marginalia]] installed, type =M-x customize-variable RET
  ^consult= to see all Consult-specific customizable variables with their current
  values and abbreviated description! Alternatively, type =C-h a ^consult= to get
  an overview of all Consult variables and functions with their descriptions.
@@ -534,7 +533,7 @@ components.
  :end:
  #+cindex: configuration
 
- *Note:* Consult allows fine-grained customization of individual commands. This
+ *NOTE:* Consult allows fine-grained customization of individual commands. This
  configuration feature is made available for experienced users with special
  requirements.
 

@@ -81,7 +81,9 @@ install @uref{https://github.com/oantolin/icomplete-vertical, Icomplete-vertical
 kept to a minimum. The ability of Consult to work well with arbitrary completion
 systems is the main advantage over other related packages. This property allows
 Consult to fit well into existing setups and it helps you to create a full
-completion environment out of small and independent components.
+completion environment out of small and independent components. Note that, if
+you use @uref{https://github.com/abo-abo/swiper#ivy, Ivy} or @uref{https://github.com/emacs-helm/helm, Helm}, you probably don't need Consult, since both packages
+already bring their own rich set of additional commands.
 
 There are the @uref{https://github.com/minad/marginalia/, Marginalia} and @uref{https://github.com/oantolin/embark/, Embark} packages, which can be combined with
 Consult. The @samp{marginalia-mode} enriches the completion display with annotations.
@@ -92,9 +94,6 @@ contexts. For example, when selecting from a list of files, an action to delete
 the file is offered. Embark offers more than local actions and can also be used
 as a completion system through its live-updating candidate collect buffer.
 
-@emph{Note}: If you use @uref{https://github.com/abo-abo/swiper#ivy, Ivy} or @uref{https://github.com/emacs-helm/helm, Helm}, you probably don't need Consult, since both
-packages already bring their own rich set of additional commands.
-
 @node Available commands
 @chapter Available commands
 
@@ -102,7 +101,7 @@ packages already bring their own rich set of additional commands.
 
 Most provided commands follow the meaningful naming scheme @samp{consult-<thing>}.
 
-@strong{Tip:} If you have @uref{https://github.com/minad/marginalia, Marginalia} installed and heavy annotators enabled, type @samp{M-x
+@strong{TIP:} If you have @uref{https://github.com/minad/marginalia, Marginalia} installed and heavy annotators enabled, type @samp{M-x
 ^consult} to see all Consult commands with their abbreviated description!
 Alternatively, type @samp{C-h a ^consult} to get an overview of all Consult
 variables and functions with their descriptions.
@@ -575,7 +574,7 @@ components.
 @cindex customization
 @cindex configuration
 
-@strong{Tip:} If you have @uref{https://github.com/minad/marginalia, Marginalia} installed, type @samp{M-x customize-variable RET
+@strong{TIP:} If you have @uref{https://github.com/minad/marginalia, Marginalia} installed, type @samp{M-x customize-variable RET
  ^consult} to see all Consult-specific customizable variables with their current
 values and abbreviated description! Alternatively, type @samp{C-h a ^consult} to get
 an overview of all Consult variables and functions with their descriptions.
@@ -684,7 +683,7 @@ an overview of all Consult variables and functions with their descriptions.
 
 @cindex configuration
 
-@strong{Note:} Consult allows fine-grained customization of individual commands. This
+@strong{NOTE:} Consult allows fine-grained customization of individual commands. This
 configuration feature is made available for experienced users with special
 requirements.
 
