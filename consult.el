@@ -2354,17 +2354,6 @@ OPEN is the function to open new files."
     (let ((args (split-string input " +-- +")))
       (append cmd (list (car args)) (mapcan #'split-string (cdr args))))))
 
-(defun consult--grep-async (cmd)
-  "Async function for `consult-grep'.
-
-CMD is the grep argument list."
-  (thread-first (consult--async-sink)
-    (consult--async-refresh-timer)
-    (consult--async-transform consult--grep-matches)
-    (consult--async-process (consult--command-args cmd))
-    (consult--async-throttle)
-    (consult--async-split)))
-
 (defun consult--grep (prompt cmd dir initial)
   "Run grep CMD in DIR with INITIAL input.
 
@@ -2375,7 +2364,12 @@ PROMPT is the prompt string."
       (consult--jump
        (consult--read
         (car prompt-dir)
-        (consult--grep-async cmd)
+        (thread-first (consult--async-sink)
+          (consult--async-refresh-timer)
+          (consult--async-transform consult--grep-matches)
+          (consult--async-process (consult--command-args cmd))
+          (consult--async-throttle)
+          (consult--async-split))
         :lookup (consult--grep-marker open)
         :preview (consult--preview-position)
         :initial (concat consult-async-default-split initial)
@@ -2403,17 +2397,6 @@ PROMPT is the prompt string."
   (interactive "P")
   (consult--grep "Ripgrep" consult-ripgrep-command dir initial))
 
-(defun consult--find-async (cmd)
-  "Async function for `consult--find'.
-
-CMD is the find argument list."
-  (thread-first (consult--async-sink)
-    (consult--async-refresh-timer)
-    (consult--async-map (lambda (x) (string-remove-prefix "./" x)))
-    (consult--async-process (consult--command-args cmd))
-    (consult--async-throttle)
-    (consult--async-split)))
-
 (defun consult--find (prompt cmd initial)
   "Run find CMD in current directory with INITIAL input.
 
@@ -2422,7 +2405,12 @@ CMD is the find argument list."
   (find-file
    (consult--read
     prompt
-    (consult--find-async cmd)
+    (thread-first (consult--async-sink)
+      (consult--async-refresh-timer)
+      (consult--async-map (lambda (x) (string-remove-prefix "./" x)))
+      (consult--async-process (consult--command-args cmd))
+      (consult--async-throttle)
+      (consult--async-split))
     :sort nil
     :require-match t
     :initial (concat consult-async-default-split initial)
