@@ -491,6 +491,11 @@ KEY is the key function."
   "Lookup CAND in CANDIDATES alist, return cadr of element."
   (cadr (assoc cand candidates)))
 
+(defun consult--lookup-location (_ candidates cand)
+  "Lookup CAND in CANDIDATES list of 'consult-location category, return the marker."
+  (when-let (found (seq-find (lambda (x) (string= x cand)) candidates))
+    (car (get-text-property 0 'consult-location found))))
+
 (defun consult--forbid-minibuffer ()
   "Raise an error if executed from the minibuffer."
   (when (minibufferp)
@@ -952,11 +957,11 @@ WIDTH is the line number width."
 The MAX-LINE is needed to determine the width.
 Since the line number is part of the candidate it will be matched-on during completion."
   (let ((width (length (number-to-string max-line))))
-    (dolist (cand candidates candidates)
-      (setcar cand
+    (mapcar (pcase-lambda (`(,marker ,line ,str))
               (concat
-               (consult--line-number-prefix (cdr cand) (caar cand) width)
-               (cdar cand))))))
+               (consult--line-number-prefix marker line width)
+               str))
+            candidates)))
 
 (defsubst consult--region-with-cursor (begin end marker)
   "Return region string with a marking at the cursor position.
@@ -969,17 +974,6 @@ MARKER is the cursor position."
         (concat str (propertize " " 'face 'consult-preview-cursor))
       (put-text-property (- marker begin) (- (1+ marker) begin) 'face 'consult-preview-cursor str)
       str)))
-
-(defsubst consult--line-with-cursor (line marker)
-  "Return line candidate.
-
-LINE is line number.
-MARKER is the cursor marker."
-  (cons (cons line (consult--region-with-cursor
-                    (line-beginning-position)
-                    (line-end-position)
-                    marker))
-        marker))
 
 ;;;; Async functions
 
@@ -1228,9 +1222,8 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
       (goto-char (point-min))
       (while (save-excursion (re-search-forward heading-regexp nil t))
         (setq line (+ line (consult--count-lines (match-beginning 0))))
-        (push (cons
-               (cons line (buffer-substring (line-beginning-position) (line-end-position)))
-               (point-marker))
+        (push (list (point-marker) line
+                    (buffer-substring (line-beginning-position) (line-end-position)))
               candidates)
         (unless (eobp) (forward-char 1))))
     (unless candidates
@@ -1331,8 +1324,12 @@ The alist contains (string . position) pairs."
             ;; the mark ring is usually small since it is limited by `mark-ring-max'.
             (let ((line (line-number-at-pos pos consult-line-numbers-widen)))
               (setq max-line (max line max-line))
-              (push (consult--line-with-cursor line marker) candidates))))))
-    (nreverse (consult--remove-dups (consult--add-line-number max-line candidates) #'car))))
+              (push (list marker line (consult--region-with-cursor
+                                       (line-beginning-position)
+                                       (line-end-position)
+                                       marker))
+                    candidates))))))
+    (nreverse (consult--remove-dups (consult--add-line-number max-line candidates) #'identity))))
 
 ;;;###autoload
 (defun consult-mark ()
@@ -1347,7 +1344,7 @@ The command supports preview of the currently selected marker position."
     :category 'consult-location
     :sort nil
     :require-match t
-    :lookup #'consult--lookup-cdr
+    :lookup #'consult--lookup-location
     :history '(:input consult--line-history)
     :preview (consult--preview-position))))
 
@@ -1371,16 +1368,15 @@ The alist contains (string . position) pairs."
                        (end (line-end-position))
                        (loc (consult--format-location (buffer-name buf) line)))
                   (consult--fontify-region begin end)
-                  (push (cons (concat
-                               (propertize
-                                (concat (propertize (consult--encode-location marker) 'display "") loc)
-                                'consult-location (cons marker line))
-                               (consult--region-with-cursor begin end marker))
-                              marker)
+                  (push (concat
+                         (propertize
+                          (concat (propertize (consult--encode-location marker) 'display "") loc)
+                          'consult-location (cons marker line))
+                         (consult--region-with-cursor begin end marker))
                         candidates))))))))
     (unless candidates
       (user-error "No global marks"))
-    (nreverse (consult--remove-dups candidates #'car))))
+    (nreverse (consult--remove-dups candidates #'identity))))
 
 ;;;###autoload
 (defun consult-global-mark ()
@@ -1403,7 +1399,7 @@ The command supports preview of the currently selected marker position."
     :category 'consult-location
     :sort nil
     :require-match t
-    :lookup #'consult--lookup-cdr
+    :lookup #'consult--lookup-location
     :history '(:input consult--line-history)
     :preview (consult--preview-position))))
 
@@ -1425,15 +1421,14 @@ The command supports preview of the currently selected marker position."
         (let* ((end (line-end-position))
                (str (buffer-substring pos end)))
           (unless (string-blank-p str)
-            (let* ((marker (point-marker))
-                   (cand (concat
-                          (consult--line-number-prefix marker line line-width)
-                          str))
-                   (dist (abs (- curr-line line))))
+            (let ((cand (concat
+                         (consult--line-number-prefix (point-marker) line line-width)
+                         str))
+                  (dist (abs (- curr-line line))))
               (when (< dist default-cand-dist)
                 (setq default-cand cand
                       default-cand-dist dist))
-              (push (cons cand marker) candidates)))
+              (push cand candidates)))
           (setq line (1+ line)
                 pos (1+ end))
           (goto-char pos))))
@@ -1447,7 +1442,7 @@ The command supports preview of the currently selected marker position."
 INPUT is the input string entered by the user.
 CANDIDATES is the line candidates alist.
 CAND is the currently selected candidate."
-  (when-let (pos (cdr (assoc cand candidates)))
+  (when-let (pos (consult--lookup-location input candidates cand))
     (if (or (string-blank-p input)
             (eq consult-line-point-placement 'line-beginning))
         pos
