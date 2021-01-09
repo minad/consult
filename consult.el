@@ -1113,7 +1113,8 @@ CMD is the command argument list."
                      (funcall async 'flush))
                    (overlay-put indicator 'display
                                 (cond
-                                 ((string-prefix-p "killed" event) nil)
+                                 ((string-prefix-p "killed" event)
+                                  (propertize ";" 'face 'consult-async-failed))
                                  ((string-prefix-p "finished" event)
                                   (propertize ":" 'face 'consult-async-finished))
                                  (_ (propertize "!" 'face 'consult-async-failed))))
