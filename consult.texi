@@ -725,9 +725,24 @@ requirements.
 
 Commands allow flexible, individual customization by setting the
 @samp{consult-config} list. You can override any option passed to the internal
-@samp{consult--read} API, for example @samp{:preview-key}, @samp{:initial}, @samp{:default},
-@samp{:history} or @samp{:sort}. Note that since @samp{consult--read} is part of the internal
+@samp{consult--read} API@. Note that since @samp{consult--read} is part of the internal
 API, options could be removed, replaced or renamed at any time.
+
+Useful options are:
+@itemize
+@item
+@samp{:preview-key} set the preview key, default is @samp{consult-preview-key}
+@item
+@samp{:initial} set the initial input
+@item
+@samp{:default} set the default value
+@item
+@samp{:history} set the history variable symbol
+@item
+@samp{:add-history} add items to the future history, for example symbol at point
+@item
+@samp{:sort} enable or disable sorting
+@end itemize
 
 @lisp
 ;; Set preview for `consult-buffer' to key `M-p'

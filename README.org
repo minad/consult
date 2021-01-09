@@ -574,9 +574,16 @@ components.
 
  Commands allow flexible, individual customization by setting the
  =consult-config= list. You can override any option passed to the internal
- =consult--read= API, for example =:preview-key=, =:initial=, =:default=,
- =:history= or =:sort=. Note that since =consult--read= is part of the internal
+ =consult--read= API. Note that since =consult--read= is part of the internal
  API, options could be removed, replaced or renamed at any time.
+
+ Useful options are:
+ - =:preview-key= set the preview key, default is =consult-preview-key=
+ - =:initial= set the initial input
+ - =:default= set the default value
+ - =:history= set the history variable symbol
+ - =:add-history= add items to the future history, for example symbol at point
+ - =:sort= enable or disable sorting
 
  #+begin_src emacs-lisp
  ;; Set preview for `consult-buffer' to key `M-p'
