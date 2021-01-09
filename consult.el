@@ -519,11 +519,12 @@ KEY is the key function."
 DISPLAY is the string to display instead of the unique string."
   (let ((str "") (n pos))
     (while (progn
-             (setq str (concat (string (+ consult--special-char
-                                          (% n consult--special-range)))
-                               str))
+             (setq str (concat
+                        (string (+ consult--special-char (% n consult--special-range)))
+                        str))
              (and (>= n consult--special-range) (setq n (/ n consult--special-range)))))
-    (propertize str 'display display)))
+    (put-text-property 0 (length str) 'display display str)
+    str))
 
 (defun consult-preview-action ()
   "Preview trigger action used if `consult-preview-key' is a key."
@@ -932,12 +933,13 @@ NARROW is an alist of narrowing prefix strings and description."
 
 (defsubst consult--line-number-prefix (width line)
   "Optimized formatting for LINE number with padding. WIDTH is the line number width."
-  (setq line (number-to-string line))
-  (propertize (concat
-               (make-string (- width (length line)) 32)
-               line
-               " ")
-              'face 'consult-line-number-prefix))
+  (let* ((line-str (number-to-string line))
+         (prefix-str (concat
+                      (make-string (- width (length line-str)) 32)
+                      line-str
+                      " ")))
+    (put-text-property 0 (length prefix-str) 'face 'consult-line-number-prefix prefix-str)
+    prefix-str))
 
 (defun consult--add-line-number (max-line candidates)
   "Add line numbers to unformatted CANDIDATES as prefix.
@@ -956,14 +958,11 @@ Since the line number is part of the candidate it will be matched-on during comp
 BEGIN is the begin position.
 END is the end position.
 MARKER is the cursor position."
-  (let ((marker-end (1+ marker)))
-    (if (> marker-end end)
-        (concat (buffer-substring begin marker)
-                (propertize " " 'face 'consult-preview-cursor))
-      (concat (buffer-substring begin marker)
-              (propertize (buffer-substring marker marker-end)
-                          'face 'consult-preview-cursor)
-              (buffer-substring marker-end end)))))
+  (let ((str (buffer-substring begin end)))
+    (if (>= marker end)
+        (concat str (propertize " " 'face 'consult-preview-cursor))
+      (put-text-property (- marker begin) (- (1+ marker) begin) 'face 'consult-preview-cursor str)
+      str)))
 
 (defsubst consult--line-with-cursor (line marker)
   "Return line candidate.
