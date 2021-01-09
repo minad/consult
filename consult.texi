@@ -680,7 +680,7 @@ an overview of all Consult variables and functions with their descriptions.
 @end multitable
 
 @node Fine-tuning
-@section Fine-tuning
+@section Fine-tuning of individual commands
 
 @cindex configuration
 

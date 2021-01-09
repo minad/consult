@@ -527,8 +527,9 @@ components.
  | consult-view-open-function      | nil                | Function to open a view by name                          |
  | consult-widen-key               | nil                | Widening key during completion                           |
 
-** Fine-tuning
+** Fine-tuning of individual commands
  :properties:
+ :alt_title: Fine-tuning
  :description: Fine-grained configuration for special requirements
  :end:
  #+cindex: configuration
