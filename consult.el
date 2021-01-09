@@ -2075,7 +2075,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                      (?m . "Bookmark")
                      ,@(when proj-root '((?p . "Project")))
                      ,@(when consult-view-list-function '((?v . "View"))))
-           :category 'virtual-buffer
+           :category 'consult-buffer
            :lookup
            (lambda (_ candidates cand)
              (if (member cand candidates)
