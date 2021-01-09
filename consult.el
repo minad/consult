@@ -1787,8 +1787,10 @@ The command supports preview of file bookmarks and narrowing."
       (consult--read
        "Bookmark: "
        (bookmark-all-names)
-       ;; add default names to future history
-       :add-history (bookmark-prop-get (bookmark-make-record) 'defaults)
+       ;; Add default names to future history.
+       ;; Ignore errors such that `consult-bookmark' can be used in
+       ;; buffers which are not backed by a file.
+       :add-history (ignore-errors (bookmark-prop-get (bookmark-make-record) 'defaults))
        :narrow
        (cons
         (lambda (cand)
@@ -1802,7 +1804,7 @@ The command supports preview of file bookmarks and narrowing."
         (mapcar (pcase-lambda (`(_ ,x ,y)) (cons x y))
                 consult-bookmark-narrow))
        :preview
-       (let ((orig-pos (point))
+       (let ((orig-marker (point-marker))
              (preview (consult--preview-position)))
          (lambda (cand restore)
            (funcall
@@ -1818,7 +1820,7 @@ The command supports preview of file bookmarks and narrowing."
                     (set-marker (make-marker) pos buf)
                   (unless restore (minibuffer-message "No preview for special bookmark"))
                   nil)
-              orig-pos)
+              orig-marker)
             restore)))
        :history 'bookmark-history
        :category 'bookmark))))
