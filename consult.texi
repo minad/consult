@@ -78,11 +78,11 @@ All Consult commands are compatible with completion systems based on the
 standard Emacs @samp{completing-read} API, notably the default completion system,
 @uref{https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html, Icomplete}, @uref{https://github.com/raxod502/selectrum, Selectrum} and @uref{https://github.com/oantolin/embark/, Embark}. If Icomplete is used, it is recommended to
 install @uref{https://github.com/oantolin/icomplete-vertical, Icomplete-vertical}. The completion system specifics in this package are
-kept to a minimum. The ability of Consult to work well with arbitrary completion
-systems is the main advantage over other related packages. This property allows
-Consult to fit well into existing setups and it helps you to create a full
-completion environment out of small and independent components. Note that, if
-you use @uref{https://github.com/abo-abo/swiper#ivy, Ivy} or @uref{https://github.com/emacs-helm/helm, Helm}, you probably don't need Consult, since both packages
+kept to a minimum. The ability of the Consult commands to work well with
+arbitrary completion systems is one main advantage of the package. This property
+allows Consult to fit well into existing setups and it helps you to create a
+full completion environment out of small and independent components. Note that,
+if you use @uref{https://github.com/abo-abo/swiper#ivy, Ivy} or @uref{https://github.com/emacs-helm/helm, Helm}, you probably don't need Consult, since both packages
 already bring their own rich set of additional commands.
 
 There are the @uref{https://github.com/minad/marginalia/, Marginalia} and @uref{https://github.com/oantolin/embark/, Embark} packages, which can be combined with
@@ -338,6 +338,9 @@ mode via the keys @samp{l/g/m}.
 @itemize
 @item
 @samp{consult-apropos}: Replacement for @samp{apropos} with completion.
+@item
+@samp{consult-man}: Find Unix man page, via Unix @samp{apropos} or @samp{man -k}.
+The selected man page is opened using the Emacs @samp{man} command.
 @item
 @samp{consult-file-externally}: Select a file and open it externally,
 e.g. using @samp{xdg-open} on Linux.

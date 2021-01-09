@@ -2424,33 +2424,6 @@ CMD is the find argument list."
     :category 'file
     :history '(:input consult--find-history))))
 
-(defun consult--man-async (cmd)
-  "Async function for `consult--man'.
-
-CMD is the man argument list."
-  (thread-first (consult--async-sink)
-    (consult--async-refresh-timer)
-    (consult--async-process (consult--command-args cmd))
-    (consult--async-throttle)
-    (consult--async-split)))
-
-(defun consult--man (prompt cmd initial)
-  "Run man CMD with INITIAL input.
-
-PROMPT is the prompt.
-CMD is the man argument list."
-  (let ((match (consult--read
-                prompt
-                (consult--man-async cmd)
-                :sort nil
-                :require-match t
-                :initial (concat consult-async-default-split initial)
-                :add-history (concat consult-async-default-split (thing-at-point 'symbol))
-                ;; XXX: category?
-                :history '(:input consult--man-history))))
-    (string-match "\\([^[:blank:]]+\\) - " match)
-    (man (match-string 1 match))))
-
 ;;;###autoload
 (defun consult-find (&optional dir initial)
   "Search for regexp with find in DIR with INITIAL input."
@@ -2465,11 +2438,39 @@ CMD is the man argument list."
   (interactive)
   (consult--find "Locate: " consult-locate-command initial))
 
-;;;##autoload
+(defun consult--man-format (lines)
+  "Format man candidates from LINES."
+  (let ((candidates))
+    (save-match-data
+      (dolist (str lines)
+        (when (string-match "^\\(.*?\\) +- +\\(.*\\)$" str)
+          (let ((name (match-string 1 str))
+                (desc (match-string 2 str)))
+            (push (cons
+                   (format "%-30s %s"
+                           (propertize name 'face 'consult-key)
+                           desc)
+                   name)
+                  candidates)))))
+    (nreverse candidates)))
+
+;;;###autoload
 (defun consult-man (&optional initial)
-  "Search for regexp with apropos with INITIAL input."
+  "Search for regexp with man with INITIAL input."
   (interactive)
-  (consult--man "Man: " consult-man-command initial))
+  (man (consult--read
+        "Manual entry: "
+        (thread-first (consult--async-sink)
+          (consult--async-refresh-timer)
+          (consult--async-transform consult--man-format)
+          (consult--async-process (consult--command-args consult-man-command))
+          (consult--async-throttle)
+          (consult--async-split))
+        :require-match t
+        :lookup #'consult--lookup-cdr
+        :initial (concat consult-async-default-split initial)
+        :add-history (concat consult-async-default-split (thing-at-point 'symbol))
+        :history '(:input consult--man-history))))
 
 ;;;; default completion-system support
 

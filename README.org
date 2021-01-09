@@ -265,6 +265,8 @@ variables and functions with their descriptions.
  #+findex: consult-completion-in-region
  #+findex: consult-theme
  - =consult-apropos=: Replacement for =apropos= with completion.
+ - =consult-man=: Find Unix man page, via Unix =apropos= or =man -k=.
+   The selected man page is opened using the Emacs =man= command.
  - =consult-file-externally=: Select a file and open it externally,
    e.g. using =xdg-open= on Linux.
  - =consult-completion-in-region=: Function which can be used as
