@@ -378,8 +378,6 @@ variables and functions with their descriptions.
  :end:
  #+cindex: embark
 
- *(WORK IN PROGRESS, NOT YET COMPLETELY IMPLEMENTED)*
-
  Embark is a versatile package which offers context dependent actions,
  comparable to a context menu. See the [[https://github.com/oantolin/embark][Embark manual]] for an extensive
  description of its capabilities.

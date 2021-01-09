@@ -464,8 +464,6 @@ must be longer than @samp{consult-async-min-input} characters by default.
 
 @cindex embark
 
-@strong{(WORK IN PROGRESS, NOT YET COMPLETELY IMPLEMENTED)}
-
 Embark is a versatile package which offers context dependent actions,
 comparable to a context menu. See the @uref{https://github.com/oantolin/embark, Embark manual} for an extensive
 description of its capabilities.
