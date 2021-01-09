@@ -1294,7 +1294,7 @@ The command supports preview of the currently selected error."
    (consult--read
     "Go to error: "
     (consult--with-increased-gc (consult--error-candidates))
-    :category 'compilation-error
+    :category 'consult-error
     :sort nil
     :require-match t
     :lookup #'consult--lookup-cadr

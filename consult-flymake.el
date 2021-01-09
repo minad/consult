@@ -80,7 +80,7 @@
   (consult--jump
    (consult--read "Flymake diagnostic: "
                   (consult--with-increased-gc (consult-flymake--candidates))
-                  :category 'flymake-error
+                  :category 'consult-flymake-error
                   :history t ;; disable history
                   :require-match t
                   :sort nil
