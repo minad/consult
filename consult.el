@@ -510,22 +510,6 @@ KEY is the key function."
   (when jit-lock-mode
     (jit-lock-fontify-now start end)))
 
-;; We must disambiguate the lines by adding a prefix such that two lines with the same text can be
-;; distinguished. In order to avoid matching the line number, such that the user can search for
-;; numbers with `consult-line', we encode the line number as unicode characters in the supplementary
-;; private use plane b. By doing that, it is unlikely that accidential matching occurs.
-(defsubst consult--unique (pos display)
-  "Generate unique string for POS.
-DISPLAY is the string to display instead of the unique string."
-  (let ((str "") (n pos))
-    (while (progn
-             (setq str (concat
-                        (string (+ consult--special-char (% n consult--special-range)))
-                        str))
-             (and (>= n consult--special-range) (setq n (/ n consult--special-range)))))
-    (put-text-property 0 (length str) 'display display str)
-    str))
-
 (defun consult-preview-action ()
   "Preview trigger action used if `consult-preview-key' is a key."
   (interactive))
@@ -931,15 +915,37 @@ NARROW is an alist of narrowing prefix strings and description."
     (goto-char pos)
     line))
 
-(defsubst consult--line-number-prefix (width line)
-  "Optimized formatting for LINE number with padding. WIDTH is the line number width."
-  (let* ((line-str (number-to-string line))
+;; We must disambiguate the lines by adding a prefix such that two lines with the same text can be
+;; distinguished. In order to avoid matching the line number, such that the user can search for
+;; numbers with `consult-line', we encode the line number as unicode characters in the supplementary
+;; private use plane b. By doing that, it is unlikely that accidential matching occurs.
+(defsubst consult--encode-location (marker)
+  "Generate unique string for MARKER.
+DISPLAY is the string to display instead of the unique string."
+  (let ((str "") (n marker))
+    (while (progn
+             (setq str (concat
+                        (string (+ consult--special-char (% n consult--special-range)))
+                        str))
+             (and (>= n consult--special-range) (setq n (/ n consult--special-range)))))
+    str))
+
+(defsubst consult--line-number-prefix (marker line width)
+  "Format LINE number prefix number with padding.
+
+MARKER and LINE are added as 'consult-location text property.
+WIDTH is the line number width."
+  (let* ((unique-str (consult--encode-location marker))
+         (line-str (number-to-string line))
          (prefix-str (concat
                       (make-string (- width (length line-str)) 32)
                       line-str
                       " ")))
     (put-text-property 0 (length prefix-str) 'face 'consult-line-number-prefix prefix-str)
-    prefix-str))
+    (add-text-properties 0 (length unique-str)
+                         `(display ,prefix-str consult-location (,marker . ,line))
+                         unique-str)
+    unique-str))
 
 (defun consult--add-line-number (max-line candidates)
   "Add line numbers to unformatted CANDIDATES as prefix.
@@ -949,7 +955,7 @@ Since the line number is part of the candidate it will be matched-on during comp
     (dolist (cand candidates candidates)
       (setcar cand
               (concat
-               (consult--unique (cdr cand) (consult--line-number-prefix width (caar cand)))
+               (consult--line-number-prefix (cdr cand) (caar cand) width)
                (cdar cand))))))
 
 (defsubst consult--region-with-cursor (begin end marker)
@@ -1241,7 +1247,7 @@ This command supports candidate preview."
    (consult--read
     "Go to heading: "
     (consult--with-increased-gc (consult--outline-candidates))
-    :category 'line
+    :category 'consult-location
     :sort nil
     :require-match t
     :lookup #'consult--line-match
@@ -1338,7 +1344,7 @@ The command supports preview of the currently selected marker position."
    (consult--read
     "Go to mark: "
     (consult--with-increased-gc (consult--mark-candidates))
-    :category 'line
+    :category 'consult-location
     :sort nil
     :require-match t
     :lookup #'consult--lookup-cdr
@@ -1365,9 +1371,11 @@ The alist contains (string . position) pairs."
                        (end (line-end-position))
                        (loc (consult--format-location (buffer-name buf) line)))
                   (consult--fontify-region begin end)
-                  (push (cons (concat (consult--unique marker "")
-                                      loc
-                                      (consult--region-with-cursor begin end marker))
+                  (push (cons (concat
+                               (propertize
+                                (concat (propertize (consult--encode-location marker) 'display "") loc)
+                                'consult-location (cons marker line))
+                               (consult--region-with-cursor begin end marker))
                               marker)
                         candidates))))))))
     (unless candidates
@@ -1389,10 +1397,10 @@ The command supports preview of the currently selected marker position."
     ;; since the locations are formatted using abbreviated buffer
     ;; names instead of file paths. If the 'xref-location category
     ;; would be used, Embark would embark-export to a broken grep-mode
-    ;; buffer. By using the 'line category, Embark will export to an
-    ;; occur buffer instead!
-    ;; See also https://github.com/minad/consult/issues/107.
-    :category 'line
+    ;; buffer. By using the 'consult-location category, Embark will
+    ;; export to an occur buffer instead! See also
+    ;; https://github.com/minad/consult/issues/107.
+    :category 'consult-location
     :sort nil
     :require-match t
     :lookup #'consult--lookup-cdr
@@ -1417,14 +1425,15 @@ The command supports preview of the currently selected marker position."
         (let* ((end (line-end-position))
                (str (buffer-substring pos end)))
           (unless (string-blank-p str)
-            (let ((cand (concat
-                         (consult--unique line (consult--line-number-prefix line-width line))
-                         str))
-                  (dist (abs (- curr-line line))))
+            (let* ((marker (point-marker))
+                   (cand (concat
+                          (consult--line-number-prefix marker line line-width)
+                          str))
+                   (dist (abs (- curr-line line))))
               (when (< dist default-cand-dist)
                 (setq default-cand cand
                       default-cand-dist dist))
-              (push (cons cand (point-marker)) candidates)))
+              (push (cons cand marker) candidates)))
           (setq line (1+ line)
                 pos (1+ end))
           (goto-char pos))))
@@ -1480,7 +1489,7 @@ This command obeys narrowing. Optionally INITIAL input can be provided."
     (consult--jump
      (consult--read
       "Go to line: " (cdr candidates)
-      :category 'line
+      :category 'consult-location
       :sort nil
       :default-top nil
       :require-match t
