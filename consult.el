@@ -337,6 +337,12 @@ Each element of the list must have the form '(handler char name)."
 (defvar consult--completion-refresh-hook nil
   "Refresh completion system.")
 
+(defvar-local consult--preview-function (lambda (_input _cand))
+  "Minibuffer-local variable which exposes the current preview function.
+This variable is never null and it should always be possible to call it safely.
+This function can be called by custom completion systems from outside the minibuffer.
+The preview function expects two arguments, the current input string and the candidate string.")
+
 (defconst consult--special-char #x100000
   "Special character used to encode line prefixes for disambiguation.
 We use the first character of the private unicode plane b.")
@@ -523,18 +529,22 @@ PREVIEW-KEY are the keys which trigger the preview."
       (let ((selected)
             (input ""))
         (minibuffer-with-setup-hook
-            (apply-partially
-             #'add-hook 'post-command-hook
-             (lambda ()
-               (setq input (minibuffer-contents-no-properties))
-               (when (or (eq preview-key 'any)
-                         (let ((keys (this-single-command-keys)))
-                           (seq-find (lambda (x) (equal (vconcat x) keys))
-                                     (if (listp preview-key) preview-key (list preview-key)))))
-                 (when-let (cand (run-hook-with-args-until-success 'consult--completion-candidate-hook))
-                   (with-selected-window (or (minibuffer-selected-window) (selected-window))
-                     (funcall preview (funcall transform input cand) nil)))))
-             nil t)
+            (lambda ()
+              (setq consult--preview-function
+                    (lambda (inp cand)
+                      (with-selected-window (or (minibuffer-selected-window) (selected-window))
+                        (funcall preview (funcall transform inp cand) nil)
+                        nil)))
+              (add-hook 'post-command-hook
+                        (lambda ()
+                          (setq input (minibuffer-contents-no-properties))
+                          (when (or (eq preview-key 'any)
+                                    (let ((keys (this-single-command-keys)))
+                                      (seq-find (lambda (x) (equal (vconcat x) keys))
+                                                (if (listp preview-key) preview-key (list preview-key)))))
+                            (when-let (cand (run-hook-with-args-until-success 'consult--completion-candidate-hook))
+                              (funcall consult--preview-function input cand))))
+                        nil t))
           (unwind-protect
               (save-excursion
                 (save-restriction
