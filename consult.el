@@ -337,9 +337,8 @@ Each element of the list must have the form '(handler char name)."
 (defvar consult--completion-refresh-hook nil
   "Refresh completion system.")
 
-(defvar-local consult--preview-function (lambda (_input _cand))
+(defvar-local consult--preview-function nil
   "Minibuffer-local variable which exposes the current preview function.
-This variable is never null and it should always be possible to call it safely.
 This function can be called by custom completion systems from outside the minibuffer.
 The preview function expects two arguments, the current input string and the candidate string.")
 
@@ -532,8 +531,7 @@ PREVIEW-KEY are the keys which trigger the preview."
               (setq consult--preview-function
                     (lambda (inp cand)
                       (with-selected-window (or (minibuffer-selected-window) (selected-window))
-                        (funcall preview (funcall transform inp cand) nil)
-                        nil)))
+                        (funcall preview (funcall transform inp cand) nil))))
               (add-hook 'post-command-hook
                         (lambda ()
                           (setq input (minibuffer-contents-no-properties))
