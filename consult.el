@@ -207,8 +207,8 @@ You may want to add a function which pulses the current line, e.g.,
   :type '(repeat string))
 
 (defcustom consult-preview-key 'any
-  "Preview trigger, can be nil, 'any or a key."
-  :type '(choice (const nil) (const any) vector))
+  "Preview trigger, can be nil, 'any, a single key or a list of keys."
+  :type '(choice (const any) vector (repeat vector)))
 
 (defcustom consult-preview-max-size 10485760
   "Files larger than this limit are not previewed."
@@ -515,14 +515,10 @@ KEY is the key function."
   (when jit-lock-mode
     (jit-lock-fontify-now start end)))
 
-(defun consult-preview-action ()
-  "Preview trigger action used if `consult-preview-key' is a key."
-  (interactive))
-
 (defun consult--with-preview-1 (transform preview preview-key fun)
   "Install TRANSFORM and PREVIEW function for FUN.
 
-PREVIEW-KEY is the key which triggers the preview."
+PREVIEW-KEY are the keys which trigger the preview."
   (if (and preview preview-key)
       (let ((orig-window (selected-window))
             (selected)
@@ -533,7 +529,9 @@ PREVIEW-KEY is the key which triggers the preview."
              (lambda ()
                (setq input (minibuffer-contents-no-properties))
                (when (or (eq preview-key 'any)
-                         (eq this-command #'consult-preview-action))
+                         (let ((keys (this-single-command-keys)))
+                           (seq-find (lambda (x) (equal (vconcat x) keys))
+                                     (if (listp preview-key) preview-key (list preview-key)))))
                  (when-let (cand (run-hook-with-args-until-success 'consult--completion-candidate-hook))
                    (with-selected-window (if (window-live-p orig-window)
                                              orig-window
@@ -560,7 +558,7 @@ PREVIEW-KEY is the key which triggers the preview."
 (defmacro consult--with-preview (transform preview preview-key &rest body)
   "Install TRANSFORM and PREVIEW in BODY.
 
-PREVIEW-KEY is the key which triggers the preview."
+PREVIEW-KEY are the keys which triggers the preview."
   (declare (indent 3))
   `(consult--with-preview-1 ,transform ,preview ,preview-key (lambda () ,@body)))
 
@@ -820,6 +818,22 @@ ARGS is the open function argument for BODY."
                       (consult--remove-dups (append items (funcall orig))))
                   (lambda () items)))))
 
+(defun consult--setup-keymap (narrow preview-key)
+  "Setup keymap for NARROW and PREVIEW-KEY."
+  (use-local-map
+   (make-composed-keymap
+    (append
+     (when narrow
+       (list (consult--narrow-setup narrow)))
+     (when (and preview-key (not (eq preview-key 'any)))
+       (let ((old-map (current-local-map))
+             (map (make-sparse-keymap)))
+         (dolist (key (if (listp preview-key) preview-key (list preview-key)))
+           (unless (lookup-key old-map key)
+             (consult--define-key map key #'ignore "Preview")))
+         (list map))))
+    (current-local-map))))
+
 (cl-defun consult--read (prompt candidates &key
                                 predicate require-match history default
                                 category initial narrow add-history
@@ -845,7 +859,7 @@ LOOKUP is a function which is applied to the result.
 INITIAL is initial input.
 DEFAULT-TOP must be nil if the default candidate should not be moved to the top.
 PREVIEW is a preview function.
-PREVIEW-KEY is the preview key (nil, 'any or a key).
+PREVIEW-KEY are the preview keys (nil, 'any, a single key or a list of keys).
 NARROW is an alist of narrowing prefix strings and description."
   (ignore default-top)
   ;; supported types
@@ -861,16 +875,7 @@ NARROW is an alist of narrowing prefix strings and description."
          (consult--add-history (if (stringp add-history)
                                    (list add-history)
                                  add-history))
-         (use-local-map
-          (make-composed-keymap
-           (append
-            (when narrow
-              (list (consult--narrow-setup narrow)))
-            (unless (symbolp preview-key)
-              (let ((map (make-sparse-keymap)))
-                (consult--define-key map preview-key #'consult-preview-action "Preview")
-                (list map))))
-           (current-local-map)))))
+         (consult--setup-keymap narrow preview-key)))
     (consult--with-async (async candidates)
       (let* ((metadata
               `(metadata
@@ -1117,7 +1122,7 @@ CMD is the command argument list."
                                   (propertize ";" 'face 'consult-async-failed))
                                  ((string-prefix-p "finished" event)
                                   (propertize ":" 'face 'consult-async-finished))
-                                 (_ (propertize "!" 'face 'consult-async-failed))))
+                                 (t (propertize "!" 'face 'consult-async-failed))))
                    (when (string-prefix-p "finished" event)
                      (unless (string= rest "")
                        (funcall async (list rest)))))))))))
@@ -1536,12 +1541,17 @@ The command respects narrowing and the settings
 `consult-goto-line-numbers' and `consult-line-numbers-widen'."
   (interactive)
   (consult--forbid-minibuffer)
-  (let ((display-line-numbers consult-goto-line-numbers)
-        (display-line-numbers-widen consult-line-numbers-widen))
+  (let* ((display-line-numbers consult-goto-line-numbers)
+         (display-line-numbers-widen consult-line-numbers-widen)
+         (config (alist-get 'consult-goto-line consult-config))
+         (preview-key (if (plist-member config 'preview-key)
+                          (plist-get config 'preview-key)
+                        consult-preview-key)))
     (while (let ((ret (minibuffer-with-setup-hook
-                          (lambda ()
-                            (setq-local consult--completion-candidate-hook
-                                        '(minibuffer-contents-no-properties)))
+                          (:append (lambda ()
+                                     (consult--setup-keymap nil preview-key)
+                                     (setq-local consult--completion-candidate-hook
+                                                 '(minibuffer-contents-no-properties))))
                         (consult--with-preview
                             (lambda (_ cand)
                               (when (and cand (string-match-p "^[[:digit:]]+$" cand))
@@ -1552,10 +1562,7 @@ The command respects narrowing and the settings
                                          (when-let (pos (and cand (consult--line-position cand)))
                                            (and (consult--in-range-p pos) pos))
                                          restore)))
-                            (let ((config (alist-get 'consult-goto-line consult-config)))
-                              (if (plist-member config 'preview-key)
-                                  (plist-get config 'preview-key)
-                                consult-preview-key))
+                            preview-key
                           (read-from-minibuffer "Go to line: ")))))
              (if (car ret)
                  (let ((pos (consult--line-position (car ret))))

@@ -306,8 +306,8 @@ variables and functions with their descriptions.
  ongoing.
 
  Previews are enabled by default but can be disabled via the
- =consult-preview-key= variable. Furthermore it is possible to define a
- keybinding to trigger the preview manually as shown in the [[#example-configuration][example
+ =consult-preview-key= variable. Furthermore it is possible to specify
+ keybindings which trigger the preview manually as shown in the [[#example-configuration][example
  configuration]]. The default setting of =consult-preview-key= is ='any= which
  means that the preview will be triggered on any keypress when the selected
  candidate changes. Each command can be configured individually with its own
@@ -482,7 +482,9 @@ components.
    ;; Configure preview. Note that the preview-key can also be configured on a
    ;; per-command basis via `consult-config'.
    ;; The default value is 'any, such that any key triggers the preview.
+   ;; (setq consult-preview-key 'any)
    ;; (setq consult-preview-key (kbd "M-p"))
+   ;; (setq consult-preview-key (list (kbd "<S-down>") (kbd "<S-up>")))
 
    ;; Optionally configure narrowing key.
    ;; Both < and C-+ work reasonably well.
@@ -550,7 +552,7 @@ components.
  | consult-mode-command-filter     | ...                | Filter for =consult-mode-command=                        |
  | consult-mode-histories          | ...                | Mode-specific history variables                          |
  | consult-narrow-key              | nil                | Narrowing prefix key during completion                   |
- | consult-preview-key             | 'any               | Key which triggers preview                               |
+ | consult-preview-key             | 'any               | Keys which triggers preview                              |
  | consult-preview-max-count       | 10                 | Maximum number of files to keep open during preview      |
  | consult-preview-max-size        | 10485760           | Size limit for previewed files                           |
  | consult-project-root-function   | nil                | Function which returns current project root              |
@@ -587,8 +589,13 @@ components.
  #+begin_src emacs-lisp
  ;; Set preview for `consult-buffer' to key `M-p'
  ;; and disable preview for `consult-theme' completely.
+ ;; For `consult-line' specify multiple keybindings.
+ ;; Note that you should bind the <S-up> and <S-down> in the
+ ;; `minibuffer-local-completion-map' or `selectrum-minibuffer-map'
+ ;; to the commands which select the previous or next candidate!
  (setq consult-config `((consult-theme :preview-key nil)
-                        (consult-buffer :preview-key ,(kbd "M-p"))))
+                        (consult-buffer :preview-key ,(kbd "M-p"))
+                        (consult-line :preview-key (list ,(kbd "<S-down>") ,(kbd "<S-up>")))))
  #+end_src
 
  Generally it is possible to modify commands for your individual needs by the
