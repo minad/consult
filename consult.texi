@@ -459,6 +459,22 @@ must be longer than @samp{consult-async-min-input} characters by default.
 @samp{#defun -- --invert-match#}: Pass argument @samp{--invert-match} to grep.
 @end itemize
 
+For asynchronous processes like @samp{find} and @samp{grep}, the prompt has a small
+indicator showing the process status:
+
+@itemize
+@item
+@samp{:} the usual prompt colon, before input is provided.
+@item
+@samp{*} with warning face, the process is running.
+@item
+@samp{:} with success face, success, process exited with an error code of zero.
+@item
+@samp{!} with error face, failure, process exited with a nonzero error code.
+@item
+@samp{;} with error face, interrupted, for example if more input is provided.
+@end itemize
+
 @node Integration with Embark
 @section Integration with Embark
 

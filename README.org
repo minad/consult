@@ -371,6 +371,15 @@ variables and functions with their descriptions.
    must be longer than =consult-async-min-input= characters by default.
  - =#defun -- --invert-match#=: Pass argument =--invert-match= to grep.
 
+ For asynchronous processes like =find= and =grep=, the prompt has a small
+ indicator showing the process status:
+
+ - =:= the usual prompt colon, before input is provided.
+ - =*= with warning face, the process is running.
+ - =:= with success face, success, process exited with an error code of zero.
+ - =!= with error face, failure, process exited with a nonzero error code.
+ - =;= with error face, interrupted, for example if more input is provided.
+
 ** Integration with Embark
  :properties:
  :description: Actions, Grep/Occur-buffer export
