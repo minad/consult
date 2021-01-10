@@ -525,9 +525,8 @@ KEY is the key function."
   "Install TRANSFORM and PREVIEW function for FUN.
 
 PREVIEW-KEY are the keys which trigger the preview."
-  (if (and preview preview-key)
-      (let ((selected)
-            (input ""))
+  (let ((input ""))
+    (if (and preview preview-key)
         (minibuffer-with-setup-hook
             (lambda ()
               (setq consult--preview-function
@@ -545,14 +544,14 @@ PREVIEW-KEY are the keys which trigger the preview."
                             (when-let (cand (run-hook-with-args-until-success 'consult--completion-candidate-hook))
                               (funcall consult--preview-function input cand))))
                         nil t))
-          (unwind-protect
-              (save-excursion
-                (save-restriction
-                  (setq selected (when-let (result (funcall fun))
-                                   (funcall transform input result)))
-                  (cons selected input)))
-            (funcall preview selected t))))
-    (let ((input ""))
+          (let ((selected))
+            (unwind-protect
+                (save-excursion
+                  (save-restriction
+                    (setq selected (when-let (result (funcall fun))
+                                     (funcall transform input result)))
+                    (cons selected input)))
+              (funcall preview selected t))))
       (minibuffer-with-setup-hook
           (apply-partially
            #'add-hook 'post-command-hook
