@@ -536,7 +536,7 @@ PREVIEW-KEY are the keys which trigger the preview."
                    (with-selected-window (if (window-live-p orig-window)
                                              orig-window
                                            (selected-window))
-                     (funcall preview (and cand (funcall transform input cand)) nil)))))
+                     (funcall preview (funcall transform input cand) nil)))))
              nil t)
           (unwind-protect
               (save-excursion
