@@ -1236,11 +1236,11 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
   "Asynchronous CMD pipeline with TRANSFORMS."
   (declare (indent 1))
   `(thread-first (consult--async-sink)
-    (consult--async-refresh-timer)
-    ,@transforms
-    (consult--async-process (consult--command-args ,cmd))
-    (consult--async-throttle)
-    (consult--async-split)))
+     (consult--async-refresh-timer)
+     ,@transforms
+     (consult--async-process (consult--command-args ,cmd))
+     (consult--async-throttle)
+     (consult--async-split)))
 
 ;;;; Commands
 
@@ -2087,23 +2087,23 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                       (bookmark-maybe-load-default-file)
                       (mapcar (lambda (x)
                                 (consult--buffer-candidate ?m (car x) 'consult-bookmark))
-                            bookmark-alist)))
+                              bookmark-alist)))
          (all-files (seq-remove (lambda (x) (gethash x buf-file-hash)) recentf-list))
          (files (mapcar (lambda (x)
                           (consult--buffer-candidate ?f (abbreviate-file-name x) 'consult-file))
                         all-files))
          (proj-root (and consult-project-root-function (funcall consult-project-root-function)))
          (proj-bufs (when proj-root
-                         (mapcar (lambda (x)
-                                   (consult--buffer-candidate ?p (buffer-name x) 'consult-buffer))
-                                 (seq-filter (lambda (x)
-                                               (when-let (file (buffer-file-name x))
-                                                 (string-prefix-p proj-root file)))
-                                             all-bufs))))
+                      (mapcar (lambda (x)
+                                (consult--buffer-candidate ?p (buffer-name x) 'consult-buffer))
+                              (seq-filter (lambda (x)
+                                            (when-let (file (buffer-file-name x))
+                                              (string-prefix-p proj-root file)))
+                                          all-bufs))))
          (proj-files (when proj-root
-                          (mapcar (lambda (x)
-                                    (consult--buffer-candidate ?q (string-remove-prefix proj-root x) 'consult-file))
-                                  (seq-filter (lambda (x) (string-prefix-p proj-root x)) all-files))))
+                       (mapcar (lambda (x)
+                                 (consult--buffer-candidate ?q (string-remove-prefix proj-root x) 'consult-file))
+                               (seq-filter (lambda (x) (string-prefix-p proj-root x)) all-files))))
          (saved-buf (current-buffer))
          (selected
           (consult--read
@@ -2392,8 +2392,8 @@ used. See also `consult-imenu'."
                                 (substring str (match-end 0)))))
             (setq str (consult--strip-ansi-escape str))
             (push (list (concat loc str)
-                  file line
-                  (next-single-char-property-change 0 'face str))
+                        file line
+                        (next-single-char-property-change 0 'face str))
                   candidates)))))
     (nreverse candidates)))
 
