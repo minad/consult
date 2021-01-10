@@ -520,8 +520,7 @@ KEY is the key function."
 
 PREVIEW-KEY are the keys which trigger the preview."
   (if (and preview preview-key)
-      (let ((orig-window (selected-window))
-            (selected)
+      (let ((selected)
             (input ""))
         (minibuffer-with-setup-hook
             (apply-partially
@@ -533,9 +532,7 @@ PREVIEW-KEY are the keys which trigger the preview."
                            (seq-find (lambda (x) (equal (vconcat x) keys))
                                      (if (listp preview-key) preview-key (list preview-key)))))
                  (when-let (cand (run-hook-with-args-until-success 'consult--completion-candidate-hook))
-                   (with-selected-window (if (window-live-p orig-window)
-                                             orig-window
-                                           (selected-window))
+                   (with-selected-window (or (minibuffer-selected-window) (selected-window))
                      (funcall preview (funcall transform input cand) nil)))))
              nil t)
           (unwind-protect
