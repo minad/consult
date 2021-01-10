@@ -809,14 +809,22 @@ ARGS is the open function argument for BODY."
 
 (defun consult--add-history (items)
   "Add ITEMS to the minibuffer history via `minibuffer-default-add-function'."
-  (when (setq items (delq nil items))
-    (setq-local minibuffer-default-add-function
-                (if-let (orig minibuffer-default-add-function)
-                    (lambda ()
-                      ;; the minibuffer-default-add-function may want generate more items
-                      (setq-local minibuffer-default-add-function orig)
-                      (consult--remove-dups (append items (funcall orig))))
-                  (lambda () items)))))
+  (setq-local minibuffer-default-add-function
+              (lambda ()
+	        (consult--remove-dups
+                 (append
+                  ;; the defaults are at the beginning of the future history
+                  (if (listp minibuffer-default)
+                      minibuffer-default
+                    (list minibuffer-default))
+                  ;; then our custom items
+                  (delete "" (delq nil (if (listp items)
+                                           items
+                                         (list items))))
+                  ;; then all the completions
+                  (all-completions ""
+                                   minibuffer-completion-table
+			           minibuffer-completion-predicate))))))
 
 (defun consult--setup-keymap (narrow preview-key)
   "Setup keymap for NARROW and PREVIEW-KEY."
@@ -873,9 +881,7 @@ NARROW is an alist of narrowing prefix strings and description."
   (minibuffer-with-setup-hook
       (:append
        (lambda ()
-         (consult--add-history (if (stringp add-history)
-                                   (list add-history)
-                                 add-history))
+         (consult--add-history add-history)
          (consult--setup-keymap narrow preview-key)))
     (consult--with-async (async candidates)
       (let* ((metadata
@@ -1363,7 +1369,7 @@ The alist contains (string . position) pairs."
                                        (line-end-position)
                                        marker))
                     candidates))))))
-    (nreverse (consult--remove-dups (consult--add-line-number max-line candidates) #'identity))))
+    (nreverse (consult--remove-dups (consult--add-line-number max-line candidates)))))
 
 ;;;###autoload
 (defun consult-mark ()
@@ -1410,7 +1416,7 @@ The alist contains (string . position) pairs."
                         candidates))))))))
     (unless candidates
       (user-error "No global marks"))
-    (nreverse (consult--remove-dups candidates #'identity))))
+    (nreverse (consult--remove-dups candidates))))
 
 ;;;###autoload
 (defun consult-global-mark ()
