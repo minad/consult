@@ -2223,9 +2223,12 @@ See `consult-buffer'."
   "Enhanced `switch-to-buffer' command with support for virtual buffers.
 
 The command supports recent files, bookmarks, views and project files
-as virtual buffers. Buffers are previewed. Furthermore narrowing
-to buffers (b), files (f), bookmarks (m), views (v) and project files (p)
-is supported via the corresponding keys."
+as virtual buffers. Buffers are previewed. Furthermore narrowing to
+buffers (b), files (f), bookmarks (m), views (v) and project files (p)
+is supported via the corresponding keys. In order to determine the
+project-specific files and buffers, the
+`consult-project-root-function' is used. The list of available views
+is obtained by calling `consult-view-list-function'."
   (interactive)
   (consult--buffer #'switch-to-buffer #'find-file #'bookmark-jump))
 
@@ -2422,8 +2425,10 @@ See also `consult-project-imenu'."
 (defun consult-project-imenu ()
   "Choose item from the imenus of all buffers from the same project.
 
-Only the buffers with the same major mode as the current buffer are
-used. See also `consult-imenu' for more details."
+In order to determine the buffers belonging to the same project, the
+`consult-project-root-function' is used. Only the buffers with the
+same major mode as the current buffer are used. See also
+`consult-imenu' for more details."
   (interactive)
   (consult--imenu (consult--project-imenu-items)))
 
@@ -2502,7 +2507,11 @@ grep, specified behind --.
 
 Example: #async-regexp -- grep-opts#filter-string
 
-The symbol at point is added to the future history."
+The symbol at point is added to the future history. If `consult-grep'
+is called interactively with a prefix argument, the user can specify
+the directory to search in. By default the project directory is used
+if `consult-project-root-function' is defined and returns non-nil.
+Otherwise the `default-directory' is searched."
   (interactive "P")
   (consult--grep "Grep" consult-grep-command dir initial))
 
@@ -2545,7 +2554,7 @@ The filename at point is added to the future history."
   "Search for regexp with find in DIR with INITIAL input.
 
 The find process is started asynchronously, similar to `consult-grep'.
-See `consult-grep' for more details."
+See `consult-grep' for more details regarding the asynchronous search."
   (interactive "P")
   (let* ((prompt-dir (consult--directory-prompt "Find" dir))
          (default-directory (cdr prompt-dir)))
@@ -2556,7 +2565,7 @@ See `consult-grep' for more details."
   "Search for regexp with locate with INITIAL input.
 
 The locate process is started asynchronously, similar to `consult-grep'.
-See `consult-grep' for more details."
+See `consult-grep' for more details regarding the asynchronous search."
   (interactive)
   (consult--find "Locate: " consult-locate-command initial))
 
@@ -2581,9 +2590,7 @@ See `consult-grep' for more details."
   "Search for regexp with man with INITIAL input.
 
 The man process is started asynchronously, similar to `consult-grep'.
-See `consult-grep' for more details.
-
-The symbol at point is added to the future history."
+See `consult-grep' for more details regarding the asynchronous search."
   (interactive)
   (man (consult--read
         "Manual entry: "
