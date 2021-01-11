@@ -1883,7 +1883,8 @@ Otherwise replace the just-yanked text with the selected text."
 (defun consult-bookmark (name)
   "If bookmark NAME exists, open it, otherwise create a new bookmark with NAME.
 
-The command supports preview of file bookmarks and narrowing."
+The command supports preview of file bookmarks and narrowing. See the
+variable `consult-bookmark-narrow' for the narrowing configuration."
   (interactive
    (list
     (consult--with-file-preview (open)
@@ -2410,6 +2411,9 @@ The symbol at point is added to the future history."
 (defun consult-imenu ()
   "Choose item from flattened `imenu' using `completing-read' with preview.
 
+The command supports preview and narrowing. See the variable
+`consult-imenu-narrow', which configures the narrowing.
+
 See also `consult-project-imenu'."
   (interactive)
   (consult--imenu (consult--imenu-items)))
@@ -2419,7 +2423,7 @@ See also `consult-project-imenu'."
   "Choose item from the imenus of all buffers from the same project.
 
 Only the buffers with the same major mode as the current buffer are
-used. See also `consult-imenu'."
+used. See also `consult-imenu' for more details."
   (interactive)
   (consult--imenu (consult--project-imenu-items)))
 
@@ -2488,10 +2492,13 @@ The symbol at point is added to the future history."
 (defun consult-grep (&optional dir initial)
   "Search for regexp with grep in DIR with INITIAL input.
 
-The input string is split, the first part of the string
-is passed to the asynchronous grep process and the second
-part of the string is passed to the completion-style filtering.
-Furthermore options can be passed to grep.
+The input string is split, the first part of the string is passed to
+the asynchronous grep process and the second part of the string is
+passed to the completion-style filtering. The input string is split at
+a punctuation character, which is given as the first character of the
+input string. The format is similar to Perl-style regular expressions,
+e.g., /regexp/. Furthermore command line options can be passed to
+grep, specified behind --.
 
 Example: #async-regexp -- grep-opts#filter-string
 
