@@ -784,23 +784,23 @@ FACE is the cursor face."
   (let ((overlays)
         (invisible)
         (face (or face 'consult-preview-cursor))
-        (saved-buf (current-buffer)))
+        (saved-pos (point-marker)))
     (lambda (cand restore)
+      (consult--invisible-restore invisible)
+      (mapc #'delete-overlay overlays)
       (cond
-       (restore
-        (consult--invisible-restore invisible)
-        (mapc #'delete-overlay overlays)
-        (when (buffer-live-p saved-buf)
-          (set-buffer saved-buf)))
+       ;; Do nothing when restoring
+       (restore)
+       ;; Jump to position
        (cand
         (consult--jump-1 cand)
-        (consult--invisible-restore invisible)
         (setq invisible (consult--invisible-show))
-        (mapc #'delete-overlay overlays)
         (let ((pos (point)))
           (setq overlays
                 (list (consult--overlay (line-beginning-position) (line-end-position) 'face 'consult-preview-line)
-                      (consult--overlay pos (1+ pos) 'face face)))))))))
+                      (consult--overlay pos (1+ pos) 'face face)))))
+       ;; If position cannot be previewed, return to saved position
+       (t (consult--jump-1 saved-pos))))))
 
 (defun consult--kill-clean-buffer (buf)
   "Kill BUF if it has not been modified."
@@ -1964,23 +1964,21 @@ variable `consult-bookmark-narrow' for the narrowing configuration."
         (mapcar (pcase-lambda (`(,x ,y ,_)) (cons x y))
                 consult-bookmark-narrow))
        :preview
-       (let ((orig-marker (point-marker))
-             (preview (consult--preview-position)))
+       (let ((preview (consult--preview-position)))
          (lambda (cand restore)
            (funcall
             preview
-            (if-let (bm (bookmark-get-bookmark-record
-                         (assoc cand bookmark-alist)))
-                (if-let* ((file (alist-get 'filename bm))
-                          (pos (alist-get 'position bm))
-                          ;; Only preview bookmarks without a handler
-                          ;; aka `bookmark-default-handler'!
-                          (buf (and (not (alist-get 'handler bm))
-                                    (funcall open file))))
-                    (set-marker (make-marker) pos buf)
-                  (unless restore (minibuffer-message "No preview for special bookmark"))
-                  nil)
-              orig-marker)
+            (when-let (bm (bookmark-get-bookmark-record
+                           (assoc cand bookmark-alist)))
+              (if-let* ((file (alist-get 'filename bm))
+                        (pos (alist-get 'position bm))
+                        ;; Only preview bookmarks without a handler
+                        ;; aka `bookmark-default-handler'!
+                        (buf (and (not (alist-get 'handler bm))
+                                  (funcall open file))))
+                  (set-marker (make-marker) pos buf)
+                (unless restore (minibuffer-message "No preview for special bookmark"))
+                nil))
             restore)))
        :history 'bookmark-history
        :category 'bookmark))))
@@ -2205,7 +2203,6 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                        (mapcar (lambda (x)
                                  (consult--buffer-candidate ?q (string-remove-prefix proj-root x) 'consult-file))
                                (seq-filter (lambda (x) (string-prefix-p proj-root x)) all-files))))
-         (saved-buf (current-buffer))
          (selected
           (consult--read
            "Switch to: " (append bufs files proj-bufs proj-files views bookmarks)
@@ -2246,9 +2243,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
            :preview
            (lambda (cand restore)
              (cond
-              (restore
-               (when (buffer-live-p saved-buf)
-                 (set-buffer saved-buf)))
+              (restore)
               ;; In order to avoid slowness and unnecessary complexity, we
               ;; only preview buffers. Loading recent files, bookmarks or
               ;; views can result in expensive operations.
