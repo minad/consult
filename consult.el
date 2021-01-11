@@ -63,13 +63,22 @@
 ;;;; Customization
 
 (defcustom consult-narrow-key nil
-  "Prefix key for narrowing during completion."
-  :type '(choice vector (const nil)))
+  "Prefix key for narrowing during completion.
+
+Good choices for this key are (kbd \"<\") or (kbd \"C-+\") for example.
+
+The key must be either a string or a vector.
+This is the key representation accepted by `define-key'."
+  :type '(choice vector string (const nil)))
 
 (defcustom consult-widen-key nil
   "Key used for widening during completion.
-If this key is unset, defaults to 'consult-narrow-key SPC'."
-  :type '(choice vector (const nil)))
+
+If this key is unset, defaults to 'consult-narrow-key SPC'.
+
+The key must be either a string or a vector.
+This is the key representation accepted by `define-key'."
+  :type '(choice vector string (const nil)))
 
 (defcustom consult-view-list-function nil
   "Function which returns a list of view names as strings, used by `consult-buffer'."
@@ -80,37 +89,44 @@ If this key is unset, defaults to 'consult-narrow-key SPC'."
   :type '(choice function (const nil)))
 
 (defcustom consult-project-root-function nil
-  "Function which returns project root, used by `consult-buffer' and `consult-grep'."
+  "Function which returns project root directory, used by `consult-buffer' and `consult-grep'."
   :type '(choice function (const nil)))
 
 (defcustom consult-async-refresh-delay 0.25
   "Refreshing delay of the completion ui for asynchronous commands.
 
-The ui is only updated every `consult-async-refresh-delay' seconds."
+The completion ui is only updated every `consult-async-refresh-delay'
+seconds. This applies to asynchronous commands like for example
+`consult-grep'."
   :type 'float)
 
 (defcustom consult-async-input-throttle 0.5
   "Input throttle for asynchronous commands.
 
 The asynchronous process is started only every
-`consult-async-input-throttle' seconds."
+`consult-async-input-throttle' seconds. This applies to asynchronous
+commands, e.g., `consult-grep'."
   :type 'float)
 
 (defcustom consult-async-input-debounce 0.25
   "Input debounce for asynchronous commands.
 
-The asynchronous process is started only when there has not been new input for
-`consult-async-input-debounce' seconds."
+The asynchronous process is started only when there has not been new
+input for `consult-async-input-debounce' seconds. This applies to
+asynchronous commands, e.g., `consult-grep'."
   :type 'float)
 
 (defcustom consult-async-min-input 3
   "Minimum number of letters needed, before asynchronous process is called.
-This applies for example to `consult-grep'."
+
+This applies to asynchronous commands, e.g., `consult-grep'."
   :type 'integer)
 
 (defcustom consult-async-default-split "#"
   "Default async input separator used for splitting.
-Can also be nil in order to disable it."
+
+Can also be nil in order to not automatically insert a separator. This
+applies to asynchronous commands, e.g., `consult-grep'."
   :type 'string)
 
 (defcustom consult-mode-histories
@@ -129,6 +145,9 @@ nil shows all `custom-available-themes'."
 (defcustom consult-after-jump-hook '(recenter)
   "Function called after jumping to a location.
 
+Commonly used functions for this hook are `recenter' and
+`reposition-window'.
+
 This is called during preview and for the jump after selection.
 You may want to add a function which pulses the current line, e.g.,
 `xref-pulse-momentarily'."
@@ -141,7 +160,9 @@ You may want to add a function which pulses the current line, e.g.,
                  (const :tag "End of the match" match-end)))
 
 (defcustom consult-line-numbers-widen t
-  "Show absolute line numbers when narrowing is active."
+  "Show absolute line numbers when narrowing is active.
+
+See also `display-line-numbers-widen'."
   :type 'boolean)
 
 (defcustom consult-goto-line-numbers t
@@ -149,7 +170,10 @@ You may want to add a function which pulses the current line, e.g.,
   :type 'boolean)
 
 (defcustom consult-fontify-limit 1048576
-  "Buffers larger than this limit are not fontified."
+  "Buffers larger than this byte limit are not fontified.
+
+This is necessary in order to prevent a large startup time
+for navigation commands like `consult-line'."
   :type 'integer)
 
 (defcustom consult-imenu-narrow
@@ -163,12 +187,19 @@ You may want to add a function which pulses the current line, e.g.,
 
 (defcustom consult-imenu-toplevel
   '((emacs-lisp-mode . "Functions"))
-  "Names of toplevel items, used by `consult-imenu'."
+  "Category of toplevel items, used by `consult-imenu'.
+
+The imenu representation provided by the backend usually puts
+functions directly at the toplevel. `consult-imenu' moves them instead
+under the category specified by this variable."
   :type 'alist)
 
 (defcustom consult-buffer-filter
   '("^ ")
-  "Filter regexps for `consult-buffer'."
+  "Filter regexps for `consult-buffer'.
+
+The default setting is to filter only ephemeral buffer names beginning
+with a space character."
   :type '(repeat regexp))
 
 (defcustom consult-mode-command-filter
@@ -178,40 +209,40 @@ You may want to add a function which pulses the current line, e.g.,
 
 (defcustom consult-git-grep-command
   '("git" "--no-pager" "grep" "--null" "--color=always" "--extended-regexp" "--line-number" "-I" "-e")
-  "Command line arguments for git-grep."
+  "Command line arguments for git-grep, see `consult-git-grep'."
   :type '(repeat string))
 
 (defcustom consult-grep-command
   '("grep" "--null" "--line-buffered" "--color=always" "--extended-regexp" "--exclude-dir=.git" "--line-number" "-I" "-r" "." "-e")
-  "Command line arguments for grep."
+  "Command line arguments for grep, see `consult-grep'."
   :type '(repeat string))
 
 (defcustom consult-ripgrep-command
   '("rg" "--null" "--line-buffered" "--color=always" "--max-columns=500" "--no-heading" "--line-number" "." "-e")
-  "Command line arguments for ripgrep."
+  "Command line arguments for ripgrep, see `consult-ripgrep'."
   :type '(repeat string))
 
 (defcustom consult-find-command
   '("find" "." "-not" "(" "-wholename" "*/.*" "-prune" ")" "-ipath")
-  "Command line arguments for find."
+  "Command line arguments for find, see `consult-find'."
   :type '(repeat string))
 
 (defcustom consult-locate-command
   '("locate" "--ignore-case" "--existing" "--regexp")
-  "Command line arguments for locate."
+  "Command line arguments for locate, see `consult-locate'."
   :type '(repeat string))
 
 (defcustom consult-man-command
   '("man" "-k")
-  "Command line arguments for man apropos."
+  "Command line arguments for man apropos, see `consult-man'."
   :type '(repeat string))
 
 (defcustom consult-preview-key 'any
-  "Preview trigger, can be nil, 'any, a single key or a list of keys."
-  :type '(choice (const any) vector (repeat vector)))
+  "Preview trigger keys, can be nil, 'any, a single key or a list of keys."
+  :type '(choice (const any) vector string (repeat (choice vector string))))
 
 (defcustom consult-preview-max-size 10485760
-  "Files larger than this limit are not previewed."
+  "Files larger than this byte limit are not previewed."
   :type 'integer)
 
 (defcustom consult-preview-max-count 10
@@ -233,7 +264,12 @@ Each element of the list must have the form '(handler char name)."
   :type 'list)
 
 (defcustom consult-config nil
-  "Command configuration alists."
+  "Command configuration alists, which allows fine-grained configuration.
+
+The options set here will be passed to `consult--read', when called
+from the corresponding command. Note that the options depend on the
+private `consult--read' API and should not be considered as stable as
+the public API."
   :type '(list (cons symbol plist)))
 
 ;;;; Faces
