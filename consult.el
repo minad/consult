@@ -249,18 +249,31 @@ with a space character."
   "Number of files to keep open at once during preview."
   :type 'integer)
 
-(defcustom consult-bookmark-narrow
-  '((bookmark-default-handler ?f "File")
-    (help-bookmark-jump ?h "Help")
-    (Info-bookmark-jump ?i "Info")
-    (image-bookmark-jump ?p "Picture")
-    (doc-view-bookmark-jump ?d "Docview")
-    (Man-bookmark-jump ?m "Man")
-    (woman-bookmark-jump ?w "Woman")
-    (gnus-summary-bookmark-jump ?g "Gnus"))
-  "Bookmark narrowing list.
+(defcustom consult-register-narrow
+  `((?n "Number" ,#'numberp)
+    (?s "String" ,#'stringp)
+    (?r "Rectangle" ,(lambda (x) (stringp (car-safe x))))
+    (?f "Frameset" ,(lambda (x) (cl-typep x 'frameset-register))) ;; only 27.1
+    (?p "Position" ,(lambda (x)
+                      (or (markerp x) (eq (car-safe x) 'file-query))))
+    (?w "Window" ,(lambda (x) (window-configuration-p (car-safe x)))))
+  "Register narrowing configuration.
 
-Each element of the list must have the form '(handler char name)."
+Each element of the list must have the form '(char name predicate)."
+  :type 'list)
+
+(defcustom consult-bookmark-narrow
+  `((?f "File" #'bookmark-default-handler)
+    (?h "Help" #'help-bookmark-jump)
+    (?i "Info" #'Info-bookmark-jump)
+    (?p "Picture" #'image-bookmark-jump)
+    (?d "Docview" #'doc-view-bookmark-jump)
+    (?m "Man" #'Man-bookmark-jump)
+    (?w "Woman" #'woman-bookmark-jump)
+    (?g "Gnus" #'gnus-summary-bookmark-jump))
+  "Bookmark narrowing configuration.
+
+Each element of the list must have the form '(char name handler)."
   :type 'list)
 
 (defcustom consult-config nil
@@ -1871,6 +1884,17 @@ Otherwise replace the just-yanked text with the selected text."
      "Register: "
      (consult--register-candidates)
      :category 'register
+     :narrow
+     (cons
+      (lambda (cand)
+        (let ((reg (get-register (cdr cand))))
+          (seq-find (lambda (x)
+                      (and
+                       (= (car x) consult--narrow)
+                       (funcall (caddr x) reg)))
+                    consult-register-narrow)))
+      (mapcar (pcase-lambda (`(,x ,y ,_)) (cons x y))
+              consult-register-narrow))
      :sort nil
      :require-match t
      :history t ;; disable history
@@ -1901,11 +1925,11 @@ variable `consult-bookmark-narrow' for the narrowing configuration."
           (if-let ((n consult--narrow)
                    (bm (bookmark-get-bookmark-record
                         (assoc cand bookmark-alist))))
-              (eq n (car (alist-get
-                          (or (alist-get 'handler bm) #'bookmark-default-handler)
-                          consult-bookmark-narrow)))
+              (eq n (caddr (alist-get
+                            (or (alist-get 'handler bm) #'bookmark-default-handler)
+                            consult-bookmark-narrow)))
             t))
-        (mapcar (pcase-lambda (`(_ ,x ,y)) (cons x y))
+        (mapcar (pcase-lambda (`(,x ,y ,_)) (cons x y))
                 consult-bookmark-narrow))
        :preview
        (let ((orig-marker (point-marker))

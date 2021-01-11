@@ -569,6 +569,7 @@ components.
  | consult-preview-max-count       | 10                 | Maximum number of files to keep open during preview      |
  | consult-preview-max-size        | 10485760           | Size limit for previewed files                           |
  | consult-project-root-function   | nil                | Function which returns current project root              |
+ | consult-register-narrow         | ...                | Narrowing configuration for =consult-register=           |
  | consult-ripgrep-command         | '(...)             | Command line arguments for ripgrep                       |
  | consult-themes                  | nil                | List of themes to be presented for selection             |
  | consult-view-list-function      | nil                | Function which returns a list of view names as strings   |
