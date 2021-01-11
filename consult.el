@@ -649,9 +649,10 @@ This command is used internally by the narrowing system of `consult--read'."
            #'ignore)))))
 
 (defun consult-narrow-help ()
-  "Print narrowing help as `minibuffer-message'.
+  "Print narrowing help as a `minibuffer-message'.
 
-This command can be bound in `consult-narrow-map'."
+This command can be bound to a key in `consult-narrow-map',
+to make it available for commands with narrowing."
   (interactive)
   (unless (minibufferp)
     (user-error "Narrow help must be called in the minibuffer"))
@@ -1317,7 +1318,8 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
 (defun consult-outline ()
   "Jump to an outline heading.
 
-This command supports candidate preview."
+This command supports candidate preview.
+The symbol at point is added to the future history."
   (interactive)
   (consult--jump
    (consult--read
@@ -1561,7 +1563,8 @@ CAND is the currently selected candidate."
   "Search for a matching line and jump to the line beginning.
 
 The default candidate is a non-empty line closest to point.
-This command obeys narrowing. Optionally INITIAL input can be provided."
+This command obeys narrowing. Optionally INITIAL input can be provided.
+The symbol at point and the last `isearch-string' is added to the future history."
   (interactive)
   (let ((candidates (consult--with-increased-gc (consult--line-candidates))))
     (consult--jump
@@ -1927,18 +1930,18 @@ The command supports preview of file bookmarks and narrowing."
 
 ;;;###autoload
 (defun consult-apropos ()
-  "Select pattern and call `apropos'."
+  "Select pattern and call `apropos'.
+
+The default value of the completion is the symbol at point."
   (interactive)
-  (let* ((sym (thing-at-point 'symbol))
-         (pattern
-          (consult--read
-           "Apropos: "
-           obarray
-           :predicate (lambda (x) (or (fboundp x) (boundp x) (facep x) (symbol-plist x)))
-           :history 'consult--apropos-history
-           :category 'symbol
-           :add-history (list sym)
-           :default sym)))
+  (let ((pattern
+         (consult--read
+          "Apropos: "
+          obarray
+          :predicate (lambda (x) (or (fboundp x) (boundp x) (facep x) (symbol-plist x)))
+          :history 'consult--apropos-history
+          :category 'symbol
+          :default (thing-at-point 'symbol))))
     (when (string= pattern "")
       (user-error "No pattern given"))
     (apropos pattern)))
@@ -2368,7 +2371,9 @@ this function can jump across buffers."
     (_ (error "Unknown imenu item: %S" item))))
 
 (defun consult--imenu (items)
-  "Choose from imenu ITEMS with preview."
+  "Choose from imenu ITEMS with preview.
+
+The symbol at point is added to the future history."
   (consult--imenu-jump
    (consult--read
     "Go to item: "
@@ -2455,7 +2460,8 @@ OPEN is the function to open new files."
 (defun consult--grep (prompt cmd dir initial)
   "Run grep CMD in DIR with INITIAL input.
 
-PROMPT is the prompt string."
+PROMPT is the prompt string.
+The symbol at point is added to the future history."
   (let* ((prompt-dir (consult--directory-prompt prompt dir))
          (default-directory (cdr prompt-dir)))
     (consult--with-file-preview (open)
@@ -2495,7 +2501,8 @@ PROMPT is the prompt string."
   "Run find CMD in current directory with INITIAL input.
 
 PROMPT is the prompt.
-CMD is the find argument list."
+CMD is the find argument list.
+The filename at point is added to the future history."
   (find-file
    (consult--read
     prompt
@@ -2504,7 +2511,7 @@ CMD is the find argument list."
     :sort nil
     :require-match t
     :initial (concat consult-async-default-split initial)
-    :add-history (concat consult-async-default-split (thing-at-point 'symbol))
+    :add-history (concat consult-async-default-split (thing-at-point 'filename))
     :category 'file
     :history '(:input consult--find-history))))
 
@@ -2540,7 +2547,9 @@ CMD is the find argument list."
 
 ;;;###autoload
 (defun consult-man (&optional initial)
-  "Search for regexp with man with INITIAL input."
+  "Search for regexp with man with INITIAL input.
+
+The symbol at point is added to the future history."
   (interactive)
   (man (consult--read
         "Manual entry: "
