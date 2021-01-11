@@ -253,7 +253,7 @@ with a space character."
   `((?n "Number" ,#'numberp)
     (?s "String" ,#'stringp)
     (?r "Rectangle" ,(lambda (x) (stringp (car-safe x))))
-    (?f "Frameset" ,(lambda (x) (cl-typep x 'frameset-register))) ;; only 27.1
+    ;; (?f "Frameset" ,#'frameset-register-p) ;; only 27.1
     (?p "Position" ,(lambda (x)
                       (or (markerp x) (eq (car-safe x) 'file-query))))
     (?w "Window" ,(lambda (x) (window-configuration-p (car-safe x)))))
@@ -1043,6 +1043,13 @@ MARKER is the cursor position."
       (put-text-property (- marker begin) (- (1+ marker) begin) 'face 'consult-preview-cursor str)
       str)))
 
+(defsubst consult--line-with-cursor (marker)
+  "Return current line where the cursor MARKER is highlighted."
+  (consult--region-with-cursor
+   (line-beginning-position)
+   (line-end-position)
+   marker))
+
 ;;;; Async functions
 
 (defun consult--async-sink ()
@@ -1422,10 +1429,7 @@ The alist contains (string . position) pairs."
             ;; the mark ring is usually small since it is limited by `mark-ring-max'.
             (let ((line (line-number-at-pos pos consult-line-numbers-widen)))
               (setq max-line (max line max-line))
-              (push (list marker line (consult--region-with-cursor
-                                       (line-beginning-position)
-                                       (line-end-position)
-                                       marker))
+              (push (list marker line (consult--line-with-cursor marker))
                     candidates))))))
     (nreverse (consult--remove-dups (consult--add-line-number max-line candidates)))))
 
@@ -1890,7 +1894,7 @@ Otherwise replace the just-yanked text with the selected text."
                              (goto-char val)
                              (concat
                               (consult--format-location (buffer-name buf) (line-number-at-pos))
-                              (buffer-substring (line-beginning-position) (line-end-position))))))))
+                              (consult--line-with-cursor val)))))))
                     (t (register-describe-oneline key))))
                   key))
           ;; Sometimes, registers are made without a `cdr'.
