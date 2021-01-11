@@ -127,6 +127,9 @@ variables and functions with their descriptions.
  #+findex: consult-kmacro
  - =consult-register=: Select from list of registers. The command
    supports narrowing to register types and preview of marker positions.
+   There is also the supplementary function =consult-register-preview= which
+   can be used as =register-preview-function= for a consistent display.
+   See the [[#example-configuration][example configuration]] for how it is used.
  - =consult-yank=, =consult-yank-pop=: Enhanced version of =yank= and
    =yank-pop= which allows selecting from the kill-ring. Live preview is
    supported when selecting from the kill-ring.
@@ -489,6 +492,12 @@ components.
 
    ;; Replace `multi-occur' with `consult-multi-occur', which is a drop-in replacement.
    (fset 'multi-occur #'consult-multi-occur)
+
+   ;; Configure register preview function.
+   ;; This gives a consistent display for both `consult-register' and
+   ;; the register preview when editing registers.
+   (setq register-preview-delay 0
+         register-preview-function #'consult-register-preview)
 
    ;; Configure other variables and modes in the :config section, after lazily loading the package
    :config

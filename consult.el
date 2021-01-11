@@ -1865,38 +1865,49 @@ Otherwise replace the just-yanked text with the selected text."
                        (set-marker (mark-marker) (point) (current-buffer)))))))
   nil)
 
+;;;###autoload
+(defun consult-register-preview (reg)
+  "Enhanced preview of register REG.
+
+This function can be used as `register-preview-function'."
+  (concat (truncate-string-to-width (consult--register-format reg) 100 0 nil "…") "\n"))
+
+(defun consult--register-format (reg)
+  "Format register REG for preview."
+  (pcase-let ((`(,key . ,val) reg))
+    (concat
+     (propertize (single-key-description key) 'face 'consult-key)
+     " "
+     ;; Special printing for certain register types
+     (cond
+      ;; Display full string
+      ((stringp val)
+       (string-trim
+        (replace-regexp-in-string
+         "[ \t\n]+" " "
+         val)))
+      ;; Display 'file-query
+      ((eq (car-safe val) 'file-query)
+       (format "%s at position %d"
+               (propertize (abbreviate-file-name (cadr val)) 'face 'consult-file)
+               (caddr val)))
+      ;; Display full line of buffer
+      ((markerp val)
+       (let ((buf (marker-buffer val)))
+         (with-current-buffer buf
+           (save-restriction
+             (save-excursion
+               (widen)
+               (goto-char val)
+               (concat
+                (consult--format-location (buffer-name buf) (line-number-at-pos))
+                (consult--line-with-cursor val)))))))
+      ;; Default printing for the other types
+      (t (register-describe-oneline key))))))
+
 (defun consult--register-candidates ()
   "Return alist of register descriptions and register names."
-  (mapcar (pcase-lambda (`(,key . ,val))
-            (cons (concat
-                   (propertize (single-key-description key) 'face 'consult-key)
-                   " "
-                   ;; Special printing for certain register types
-                   (cond
-                    ;; Display full string
-                    ((stringp val)
-                     (string-trim
-                      (replace-regexp-in-string
-                       "[ \t\n]+" " "
-                       val)))
-                    ;; Display 'file-query
-                    ((eq (car-safe val) 'file-query)
-                     (format "%s at position %d"
-                             (propertize (abbreviate-file-name (cadr val)) 'face 'consult-file)
-                             (caddr val)))
-                    ;; Display full line of buffer
-                    ((markerp val)
-                     (let ((buf (marker-buffer val)))
-                       (with-current-buffer buf
-                         (save-restriction
-                           (save-excursion
-                             (widen)
-                             (goto-char val)
-                             (concat
-                              (consult--format-location (buffer-name buf) (line-number-at-pos))
-                              (consult--line-with-cursor val)))))))
-                    (t (register-describe-oneline key))))
-                  key))
+  (mapcar (lambda (reg) (cons (consult--register-format reg) (car reg)))
           ;; Sometimes, registers are made without a `cdr'.
           ;; Such registers don't do anything, and can be ignored.
           (or (sort (seq-filter #'cdr register-alist) #'car-less-than-car)
