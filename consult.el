@@ -1316,7 +1316,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
 
 ;;;###autoload
 (defun consult-outline ()
-  "Jump to an outline heading.
+  "Jump to an outline heading, obtained by matching against `outline-regexp'.
 
 This command supports candidate preview.
 The symbol at point is added to the future history."
@@ -1367,7 +1367,7 @@ The symbol at point is added to the future history."
 
 ;;;###autoload
 (defun consult-error ()
-  "Jump to a compliation error in the current buffer.
+  "Jump to a compilation error in the current buffer.
 
 This command works in compilation buffers and grep buffers.
 The command supports preview of the currently selected error."
@@ -1420,7 +1420,8 @@ The alist contains (string . position) pairs."
 (defun consult-mark ()
   "Jump to a marker in the buffer-local `mark-ring'.
 
-The command supports preview of the currently selected marker position."
+The command supports preview of the currently selected marker position.
+The symbol at point is added to the future history."
   (interactive)
   (consult--jump
    (consult--read
@@ -1431,6 +1432,7 @@ The command supports preview of the currently selected marker position."
     :require-match t
     :lookup #'consult--lookup-location
     :history '(:input consult--line-history)
+    :add-history (thing-at-point 'symbol)
     :preview (consult--preview-position))))
 
 (defun consult--global-mark-candidates ()
@@ -1467,7 +1469,8 @@ The alist contains (string . position) pairs."
 (defun consult-global-mark ()
   "Jump to a marker in `global-mark-ring'.
 
-The command supports preview of the currently selected marker position."
+The command supports preview of the currently selected marker position.
+The symbol at point is added to the future history."
   (interactive)
   (consult--jump
    (consult--read
@@ -1486,6 +1489,7 @@ The command supports preview of the currently selected marker position."
     :require-match t
     :lookup #'consult--lookup-location
     :history '(:input consult--line-history)
+    :add-history (thing-at-point 'symbol)
     :preview (consult--preview-position))))
 
 (defun consult--line-candidates ()
@@ -2257,9 +2261,10 @@ is supported via the corresponding keys."
 
 ;;;###autoload
 (defun consult-kmacro (arg)
-  "Run a chosen keyboard macro.  With prefix ARG, run the macro that many times.
+  "Run a chosen keyboard macro.
 
-Macros containing mouse clicks aren't displayed."
+With prefix ARG, run the macro that many times.
+Macros containing mouse clicks are omitted."
   (interactive "p")
   (let ((selected (consult--read
                    "Keyboard macro: "
