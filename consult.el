@@ -2486,19 +2486,32 @@ The symbol at point is added to the future history."
 
 ;;;###autoload
 (defun consult-grep (&optional dir initial)
-  "Search for regexp with grep in DIR with INITIAL input."
+  "Search for regexp with grep in DIR with INITIAL input.
+
+The input string is split, the first part of the string
+is passed to the asynchronous grep process and the second
+part of the string is passed to the completion-style filtering.
+Furthermore options can be passed to grep.
+
+Example: #async-regexp -- grep-opts#filter-string
+
+The symbol at point is added to the future history."
   (interactive "P")
   (consult--grep "Grep" consult-grep-command dir initial))
 
 ;;;###autoload
 (defun consult-git-grep (&optional dir initial)
-  "Search for regexp with grep in DIR with INITIAL input."
+  "Search for regexp with grep in DIR with INITIAL input.
+
+See `consult-grep' for more details."
   (interactive "P")
   (consult--grep "Git-grep" consult-git-grep-command dir initial))
 
 ;;;###autoload
 (defun consult-ripgrep (&optional dir initial)
-  "Search for regexp with rg in DIR with INITIAL input."
+  "Search for regexp with rg in DIR with INITIAL input.
+
+See `consult-grep' for more details."
   (interactive "P")
   (consult--grep "Ripgrep" consult-ripgrep-command dir initial))
 
@@ -2522,7 +2535,10 @@ The filename at point is added to the future history."
 
 ;;;###autoload
 (defun consult-find (&optional dir initial)
-  "Search for regexp with find in DIR with INITIAL input."
+  "Search for regexp with find in DIR with INITIAL input.
+
+The find process is started asynchronously, similar to `consult-grep'.
+See `consult-grep' for more details."
   (interactive "P")
   (let* ((prompt-dir (consult--directory-prompt "Find" dir))
          (default-directory (cdr prompt-dir)))
@@ -2530,7 +2546,10 @@ The filename at point is added to the future history."
 
 ;;;###autoload
 (defun consult-locate (&optional initial)
-  "Search for regexp with locate with INITIAL input."
+  "Search for regexp with locate with INITIAL input.
+
+The locate process is started asynchronously, similar to `consult-grep'.
+See `consult-grep' for more details."
   (interactive)
   (consult--find "Locate: " consult-locate-command initial))
 
@@ -2553,6 +2572,9 @@ The filename at point is added to the future history."
 ;;;###autoload
 (defun consult-man (&optional initial)
   "Search for regexp with man with INITIAL input.
+
+The man process is started asynchronously, similar to `consult-grep'.
+See `consult-grep' for more details.
 
 The symbol at point is added to the future history."
   (interactive)
