@@ -1900,7 +1900,10 @@ Otherwise replace the just-yanked text with the selected text."
 
 ;;;###autoload
 (defun consult-register (reg)
-  "Use register REG and either jump to location or insert the stored text."
+  "Use register REG and either jump to location or insert the stored text.
+
+The command supports narrowing, see `consult-register-narrow'.
+Marker positions are previewed."
   (interactive
    (list
     (consult--read
