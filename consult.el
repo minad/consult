@@ -520,7 +520,7 @@ KEY is the key function."
   (when jit-lock-mode
     (jit-lock-fontify-now start end)))
 
-(defun consult--with-preview-1 (transform preview preview-key fun)
+(defun consult--with-preview-1 (preview-key preview transform fun)
   "Install TRANSFORM and PREVIEW function for FUN.
 
 PREVIEW-KEY are the keys which trigger the preview."
@@ -561,12 +561,12 @@ PREVIEW-KEY are the keys which trigger the preview."
                 (funcall transform input result))
               input)))))
 
-(defmacro consult--with-preview (transform preview preview-key &rest body)
+(defmacro consult--with-preview (preview-key preview transform &rest body)
   "Install TRANSFORM and PREVIEW in BODY.
 
 PREVIEW-KEY are the keys which triggers the preview."
   (declare (indent 3))
-  `(consult--with-preview-1 ,transform ,preview ,preview-key (lambda () ,@body)))
+  `(consult--with-preview-1 ,preview-key ,preview ,transform (lambda () ,@body)))
 
 (defun consult--widen-key ()
   "Return widening key, if `consult-widen-key' is not set, default to 'consult-narrow-key SPC'."
@@ -890,25 +890,26 @@ NARROW is an alist of narrowing prefix strings and description."
          (consult--add-history add-history)
          (consult--setup-keymap narrow preview-key)))
     (consult--with-async (async candidates)
-      (let* ((metadata
-              `(metadata
-                ,@(when category `((category . ,category)))
-                ,@(unless sort '((cycle-sort-function . identity)
-                                 (display-sort-function . identity)))))
-             (table
-              (lambda (str pred action)
-                (if (eq action 'metadata)
-                    metadata
-                  (complete-with-action action (funcall async 'get) str pred))))
-             (transform
-              (lambda (input cand)
-                (funcall lookup input (funcall async 'get) cand)))
-             (result
-              (consult--with-preview transform preview preview-key
-                (completing-read prompt table
-                                 predicate require-match initial
-                                 (if (symbolp history) history (cadr history))
-                                 default))))
+      ;; NOTE: Do not unnecessarily let-bind the lambdas to avoid
+      ;; overcapturing in the interpreter. This will make closures and the
+      ;; lambda string representation larger, which makes debugging much worse.
+      ;; Fortunately the overcapturing problem does not affect the bytecode
+      ;; interpreter which does a proper scope analyis.
+      (let ((result
+             (consult--with-preview preview-key preview
+                                    (lambda (input cand)
+                                      (funcall lookup input (funcall async 'get) cand))
+               (completing-read prompt
+                                (lambda (str pred action)
+                                  (if (eq action 'metadata)
+                                      `(metadata
+                                        ,@(when category `((category . ,category)))
+                                        ,@(unless sort '((cycle-sort-function . identity)
+                                                         (display-sort-function . identity))))
+                                    (complete-with-action action (funcall async 'get) str pred)))
+                                predicate require-match initial
+                                (if (symbolp history) history (cadr history))
+                                default))))
         (pcase-exhaustive history
           (`(:input ,var)
            (set var (cdr (symbol-value var)))
@@ -1566,16 +1567,16 @@ The command respects narrowing and the settings
                                      (setq-local consult--completion-candidate-hook
                                                  '(minibuffer-contents-no-properties))))
                         (consult--with-preview
-                            (lambda (_ cand)
-                              (when (and cand (string-match-p "^[[:digit:]]+$" cand))
-                                (string-to-number cand)))
+                            preview-key
                             (let ((preview (consult--preview-position)))
                               (lambda (cand restore)
                                 (funcall preview
                                          (when-let (pos (and cand (consult--line-position cand)))
                                            (and (consult--in-range-p pos) pos))
                                          restore)))
-                            preview-key
+                            (lambda (_ cand)
+                              (when (and cand (string-match-p "^[[:digit:]]+$" cand))
+                                (string-to-number cand)))
                           (read-from-minibuffer "Go to line: ")))))
              (if (car ret)
                  (let ((pos (consult--line-position (car ret))))
