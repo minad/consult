@@ -683,7 +683,7 @@ PERMANENTLY non-nil means the overlays will not be restored later."
         (if permanently
             (funcall (overlay-get ov 'isearch-open-invisible) ov)
           (push (cons ov (overlay-get ov 'invisible)) opened)
-          (if-let ((func (overlay-get ov 'isearch-open-invisible-temporary)))
+          (if-let (func (overlay-get ov 'isearch-open-invisible-temporary))
               (funcall func nil)
             (overlay-put ov 'invisible nil)))))))
 
@@ -691,7 +691,7 @@ PERMANENTLY non-nil means the overlays will not be restored later."
 (defun consult--invisible-restore (overlays)
   "Restore any opened OVERLAYS that were previously disabled."
   (dolist (ov overlays)
-    (if-let ((func (overlay-get (car ov) 'isearch-open-invisible-temporary)))
+    (if-let (func (overlay-get (car ov) 'isearch-open-invisible-temporary))
         (funcall func t)
       (overlay-put (car ov) 'invisible (cdr ov)))))
 
@@ -1666,7 +1666,7 @@ The arguments and expected return value are as specified for
         (progn (message "No completion") nil)
       (delete-region start end)
       (insert (substring-no-properties completion))
-      (when-let ((exit (plist-get completion-extra-properties :exit-function)))
+      (when-let (exit (plist-get completion-extra-properties :exit-function))
         (funcall exit completion exit-status))
       t)))
 
@@ -2295,7 +2295,7 @@ Prepend PREFIX in front of all items."
          (items (imenu--make-index-alist t)))
     (setq items (remove imenu--rescan-item items))
     ;; Fix toplevel items, e.g., emacs-lisp-mode toplevel items are functions
-    (when-let ((toplevel (cdr (seq-find (lambda (x) (derived-mode-p (car x))) consult-imenu-toplevel))))
+    (when-let (toplevel (cdr (seq-find (lambda (x) (derived-mode-p (car x))) consult-imenu-toplevel)))
       (let ((tops (seq-remove (lambda (x) (listp (cdr x))) items))
             (rest (seq-filter (lambda (x) (listp (cdr x))) items)))
         (setq items (append rest (and tops (list (cons toplevel tops)))))))
