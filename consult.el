@@ -1382,7 +1382,7 @@ The command supports preview of the currently selected error."
     :sort nil
     :require-match t
     :lookup #'consult--lookup-cadr
-    :narrow '((lambda (cand) (= (caddr cand) consult--narrow))
+    :narrow `(,(lambda (cand) (= (caddr cand) consult--narrow))
               (?e . "Error")
               (?w . "Warning")
               (?i . "Info"))
@@ -2059,7 +2059,7 @@ This is an alternative to `minor-mode-menu-from-indicator'."
     (consult--minor-mode-candidates)
     :require-match t
     :category 'minor-mode
-    :narrow '((lambda (cand) (seq-position (caddr cand) consult--narrow))
+    :narrow `(,(lambda (cand) (seq-position (caddr cand) consult--narrow))
               (?l . "Local")
               (?g . "Global")
               (?i . "On")

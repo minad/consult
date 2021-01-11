@@ -85,7 +85,7 @@
                   :history t ;; disable history
                   :require-match t
                   :sort nil
-                  :narrow '((lambda (cand) (= (caddr cand) consult--narrow))
+                  :narrow `(,(lambda (cand) (= (caddr cand) consult--narrow))
                             (?e . "Error")
                             (?w . "Warning")
                             (?i . "Info"))
