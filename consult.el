@@ -1863,13 +1863,36 @@ Otherwise replace the just-yanked text with the selected text."
 
 (defun consult--register-candidates ()
   "Return alist of register descriptions and register names."
-  (mapcar (lambda (r)
-            (setq r (car r))
+  (mapcar (pcase-lambda (`(,key . ,val))
             (cons (concat
-                   (propertize (single-key-description r) 'face 'consult-key)
+                   (propertize (single-key-description key) 'face 'consult-key)
                    " "
-                   (register-describe-oneline r))
-                  r))
+                   ;; Special printing for certain register types
+                   (cond
+                    ;; Display full string
+                    ((stringp val)
+                     (string-trim
+                      (replace-regexp-in-string
+                       "[ \t\n]+" " "
+                       val)))
+                    ;; Display 'file-query
+                    ((eq (car-safe val) 'file-query)
+                     (format "%s at position %d"
+                             (propertize (abbreviate-file-name (cadr val)) 'face 'consult-file)
+                             (caddr val)))
+                    ;; Display full line of buffer
+                    ((markerp val)
+                     (let ((buf (marker-buffer val)))
+                       (with-current-buffer buf
+                         (save-restriction
+                           (save-excursion
+                             (widen)
+                             (goto-char val)
+                             (concat
+                              (consult--format-location (buffer-name buf) (line-number-at-pos))
+                              (buffer-substring (line-beginning-position) (line-end-position))))))))
+                    (t (register-describe-oneline key))))
+                  key))
           ;; Sometimes, registers are made without a `cdr'.
           ;; Such registers don't do anything, and can be ignored.
           (or (sort (seq-filter #'cdr register-alist) #'car-less-than-car)
@@ -1884,6 +1907,15 @@ Otherwise replace the just-yanked text with the selected text."
      "Register: "
      (consult--register-candidates)
      :category 'register
+     :preview
+     (let ((preview (consult--preview-position)))
+       (lambda (cand restore)
+         (funcall preview
+                  ;; Preview markers
+                  (when-let (reg (get-register cand))
+                    (when (markerp reg)
+                      reg))
+                  restore)))
      :narrow
      (cons
       (lambda (cand)
