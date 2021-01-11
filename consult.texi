@@ -670,7 +670,7 @@ an overview of all Consult variables and functions with their descriptions.
 @item consult-find-command
 @tab '(@dots{})
 @tab Command line arguments for find
-@item consult-fontify-limit
+@item consult-fontify-max-size
 @tab 1048576
 @tab Buffers larger than this limit are not fontified
 @item consult-git-grep-command

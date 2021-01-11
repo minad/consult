@@ -169,7 +169,7 @@ See also `display-line-numbers-widen'."
   "Show line numbers for `consult-goto-line'."
   :type 'boolean)
 
-(defcustom consult-fontify-limit 1048576
+(defcustom consult-fontify-max-size 1048576
   "Buffers larger than this byte limit are not fontified.
 
 This is necessary in order to prevent a large startup time
@@ -560,8 +560,8 @@ KEY is the key function."
   ;; Font-locking is lazy, i.e., if a line has not been looked at yet, the line is not font-locked.
   ;; We would observe this if consulting an unfontified line. Therefore we have to enforce
   ;; font-locking now, which is slow. In order to prevent is hang-up we check the buffer size
-  ;; against `consult-fontify-limit'.
-  (when (and jit-lock-mode (< (buffer-size) consult-fontify-limit))
+  ;; against `consult-fontify-max-size'.
+  (when (and jit-lock-mode (< (buffer-size) consult-fontify-max-size))
     (jit-lock-fontify-now)))
 
 (defsubst consult--fontify-region (start end)

@@ -553,7 +553,7 @@ components.
  | consult-buffer-filter           | ...                | Filter for =consult-buffer=                              |
  | consult-config                  | nil                | Invididual command option configuration                  |
  | consult-find-command            | '(...)             | Command line arguments for find                          |
- | consult-fontify-limit           | 1048576            | Buffers larger than this limit are not fontified         |
+ | consult-fontify-max-size        | 1048576            | Buffers larger than this limit are not fontified         |
  | consult-git-grep-command        | '(...)             | Command line arguments for git-grep                      |
  | consult-goto-line-numbers       | t                  | Show line numbers for =consult-goto-line=                |
  | consult-grep-command            | '(...)             | Command line arguments for grep                          |
