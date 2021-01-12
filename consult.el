@@ -1610,12 +1610,12 @@ The symbol at point and the last `isearch-string' is added to the future history
       :initial initial
       :preview (consult--preview-position)))))
 
-(defun consult-keep-lines (&optional intial)
+(defun consult-keep-lines ()
   "Select a subset of the lines in the current buffer with live preview.
 
 The lines selected are those that match the minibuffer input
 according to the current `completion-styles'. This command obeys
-narrowing. Optionally INITIAL input can be provided."
+narrowing."
   (interactive)
 
   (consult--fontify-all)
