@@ -132,6 +132,11 @@ variables and functions with their descriptions.
    =yank-pop= which allows selecting from the kill-ring. Live preview is
    supported when selecting from the kill-ring.
  - =consult-kmacro=: Select macro from the macro ring and execute it.
+ - =consult-keep-lines=: Replacement for =keep-lines= which uses the current
+   completion style for filtering the buffer. The function updates the buffer
+   while typing. In particular, this function can be used to further narrow an
+   exported Embark collect buffer with the same completion filtering as during
+   =completing-read=.
 
 ** Navigation
  :properties:
