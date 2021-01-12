@@ -1,4 +1,4 @@
-;;; consult-flycheck.el --- Provides the command `consult-flycheck'  -*- lexical-binding: t; -*-
+;;; consult-flycheck.el --- Provides the command `consult-flycheck' -*- lexical-binding: t; -*-
 
 ;; Author: Daniel Mendler, Consult and Selectrum contributors
 ;; Maintainer: Daniel Mendler

@@ -1,4 +1,4 @@
-;;; consult-flymake.el --- Provides the command `consult-flymake'  -*- lexical-binding: t; -*-
+;;; consult-flymake.el --- Provides the command `consult-flymake' -*- lexical-binding: t; -*-
 
 ;; This file is not part of GNU Emacs.
 
