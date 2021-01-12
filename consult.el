@@ -1649,8 +1649,9 @@ narrowing."
                  (when last (setcdr last nil)) ; make it a proper list
                  (with-current-buffer buffer
                    (when font-lock-mode (font-lock-mode -1))
-                   (delete-region (point-min) (point-max))
-                   (insert (string-join filtered "\n"))
+                   (atomic-change-group
+                     (delete-region (point-min) (point-max))
+                     (insert (string-join filtered "\n")))
                    (goto-char (point-min))))))
            nil t))
       (unwind-protect
