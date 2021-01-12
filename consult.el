@@ -1619,17 +1619,17 @@ according to the current `completion-styles'. This command obeys
 narrowing."
   (interactive)
   (consult--forbid-minibuffer)
-  (consult--fontify-all)
-  (let* ((buffer (current-buffer))
-         (lines)
-         (font-lock-orig font-lock-mode)
-         (point-orig (point))
-         ;; See `atomic-change-group' for these settings
-         (undo-outer-limit nil)
-         (undo-limit most-positive-fixnum)
-         (undo-strong-limit most-positive-fixnum)
-         (changes (prepare-change-group)))
-    (consult--with-increased-gc
+  (consult--with-increased-gc
+   (consult--fontify-all)
+   (let* ((buffer (current-buffer))
+          (lines)
+          (font-lock-orig font-lock-mode)
+          (point-orig (point))
+          ;; See `atomic-change-group' for these settings
+          (undo-outer-limit nil)
+          (undo-limit most-positive-fixnum)
+          (undo-strong-limit most-positive-fixnum)
+          (changes (prepare-change-group)))
      (save-excursion
        (let ((pos (point-min))
              (max (point-max))
@@ -1639,18 +1639,17 @@ narrowing."
            (setq end (line-end-position))
            (push (buffer-substring pos end) lines)
            (setq pos (1+ end))))
-       (setq lines (nreverse lines))))
-    (minibuffer-with-setup-hook
-        (lambda ()
-          (add-hook
-           'after-change-functions
-           (lambda (&rest _)
-             (let* ((input (minibuffer-contents-no-properties))
-                    (filtered-contents
-                     ;; Special case the empty input for performance.
-                     ;; Otherwise it could happen that the minibuffer is empty,
-                     ;; but the buffer has not been updated.
-                     (consult--with-increased-gc
+       (setq lines (nreverse lines)))
+     (minibuffer-with-setup-hook
+         (lambda ()
+           (add-hook
+            'after-change-functions
+            (lambda (&rest _)
+              (let* ((input (minibuffer-contents-no-properties))
+                     (filtered-contents
+                      ;; Special case the empty input for performance.
+                      ;; Otherwise it could happen that the minibuffer is empty,
+                      ;; but the buffer has not been updated.
                       (if (string= input "")
                           (string-join lines "\n")
                         (while-no-input
@@ -1658,31 +1657,31 @@ narrowing."
                           (let* ((filtered (completion-all-completions input (mapcar #'copy-sequence lines) nil 0))
                                  (last (last filtered)))
                             (when last (setcdr last nil)) ;; make it a proper list
-                            (string-join filtered "\n")))))))
-               (when (stringp filtered-contents)
-                 (with-current-buffer buffer
-                   (when font-lock-mode (font-lock-mode -1))
-                   ;; Disable modification hooks for performance
-                   (let ((inhibit-modification-hooks t))
-                     (delete-region (point-min) (point-max))
-                     (insert filtered-contents)
-                     ;; Amalgamate immediately in order to avoid long undo list
-                     (undo-amalgamate-change-group changes)
-                     (goto-char (point-min)))))))
-           nil t))
-      (unwind-protect
-          (progn
-            (activate-change-group changes)
-            (read-from-minibuffer "Keep lines: ")
-            (setq point-orig nil))
-        ;; Disable modification hooks for performance
-        (let ((inhibit-modification-hooks t))
-          (if (not point-orig)
-              (accept-change-group changes)
-            (cancel-change-group changes)
-            (goto-char point-orig)))
-        (when (and font-lock-orig (not font-lock-mode))
-          (font-lock-mode))))))
+                            (string-join filtered "\n"))))))
+                (when (stringp filtered-contents)
+                  (with-current-buffer buffer
+                    (when font-lock-mode (font-lock-mode -1))
+                    ;; Disable modification hooks for performance
+                    (let ((inhibit-modification-hooks t))
+                      (delete-region (point-min) (point-max))
+                      (insert filtered-contents)
+                      ;; Amalgamate immediately in order to avoid long undo list
+                      (undo-amalgamate-change-group changes)
+                      (goto-char (point-min)))))))
+            nil t))
+       (unwind-protect
+           (progn
+             (activate-change-group changes)
+             (read-from-minibuffer "Keep lines: ")
+             (setq point-orig nil))
+         ;; Disable modification hooks for performance
+         (let ((inhibit-modification-hooks t))
+           (if (not point-orig)
+               (accept-change-group changes)
+             (cancel-change-group changes)
+             (goto-char point-orig)))
+         (when (and font-lock-orig (not font-lock-mode))
+           (font-lock-mode)))))))
 
 ;;;###autoload
 (defun consult-goto-line ()
