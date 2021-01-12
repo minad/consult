@@ -1146,13 +1146,13 @@ CMD is the command argument list."
       (pcase action
         (""
          ;; If no input is provided kill current process
-         (ignore-errors (kill-process proc))
+         (ignore-errors (delete-process proc))
          (setq last-args nil))
         ((pred stringp)
          (let ((args (funcall cmd action)))
            (unless (equal args last-args)
              (setq last-args args)
-             (ignore-errors (kill-process proc))
+             (ignore-errors (delete-process proc))
              (when args
                (overlay-put indicator 'display (propertize "*" 'face 'consult-async-running))
                (with-current-buffer (get-buffer-create consult--async-stderr)
@@ -1198,7 +1198,7 @@ CMD is the command argument list."
                      (unless (string= rest "")
                        (funcall async (list rest)))))))))))
         ('destroy
-         (ignore-errors (kill-process proc))
+         (ignore-errors (delete-process proc))
          (delete-overlay indicator)
          (funcall async 'destroy))
         ('setup
