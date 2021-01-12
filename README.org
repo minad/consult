@@ -53,20 +53,15 @@ consult-grep
 #+caption: consult-grep
 [[https://github.com/minad/consult/blob/main/images/consult-grep.gif?raw=true]]
 
-consult-mark
+consult-imenu
 
-#+caption: consult-mark
-[[https://github.com/minad/consult/blob/main/images/consult-mark.png?raw=true]]
+#+caption: consult-imenu
+[[https://github.com/minad/consult/blob/main/images/consult-imenu.png?raw=true]]
 
 consult-line
 
 #+caption: consult-line
 [[https://github.com/minad/consult/blob/main/images/consult-line.png?raw=true]]
-
-consult-outline
-
-#+caption: consult-outline
-[[https://github.com/minad/consult/blob/main/images/consult-outline.png?raw=true]]
 
 * Available commands
 :properties:
