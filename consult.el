@@ -2728,5 +2728,59 @@ See `consult-grep' for more details regarding the asynchronous search."
   (add-hook 'consult--completion-candidate-hook #'consult--icomplete-candidate)
   (add-hook 'consult--completion-refresh-hook #'consult--icomplete-refresh))
 
+;;;; selectrum support
+
+(defvar selectrum-active-p)
+(defvar selectrum-refine-candidates-function)
+(defvar selectrum-highlight-candidates-function)
+(defvar selectrum--move-default-candidate-p)
+(defvar selectrum-fix-minibuffer-height)
+(declare-function selectrum-exhibit "selectrum")
+(declare-function selectrum-get-current-candidate "selectrum")
+
+(defun consult-selectrum--match ()
+  "Return selectrum matching function."
+  (and selectrum-active-p selectrum-refine-candidates-function))
+
+(defun consult-selectrum--candidate ()
+  "Return current selectrum candidate."
+  (and selectrum-active-p (selectrum-get-current-candidate)))
+
+(defun consult-selectrum--refresh ()
+  "Refresh selectrum view."
+  (and selectrum-active-p (selectrum-exhibit 'keep-selected)))
+
+(defun consult-selectrum--read-setup (fun prompt candidates &rest opts)
+  "Advice, which configures `consult--read' for selectrum.
+
+FUN is the original function.
+See `consult--read' for the PROMPT, CANDIDATES and OPTS arguments."
+  (minibuffer-with-setup-hook
+      (lambda ()
+        ;; Set mode-default-candidate selectrum option according to :default-top
+        (setq-local selectrum--move-default-candidate-p (plist-get opts :default-top))
+        ;; Fix selectrum height for async completion table
+        (when (functionp candidates) (setq-local selectrum-fix-minibuffer-height t)))
+    (apply fun prompt candidates opts)))
+
+(defun consult-selectrum--async-split-wrap (orig)
+  "Wrap selectrum candidates highlight/refinement ORIG function for `consult--async-split'."
+  (lambda (str cands)
+    (funcall orig (substring str (cdr (consult--async-split-string str))) cands)))
+
+(defun consult-selectrum--async-split-setup ()
+  "Advice for `consult--async-split-setup' to be used by Selectrum."
+  (setq-local selectrum-refine-candidates-function
+              (consult-selectrum--async-split-wrap selectrum-refine-candidates-function))
+  (setq-local selectrum-highlight-candidates-function
+              (consult-selectrum--async-split-wrap selectrum-highlight-candidates-function)))
+
+(with-eval-after-load 'selectrum
+  (add-hook 'consult--completion-match-hook #'consult-selectrum--match)
+  (add-hook 'consult--completion-candidate-hook #'consult-selectrum--candidate)
+  (add-hook 'consult--completion-refresh-hook #'consult-selectrum--refresh)
+  (advice-add #'consult--read :around #'consult-selectrum--read-setup)
+  (advice-add #'consult--async-split-setup :before #'consult-selectrum--async-split-setup))
+
 (provide 'consult)
 ;;; consult.el ends here

@@ -423,9 +423,6 @@ variables and functions with their descriptions.
 :end:
 #+cindex: installation
 
-*NOTE: If you are using [[https://github.com/raxod502/selectrum][Selectrum]], you MUST install the packages selectrum,
-consult and consult-selectrum!*
-
 Consult can be installed from [[https://melpa.org/][MELPA]] via the Emacs built-in package manager.
 Alternatively it can be directly installed from the development repository via
 other non-standard package managers.
@@ -437,10 +434,10 @@ configure the keybindings yourself. As a result, the package is not intrusive
 but requires a little setup effort. Feel free to only bind the commands you
 consider useful to your workflow!
 
-Note that there are three packages as of now: =consult.el=,
-=consult-selectrum.el= and =consult-flycheck.el=. Consult has been split
-such that the main package =consult.el= only depends on Emacs core
-components.
+Note that there are two packages as of now: =consult= and =consult-flycheck=.
+=consult-flycheck= is a separate package such that the core =consult= package
+only depends on Emacs core components. The =consult= package will work out of
+the box with the default completion, Icomplete and Selectrum.
 
 ** Example configuration
  :properties:
@@ -524,12 +521,6 @@ components.
    ;; Optionally configure a function which returns the project root directory
    (autoload 'projectile-project-root "projectile")
    (setq consult-project-root-function #'projectile-project-root))
-
- ;; Enable Consult-Selectrum integration.
- ;; This package should be installed if Selectrum is used.
- (use-package consult-selectrum
-   :after selectrum
-   :demand t)
 
  ;; Optionally add the `consult-flycheck' command.
  (use-package consult-flycheck
@@ -633,14 +624,10 @@ components.
 :description: Related packages recommended for installation
 :end:
 
-*NOTE: If you are using [[https://github.com/raxod502/selectrum][Selectrum]], you MUST install the packages selectrum,
-consult and consult-selectrum!*
-
 It is recommended to install the following package combination:
 
 - consult: This package
 - consult-flycheck: Provides the consult-flycheck command
-- consult-selectrum: Provides integration with Selectrum
 - [[https://github.com/raxod502/selectrum][selectrum]] or [[https://github.com/oantolin/icomplete-vertical][icomplete-vertical]]: Vertical completion systems
 - [[https://github.com/minad/marginalia][marginalia]]: Annotations for the completion candidates
 - [[https://github.com/oantolin/embark][embark]]: Action commands, which can act on the completion candidates
