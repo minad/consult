@@ -24,11 +24,11 @@
 (require 'icomplete)
 (require 'consult)
 
-(defun consult--icomplete-candidate ()
+(defun consult-icomplete--candidate ()
   "Return current icomplete candidate."
   (and icomplete-mode (car completion-all-sorted-completions)))
 
-(defun consult--icomplete-refresh ()
+(defun consult-icomplete--refresh ()
   "Refresh icomplete view, keep current candidate selected if possible."
   (when icomplete-mode
     (let ((top (car completion-all-sorted-completions)))
@@ -50,8 +50,8 @@
               (setq completions (cdr completions)))))))
     (icomplete-exhibit)))
 
-(add-hook 'consult--completion-candidate-hook #'consult--icomplete-candidate)
-(add-hook 'consult--completion-refresh-hook #'consult--icomplete-refresh)
+(add-hook 'consult--completion-candidate-hook #'consult-icomplete--candidate)
+(add-hook 'consult--completion-refresh-hook #'consult-icomplete--refresh)
 
 (provide 'consult-icomplete)
 ;;; consult-icomplete.el ends here
