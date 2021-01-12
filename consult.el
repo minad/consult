@@ -1610,6 +1610,7 @@ The symbol at point and the last `isearch-string' is added to the future history
       :initial initial
       :preview (consult--preview-position)))))
 
+;;;###autoload
 (defun consult-keep-lines ()
   "Select a subset of the lines in the current buffer with live preview.
 
