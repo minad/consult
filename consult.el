@@ -1620,15 +1620,26 @@ narrowing."
   (interactive)
   (consult--forbid-minibuffer)
   (consult--fontify-all)
-  (let ((buffer (current-buffer))
-        (contents (buffer-string))
-        (font-lock-orig font-lock-mode)
-        (point-orig (point))
-        ;; See `atomic-change-group' for these settings
-        (undo-outer-limit nil)
-	(undo-limit most-positive-fixnum)
-	(undo-strong-limit most-positive-fixnum)
-        (changes (prepare-change-group)))
+  (let* ((buffer (current-buffer))
+         (lines)
+         (font-lock-orig font-lock-mode)
+         (point-orig (point))
+         ;; See `atomic-change-group' for these settings
+         (undo-outer-limit nil)
+         (undo-limit most-positive-fixnum)
+         (undo-strong-limit most-positive-fixnum)
+         (changes (prepare-change-group)))
+    (consult--with-increased-gc
+     (save-excursion
+       (let ((pos (point-min))
+             (max (point-max))
+             end)
+         (while (< pos max)
+           (goto-char pos)
+           (setq end (line-end-position))
+           (push (buffer-substring pos end) lines)
+           (setq pos (1+ end))))
+       (setq lines (nreverse lines))))
     (minibuffer-with-setup-hook
         (lambda ()
           (add-hook
@@ -1639,12 +1650,12 @@ narrowing."
                      ;; Special case the empty input for performance.
                      ;; Otherwise it could happen that the minibuffer is empty,
                      ;; but the buffer has not been updated.
-                     (if (string= input "")
-                         contents
-                       (consult--with-increased-gc
+                     (consult--with-increased-gc
+                      (if (string= input "")
+                          (string-join lines "\n")
                         (while-no-input
                           ;; Allocate new string candidates since completion-all-completions will mutate!
-                          (let* ((filtered (completion-all-completions input (split-string contents "\n") nil 0))
+                          (let* ((filtered (completion-all-completions input (mapcar #'copy-sequence lines) nil 0))
                                  (last (last filtered)))
                             (when last (setcdr last nil)) ;; make it a proper list
                             (string-join filtered "\n")))))))
