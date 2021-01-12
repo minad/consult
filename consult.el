@@ -1627,14 +1627,15 @@ narrowing."
         (success t)
         lines)
 
-    (save-excursion
-      (let ((pos (point-min)) end)
-        (while (< pos (point-max))
-          (goto-char pos)
-          (setq end (line-end-position))
-          (push (buffer-substring pos end) lines)
-          (setq pos (1+ end)))))
-    (setq lines (nreverse lines))
+    (consult--with-increased-gc
+     (save-excursion
+       (let ((pos (point-min)) end)
+         (while (< pos (point-max))
+           (goto-char pos)
+           (setq end (line-end-position))
+           (push (buffer-substring pos end) lines)
+           (setq pos (1+ end)))))
+     (setq lines (nreverse lines)))
 
     (minibuffer-with-setup-hook
         (lambda ()
