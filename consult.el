@@ -1462,7 +1462,7 @@ The alist contains (string . position) pairs."
       (dolist (marker global-mark-ring)
         (let ((pos (marker-position marker))
               (buf (marker-buffer marker)))
-          (when (and pos buf (buffer-live-p buf) (not (minibufferp buf)))
+          (when (and pos (buffer-live-p buf) (not (minibufferp buf)))
             (with-current-buffer buf
               (when (consult--in-range-p pos)
                 (goto-char pos)
@@ -1892,16 +1892,15 @@ This function can be used as `register-preview-function'."
                (propertize (abbreviate-file-name (cadr val)) 'face 'consult-file)
                (caddr val)))
       ;; Display full line of buffer
-      ((markerp val)
-       (let ((buf (marker-buffer val)))
-         (with-current-buffer buf
-           (save-restriction
-             (save-excursion
-               (widen)
-               (goto-char val)
-               (concat
-                (consult--format-location (buffer-name buf) (line-number-at-pos))
-                (consult--line-with-cursor val)))))))
+      ((and (markerp val) (buffer-live-p (marker-buffer val)))
+       (with-current-buffer (marker-buffer val)
+         (save-restriction
+           (save-excursion
+             (widen)
+             (goto-char val)
+             (concat
+              (consult--format-location (buffer-name) (line-number-at-pos))
+              (consult--line-with-cursor val))))))
       ;; Default printing for the other types
       (t (register-describe-oneline key))))))
 
