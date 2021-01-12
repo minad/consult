@@ -1662,8 +1662,8 @@ narrowing."
                (when (stringp filtered-contents)
                  (with-current-buffer buffer
                    (when font-lock-mode (font-lock-mode -1))
-                   ;; Disable after-change-functions for performance
-                   (let ((after-change-functions))
+                   ;; Disable modification hooks for performance
+                   (let ((inhibit-modification-hooks t))
                      (delete-region (point-min) (point-max))
                      (insert filtered-contents)
                      ;; Amalgamate immediately in order to avoid long undo list
@@ -1675,8 +1675,8 @@ narrowing."
             (activate-change-group changes)
             (read-from-minibuffer "Keep lines: ")
             (setq point-orig nil))
-        ;; Disable after-change-functions for performance
-        (let ((after-change-functions))
+        ;; Disable modification hooks for performance
+        (let ((inhibit-modification-hooks t))
           (if (not point-orig)
               (accept-change-group changes)
             (cancel-change-group changes)
