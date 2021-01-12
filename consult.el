@@ -1610,6 +1610,41 @@ The symbol at point and the last `isearch-string' is added to the future history
       :initial initial
       :preview (consult--preview-position)))))
 
+(defun consult-keep-lines (&optional intial)
+  "Select a subset of the lines in the current buffer with live preview.
+
+The lines selected are those that match the minibuffer input
+according to the current `completion-styles'. This command obeys
+narrowing. Optionally INITIAL input can be provided."
+  (interactive)
+  (consult--with-increased-gc 
+   (let ((buffer (current-buffer))
+         (lines (split-string (buffer-string) "\n"))
+         (changes (prepare-change-group))
+         cancel)
+     (minibuffer-with-setup-hook
+         (lambda ()
+           (add-hook
+            'after-change-functions
+            (lambda (&rest _)
+              (when-let* ((input (minibuffer-contents-no-properties))
+                          (filtered (completion-all-completions input lines nil 0)))
+                (setcdr (last filtered) nil) ; make it a proper list
+                (with-current-buffer buffer
+                  (delete-region (point-min) (point-max))
+                  (insert (string-join filtered "\n"))
+                  (goto-char (point-min)))))
+            nil t))
+       (unwind-protect
+           (condition-case nil
+               (read-from-minibuffer "Keep lines: ")
+             (quit (setq cancel t)))
+         (undo-amalgamate-change-group changes)
+         (activate-change-group changes)
+         (if cancel
+             (cancel-change-group changes)
+           (accept-change-group changes)))))))
+
 ;;;###autoload
 (defun consult-goto-line ()
   "Read line number and jump to the line with preview.
