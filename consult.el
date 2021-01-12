@@ -852,9 +852,9 @@ ARGS is the open function argument for BODY."
         (lambda ()
           (funcall async 'setup)
           ;; push input string to request refresh
-          (let ((push (lambda () (funcall async (minibuffer-contents-no-properties)))))
+          (let ((push (lambda (&rest _) (funcall async (minibuffer-contents-no-properties)))))
             (run-at-time 0 nil push)
-            (add-hook 'post-command-hook push nil t)))
+            (add-hook 'after-change-functions push nil t)))
       (unwind-protect
           (funcall fun async)
         (funcall async 'destroy)))))
