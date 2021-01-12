@@ -1611,6 +1611,69 @@ The symbol at point and the last `isearch-string' is added to the future history
       :preview (consult--preview-position)))))
 
 ;;;###autoload
+(defun consult-keep-lines ()
+  "Select a subset of the lines in the current buffer with live preview.
+
+The lines selected are those that match the minibuffer input
+according to the current `completion-styles'. This command obeys
+narrowing."
+  (interactive)
+  (consult--forbid-minibuffer)
+  (consult--fontify-all)
+  (let ((buffer (current-buffer))
+        (contents (buffer-string))
+        (font-lock-orig font-lock-mode)
+        (point-orig (point))
+        ;; See `atomic-change-group' for these settings
+        (undo-outer-limit nil)
+	(undo-limit most-positive-fixnum)
+	(undo-strong-limit most-positive-fixnum)
+        (changes (prepare-change-group)))
+    (minibuffer-with-setup-hook
+        (lambda ()
+          (add-hook
+           'after-change-functions
+           (lambda (&rest _)
+             (let* ((input (minibuffer-contents-no-properties))
+                    (filtered-contents
+                     ;; Special case the empty input for performance.
+                     ;; Otherwise it could happen that the minibuffer is empty,
+                     ;; but the buffer has not been updated.
+                     (if (string= input "")
+                         contents
+                       (consult--with-increased-gc
+                        (while-no-input
+                          ;; Allocate new string candidates since completion-all-completions will mutate!
+                          (let* ((filtered (completion-all-completions input (split-string contents "\n") nil 0))
+                                 (last (last filtered)))
+                            (when last (setcdr last nil)) ;; make it a proper list
+                            (string-join filtered "\n")))))))
+               (when (stringp filtered-contents)
+                 (with-current-buffer buffer
+                   (when font-lock-mode (font-lock-mode -1))
+                   ;; Disable after-change-functions for performance
+                   (let ((after-change-functions))
+                     (delete-region (point-min) (point-max))
+                     (insert filtered-contents)
+                     ;; Amalgamate immediately in order to avoid long undo list
+                     (undo-amalgamate-change-group changes)
+                     (goto-char (point-min)))))))
+           nil t))
+      (unwind-protect
+          (progn
+            (activate-change-group changes)
+            (read-from-minibuffer "Keep lines: ")
+            (setq point-orig nil))
+        ;; Disable after-change-functions for performance
+        (let ((after-change-functions))
+          (if (not point-orig)
+              (accept-change-group changes)
+            (cancel-change-group changes)
+            (goto-char point-orig)))
+        (when (and font-lock-orig (not font-lock-mode))
+          (font-lock-mode))))))
+
+;;;###autoload
 (defun consult-goto-line ()
   "Read line number and jump to the line with preview.
 
