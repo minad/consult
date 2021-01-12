@@ -882,27 +882,29 @@ ARGS is the open function argument for BODY."
                                    minibuffer-completion-table
 			           minibuffer-completion-predicate))))))
 
-(defun consult--setup-keymap (narrow preview-key)
-  "Setup keymap for NARROW and PREVIEW-KEY."
-  (use-local-map
-   (make-composed-keymap
-    (append
-     (when narrow
-       (list (consult--narrow-setup narrow)))
-     (when (and preview-key (not (eq preview-key 'any)))
-       (let ((old-map (current-local-map))
-             (map (make-sparse-keymap))
-             (preview-key (if (listp preview-key) preview-key (list preview-key))))
-         (dolist (key preview-key)
-           (unless (lookup-key old-map key)
-             (consult--define-key map key #'ignore "Preview")))
-         (list map))))
-    (current-local-map))))
+(defun consult--keymap-setup (keymap narrow preview-key)
+  "Setup keymaps.
+
+NARROW are the narrowing settings.
+PREVIEW-KEY are the preview keys.
+KEYMAP is a custom keymap."
+  (setq keymap (list keymap))
+  (when narrow
+    (push (consult--narrow-setup narrow) keymap))
+  (when (and preview-key (not (eq preview-key 'any)))
+    (let ((old-map (current-local-map))
+          (map (make-sparse-keymap))
+          (preview-key (if (listp preview-key) preview-key (list preview-key))))
+      (dolist (key preview-key)
+        (unless (lookup-key old-map key)
+          (consult--define-key map key #'ignore "Preview")))
+      (push map keymap)))
+  (use-local-map (make-composed-keymap keymap (current-local-map))))
 
 (cl-defun consult--read (prompt candidates &key
                                 predicate require-match history default
                                 category initial narrow add-history
-                                preview (preview-key consult-preview-key)
+                                keymap preview (preview-key consult-preview-key)
                                 (sort t) (default-top t) (lookup (lambda (_input _cands x) x)))
   "Simplified completing read function.
 
@@ -925,6 +927,7 @@ INITIAL is initial input.
 DEFAULT-TOP must be nil if the default candidate should not be moved to the top.
 PREVIEW is a preview function.
 PREVIEW-KEY are the preview keys (nil, 'any, a single key or a list of keys).
+KEYMAP is an additional keymap.
 NARROW is an alist of narrowing prefix strings and description."
   (ignore default-top)
   ;; supported types
@@ -938,7 +941,7 @@ NARROW is an alist of narrowing prefix strings and description."
       (:append
        (lambda ()
          (consult--add-history add-history)
-         (consult--setup-keymap narrow preview-key)))
+         (consult--keymap-setup keymap narrow preview-key)))
     (consult--with-async (async candidates)
       ;; NOTE: Do not unnecessarily let-bind the lambdas to avoid
       ;; overcapturing in the interpreter. This will make closures and the
@@ -1623,7 +1626,7 @@ The command respects narrowing and the settings
                         consult-preview-key)))
     (while (let ((ret (minibuffer-with-setup-hook
                           (:append (lambda ()
-                                     (consult--setup-keymap nil preview-key)
+                                     (consult--keymap-setup nil nil preview-key)
                                      (setq-local consult--completion-candidate-hook
                                                  '(minibuffer-contents-no-properties))))
                         (consult--with-preview
@@ -1944,13 +1947,35 @@ Marker positions are previewed."
                     consult-register-narrow)))
       (mapcar (pcase-lambda (`(,x ,y ,_)) (cons x y))
               consult-register-narrow))
+     :keymap
+     (let ((map (make-sparse-keymap)))
+       (define-key map (kbd "C-q")
+         (lambda ()
+           (interactive)
+           (let* ((register-preview-delay nil)
+                  (key (register-read-with-preview "Press key")))
+             (run-at-time 0 nil (apply-partially #'consult-register key))
+             (exit-minibuffer))))
+       map)
      :sort nil
      :require-match t
      :history t ;; disable history
      :lookup #'consult--lookup-cdr)))
-  (condition-case nil
-      (jump-to-register reg)
-    (error (insert-register reg))))
+  (when reg
+    (cond
+     ;; Register exists, either jump or insert
+     ((get-register reg)
+      (condition-case nil
+          (jump-to-register reg)
+        (error (insert-register reg))))
+     ;; Region is active, copy string
+     ((region-active-p)
+      (copy-to-register reg (region-beginning) (region-end))
+      (message "Stored region in register `%s'" (single-key-description reg)))
+     ;; Store point
+     (t
+      (point-to-register reg)
+      (message "Stored point in register `%s'" (single-key-description reg))))))
 
 ;;;###autoload
 (defun consult-bookmark (name)
