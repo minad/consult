@@ -121,10 +121,13 @@ variables and functions with their descriptions.
  #+findex: consult-yank
  #+findex: consult-kmacro
  - =consult-register=: Select from list of registers. The command
-   supports narrowing to register types and preview of marker positions.
-   There is also the supplementary function =consult-register-preview= which
-   can be used as =register-preview-function= for a consistent display.
-   See the [[#example-configuration][example configuration]] for how it is used.
+   supports narrowing to register types and preview of marker positions. This
+   command is useful to search the register contents. For quick access it is
+   recommended to use the built-in Emacs commands like =jump-to-register=. There
+   is also the supplementary function =consult-register-preview= which can be
+   used as =register-preview-function= for a consistent display. See the [[#example-configuration][example
+   configuration]] for how the =consult-register-preview= function is meant to be
+   used.
  - =consult-yank=, =consult-yank-pop=: Enhanced version of =yank= and
    =yank-pop= which allows selecting from the kill-ring. Live preview is
    supported when selecting from the kill-ring.

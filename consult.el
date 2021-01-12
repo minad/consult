@@ -1916,8 +1916,12 @@ This function can be used as `register-preview-function'."
 (defun consult-register (reg)
   "Use register REG and either jump to location or insert the stored text.
 
-The command supports narrowing, see `consult-register-narrow'.
-Marker positions are previewed."
+This command is useful to search the register contents. For quick
+access to registers it is still recommended to use the built-in
+register access functions, like `jump-to-register',
+`point-to-register', `insert-register' and `copy-to-register'. The
+command supports narrowing, see `consult-register-narrow'. Marker
+positions are previewed."
   (interactive
    (list
     (consult--read
