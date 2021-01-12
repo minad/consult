@@ -1624,6 +1624,7 @@ narrowing."
         (contents (buffer-string))
         (font-lock-orig font-lock-mode)
         (point-orig (point))
+        ;; See `atomic-change-group' for these settings
         (undo-outer-limit nil)
 	(undo-limit most-positive-fixnum)
 	(undo-strong-limit most-positive-fixnum)
@@ -1635,10 +1636,14 @@ narrowing."
            (lambda (&rest _)
              (let* ((input (minibuffer-contents-no-properties))
                     (filtered-contents
+                     ;; Special case the empty input for performance.
+                     ;; Otherwise it could happen that the minibuffer is empty,
+                     ;; but the buffer has not been updated.
                      (if (string= input "")
                          contents
                        (consult--with-increased-gc
                         (while-no-input
+                          ;; Allocate new string candidates since completion-all-completions will mutate!
                           (let* ((filtered (completion-all-completions input (split-string contents "\n") nil 0))
                                  (last (last filtered)))
                             (when last (setcdr last nil)) ;; make it a proper list
@@ -1646,9 +1651,11 @@ narrowing."
                (when (stringp filtered-contents)
                  (with-current-buffer buffer
                    (when font-lock-mode (font-lock-mode -1))
+                   ;; Disable after-change-functions for performance
                    (let ((after-change-functions))
                      (delete-region (point-min) (point-max))
                      (insert filtered-contents)
+                     ;; Amalgamate immediately in order to avoid long undo list
                      (undo-amalgamate-change-group changes)
                      (goto-char (point-min)))))))
            nil t))
@@ -1657,6 +1664,7 @@ narrowing."
             (activate-change-group changes)
             (read-from-minibuffer "Keep lines: ")
             (setq point-orig nil))
+        ;; Disable after-change-functions for performance
         (let ((after-change-functions))
           (if (not point-orig)
               (accept-change-group changes)
