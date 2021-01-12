@@ -852,8 +852,14 @@ Consult and add more components later to the mix.
 @chapter Acknowledgements
 
 You probably guessed from the name that this package took inspiration from
-@uref{https://github.com/abo-abo/swiper#counsel, Counsel} by Oleh Krehel. Some of the commands found in this package originated in
-the @uref{https://github.com/raxod502/selectrum/wiki/Useful-Commands, Selectrum wiki}.
+@uref{https://github.com/abo-abo/swiper#counsel, Counsel} by Oleh Krehel. Some of the Consult commands originated in the @uref{https://github.com/raxod502/selectrum/wiki/Useful-Commands, Selectrum
+wiki}. The commands have been rewritten and greatly enhanced in comparison to the
+wiki versions. In particular all Selectrum-specific code has been removed, such
+that the commands are compatible with the @samp{completing-read} API@.
+
+Consult is intended to be a community effort, please participate in the
+discussions. Contributions are very welcome. If you have a proposal, take a look
+at the @uref{https://github.com/minad/consult/issues/6, Consult wishlist}.
 
 Code contributions:
 @itemize
