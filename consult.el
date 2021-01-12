@@ -1618,13 +1618,16 @@ according to the current `completion-styles'. This command obeys
 narrowing."
   (interactive)
 
+  (consult--forbid-minibuffer)
   (consult--fontify-all)
 
   (let ((buffer (current-buffer))
         (font-lock-originally font-lock-mode)
         (original-point (point))
         (changes (prepare-change-group))
-        (success t)
+        (undo-outer-limit nil)
+	(undo-limit most-positive-fixnum)
+	(undo-strong-limit most-positive-fixnum)
         lines)
 
     (consult--with-increased-gc
@@ -1643,27 +1646,28 @@ narrowing."
            'after-change-functions
            (lambda (&rest _)
              (while-no-input
-               (let* ((input (minibuffer-contents-no-properties))
-                      (filtered (completion-all-completions input lines nil 0))
-                      (last (last filtered)))
-                 (when last (setcdr last nil)) ; make it a proper list
+               (let ((filtered)
+                     (last))
+                 (while-no-input
+                   (setq filtered (completion-all-completions (minibuffer-contents-no-properties) lines nil 0)))
+                 (setq last (last filtered))
+                 (when last (setcdr last nil)) ;; make it a proper list
+                 (setq filtered (string-join filtered "\n"))
                  (with-current-buffer buffer
                    (when font-lock-mode (font-lock-mode -1))
-                   (atomic-change-group
-                     (delete-region (point-min) (point-max))
-                     (insert (string-join filtered "\n")))
+                   (delete-region (point-min) (point-max))
+                   (insert filtered)
+                   (undo-amalgamate-change-group changes)
                    (goto-char (point-min))))))
            nil t))
       (unwind-protect
           (progn
             (activate-change-group changes)
-            (condition-case nil
-                (read-from-minibuffer "Keep lines: ")
-              (quit (setq success nil))))
-        (undo-amalgamate-change-group changes)
+            (read-from-minibuffer "Keep lines: ")
+            (setq original-point nil))
         (when (and font-lock-originally (not font-lock-mode))
           (font-lock-mode))
-        (if success
+        (if (not original-point)
             (accept-change-group changes)
           (cancel-change-group changes)
           (goto-char original-point))))))
