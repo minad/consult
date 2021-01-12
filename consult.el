@@ -1617,33 +1617,54 @@ The lines selected are those that match the minibuffer input
 according to the current `completion-styles'. This command obeys
 narrowing. Optionally INITIAL input can be provided."
   (interactive)
-  (consult--with-increased-gc 
-   (let ((buffer (current-buffer))
-         (lines (split-string (buffer-string) "\n"))
-         (changes (prepare-change-group))
-         cancel)
-     (minibuffer-with-setup-hook
-         (lambda ()
-           (add-hook
-            'after-change-functions
-            (lambda (&rest _)
-              (when-let* ((input (minibuffer-contents-no-properties))
-                          (filtered (completion-all-completions input lines nil 0)))
-                (setcdr (last filtered) nil) ; make it a proper list
-                (with-current-buffer buffer
-                  (delete-region (point-min) (point-max))
-                  (insert (string-join filtered "\n"))
-                  (goto-char (point-min)))))
-            nil t))
-       (unwind-protect
-           (condition-case nil
-               (read-from-minibuffer "Keep lines: ")
-             (quit (setq cancel t)))
-         (undo-amalgamate-change-group changes)
-         (activate-change-group changes)
-         (if cancel
-             (cancel-change-group changes)
-           (accept-change-group changes)))))))
+
+  (consult--fontify-all)
+
+  (let ((buffer (current-buffer))
+        (font-lock-originally font-lock-mode)
+        (original-point (point))
+        (changes (prepare-change-group))
+        (success t)
+        lines)
+
+    (save-excursion
+      (let ((pos (point-min)) end)
+        (while (< pos (point-max))
+          (goto-char pos)
+          (setq end (line-end-position))
+          (push (buffer-substring pos end) lines)
+          (setq pos (1+ end)))))
+    (setq lines (nreverse lines))
+
+    (minibuffer-with-setup-hook
+        (lambda ()
+          (add-hook
+           'after-change-functions
+           (lambda (&rest _)
+             (while-no-input
+               (let* ((input (minibuffer-contents-no-properties))
+                      (filtered (completion-all-completions input lines nil 0))
+                      (last (last filtered)))
+                 (when last (setcdr last nil)) ; make it a proper list
+                 (with-current-buffer buffer
+                   (when font-lock-mode (font-lock-mode -1))
+                   (delete-region (point-min) (point-max))
+                   (insert (string-join filtered "\n"))
+                   (goto-char (point-min))))))
+           nil t))
+      (unwind-protect
+          (progn
+            (activate-change-group changes)
+            (condition-case nil
+                (read-from-minibuffer "Keep lines: ")
+              (quit (setq success nil))))
+        (undo-amalgamate-change-group changes)
+        (when (and font-lock-originally (not font-lock-mode))
+          (font-lock-mode))
+        (if success
+            (accept-change-group changes)
+          (cancel-change-group changes)
+          (goto-char original-point))))))
 
 ;;;###autoload
 (defun consult-goto-line ()
