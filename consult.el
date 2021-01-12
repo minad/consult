@@ -2513,16 +2513,16 @@ same major mode as the current buffer are used. See also
           (let* ((file (expand-file-name (consult--strip-ansi-escape (match-string 1 str))))
                  (line (string-to-number (consult--strip-ansi-escape (match-string 2 str))))
                  (str (substring str (match-end 0)))
-                 (loc (consult--format-location (file-relative-name file) line)))
+                 (loc (consult--format-location (string-remove-prefix default-directory file) line))
+                 (pos))
             (while (string-match consult--grep-match-regexp str)
+              (unless pos
+                (setq pos (match-beginning 0)))
               (setq str (concat (substring str 0 (match-beginning 0))
                                 (propertize (substring (match-string 1 str)) 'face 'consult-preview-match)
                                 (substring str (match-end 0)))))
             (setq str (consult--strip-ansi-escape str))
-            (push (list (concat loc str)
-                        file line
-                        (next-single-char-property-change 0 'face str))
-                  candidates)))))
+            (push (list (concat loc str) file line (or pos 0)) candidates)))))
     (nreverse candidates)))
 
 (defun consult--grep-marker (open)
