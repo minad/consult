@@ -1147,11 +1147,13 @@ CMD is the command argument list."
         (""
          ;; If no input is provided kill current process
          (ignore-errors (delete-process proc))
-         (setq last-args nil))
+         (setq last-args nil
+               rest nil))
         ((pred stringp)
          (let ((args (funcall cmd action)))
            (unless (equal args last-args)
-             (setq last-args args)
+             (setq last-args args
+                   rest nil)
              (ignore-errors (delete-process proc))
              (when args
                (overlay-put indicator 'display (propertize "*" 'face 'consult-async-running))
