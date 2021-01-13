@@ -1629,11 +1629,12 @@ The symbol at point and the last `isearch-string' is added to the future history
       :initial initial
       :preview (consult--preview-position)))))
 
-(defun consult--line-subset (prompt match)
+(defun consult--filter-lines (prompt match)
   "Select a subset of the lines in the current buffer with live preview.
 
 The lines selected are those that match the minibuffer input
-according to the function MATCH. This command obeys narrowing."
+according to the function MATCH. This command obeys narrowing.
+PROMPT is the prompt shown to the user."
   (consult--forbid-minibuffer)
   (barf-if-buffer-read-only)
   (consult--with-increased-gc
@@ -1669,12 +1670,9 @@ according to the function MATCH. This command obeys narrowing."
                       ;; but the buffer has not been updated.
                       (if (string= input "")
                           (string-join lines "\n")
+                        ;; Allocate new string candidates since the matching function mutates!
                         (while-no-input
-                          ;; Allocate new string candidates since the matching function mutates!
-                          (let* ((filtered (funcall match input (mapcar #'copy-sequence lines)))
-                                 (last (last filtered)))
-                            (when last (setcdr last nil)) ;; make it a proper list
-                            (string-join filtered "\n"))))))
+                          (string-join (funcall match input (mapcar #'copy-sequence lines)) "\n")))))
                 (when (stringp filtered-contents)
                   (with-current-buffer buffer
                     (when font-lock-mode (font-lock-mode -1))
@@ -1708,7 +1706,7 @@ The lines selected are those that match the minibuffer input
 according to your completion system.  This command obeys
 narrowing."
   (interactive)
-  (consult--line-subset
+  (consult--filter-lines
    "Keep lines: "
    (run-hook-with-args-until-success 'consult--completion-match-hook)))
 
@@ -1720,19 +1718,15 @@ The lines removed are those that match the minibuffer input
 according to your completion system.  This command obeys
 narrowing."
   (interactive)
-  (consult--line-subset
+  (consult--filter-lines
    "Flush lines: "
-   (let ((match
-          (run-hook-with-args-until-success 'consult--completion-match-hook)))
+   (let ((match (run-hook-with-args-until-success 'consult--completion-match-hook)))
      (lambda (input lines)
-       (let* ((matching (funcall match input lines))
-              (remove (make-hash-table :test #'equal))
-              (last (last matching)))
-         (when (consp last)
-           (setcdr last nil))
-         (dolist (line matching)
-           (puthash line t remove))
-         (seq-filter (lambda (line) (not (gethash line remove))) lines))))))
+       (let ((filtered (funcall match input lines))
+             (ht (make-hash-table :test #'equal :size (length lines))))
+         (dolist (line filtered)
+           (puthash line t ht))
+         (seq-remove (lambda (line) (gethash line ht)) lines))))))
 
 ;;;###autoload
 (defun consult-goto-line ()
@@ -2816,7 +2810,14 @@ See `consult-grep' for more details regarding the asynchronous search."
 
 (defun consult--default-completion-match ()
   "Return default matching function."
-  (lambda (str cands) (completion-all-completions str cands nil (length str))))
+  (lambda (str cands)
+    (let* ((filtered (completion-all-completions str cands nil (length str)))
+           (last (last filtered)))
+      ;; completion-all-completions returns an improper list
+      ;; where the last link is not necessarily nil. Fix this!
+      (when (consp last)
+        (setcdr last nil))
+      filtered)))
 
 (add-hook 'consult--completion-candidate-hook #'consult--default-completion-candidate)
 (add-hook 'consult--completion-match-hook #'consult--default-completion-match)
