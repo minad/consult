@@ -34,7 +34,11 @@
 
 (defun consult-selectrum--match ()
   "Return selectrum matching function."
-  (and selectrum-active-p selectrum-refine-candidates-function))
+  ;; Do not use selectrum-active-p here, since we want to always use
+  ;; the Selectrum filtering when Selectrum is installed, even when
+  ;; Selectrum is currently not active.
+  (and (eq completing-read-function #'selectrum-completing-read)
+       selectrum-refine-candidates-function))
 
 (defun consult-selectrum--candidate ()
   "Return current selectrum candidate."

@@ -1629,7 +1629,8 @@ narrowing."
           (undo-outer-limit nil)
           (undo-limit most-positive-fixnum)
           (undo-strong-limit most-positive-fixnum)
-          (changes (prepare-change-group)))
+          (changes (prepare-change-group))
+          (match (run-hook-with-args-until-success 'consult--completion-match-hook)))
      (save-excursion
        (let ((pos (point-min))
              (max (point-max))
@@ -1653,8 +1654,8 @@ narrowing."
                       (if (string= input "")
                           (string-join lines "\n")
                         (while-no-input
-                          ;; Allocate new string candidates since completion-all-completions will mutate!
-                          (let* ((filtered (completion-all-completions input (mapcar #'copy-sequence lines) nil 0))
+                          ;; Allocate new string candidates since the matching function mutates!
+                          (let* ((filtered (funcall match input (mapcar #'copy-sequence lines)))
                                  (last (last filtered)))
                             (when last (setcdr last nil)) ;; make it a proper list
                             (string-join filtered "\n"))))))
