@@ -2179,20 +2179,20 @@ for which the command history is used."
 
 In order to select from a specific HISTORY, pass the history variable as argument."
   (interactive)
-  (let* ((enable-recursive-minibuffers t)
-         (str (consult--read
-               "History: "
-               (let ((history (or history (consult--current-history))))
-                 (or (consult--remove-dups (if (ring-p history)
-                                               (ring-elements history)
-                                             history))
-                     (user-error "History is empty")))
-               :history t ;; disable history
-               :category ;; Report command category for M-x history
-               (and (minibufferp)
-                    (eq minibuffer-history-variable 'extended-command-history)
-                    'command)
-               :sort nil)))
+  (let ((str (consult--local-let ((enable-recursive-minibuffers t))
+               (consult--read
+                "History: "
+                (let ((history (or history (consult--current-history))))
+                  (or (consult--remove-dups (if (ring-p history)
+                                                (ring-elements history)
+                                              history))
+                      (user-error "History is empty")))
+                :history t ;; disable history
+                :category ;; Report command category for M-x history
+                (and (minibufferp)
+                     (eq minibuffer-history-variable 'extended-command-history)
+                     'command)
+                :sort nil))))
     (when (minibufferp)
       (delete-minibuffer-contents))
     (insert (substring-no-properties str))))
