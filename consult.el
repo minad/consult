@@ -433,6 +433,21 @@ Size of private unicode plane b.")
 
 ;;;; Helper functions
 
+(defmacro consult--local-let (binds &rest body)
+  "Buffer local let BINDS in BODY."
+  (declare (indent 1))
+  (let ((local (mapcar (lambda (x) (cons (make-symbol "local") (car x))) binds)))
+    `(let (,@(mapcar (lambda (x) `(,(car x) (local-variable-p ',(cdr x)))) local))
+       (unwind-protect
+           (progn
+             ,@(mapcar (lambda (x) `(make-local-variable ',(car x))) binds)
+             (let (,@binds)
+               ,@body))
+         ,@(mapcar (lambda (x)
+                     `(unless ,(car x)
+                        (kill-local-variable ',(cdr x))))
+                   local)))))
+
 (defun consult--regexp-filter (regexps)
   "Create filter regexp from REGEXPS."
   (string-join (mapcar (lambda (x) (concat "\\(?:" x "\\)")) regexps) "\\|"))
@@ -1693,39 +1708,39 @@ The command respects narrowing and the settings
 `consult-goto-line-numbers' and `consult-line-numbers-widen'."
   (interactive)
   (consult--forbid-minibuffer)
-  (let* ((display-line-numbers consult-goto-line-numbers)
-         (display-line-numbers-widen consult-line-numbers-widen)
-         (config (alist-get 'consult-goto-line consult-config))
-         (preview-key (if (plist-member config 'preview-key)
-                          (plist-get config 'preview-key)
-                        consult-preview-key)))
-    (while (let ((ret (minibuffer-with-setup-hook
-                          (:append (lambda ()
-                                     (consult--setup-keymap nil preview-key)
-                                     (setq-local consult--completion-candidate-hook
-                                                 '(minibuffer-contents-no-properties))))
-                        (consult--with-preview
-                            preview-key
-                            (let ((preview (consult--preview-position)))
-                              (lambda (cand restore)
-                                (funcall preview
-                                         (when-let (pos (and cand (consult--line-position cand)))
-                                           (and (consult--in-range-p pos) pos))
-                                         restore)))
-                            (lambda (_ cand)
-                              (when (and cand (string-match-p "^[[:digit:]]+$" cand))
-                                (string-to-number cand)))
-                          (read-from-minibuffer "Go to line: ")))))
-             (if (car ret)
-                 (let ((pos (consult--line-position (car ret))))
-                   (if (consult--in-range-p pos)
-                       (consult--jump pos)
-                     (message "Line number out of range.")
-                     (sit-for 1)
-                     t))
-               (message "Please enter a number.")
-               (sit-for 1)
-               t)))))
+  (consult--local-let ((display-line-numbers consult-goto-line-numbers)
+                       (display-line-numbers-widen consult-line-numbers-widen))
+    (let* ((config (alist-get 'consult-goto-line consult-config))
+           (preview-key (if (plist-member config 'preview-key)
+                            (plist-get config 'preview-key)
+                          consult-preview-key)))
+      (while (let ((ret (minibuffer-with-setup-hook
+                            (:append (lambda ()
+                                       (consult--setup-keymap nil preview-key)
+                                       (setq-local consult--completion-candidate-hook
+                                                   '(minibuffer-contents-no-properties))))
+                          (consult--with-preview
+                              preview-key
+                              (let ((preview (consult--preview-position)))
+                                (lambda (cand restore)
+                                  (funcall preview
+                                           (when-let (pos (and cand (consult--line-position cand)))
+                                             (and (consult--in-range-p pos) pos))
+                                           restore)))
+                              (lambda (_ cand)
+                                (when (and cand (string-match-p "^[[:digit:]]+$" cand))
+                                  (string-to-number cand)))
+                            (read-from-minibuffer "Go to line: ")))))
+               (if (car ret)
+                   (let ((pos (consult--line-position (car ret))))
+                     (if (consult--in-range-p pos)
+                         (consult--jump pos)
+                       (message "Line number out of range.")
+                       (sit-for 1)
+                       t))
+                 (message "Please enter a number.")
+                 (sit-for 1)
+                 t))))))
 
 (defun consult--recent-file-read ()
   "Read recent file via `completing-read'."
