@@ -431,7 +431,7 @@ Size of private unicode plane b.")
 (defconst consult--grep-match-regexp "\e\\[[0-9;]+m\\(.*?\\)\e\\[[0-9;]*m"
   "Regexp used to find matches in grep output.")
 
-;;;; Helper functions
+;;;; Helper functions and macros
 
 (defmacro consult--local-let (binds &rest body)
   "Buffer local let BINDS of dynamic variables in BODY."
@@ -589,124 +589,6 @@ KEY is the key function."
   (when jit-lock-mode
     (jit-lock-fontify-now start end)))
 
-(defun consult--with-preview-1 (preview-key preview transform fun)
-  "Install TRANSFORM and PREVIEW function for FUN.
-
-PREVIEW-KEY are the keys which trigger the preview."
-  (let ((input ""))
-    (if (and preview preview-key)
-        (minibuffer-with-setup-hook
-            (lambda ()
-              (setq consult--preview-function
-                    (lambda (inp cand)
-                      (unless (window-minibuffer-p)
-                        (error "Minibuffer window is not selected in consult--preview-function"))
-                      (with-selected-window (or (minibuffer-selected-window) (next-window))
-                        (funcall preview (funcall transform inp cand) nil))))
-              (add-hook 'post-command-hook
-                        (lambda ()
-                          (setq input (minibuffer-contents-no-properties))
-                          (when (or (eq preview-key 'any)
-                                    (let ((keys (this-single-command-keys)))
-                                      (seq-find (lambda (x) (equal (vconcat x) keys))
-                                                (if (listp preview-key) preview-key (list preview-key)))))
-                            (when-let (cand (run-hook-with-args-until-success 'consult--completion-candidate-hook))
-                              (funcall consult--preview-function input cand))))
-                        nil t))
-          (let ((selected))
-            (unwind-protect
-                (save-excursion
-                  (save-restriction
-                    (setq selected (when-let (result (funcall fun))
-                                     (funcall transform input result)))
-                    (cons selected input)))
-              (funcall preview selected t))))
-      (minibuffer-with-setup-hook
-          (apply-partially
-           #'add-hook 'post-command-hook
-           (lambda () (setq input (minibuffer-contents-no-properties)))
-           nil t)
-        (cons (when-let (result (funcall fun))
-                (funcall transform input result))
-              input)))))
-
-(defmacro consult--with-preview (preview-key preview transform &rest body)
-  "Install TRANSFORM and PREVIEW in BODY.
-
-PREVIEW-KEY are the keys which triggers the preview."
-  (declare (indent 3))
-  `(consult--with-preview-1 ,preview-key ,preview ,transform (lambda () ,@body)))
-
-(defun consult--widen-key ()
-  "Return widening key, if `consult-widen-key' is not set, default to 'consult-narrow-key SPC'."
-  (or consult-widen-key (and consult-narrow-key (vconcat consult-narrow-key " "))))
-
-(defun consult-narrow (key)
-  "Narrow current completion with KEY.
-
-This command is used internally by the narrowing system of `consult--read'."
-  (interactive
-   (list (unless (equal (this-single-command-keys) (consult--widen-key))
-           last-command-event)))
-  (unless (minibufferp) (error "Command must be executed in minibuffer"))
-  (setq consult--narrow key)
-  (when consult--narrow-predicate
-    (setq minibuffer-completion-predicate (and consult--narrow consult--narrow-predicate)))
-  (when consult--narrow-overlay
-    (delete-overlay consult--narrow-overlay))
-  (when consult--narrow
-    (setq consult--narrow-overlay
-          (consult--overlay (- (minibuffer-prompt-end) 1) (minibuffer-prompt-end)
-                            'before-string
-                            (propertize (format " [%s]" (cdr (assoc key consult--narrow-prefixes)))
-                                        'face 'consult-narrow-indicator))))
-  (run-hooks 'consult--completion-refresh-hook))
-
-(defconst consult--narrow-delete
-  `(menu-item
-    "" nil :filter
-    ,(lambda (&optional _)
-       (when (string= (minibuffer-contents-no-properties) "")
-         (consult-narrow nil)
-         #'ignore))))
-
-(defconst consult--narrow-space
-  `(menu-item
-    "" nil :filter
-    ,(lambda (&optional _)
-       (let ((str (minibuffer-contents-no-properties)))
-         (when-let (pair (or (and (= 1 (length str)) (assoc (elt str 0) consult--narrow-prefixes))
-                             (and (string= str "") (assoc 32 consult--narrow-prefixes))))
-           (delete-minibuffer-contents)
-           (consult-narrow (car pair))
-           #'ignore)))))
-
-(defun consult-narrow-help ()
-  "Print narrowing help as a `minibuffer-message'.
-
-This command can be bound to a key in `consult-narrow-map',
-to make it available for commands with narrowing."
-  (interactive)
-  (unless (minibufferp)
-    (user-error "Narrow help must be called in the minibuffer"))
-  (let ((minibuffer-message-timeout 1000000))
-    (minibuffer-message
-     (string-join
-      (thread-last consult--narrow-prefixes
-        (seq-filter (lambda (x) (/= (car x) 32)))
-        (mapcar (lambda (x) (concat
-                             (propertize (char-to-string (car x)) 'face 'consult-key)
-                             " " (cdr x)))))
-      " "))))
-
-(defvar consult-narrow-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map " " consult--narrow-space)
-    (define-key map [127] consult--narrow-delete)
-    map)
-  "Narrowing keymap which is added to the local minibuffer map.
-Note that `consult-narrow-key' and `consult-widen-key' are bound dynamically.")
-
 (defun consult--define-key (map key cmd desc)
   "Bind CMD to KEY in MAP and add which-key description DESC."
   (define-key map key cmd)
@@ -719,30 +601,127 @@ Note that `consult-narrow-key' and `consult-widen-key' are bound dynamically.")
     (define-key map (vconcat (seq-take key idx) (vector 'which-key (elt key idx)))
       `(which-key (,desc)))))
 
-(defun consult--narrow-setup (settings)
-  "Setup narrowing with SETTINGS."
-  (if (functionp (car settings))
-      (setq consult--narrow-predicate (car settings)
-            consult--narrow-prefixes (cdr settings))
-    (setq consult--narrow-predicate nil
-          consult--narrow-prefixes settings))
-  (let ((map (make-composed-keymap nil consult-narrow-map)))
-    (when consult-narrow-key
-      (dolist (pair consult--narrow-prefixes)
-        (when (/= (car pair) 32)
-          (consult--define-key map
-                               (vconcat consult-narrow-key (vector (car pair)))
-                               #'consult-narrow (cdr pair)))))
-    (when-let (widen (consult--widen-key))
-      (consult--define-key map widen #'consult-narrow "All"))
-    map))
-
 (defmacro consult--with-increased-gc (&rest body)
   "Temporarily increase the gc limit in BODY to optimize for throughput."
   `(let* ((overwrite (> consult--gc-threshold gc-cons-threshold))
           (gc-cons-threshold (if overwrite consult--gc-threshold gc-cons-threshold))
           (gc-cons-percentage (if overwrite consult--gc-percentage gc-cons-percentage)))
      ,@body))
+
+(defun consult--count-lines (pos)
+  "Move to position POS and return number of lines."
+  (let ((line 0))
+    (while (< (point) pos)
+      (forward-line 1)
+      (when (<= (point) pos)
+        (setq line (1+ line))))
+    (goto-char pos)
+    line))
+
+;; We must disambiguate the lines by adding a prefix such that two lines with the same text can be
+;; distinguished. In order to avoid matching the line number, such that the user can search for
+;; numbers with `consult-line', we encode the line number as unicode characters in the supplementary
+;; private use plane b. By doing that, it is unlikely that accidential matching occurs.
+(defsubst consult--encode-location (marker)
+  "Generate unique string for MARKER.
+DISPLAY is the string to display instead of the unique string."
+  (let ((str "") (n marker))
+    (while (progn
+             (setq str (concat str
+                               (char-to-string (+ consult--special-char (% n consult--special-range)))))
+             (and (>= n consult--special-range) (setq n (/ n consult--special-range)))))
+    str))
+
+(defsubst consult--line-number-prefix (marker line width)
+  "Format LINE number prefix number with padding.
+
+MARKER and LINE are added as 'consult-location text property.
+WIDTH is the line number width."
+  (let* ((unique-str (consult--encode-location marker))
+         (line-str (number-to-string line))
+         (prefix-str (concat
+                      (make-string (- width (length line-str)) 32)
+                      line-str
+                      " ")))
+    (put-text-property 0 (length prefix-str) 'face 'consult-line-number-prefix prefix-str)
+    (add-text-properties 0 (length unique-str)
+                         `(display ,prefix-str consult-location (,marker . ,line))
+                         unique-str)
+    unique-str))
+
+(defun consult--add-line-number (max-line candidates)
+  "Add line numbers to unformatted CANDIDATES as prefix.
+The MAX-LINE is needed to determine the width.
+Since the line number is part of the candidate it will be matched-on during completion."
+  (let ((width (length (number-to-string max-line))))
+    (mapcar (pcase-lambda (`(,marker ,line ,str))
+              (concat
+               (consult--line-number-prefix marker line width)
+               str))
+            candidates)))
+
+(defsubst consult--region-with-cursor (begin end marker)
+  "Return region string with a marking at the cursor position.
+
+BEGIN is the begin position.
+END is the end position.
+MARKER is the cursor position."
+  (let ((str (buffer-substring begin end)))
+    (if (>= marker end)
+        (concat str (propertize " " 'face 'consult-preview-cursor))
+      (put-text-property (- marker begin) (- (1+ marker) begin) 'face 'consult-preview-cursor str)
+      str)))
+
+(defsubst consult--line-with-cursor (marker)
+  "Return current line where the cursor MARKER is highlighted."
+  (consult--region-with-cursor
+   (line-beginning-position)
+   (line-end-position)
+   marker))
+
+;;;; Preview support
+
+(defun consult--kill-clean-buffer (buf)
+  "Kill BUF if it has not been modified."
+  (unless (or (eq buf (current-buffer)) (buffer-modified-p buf))
+    (kill-buffer buf)))
+
+(defun consult--with-file-preview-1 (fun)
+  "Provide a function to open files temporarily.
+The files are closed automatically in the end.
+
+FUN receives the open function as argument."
+  (let* ((new-buffers)
+         (old-recentf-list (copy-sequence recentf-list))
+         (open-file
+          (lambda (name)
+            (or (get-file-buffer name)
+                (when-let (attrs (file-attributes name))
+                  (if (> (file-attribute-size attrs) consult-preview-max-size)
+                      (and (minibuffer-message "File `%s' too large for preview" name) nil)
+                    (let ((buf (find-file-noselect name 'nowarn)))
+                      (push buf new-buffers)
+                      ;; Only keep a few buffers alive
+                      (while (> (length new-buffers) consult-preview-max-count)
+                        (consult--kill-clean-buffer (car (last new-buffers)))
+                        (setq new-buffers (nbutlast new-buffers)))
+                      buf)))))))
+    (unwind-protect
+        (funcall fun open-file)
+      ;; Kill all temporary buffers
+      (mapc #'consult--kill-clean-buffer new-buffers)
+      ;; Restore old recentf-list and record the current buffer
+      (setq recentf-list old-recentf-list)
+      (when (member (current-buffer) new-buffers)
+        (recentf-add-file (buffer-file-name (current-buffer)))))))
+
+(defmacro consult--with-file-preview (args &rest body)
+  "Provide a function to open files temporarily.
+The files are closed automatically in the end.
+
+ARGS is the open function argument for BODY."
+  (declare (indent 1))
+  `(consult--with-file-preview-1 (lambda ,args ,@body)))
 
 ;; Derived from ctrlf, originally isearch
 (defun consult--invisible-show (&optional permanently)
@@ -822,47 +801,145 @@ FACE is the cursor face."
        ;; If position cannot be previewed, return to saved position
        (t (consult--jump-1 saved-pos))))))
 
-(defun consult--kill-clean-buffer (buf)
-  "Kill BUF if it has not been modified."
-  (unless (or (eq buf (current-buffer)) (buffer-modified-p buf))
-    (kill-buffer buf)))
+(defun consult--with-preview-1 (preview-key preview transform fun)
+  "Install TRANSFORM and PREVIEW function for FUN.
 
-(defun consult--with-file-preview-1 (fun)
-  "Provide a function to open files temporarily.
-The files are closed automatically in the end.
+PREVIEW-KEY are the keys which trigger the preview."
+  (let ((input ""))
+    (if (and preview preview-key)
+        (minibuffer-with-setup-hook
+            (lambda ()
+              (setq consult--preview-function
+                    (lambda (inp cand)
+                      (unless (window-minibuffer-p)
+                        (error "Minibuffer window is not selected in consult--preview-function"))
+                      (with-selected-window (or (minibuffer-selected-window) (next-window))
+                        (funcall preview (funcall transform inp cand) nil))))
+              (add-hook 'post-command-hook
+                        (lambda ()
+                          (setq input (minibuffer-contents-no-properties))
+                          (when (or (eq preview-key 'any)
+                                    (let ((keys (this-single-command-keys)))
+                                      (seq-find (lambda (x) (equal (vconcat x) keys))
+                                                (if (listp preview-key) preview-key (list preview-key)))))
+                            (when-let (cand (run-hook-with-args-until-success 'consult--completion-candidate-hook))
+                              (funcall consult--preview-function input cand))))
+                        nil t))
+          (let ((selected))
+            (unwind-protect
+                (save-excursion
+                  (save-restriction
+                    (setq selected (when-let (result (funcall fun))
+                                     (funcall transform input result)))
+                    (cons selected input)))
+              (funcall preview selected t))))
+      (minibuffer-with-setup-hook
+          (apply-partially
+           #'add-hook 'post-command-hook
+           (lambda () (setq input (minibuffer-contents-no-properties)))
+           nil t)
+        (cons (when-let (result (funcall fun))
+                (funcall transform input result))
+              input)))))
 
-FUN receives the open function as argument."
-  (let* ((new-buffers)
-         (old-recentf-list (copy-sequence recentf-list))
-         (open-file
-          (lambda (name)
-            (or (get-file-buffer name)
-                (when-let (attrs (file-attributes name))
-                  (if (> (file-attribute-size attrs) consult-preview-max-size)
-                      (and (minibuffer-message "File `%s' too large for preview" name) nil)
-                    (let ((buf (find-file-noselect name 'nowarn)))
-                      (push buf new-buffers)
-                      ;; Only keep a few buffers alive
-                      (while (> (length new-buffers) consult-preview-max-count)
-                        (consult--kill-clean-buffer (car (last new-buffers)))
-                        (setq new-buffers (nbutlast new-buffers)))
-                      buf)))))))
-    (unwind-protect
-        (funcall fun open-file)
-      ;; Kill all temporary buffers
-      (mapc #'consult--kill-clean-buffer new-buffers)
-      ;; Restore old recentf-list and record the current buffer
-      (setq recentf-list old-recentf-list)
-      (when (member (current-buffer) new-buffers)
-        (recentf-add-file (buffer-file-name (current-buffer)))))))
+(defmacro consult--with-preview (preview-key preview transform &rest body)
+  "Install TRANSFORM and PREVIEW in BODY.
 
-(defmacro consult--with-file-preview (args &rest body)
-  "Provide a function to open files temporarily.
-The files are closed automatically in the end.
+PREVIEW-KEY are the keys which triggers the preview."
+  (declare (indent 3))
+  `(consult--with-preview-1 ,preview-key ,preview ,transform (lambda () ,@body)))
 
-ARGS is the open function argument for BODY."
-  (declare (indent 1))
-  `(consult--with-file-preview-1 (lambda ,args ,@body)))
+;;;; Narrowing support
+
+(defun consult--widen-key ()
+  "Return widening key, if `consult-widen-key' is not set, default to 'consult-narrow-key SPC'."
+  (or consult-widen-key (and consult-narrow-key (vconcat consult-narrow-key " "))))
+
+(defun consult-narrow (key)
+  "Narrow current completion with KEY.
+
+This command is used internally by the narrowing system of `consult--read'."
+  (interactive
+   (list (unless (equal (this-single-command-keys) (consult--widen-key))
+           last-command-event)))
+  (unless (minibufferp) (error "Command must be executed in minibuffer"))
+  (setq consult--narrow key)
+  (when consult--narrow-predicate
+    (setq minibuffer-completion-predicate (and consult--narrow consult--narrow-predicate)))
+  (when consult--narrow-overlay
+    (delete-overlay consult--narrow-overlay))
+  (when consult--narrow
+    (setq consult--narrow-overlay
+          (consult--overlay (- (minibuffer-prompt-end) 1) (minibuffer-prompt-end)
+                            'before-string
+                            (propertize (format " [%s]" (cdr (assoc key consult--narrow-prefixes)))
+                                        'face 'consult-narrow-indicator))))
+  (run-hooks 'consult--completion-refresh-hook))
+
+(defconst consult--narrow-delete
+  `(menu-item
+    "" nil :filter
+    ,(lambda (&optional _)
+       (when (string= (minibuffer-contents-no-properties) "")
+         (consult-narrow nil)
+         #'ignore))))
+
+(defconst consult--narrow-space
+  `(menu-item
+    "" nil :filter
+    ,(lambda (&optional _)
+       (let ((str (minibuffer-contents-no-properties)))
+         (when-let (pair (or (and (= 1 (length str)) (assoc (elt str 0) consult--narrow-prefixes))
+                             (and (string= str "") (assoc 32 consult--narrow-prefixes))))
+           (delete-minibuffer-contents)
+           (consult-narrow (car pair))
+           #'ignore)))))
+
+(defun consult-narrow-help ()
+  "Print narrowing help as a `minibuffer-message'.
+
+This command can be bound to a key in `consult-narrow-map',
+to make it available for commands with narrowing."
+  (interactive)
+  (unless (minibufferp)
+    (user-error "Narrow help must be called in the minibuffer"))
+  (let ((minibuffer-message-timeout 1000000))
+    (minibuffer-message
+     (string-join
+      (thread-last consult--narrow-prefixes
+        (seq-filter (lambda (x) (/= (car x) 32)))
+        (mapcar (lambda (x) (concat
+                             (propertize (char-to-string (car x)) 'face 'consult-key)
+                             " " (cdr x)))))
+      " "))))
+
+(defvar consult-narrow-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map " " consult--narrow-space)
+    (define-key map [127] consult--narrow-delete)
+    map)
+  "Narrowing keymap which is added to the local minibuffer map.
+Note that `consult-narrow-key' and `consult-widen-key' are bound dynamically.")
+
+(defun consult--narrow-setup (settings)
+  "Setup narrowing with SETTINGS."
+  (if (functionp (car settings))
+      (setq consult--narrow-predicate (car settings)
+            consult--narrow-prefixes (cdr settings))
+    (setq consult--narrow-predicate nil
+          consult--narrow-prefixes settings))
+  (let ((map (make-composed-keymap nil consult-narrow-map)))
+    (when consult-narrow-key
+      (dolist (pair consult--narrow-prefixes)
+        (when (/= (car pair) 32)
+          (consult--define-key map
+                               (vconcat consult-narrow-key (vector (car pair)))
+                               #'consult-narrow (cdr pair)))))
+    (when-let (widen (consult--widen-key))
+      (consult--define-key map widen #'consult-narrow "All"))
+    map))
+
+;;;; Async support
 
 (defun consult--with-async-1 (async fun)
   "Setup ASYNC for FUN."
@@ -882,115 +959,6 @@ ARGS is the open function argument for BODY."
   "Setup ASYNC for BODY."
   (declare (indent 1))
   `(consult--with-async-1 ,@(cdr async) (lambda (,(car async)) ,@body)))
-
-(defun consult--add-history (items)
-  "Add ITEMS to the minibuffer history via `minibuffer-default-add-function'."
-  (setq-local minibuffer-default-add-function
-              (lambda ()
-	        (consult--remove-dups
-                 (append
-                  ;; the defaults are at the beginning of the future history
-                  (if (listp minibuffer-default)
-                      minibuffer-default
-                    (list minibuffer-default))
-                  ;; then our custom items
-                  (delete "" (delq nil (if (listp items)
-                                           items
-                                         (list items))))
-                  ;; then all the completions
-                  (all-completions ""
-                                   minibuffer-completion-table
-			           minibuffer-completion-predicate))))))
-
-(defun consult--setup-keymap (narrow preview-key)
-  "Setup keymap for NARROW and PREVIEW-KEY."
-  (use-local-map
-   (make-composed-keymap
-    (append
-     (when narrow
-       (list (consult--narrow-setup narrow)))
-     (when (and preview-key (not (eq preview-key 'any)))
-       (let ((old-map (current-local-map))
-             (map (make-sparse-keymap))
-             (preview-key (if (listp preview-key) preview-key (list preview-key))))
-         (dolist (key preview-key)
-           (unless (lookup-key old-map key)
-             (consult--define-key map key #'ignore "Preview")))
-         (list map))))
-    (current-local-map))))
-
-(defun consult--count-lines (pos)
-  "Move to position POS and return number of lines."
-  (let ((line 0))
-    (while (< (point) pos)
-      (forward-line 1)
-      (when (<= (point) pos)
-        (setq line (1+ line))))
-    (goto-char pos)
-    line))
-
-;; We must disambiguate the lines by adding a prefix such that two lines with the same text can be
-;; distinguished. In order to avoid matching the line number, such that the user can search for
-;; numbers with `consult-line', we encode the line number as unicode characters in the supplementary
-;; private use plane b. By doing that, it is unlikely that accidential matching occurs.
-(defsubst consult--encode-location (marker)
-  "Generate unique string for MARKER.
-DISPLAY is the string to display instead of the unique string."
-  (let ((str "") (n marker))
-    (while (progn
-             (setq str (concat str
-                               (char-to-string (+ consult--special-char (% n consult--special-range)))))
-             (and (>= n consult--special-range) (setq n (/ n consult--special-range)))))
-    str))
-
-(defsubst consult--line-number-prefix (marker line width)
-  "Format LINE number prefix number with padding.
-
-MARKER and LINE are added as 'consult-location text property.
-WIDTH is the line number width."
-  (let* ((unique-str (consult--encode-location marker))
-         (line-str (number-to-string line))
-         (prefix-str (concat
-                      (make-string (- width (length line-str)) 32)
-                      line-str
-                      " ")))
-    (put-text-property 0 (length prefix-str) 'face 'consult-line-number-prefix prefix-str)
-    (add-text-properties 0 (length unique-str)
-                         `(display ,prefix-str consult-location (,marker . ,line))
-                         unique-str)
-    unique-str))
-
-(defun consult--add-line-number (max-line candidates)
-  "Add line numbers to unformatted CANDIDATES as prefix.
-The MAX-LINE is needed to determine the width.
-Since the line number is part of the candidate it will be matched-on during completion."
-  (let ((width (length (number-to-string max-line))))
-    (mapcar (pcase-lambda (`(,marker ,line ,str))
-              (concat
-               (consult--line-number-prefix marker line width)
-               str))
-            candidates)))
-
-(defsubst consult--region-with-cursor (begin end marker)
-  "Return region string with a marking at the cursor position.
-
-BEGIN is the begin position.
-END is the end position.
-MARKER is the cursor position."
-  (let ((str (buffer-substring begin end)))
-    (if (>= marker end)
-        (concat str (propertize " " 'face 'consult-preview-cursor))
-      (put-text-property (- marker begin) (- (1+ marker) begin) 'face 'consult-preview-cursor str)
-      str)))
-
-(defsubst consult--line-with-cursor (marker)
-  "Return current line where the cursor MARKER is highlighted."
-  (consult--region-with-cursor
-   (line-beginning-position)
-   (line-end-position)
-   marker))
-
-;;;; Async functions
 
 (defun consult--async-sink ()
   "Create ASYNC sink function.
@@ -1243,6 +1211,42 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
      (consult--async-split)))
 
 ;;;; Main consult--read API
+
+(defun consult--add-history (items)
+  "Add ITEMS to the minibuffer history via `minibuffer-default-add-function'."
+  (setq-local minibuffer-default-add-function
+              (lambda ()
+	        (consult--remove-dups
+                 (append
+                  ;; the defaults are at the beginning of the future history
+                  (if (listp minibuffer-default)
+                      minibuffer-default
+                    (list minibuffer-default))
+                  ;; then our custom items
+                  (delete "" (delq nil (if (listp items)
+                                           items
+                                         (list items))))
+                  ;; then all the completions
+                  (all-completions ""
+                                   minibuffer-completion-table
+			           minibuffer-completion-predicate))))))
+
+(defun consult--setup-keymap (narrow preview-key)
+  "Setup keymap for NARROW and PREVIEW-KEY."
+  (use-local-map
+   (make-composed-keymap
+    (append
+     (when narrow
+       (list (consult--narrow-setup narrow)))
+     (when (and preview-key (not (eq preview-key 'any)))
+       (let ((old-map (current-local-map))
+             (map (make-sparse-keymap))
+             (preview-key (if (listp preview-key) preview-key (list preview-key))))
+         (dolist (key preview-key)
+           (unless (lookup-key old-map key)
+             (consult--define-key map key #'ignore "Preview")))
+         (list map))))
+    (current-local-map))))
 
 (cl-defun consult--read (prompt candidates &key
                                 predicate require-match history default
