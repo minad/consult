@@ -497,6 +497,9 @@ and then selecting the buffer.
 
 @cindex embark
 
+@strong{NOTE}: Please install the @samp{embark-consult} package from MELPA, which provides
+Consult-specific Embark actions and the Occur buffer export.
+
 Embark is a versatile package which offers context dependent actions,
 comparable to a context menu. See the @uref{https://github.com/oantolin/embark, Embark manual} for an extensive
 description of its capabilities.
@@ -561,6 +564,7 @@ the box with the default completion, Icomplete and Selectrum.
   :bind (("C-x M-:" . consult-complex-command)
          ("C-c h" . consult-history)
          ("C-c m" . consult-mode-command)
+         ("C-c k" . consult-keep-lines)
          ("C-x b" . consult-buffer)
          ("C-x 4 b" . consult-buffer-other-window)
          ("C-x 5 b" . consult-buffer-other-frame)
@@ -819,7 +823,7 @@ consult-flycheck: Provides the consult-flycheck command
 @item
 @uref{https://github.com/minad/marginalia, marginalia}: Annotations for the completion candidates
 @item
-@uref{https://github.com/oantolin/embark, embark}: Action commands, which can act on the completion candidates
+@uref{https://github.com/oantolin/embark, embark and embark-consult}: Action commands, which can act on the completion candidates
 @item
 @uref{https://github.com/oantolin/orderless, orderless}: Completion style, Flexible candidate filtering
 @item
