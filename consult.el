@@ -2392,12 +2392,12 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                                               (string-prefix-p proj-root file)))
                                           all-bufs))))
          (proj-files (when proj-root
-                       (let ((proj-root-len (length proj-root)))
+                       (let ((len (length proj-root))
+                             (hidden-root (propertize proj-root 'display "")))
                          (mapcar (lambda (x)
                                    (consult--buffer-candidate
                                     ?q
-                                    ;; Hide the project root
-                                    (concat (propertize proj-root 'display "") (substring x proj-root-len))
+                                    (concat hidden-root (substring x len))
                                     'consult-file))
                                  (seq-filter (lambda (x) (string-prefix-p proj-root x)) all-files)))))
          (selected
