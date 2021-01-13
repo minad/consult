@@ -434,19 +434,23 @@ Size of private unicode plane b.")
 ;;;; Helper functions
 
 (defmacro consult--local-let (binds &rest body)
-  "Buffer local let BINDS in BODY."
+  "Buffer local let BINDS of dynamic variables in BODY."
   (declare (indent 1))
-  (let ((local (mapcar (lambda (x) (cons (make-symbol "local") (car x))) binds)))
-    `(let (,@(mapcar (lambda (x) `(,(car x) (local-variable-p ',(cdr x)))) local))
+  (let ((buffer (make-symbol "buffer"))
+        (local (mapcar (lambda (x) (cons (make-symbol "local") (car x))) binds)))
+    `(let ((,buffer (current-buffer))
+           ,@(mapcar (lambda (x) `(,(car x) (local-variable-p ',(cdr x)))) local))
        (unwind-protect
            (progn
              ,@(mapcar (lambda (x) `(make-local-variable ',(car x))) binds)
              (let (,@binds)
                ,@body))
-         ,@(mapcar (lambda (x)
-                     `(unless ,(car x)
-                        (kill-local-variable ',(cdr x))))
-                   local)))))
+         (when (buffer-live-p ,buffer)
+           (with-current-buffer ,buffer
+             ,@(mapcar (lambda (x)
+                         `(unless ,(car x)
+                            (kill-local-variable ',(cdr x))))
+                       local)))))))
 
 (defun consult--regexp-filter (regexps)
   "Create filter regexp from REGEXPS."
