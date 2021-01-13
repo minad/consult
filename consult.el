@@ -1111,21 +1111,21 @@ the separator. Examples: \"/async/filter\", \"#async#filter\"."
           (cons (match-string 1 str) (match-end 0))))
     (cons str (length str))))
 
-(defun consult--async-split-wrap (fun)
-  "Wrap completion style function FUN for `consult--async-split'."
-  (lambda (str table pred point &optional metadata)
-    (let ((completion-styles (cdr completion-styles))
-          (pos (cdr (consult--async-split-string str))))
-      (funcall fun
-               (substring str pos)
-               table pred
-               (- point pos)
-               metadata))))
+(defmacro consult--async-split-wrap (suffix)
+  "Create completion style function with name SUFFIX."
+  (let ((name (intern (format "consult--async-split-%s" suffix))))
+    `(progn
+       (defun ,name (str table pred point &optional metadata)
+         (let ((completion-styles (cdr completion-styles))
+               (pos (cdr (consult--async-split-string str))))
+           (,(intern (format "completion-%s" suffix))
+            (substring str pos) table pred (- point pos) metadata)))
+       ',name)))
 
 (add-to-list 'completion-styles-alist
              (list 'consult--async-split
-                   (consult--async-split-wrap #'completion-try-completion)
-                   (consult--async-split-wrap #'completion-all-completions)
+                   (consult--async-split-wrap try-completion)
+                   (consult--async-split-wrap all-completions)
                    "Split async and filter part."))
 
 (defun consult--async-split-setup ()
