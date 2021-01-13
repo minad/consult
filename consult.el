@@ -1629,14 +1629,11 @@ The symbol at point and the last `isearch-string' is added to the future history
       :initial initial
       :preview (consult--preview-position)))))
 
-;;;###autoload
-(defun consult-keep-lines ()
+(defun consult--line-subset (prompt match)
   "Select a subset of the lines in the current buffer with live preview.
 
 The lines selected are those that match the minibuffer input
-according to the current `completion-styles'. This command obeys
-narrowing."
-  (interactive)
+according to the function MATCH. This command obeys narrowing."
   (consult--forbid-minibuffer)
   (barf-if-buffer-read-only)
   (consult--with-increased-gc
@@ -1649,8 +1646,7 @@ narrowing."
           (undo-outer-limit nil)
           (undo-limit most-positive-fixnum)
           (undo-strong-limit most-positive-fixnum)
-          (changes (prepare-change-group))
-          (match (run-hook-with-args-until-success 'consult--completion-match-hook)))
+          (changes (prepare-change-group)))
      (save-excursion
        (let ((pos (point-min))
              (max (point-max))
@@ -1693,7 +1689,7 @@ narrowing."
        (unwind-protect
            (progn
              (activate-change-group changes)
-             (read-from-minibuffer "Keep lines: ")
+             (read-from-minibuffer prompt)
              (setq point-orig nil))
          ;; Disable modification hooks for performance
          (let ((inhibit-modification-hooks t))
@@ -1703,6 +1699,40 @@ narrowing."
              (goto-char point-orig)))
          (when (and font-lock-orig (not font-lock-mode))
            (font-lock-mode)))))))
+
+;;;###autoload
+(defun consult-keep-lines ()
+  "Select a subset of the lines in the current buffer with live preview.
+
+The lines selected are those that match the minibuffer input
+according to your completion system.  This command obeys
+narrowing."
+  (interactive)
+  (consult--line-subset
+   "Keep lines: "
+   (run-hook-with-args-until-success 'consult--completion-match-hook)))
+
+;;;###autoload
+(defun consult-flush-lines ()
+  "Remove a subset of the lines in the current buffer with live preview.
+
+The lines removed are those that match the minibuffer input
+according to your completion system.  This command obeys
+narrowing."
+  (interactive)
+  (consult--line-subset
+   "Flush lines: "
+   (let ((match
+          (run-hook-with-args-until-success 'consult--completion-match-hook)))
+     (lambda (input lines)
+       (let* ((matching (funcall match input lines))
+              (remove (make-hash-table :test #'equal))
+              (last (last matching)))
+         (when (consp last)
+           (setcdr last nil))
+         (dolist (line matching)
+           (puthash line t remove))
+         (seq-filter (lambda (line) (not (gethash line remove))) lines))))))
 
 ;;;###autoload
 (defun consult-goto-line ()
