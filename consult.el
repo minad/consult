@@ -2811,13 +2811,9 @@ See `consult-grep' for more details regarding the asynchronous search."
 (defun consult--default-completion-match ()
   "Return default matching function."
   (lambda (str cands)
-    (let* ((filtered (completion-all-completions str cands nil (length str)))
-           (last (last filtered)))
-      ;; completion-all-completions returns an improper list
-      ;; where the last link is not necessarily nil. Fix this!
-      (when (consp last)
-        (setcdr last nil))
-      filtered)))
+    ;; completion-all-completions returns an improper list
+    ;; where the last link is not necessarily nil. Fix this!
+    (nconc (completion-all-completions str cands nil (length str)) nil)))
 
 (add-hook 'consult--completion-candidate-hook #'consult--default-completion-candidate)
 (add-hook 'consult--completion-match-hook #'consult--default-completion-match)
