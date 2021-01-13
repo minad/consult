@@ -2392,9 +2392,14 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                                               (string-prefix-p proj-root file)))
                                           all-bufs))))
          (proj-files (when proj-root
-                       (mapcar (lambda (x)
-                                 (consult--buffer-candidate ?q (string-remove-prefix proj-root x) 'consult-file))
-                               (seq-filter (lambda (x) (string-prefix-p proj-root x)) all-files))))
+                       (let ((proj-root-len (length proj-root)))
+                         (mapcar (lambda (x)
+                                   (consult--buffer-candidate
+                                    ?q
+                                    ;; Hide the project root
+                                    (concat (propertize proj-root 'display "") (substring x proj-root-len))
+                                    'consult-file))
+                                 (seq-filter (lambda (x) (string-prefix-p proj-root x)) all-files)))))
          (selected
           (consult--read
            "Switch to: " (append bufs files proj-bufs proj-files views bookmarks)
