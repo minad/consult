@@ -919,86 +919,6 @@ ARGS is the open function argument for BODY."
          (list map))))
     (current-local-map))))
 
-(cl-defun consult--read (prompt candidates &key
-                                predicate require-match history default
-                                category initial narrow add-history
-                                preview (preview-key consult-preview-key)
-                                (sort t) (default-top t) (lookup (lambda (_input _cands x) x)))
-  "Simplified completing read function.
-
-Arguments:
-
-PROMPT is the string to prompt with.
-CANDIDATES is the candidate list or alist.
-
-Options:
-
-PREDICATE is a filter function for the candidates.
-REQUIRE-MATCH equals t means that an exact match is required.
-HISTORY is the symbol of the history variable.
-DEFAULT is the default selected value.
-ADD-HISTORY is a list of items to add to the history.
-CATEGORY is the completion category.
-SORT should be set to nil if the candidates are already sorted.
-LOOKUP is a function which is applied to the result.
-INITIAL is initial input.
-DEFAULT-TOP must be nil if the default candidate should not be moved to the top.
-PREVIEW is a preview function.
-PREVIEW-KEY are the preview keys (nil, 'any, a single key or a list of keys).
-NARROW is an alist of narrowing prefix strings and description."
-  (ignore default-top)
-  ;; supported types
-  (cl-assert (or (functionp candidates)     ;; async table
-                 (not candidates)           ;; nil, empty list
-                 (obarrayp candidates)      ;; obarray
-                 (stringp (car candidates)) ;; string list
-                 (symbolp (car candidates)) ;; symbol list
-                 (consp (car candidates)))) ;; alist
-  (minibuffer-with-setup-hook
-      (:append
-       (lambda ()
-         (consult--add-history add-history)
-         (consult--setup-keymap narrow preview-key)))
-    (consult--with-async (async candidates)
-      ;; NOTE: Do not unnecessarily let-bind the lambdas to avoid
-      ;; overcapturing in the interpreter. This will make closures and the
-      ;; lambda string representation larger, which makes debugging much worse.
-      ;; Fortunately the overcapturing problem does not affect the bytecode
-      ;; interpreter which does a proper scope analyis.
-      (let ((result
-             (consult--with-preview preview-key preview
-                                    (lambda (input cand)
-                                      (funcall lookup input (funcall async 'get) cand))
-               (completing-read prompt
-                                (lambda (str pred action)
-                                  (if (eq action 'metadata)
-                                      `(metadata
-                                        ,@(when category `((category . ,category)))
-                                        ,@(unless sort '((cycle-sort-function . identity)
-                                                         (display-sort-function . identity))))
-                                    (complete-with-action action (funcall async 'get) str pred)))
-                                predicate require-match initial
-                                (if (symbolp history) history (cadr history))
-                                default))))
-        (pcase-exhaustive history
-          (`(:input ,var)
-           (set var (cdr (symbol-value var)))
-           (add-to-history var (cdr result)))
-          ((pred symbolp)))
-        (car result)))))
-
-(defun consult--read-config (args)
-  "Advice for `consult--read' which adjusts ARGS, merging the command configuration."
-  (when-let (config (alist-get this-command consult-config))
-    (setq args (copy-sequence args))
-    (let ((options (cddr args)))
-      (while config
-        (setq options (plist-put options (car config) (cadr config))
-              config (cddr config)))
-      (setf (cddr args) options)))
-  args)
-(advice-add #'consult--read :filter-args #'consult--read-config)
-
 (defun consult--count-lines (pos)
   "Move to position POS and return number of lines."
   (let ((line 0))
@@ -1322,7 +1242,91 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
      (consult--async-throttle)
      (consult--async-split)))
 
+;;;; Main consult--read API
+
+(cl-defun consult--read (prompt candidates &key
+                                predicate require-match history default
+                                category initial narrow add-history
+                                preview (preview-key consult-preview-key)
+                                (sort t) (default-top t) (lookup (lambda (_input _cands x) x)))
+  "Simplified completing read function.
+
+Arguments:
+
+PROMPT is the string to prompt with.
+CANDIDATES is the candidate list or alist.
+
+Options:
+
+PREDICATE is a filter function for the candidates.
+REQUIRE-MATCH equals t means that an exact match is required.
+HISTORY is the symbol of the history variable.
+DEFAULT is the default selected value.
+ADD-HISTORY is a list of items to add to the history.
+CATEGORY is the completion category.
+SORT should be set to nil if the candidates are already sorted.
+LOOKUP is a function which is applied to the result.
+INITIAL is initial input.
+DEFAULT-TOP must be nil if the default candidate should not be moved to the top.
+PREVIEW is a preview function.
+PREVIEW-KEY are the preview keys (nil, 'any, a single key or a list of keys).
+NARROW is an alist of narrowing prefix strings and description."
+  (ignore default-top)
+  ;; supported types
+  (cl-assert (or (functionp candidates)     ;; async table
+                 (not candidates)           ;; nil, empty list
+                 (obarrayp candidates)      ;; obarray
+                 (stringp (car candidates)) ;; string list
+                 (symbolp (car candidates)) ;; symbol list
+                 (consp (car candidates)))) ;; alist
+  (minibuffer-with-setup-hook
+      (:append
+       (lambda ()
+         (consult--add-history add-history)
+         (consult--setup-keymap narrow preview-key)))
+    (consult--with-async (async candidates)
+      ;; NOTE: Do not unnecessarily let-bind the lambdas to avoid
+      ;; overcapturing in the interpreter. This will make closures and the
+      ;; lambda string representation larger, which makes debugging much worse.
+      ;; Fortunately the overcapturing problem does not affect the bytecode
+      ;; interpreter which does a proper scope analyis.
+      (let ((result
+             (consult--with-preview preview-key preview
+                                    (lambda (input cand)
+                                      (funcall lookup input (funcall async 'get) cand))
+               (completing-read prompt
+                                (lambda (str pred action)
+                                  (if (eq action 'metadata)
+                                      `(metadata
+                                        ,@(when category `((category . ,category)))
+                                        ,@(unless sort '((cycle-sort-function . identity)
+                                                         (display-sort-function . identity))))
+                                    (complete-with-action action (funcall async 'get) str pred)))
+                                predicate require-match initial
+                                (if (symbolp history) history (cadr history))
+                                default))))
+        (pcase-exhaustive history
+          (`(:input ,var)
+           (set var (cdr (symbol-value var)))
+           (add-to-history var (cdr result)))
+          ((pred symbolp)))
+        (car result)))))
+
+(defun consult--read-config (args)
+  "Advice for `consult--read' which adjusts ARGS, merging the command configuration."
+  (when-let (config (alist-get this-command consult-config))
+    (setq args (copy-sequence args))
+    (let ((options (cddr args)))
+      (while config
+        (setq options (plist-put options (car config) (cadr config))
+              config (cddr config)))
+      (setf (cddr args) options)))
+  args)
+(advice-add #'consult--read :filter-args #'consult--read-config)
+
 ;;;; Commands
+
+;;;;; Command: multi-occur
 
 ;; see https://github.com/raxod502/selectrum/issues/226
 ;;;###autoload
@@ -1336,6 +1340,8 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                                                   #'internal-complete-buffer))
                 (occur-read-primary-args)))
   (occur-1 regexp nlines bufs))
+
+;;;;; Command: consult-outline
 
 (defun consult--outline-candidates ()
   "Return alist of outline headings and positions."
@@ -1374,6 +1380,8 @@ The symbol at point is added to the future history."
     :history '(:input consult--line-history)
     :add-history (thing-at-point 'symbol)
     :preview (consult--preview-position))))
+
+;;;;; Command: consult-error
 
 (defun consult--error-candidates ()
   "Return alist of errors and positions."
@@ -1432,6 +1440,8 @@ The command supports preview of the currently selected error."
     :preview
     (consult--preview-position 'consult-preview-error))))
 
+;;;;; Command: consult-mark
+
 (defun consult--mark-candidates ()
   "Return alist of lines containing markers.
 The alist contains (string . position) pairs."
@@ -1473,6 +1483,8 @@ The symbol at point is added to the future history."
     :history '(:input consult--line-history)
     :add-history (thing-at-point 'symbol)
     :preview (consult--preview-position))))
+
+;;;;; Command: consult-global-mark
 
 (defun consult--global-mark-candidates ()
   "Return alist of lines containing markers.
@@ -1530,6 +1542,8 @@ The symbol at point is added to the future history."
     :history '(:input consult--line-history)
     :add-history (thing-at-point 'symbol)
     :preview (consult--preview-position))))
+
+;;;;; Command: consult-line
 
 (defun consult--line-candidates ()
   "Return alist of lines and positions."
@@ -1628,6 +1642,8 @@ The symbol at point and the last `isearch-string' is added to the future history
       :default (car candidates)
       :initial initial
       :preview (consult--preview-position)))))
+
+;;;;; Command: consult-keep/flush-lines
 
 (defun consult--filter-lines (prompt match)
   "Select a subset of the lines in the current buffer with live preview.
@@ -1728,6 +1744,8 @@ narrowing."
            (puthash line t ht))
          (seq-remove (lambda (line) (gethash line ht)) lines))))))
 
+;;;;; Command: consult-goto-line
+
 ;;;###autoload
 (defun consult-goto-line ()
   "Read line number and jump to the line with preview.
@@ -1770,6 +1788,8 @@ The command respects narrowing and the settings
                  (sit-for 1)
                  t))))))
 
+;;;;; Command: consult-recent-file
+
 (defun consult--recent-file-read ()
   "Read recent file via `completing-read'."
   (consult--read
@@ -1799,6 +1819,8 @@ The command respects narrowing and the settings
   (interactive)
   (find-file-other-window (consult--recent-file-read)))
 
+;;;;; Command: consult-file-externally
+
 ;;;###autoload
 (defun consult-file-externally (file)
   "Open FILE externally using the default application of the system."
@@ -1812,6 +1834,8 @@ The command respects narrowing and the settings
                     (_ "xdg-open"))
                   nil 0 nil
                   (expand-file-name file))))
+
+;;;;; Command: consult-completion-in-region
 
 ;; Use minibuffer completion as the UI for completion-at-point
 ;;;###autoload
@@ -1853,6 +1877,8 @@ The arguments and expected return value are as specified for
       (when-let (exit (plist-get completion-extra-properties :exit-function))
         (funcall exit completion exit-status))
       t)))
+
+;;;;; Command: consult-mode-command
 
 (defun consult--mode-commands (mode)
   "Extract commands from MODE.
@@ -1913,6 +1939,8 @@ If no MODES are specified, use currently active major and minor modes."
      :require-match t
      :history 'consult--mode-command-history
      :category 'command))))
+
+;;;;; Command: consult-yank
 
 (defun consult--yank-read ()
   "Open kill ring menu and return selected text."
@@ -1985,6 +2013,8 @@ Otherwise replace the just-yanked text with the selected text."
           (goto-char (prog1 (mark t)
                        (set-marker (mark-marker) (point) (current-buffer)))))))
   nil)
+
+;;;;; Command: consult-register
 
 ;;;###autoload
 (defun consult-register-preview (reg)
@@ -2077,6 +2107,8 @@ positions are previewed."
       (jump-to-register reg)
     (error (insert-register reg))))
 
+;;;;; Command: consult-bookmark
+
 ;;;###autoload
 (defun consult-bookmark (name)
   "If bookmark NAME exists, open it, otherwise create a new bookmark with NAME.
@@ -2129,6 +2161,8 @@ variable `consult-bookmark-narrow' for the narrowing configuration."
       (bookmark-jump name)
     (bookmark-set name)))
 
+;;;;; Command: consult-apropos
+
 ;;;###autoload
 (defun consult-apropos ()
   "Select pattern and call `apropos'.
@@ -2146,6 +2180,8 @@ The default value of the completion is the symbol at point."
     (when (string= pattern "")
       (user-error "No pattern given"))
     (apropos pattern)))
+
+;;;;; Command: consult-complex-command
 
 ;;;###autoload
 (defun consult-complex-command ()
@@ -2166,6 +2202,8 @@ This command can act as a drop-in replacement for `repeat-complex-command'."
     (apply #'funcall-interactively
 	   (car cmd)
 	   (mapcar (lambda (e) (eval e t)) (cdr cmd)))))
+
+;;;;; Command: consult-history
 
 (defun consult--current-history ()
   "Return the history relevant to the current buffer.
@@ -2223,6 +2261,8 @@ In order to select from a specific HISTORY, pass the history variable as argumen
       (delete-minibuffer-contents))
     (insert (substring-no-properties str))))
 
+;;;;; Command: consult-minor-mode-menu
+
 (defun consult--minor-mode-candidates ()
   "Return list of minor-mode candidate strings."
   (mapcar
@@ -2265,6 +2305,8 @@ This is an alternative to `minor-mode-menu-from-indicator'."
     :lookup #'consult--lookup-cadr
     :history 'consult--minor-mode-menu-history)))
 
+;;;;; Command: consult-theme
+
 ;;;###autoload
 (defun consult-theme (theme)
   "Disable current themes and enable THEME from `consult-themes'.
@@ -2295,6 +2337,8 @@ The command supports previewing the currently selected theme."
       (if (custom-theme-p theme)
           (enable-theme theme)
         (load-theme theme :no-confirm)))))
+
+;;;;; Command: consult-buffer
 
 (defsubst consult--buffer-candidate (type cand face)
   "Format virtual buffer candidate.
@@ -2427,6 +2471,8 @@ is obtained by calling `consult-view-list-function'."
   (interactive)
   (consult--buffer #'switch-to-buffer #'find-file #'bookmark-jump))
 
+;;;;; Command: consult-kmacro
+
 (defun consult--kmacro-candidates ()
   "Return alist of kmacros and indices."
   (consult--remove-dups
@@ -2492,6 +2538,8 @@ Macros containing mouse clicks are omitted."
               (list last-kbd-macro
                     kmacro-counter
                     kmacro-counter-format))))))
+
+;;;;; Command: consult-imenu
 
 (defun consult--imenu-special (_name pos buf name fn &rest args)
   "Wrapper function for special imenu items.
@@ -2648,6 +2696,8 @@ same major mode as the current buffer are used. See also
             (push (list (concat loc str) file line (or pos 0)) candidates)))))
     (nreverse candidates)))
 
+;;;;; Command: consult-grep
+
 (defun consult--grep-marker (open)
   "Grep candidate to marker.
 
@@ -2726,6 +2776,8 @@ See `consult-grep' for more details."
   (interactive "P")
   (consult--grep "Ripgrep" consult-ripgrep-command dir initial))
 
+;;;;; Command: consult-find
+
 (defun consult--find (prompt cmd initial)
   "Run find CMD in current directory with INITIAL input.
 
@@ -2764,6 +2816,8 @@ See `consult-grep' for more details regarding the asynchronous search."
   (interactive)
   (consult--find "Locate: " consult-locate-command initial))
 
+;;;;; Command: consult-man
+
 (defun consult--man-format (lines)
   "Format man candidates from LINES."
   (let ((candidates))
@@ -2797,7 +2851,7 @@ See `consult-grep' for more details regarding the asynchronous search."
         :add-history (concat consult-async-default-split (thing-at-point 'symbol))
         :history '(:input consult--man-history))))
 
-;;;; integration with the default completion system
+;;;; Integration with the default completion system
 
 (defun consult--default-completion-candidate ()
   "Return current candidate from default completion system."
@@ -2818,12 +2872,15 @@ See `consult-grep' for more details regarding the asynchronous search."
 (add-hook 'consult--completion-candidate-hook #'consult--default-completion-candidate)
 (add-hook 'consult--completion-match-hook #'consult--default-completion-match)
 
-;; announce now that consult has been loaded
+;; Announce now that consult has been loaded
 (provide 'consult)
 
-;;;; integration with other completion systems
+;;;; Integration with other completion systems
 
 (with-eval-after-load 'icomplete (require 'consult-icomplete))
 (with-eval-after-load 'selectrum (require 'consult-selectrum))
 
+;; Local Variables:
+;; outline-regexp: ";;;;* "
+;; End:
 ;;; consult.el ends here
