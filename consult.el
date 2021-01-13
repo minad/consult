@@ -1619,6 +1619,7 @@ according to the current `completion-styles'. This command obeys
 narrowing."
   (interactive)
   (consult--forbid-minibuffer)
+  (barf-if-buffer-read-only)
   (consult--with-increased-gc
    (consult--fontify-all)
    (let* ((buffer (current-buffer))
