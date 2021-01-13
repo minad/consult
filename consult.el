@@ -2395,7 +2395,6 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                        (mapcar (lambda (x)
                                  (consult--buffer-candidate ?q (string-remove-prefix proj-root x) 'consult-file))
                                (seq-filter (lambda (x) (string-prefix-p proj-root x)) all-files))))
-         (proj-open-file (lambda (f) (funcall open-file (concat proj-root f))))
          (selected
           (consult--read
            "Switch to: " (append bufs files proj-bufs proj-files views bookmarks)
@@ -2427,7 +2426,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                          (?m open-bookmark)
                          (?v consult-view-open-function)
                          (?p open-buffer)
-                         (?q proj-open-file)
+                         (?q open-file)
                          (?f open-file))
                        (substring cand 1))
                ;; When candidate is not found in the alist,
