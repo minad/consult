@@ -1708,7 +1708,7 @@ narrowing."
   (interactive)
   (consult--filter-lines
    "Keep lines: "
-   (run-hook-with-args-until-success 'consult--completion-match-hook)))
+   (run-hook-with-args-until-success 'consult--completion-match-hook 'highlight)))
 
 ;;;###autoload
 (defun consult-flush-lines ()
@@ -1720,7 +1720,7 @@ narrowing."
   (interactive)
   (consult--filter-lines
    "Flush lines: "
-   (let ((match (run-hook-with-args-until-success 'consult--completion-match-hook)))
+   (let ((match (run-hook-with-args-until-success 'consult--completion-match-hook 'highlight)))
      (lambda (input lines)
        (let ((filtered (funcall match input lines))
              (ht (make-hash-table :test #'equal :size (length lines))))
@@ -2808,7 +2808,7 @@ See `consult-grep' for more details regarding the asynchronous search."
                              minibuffer-completion-predicate)
         cand))))
 
-(defun consult--default-completion-match ()
+(defun consult--default-completion-match (&optional _highlight)
   "Return default matching function."
   (lambda (str cands)
     ;; completion-all-completions returns an improper list

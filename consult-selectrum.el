@@ -24,13 +24,17 @@
 (require 'consult)
 (require 'selectrum)
 
-(defun consult-selectrum--match ()
-  "Return selectrum matching function."
+(defun consult-selectrum--match (&optional highlight)
+  "Return selectrum matching function with optional HIGHLIGHT."
   ;; Do not use selectrum-active-p here, since we want to always use
   ;; the Selectrum filtering when Selectrum is installed, even when
   ;; Selectrum is currently not active.
-  (and (eq completing-read-function #'selectrum-completing-read)
-       selectrum-refine-candidates-function))
+  (when (eq completing-read-function #'selectrum-completing-read)
+    (if highlight
+        (lambda (str cands)
+          (funcall selectrum-highlight-candidates-function str
+                   (funcall selectrum-refine-candidates-function str cands)))
+      selectrum-refine-candidates-function)))
 
 (defun consult-selectrum--candidate ()
   "Return current selectrum candidate."
