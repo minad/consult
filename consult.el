@@ -392,11 +392,11 @@ the public API."
 This function can be called by custom completion systems from outside the minibuffer.
 The preview function expects two arguments, the current input string and the candidate string.")
 
-(defconst consult--special-char #x100000
+(defconst consult--tofu-char #x100000
   "Special character used to encode line prefixes for disambiguation.
 We use the first character of the private unicode plane b.")
 
-(defconst consult--special-range #xFFFE
+(defconst consult--tofu-range #xFFFE
   "Special character range.
 Size of private unicode plane b.")
 
@@ -628,8 +628,8 @@ DISPLAY is the string to display instead of the unique string."
   (let ((str "") (n marker))
     (while (progn
              (setq str (concat str
-                               (char-to-string (+ consult--special-char (% n consult--special-range)))))
-             (and (>= n consult--special-range) (setq n (/ n consult--special-range)))))
+                               (char-to-string (+ consult--tofu-char (% n consult--tofu-range)))))
+             (and (>= n consult--tofu-range) (setq n (/ n consult--tofu-range)))))
     str))
 
 (defsubst consult--line-number-prefix (marker line width)
@@ -1597,8 +1597,8 @@ CAND is the currently selected candidate."
       ;; Strip unique line number prefix
       (let ((i 0)
             (n (length cand))
-            (cmin consult--special-char)
-            (cmax (- (+ consult--special-char consult--special-range) 1)))
+            (cmin consult--tofu-char)
+            (cmax (- (+ consult--tofu-char consult--tofu-range) 1)))
         (while (and (< i n) (<= cmin (aref cand i) cmax))
           (setq i (1+ i)))
         (when (> i 0)
@@ -2356,7 +2356,7 @@ The command supports previewing the currently selected theme."
 CAND is the candidate string.
 TYPE is the type character.
 FACE is the face for the candidate."
-  (concat (propertize (char-to-string (+ consult--special-char type)) 'display "") (propertize cand 'face face)))
+  (concat (propertize (char-to-string (+ consult--tofu-char type)) 'display "") (propertize cand 'face face)))
 
 (defun consult--buffer (open-buffer open-file open-bookmark)
   "Backend implementation of `consult-buffer'.
@@ -2412,7 +2412,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
            :sort nil
            :predicate
            (lambda (cand)
-             (let ((type (- (aref cand 0) consult--special-char)))
+             (let ((type (- (aref cand 0) consult--tofu-char)))
                (when (= type ?q) (setq type ?p)) ;; q=project files
                (if (eq consult--narrow 32) ;; narrowed to hidden buffers
                    (= type ?h)
@@ -2430,7 +2430,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
            :lookup
            (lambda (_ candidates cand)
              (if (member cand candidates)
-                 (cons (pcase-exhaustive (- (aref cand 0) consult--special-char)
+                 (cons (pcase-exhaustive (- (aref cand 0) consult--tofu-char)
                          (?b open-buffer)
                          (?h open-buffer)
                          (?m open-bookmark)
@@ -2891,8 +2891,8 @@ See `consult-grep' for more details regarding the asynchronous search."
 (defun consult--default-completion-fry-the-tofus (&rest _)
   (let ((pos (point-min))
         (max (point-max))
-        (cmin consult--special-char)
-        (cmax (- (+ consult--special-char consult--special-range) 1)))
+        (cmin consult--tofu-char)
+        (cmax (- (+ consult--tofu-char consult--tofu-range) 1)))
     (while (< pos max)
       (when (<= cmin (char-after pos) cmax)
         (put-text-property pos (1+ pos) 'display ""))
