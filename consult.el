@@ -551,7 +551,7 @@ KEY is the key function."
 
 (defsubst consult--in-range-p (pos)
   "Return t if position POS lies in range `point-min' to `point-max'."
-  (and (>= pos (point-min)) (<= pos (point-max))))
+  (<= (point-min) pos (point-max)))
 
 (defun consult--lookup-elem (_ candidates cand)
   "Lookup CAND in CANDIDATES alist, return element."
@@ -891,7 +891,7 @@ This command is used internally by the narrowing system of `consult--read'."
     "" nil :filter
     ,(lambda (&optional _)
        (let ((str (minibuffer-contents-no-properties)))
-         (when-let (pair (or (and (= 1 (length str)) (assoc (elt str 0) consult--narrow-prefixes))
+         (when-let (pair (or (and (= 1 (length str)) (assoc (aref str 0) consult--narrow-prefixes))
                              (and (string= str "") (assoc 32 consult--narrow-prefixes))))
            (delete-minibuffer-contents)
            (consult-narrow (car pair))
@@ -1595,10 +1595,14 @@ CAND is the currently selected candidate."
             (eq consult-line-point-placement 'line-beginning))
         pos
       ;; Strip unique line number prefix
-      (while (and (> (length cand) 0)
-                  (>= (elt cand 0) consult--special-char)
-                  (< (elt cand 0) (+ consult--special-char consult--special-range)))
-        (setq cand (substring cand 1)))
+      (let ((i 0)
+            (n (length cand))
+            (cmin consult--special-char)
+            (cmax (- (+ consult--special-char consult--special-range) 1)))
+        (while (and (< i n) (<= cmin (aref cand i) cmax))
+          (setq i (1+ i)))
+        (when (> i 0)
+          (setq cand (substring cand i))))
       (let ((beg 0)
             (end (length cand))
             (match (run-hook-with-args-until-success 'consult--completion-match-hook)))
@@ -2408,7 +2412,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
            :sort nil
            :predicate
            (lambda (cand)
-             (let ((type (- (elt cand 0) consult--special-char)))
+             (let ((type (- (aref cand 0) consult--special-char)))
                (when (= type ?q) (setq type ?p)) ;; q=project files
                (if (eq consult--narrow 32) ;; narrowed to hidden buffers
                    (= type ?h)
@@ -2426,7 +2430,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
            :lookup
            (lambda (_ candidates cand)
              (if (member cand candidates)
-                 (cons (pcase-exhaustive (- (elt cand 0) consult--special-char)
+                 (cons (pcase-exhaustive (- (aref cand 0) consult--special-char)
                          (?b open-buffer)
                          (?h open-buffer)
                          (?m open-bookmark)
@@ -2657,7 +2661,7 @@ The symbol at point is added to the future history."
                        (l (length n)))
                   (and (> (length c) l)
                        (eq t (compare-strings n 0 l c 0 l))
-                       (= (elt c l) 32)))))
+                       (= (aref c l) 32)))))
             narrow))
     :category 'imenu
     :lookup #'consult--lookup-elem
