@@ -692,7 +692,8 @@ The files are closed automatically in the end.
 
 FUN receives the open function as argument."
   (let* ((new-buffers)
-         (old-recentf-list (copy-sequence recentf-list))
+         (recentf-should-restore recentf-mode)
+         (recentf-saved-list (when recentf-should-restore (copy-sequence recentf-list)))
          (open-file
           (lambda (name)
             (or (get-file-buffer name)
@@ -711,9 +712,10 @@ FUN receives the open function as argument."
       ;; Kill all temporary buffers
       (mapc #'consult--kill-clean-buffer new-buffers)
       ;; Restore old recentf-list and record the current buffer
-      (setq recentf-list old-recentf-list)
-      (when (member (current-buffer) new-buffers)
-        (recentf-add-file (buffer-file-name (current-buffer)))))))
+      (when recentf-should-restore
+        (setq recentf-list recentf-saved-list)
+        (when (member (current-buffer) new-buffers)
+          (recentf-add-file (buffer-file-name (current-buffer))))))))
 
 (defmacro consult--with-file-preview (args &rest body)
   "Provide a function to open files temporarily.
