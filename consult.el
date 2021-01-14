@@ -2890,6 +2890,6 @@ See `consult-grep' for more details regarding the asynchronous search."
 (with-eval-after-load 'selectrum (require 'consult-selectrum))
 
 ;; Local Variables:
-;; outline-regexp: ";;;;* "
+;; outline-regexp: ";;;;* \\|(defun consult-[a-z]"
 ;; End:
 ;;; consult.el ends here
