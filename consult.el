@@ -2888,6 +2888,25 @@ See `consult-grep' for more details regarding the asynchronous search."
 (add-hook 'consult--completion-candidate-hook #'consult--default-completion-candidate)
 (add-hook 'consult--completion-match-hook #'consult--default-completion-match)
 
+(defun consult--default-completion-fry-the-tofus (&rest _)
+  (let ((pos (point-min))
+        (max (point-max))
+        (cmin consult--special-char)
+        (cmax (- (+ consult--special-char consult--special-range) 1)))
+    (while (< pos max)
+      (when (<= cmin (char-after pos) cmax)
+        (put-text-property pos (1+ pos) 'display ""))
+      (setq pos (1+ pos)))))
+
+(defun consult--default-completion-setup-tofu-pan (fun prompt candidates &rest opts)
+  (if (eq completing-read-function #'completing-read-default)
+      (minibuffer-with-setup-hook
+          (apply-partially #'add-hook 'after-change-functions #'consult--default-completion-fry-the-tofus nil t)
+        (apply fun prompt candidates opts))
+    (apply fun prompt candidates opts)))
+
+(advice-add #'consult--read :around #'consult--default-completion-setup-tofu-pan)
+
 ;; Announce now that consult has been loaded
 (provide 'consult)
 
