@@ -2702,7 +2702,7 @@ same major mode as the current buffer are used. See also
               (unless pos
                 (setq pos (match-beginning 0)))
               (setq str (concat (substring str 0 (match-beginning 0))
-                                (propertize (substring (match-string 1 str)) 'face 'consult-preview-match)
+                                (propertize (match-string 1 str) 'face 'consult-preview-match)
                                 (substring str (match-end 0)))))
             (setq str (consult--strip-ansi-escape str))
             (push (list (concat loc str) file line (or pos 0)) candidates)))))
