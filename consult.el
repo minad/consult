@@ -2359,12 +2359,11 @@ FACE is the face for the candidate."
 
 Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be used to display the item."
   (let* ((curr-buf (current-buffer))
-         (all-bufs-list (buffer-list))
+         (all-bufs (append (delq curr-buf (buffer-list)) (list curr-buf)))
          (buf-file-hash (let ((ht (make-hash-table :test #'equal)))
-                          (dolist (buf all-bufs-list ht)
+                          (dolist (buf all-bufs ht)
                             (when-let (file (buffer-file-name buf))
                               (puthash file t ht)))))
-         (all-bufs (append (delq curr-buf all-bufs-list) (list curr-buf)))
          (buf-filter (consult--regexp-filter consult-buffer-filter))
          (bufs (mapcar (lambda (x)
                          (let ((name (buffer-name x)))
@@ -2446,8 +2445,10 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
               ;; In order to avoid slowness and unnecessary complexity, we
               ;; only preview buffers. Loading recent files, bookmarks or
               ;; views can result in expensive operations.
-              ((and (eq (car cand) open-buffer) (get-buffer (cdr cand)))
-               (funcall open-buffer (cdr cand) 'norecord)))))))
+              ((and (or (eq (car cand) #'switch-to-buffer)
+                        (eq (car cand) #'switch-to-buffer-other-window))
+                    (get-buffer (cdr cand)))
+               (funcall (car cand) (cdr cand) 'norecord)))))))
     (when selected (funcall (car selected) (cdr selected)))))
 
 ;;;###autoload
@@ -2456,9 +2457,9 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
 
 See `consult-buffer'."
   (interactive)
-  ;; bookmark-jump-other-frame is supported on Emacs >= 27.1, we want to support at least 26
   (consult--buffer #'switch-to-buffer-other-frame #'find-file-other-frame
-                   (if (fboundp 'bookmark-jump-other-frame) #'bookmark-jump-other-frame #'bookmark-jump)))
+                   ;; bookmark-jump-other-frame is supported on Emacs >= 27.1, we want to support at least 26
+                   (lambda (bm) (bookmark-jump bm #'switch-to-buffer-other-frame))))
 
 ;;;###autoload
 (defun consult-buffer-other-window ()
