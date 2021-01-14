@@ -1250,11 +1250,24 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
          (list map))))
     (current-local-map))))
 
+(defun consult--fry-the-tofus (&rest _)
+  "Fry the tofus in the minibuffer."
+  (let* ((min (minibuffer-prompt-end))
+         (max (point-max))
+         (pos min)
+         (cmin consult--tofu-char)
+         (cmax (- (+ consult--tofu-char consult--tofu-range) 1)))
+    (while (and (< pos max) (<= cmin (char-after pos) cmax))
+      (setq pos (1+ pos)))
+    (when (> pos min)
+      (put-text-property min pos 'display " "))))
+
 (cl-defun consult--read-setup (_prompt _candidates
                                        &key add-history narrow preview-key &allow-other-keys)
   "Minibuffer setup for `consult--read'.
 
 See `consult--read' for the ADD-HISTORY, NARROW and PREVIEW-KEY arguments."
+  (add-hook 'after-change-functions #'consult--fry-the-tofus nil t)
   (consult--setup-keymap narrow preview-key)
   (consult--add-history add-history))
 
