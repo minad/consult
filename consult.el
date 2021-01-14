@@ -378,10 +378,12 @@ the public API."
 
 ;;;; Internal variables
 
-(defvar consult--completion-match-hook nil
+(defvar consult--completion-match-hook
+  (list #'consult--default-completion-match)
   "Obtain match function from completion system.")
 
-(defvar consult--completion-candidate-hook nil
+(defvar consult--completion-candidate-hook
+  (list #'consult--default-completion-candidate)
   "Get candidate from completion system.")
 
 (defvar consult--completion-refresh-hook nil
@@ -1012,14 +1014,12 @@ the separator. Examples: \"/async/filter\", \"#async#filter\"."
             (substring str pos) table pred (- point pos) metadata)))
        ',name)))
 
-(add-to-list 'completion-styles-alist
-             (list 'consult--async-split
-                   (consult--async-split-wrap try-completion)
-                   (consult--async-split-wrap all-completions)
-                   "Split async and filter part."))
-
 (defun consult--async-split-setup ()
   "Setup `consult--async-split' completion styles."
+  (setq-local completion-styles-alist (cons (list 'consult--async-split
+                                                  (consult--async-split-wrap try-completion)
+                                                  (consult--async-split-wrap all-completions) "")
+                                            completion-styles-alist))
   (setq-local completion-styles (cons 'consult--async-split completion-styles)))
 
 (defun consult--async-split (async)
@@ -2903,9 +2903,6 @@ See `consult-grep' for more details regarding the asynchronous search."
     ;; completion-all-completions returns an improper list
     ;; where the last link is not necessarily nil. Fix this!
     (nconc (completion-all-completions str cands nil (length str)) nil)))
-
-(add-hook 'consult--completion-candidate-hook #'consult--default-completion-candidate)
-(add-hook 'consult--completion-match-hook #'consult--default-completion-match)
 
 ;; Announce now that consult has been loaded
 (provide 'consult)

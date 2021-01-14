@@ -47,7 +47,7 @@
 (cl-defun consult-selectrum--read-setup (_prompt candidates &key default-top &allow-other-keys)
   "Advice for `consult--read-setup' for Selectrum specific setup.
 
-See `consult--read' for the PROMPT, CANDIDATES and DEFAULT-TOP arguments."
+See `consult--read' for the CANDIDATES and DEFAULT-TOP arguments."
   ;; Set mode-default-candidate selectrum option according to :default-top
   (setq-local selectrum--move-default-candidate-p default-top)
   ;; Fix selectrum height for async completion table

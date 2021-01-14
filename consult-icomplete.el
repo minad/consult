@@ -21,8 +21,8 @@
 
 ;;; Code:
 
-(require 'icomplete)
 (require 'consult)
+(require 'icomplete)
 
 (defun consult-icomplete--candidate ()
   "Return current icomplete candidate."
