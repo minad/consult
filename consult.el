@@ -1332,7 +1332,7 @@ NARROW is an alist of narrowing prefix strings and description."
 
 ;;;; Commands
 
-;;;;; Command: multi-occur
+;;;;; Command: consult-multi-occur
 
 ;; see https://github.com/raxod502/selectrum/issues/226
 ;;;###autoload
