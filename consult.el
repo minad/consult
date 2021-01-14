@@ -1218,7 +1218,7 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
   "Add ITEMS to the minibuffer history via `minibuffer-default-add-function'."
   (setq-local minibuffer-default-add-function
               (lambda ()
-	        (consult--remove-dups
+                (consult--remove-dups
                  (append
                   ;; the defaults are at the beginning of the future history
                   (if (listp minibuffer-default)
@@ -1231,7 +1231,7 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
                   ;; then all the completions
                   (all-completions ""
                                    minibuffer-completion-table
-			           minibuffer-completion-predicate))))))
+                                   minibuffer-completion-predicate))))))
 
 (defun consult--setup-keymap (narrow preview-key)
   "Setup keymap for NARROW and PREVIEW-KEY."
@@ -1250,19 +1250,27 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
          (list map))))
     (current-local-map))))
 
-(cl-defun consult--read (prompt candidates &key
+(cl-defun consult--read-setup (_prompt _candidates
+                                       &key add-history narrow preview-key &allow-other-keys)
+  "Minibuffer setup for `consult--read'.
+
+See `consult--read' for the ADD-HISTORY, NARROW and PREVIEW-KEY arguments."
+  (consult--setup-keymap narrow preview-key)
+  (consult--add-history add-history))
+
+(cl-defun consult--read (prompt candidates &rest options &key
                                 predicate require-match history default
                                 category initial narrow add-history
                                 preview (preview-key consult-preview-key)
                                 (sort t) (default-top t) (lookup (lambda (_input _cands x) x)))
-  "Simplified completing read function.
+  "Enhanced completing read function.
 
 Arguments:
 
 PROMPT is the string to prompt with.
 CANDIDATES is the candidate list or alist.
 
-Options:
+Keyword OPTIONS:
 
 PREDICATE is a filter function for the candidates.
 REQUIRE-MATCH equals t means that an exact match is required.
@@ -1277,7 +1285,7 @@ DEFAULT-TOP must be nil if the default candidate should not be moved to the top.
 PREVIEW is a preview function.
 PREVIEW-KEY are the preview keys (nil, 'any, a single key or a list of keys).
 NARROW is an alist of narrowing prefix strings and description."
-  (ignore default-top)
+  (ignore default-top add-history narrow)
   ;; supported types
   (cl-assert (or (functionp candidates)     ;; async table
                  (not candidates)           ;; nil, empty list
@@ -1286,10 +1294,7 @@ NARROW is an alist of narrowing prefix strings and description."
                  (symbolp (car candidates)) ;; symbol list
                  (consp (car candidates)))) ;; alist
   (minibuffer-with-setup-hook
-      (:append
-       (lambda ()
-         (consult--add-history add-history)
-         (consult--setup-keymap narrow preview-key)))
+      (:append (lambda () (apply #'consult--read-setup prompt candidates options)))
     (consult--with-async (async candidates)
       ;; NOTE: Do not unnecessarily let-bind the lambdas to avoid
       ;; overcapturing in the interpreter. This will make closures and the
