@@ -1260,7 +1260,8 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
     (while (and (< pos max) (<= cmin (char-after pos) cmax))
       (setq pos (1+ pos)))
     (when (> pos min)
-      (put-text-property min pos 'display " "))))
+      (remove-list-of-text-properties min pos '(display))
+      (put-text-property min pos 'invisible t))))
 
 (cl-defun consult--read-setup (_prompt _candidates
                                        &key add-history narrow preview-key &allow-other-keys)
@@ -1532,7 +1533,7 @@ The alist contains (string . position) pairs."
                   (consult--fontify-region begin end)
                   (push (concat
                          (propertize
-                          (concat (propertize (consult--encode-location marker) 'display "") loc)
+                          (concat (propertize (consult--encode-location marker) 'invisible t) loc)
                           'consult-location (cons marker line))
                          (consult--region-with-cursor begin end marker))
                         candidates))))))))
@@ -2374,7 +2375,7 @@ The command supports previewing the currently selected theme."
 CAND is the candidate string.
 TYPE is the type character.
 FACE is the face for the candidate."
-  (concat (propertize (char-to-string (+ consult--tofu-char type)) 'display "") (propertize cand 'face face)))
+  (concat (propertize (char-to-string (+ consult--tofu-char type)) 'invisible t) (propertize cand 'face face)))
 
 (defun consult--buffer (open-buffer open-file open-bookmark)
   "Backend implementation of `consult-buffer'.
@@ -2416,7 +2417,7 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                                           all-bufs))))
          (proj-files (when proj-root
                        (let ((len (length proj-root))
-                             (hidden-root (propertize proj-root 'display "")))
+                             (hidden-root (propertize proj-root 'invisible t)))
                          (mapcar (lambda (x)
                                    (consult--buffer-candidate
                                     ?q
