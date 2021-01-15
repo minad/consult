@@ -1259,7 +1259,7 @@ Note that `consult-narrow-key' and `consult-widen-key' are bound dynamically.")
     ;; Async keys overwriting some unusable defaults for the default completion
     (when async
       (when (eq (lookup-key old-map " ") #'minibuffer-complete-word)
-        (define-key map " " #'self-insert-key))
+        (define-key map " " #'self-insert-command))
       (when (eq (lookup-key old-map "\t") #'minibuffer-complete)
         (define-key map "\t" #'minibuffer-completion-help)))
 
