@@ -382,8 +382,8 @@ the public API."
 
 ;;;; Internal variables
 
-(defvar consult--completion-match-hook
-  (list #'consult--default-completion-match)
+(defvar consult--completion-filter-hook
+  (list #'consult--default-completion-filter)
   "Obtain match function from completion system.")
 
 (defvar consult--completion-candidate-hook
@@ -1665,12 +1665,12 @@ CAND is the currently selected candidate."
           (setq cand (substring cand i))))
       (let ((beg 0)
             (end (length cand))
-            (match (run-hook-with-args-until-success 'consult--completion-match-hook)))
+            (filter (run-hook-with-args-until-success 'consult--completion-filter-hook)))
         ;; Find match end position, remove characters from line end until matching fails
         (let ((step 16))
           (while (> step 0)
             (while (and (> (- end step) 0)
-                        (funcall match input (list (substring cand 0 (- end step)))))
+                        (funcall filter input (list (substring cand 0 (- end step)))))
               (setq end (- end step)))
             (setq step (/ step 2))))
         ;; Find match beginning position, remove characters from line beginning until matching fails
@@ -1678,7 +1678,7 @@ CAND is the currently selected candidate."
           (let ((step 16))
             (while (> step 0)
               (while (and (< (+ beg step) end)
-                          (funcall match input (list (substring cand (+ beg step) end))))
+                          (funcall filter input (list (substring cand (+ beg step) end))))
                 (setq beg (+ beg step)))
               (setq step (/ step 2)))
             (setq end beg)))
@@ -1715,11 +1715,11 @@ The symbol at point and the last `isearch-string' is added to the future history
 
 ;;;;; Command: consult-keep/flush-lines
 
-(defun consult--filter-lines (prompt match)
+(defun consult--filter-lines (prompt filter)
   "Select a subset of the lines in the current buffer with live preview.
 
 The lines selected are those that match the minibuffer input
-according to the function MATCH. This command obeys narrowing.
+according to the function FILTER. This command obeys narrowing.
 PROMPT is the prompt shown to the user."
   (consult--forbid-minibuffer)
   (barf-if-buffer-read-only)
@@ -1758,7 +1758,7 @@ PROMPT is the prompt shown to the user."
                           (string-join lines "\n")
                         ;; Allocate new string candidates since the matching function mutates!
                         (while-no-input
-                          (string-join (funcall match input (mapcar #'copy-sequence lines)) "\n")))))
+                          (string-join (funcall filter input (mapcar #'copy-sequence lines)) "\n")))))
                 (when (stringp filtered-contents)
                   (with-current-buffer buffer
                     (when font-lock-mode (font-lock-mode -1))
@@ -1794,7 +1794,7 @@ narrowing."
   (interactive)
   (consult--filter-lines
    "Keep lines: "
-   (run-hook-with-args-until-success 'consult--completion-match-hook 'highlight)))
+   (run-hook-with-args-until-success 'consult--completion-filter-hook 'highlight)))
 
 ;;;###autoload
 (defun consult-flush-lines ()
@@ -1806,9 +1806,9 @@ narrowing."
   (interactive)
   (consult--filter-lines
    "Flush lines: "
-   (let ((match (run-hook-with-args-until-success 'consult--completion-match-hook 'highlight)))
+   (let ((filter (run-hook-with-args-until-success 'consult--completion-filter-hook 'highlight)))
      (lambda (input lines)
-       (let ((ht (consult--string-hash (funcall match input lines))))
+       (let ((ht (consult--string-hash (funcall filter input lines))))
          (seq-remove (lambda (line) (gethash line ht)) lines))))))
 
 ;;;;; Command: consult-goto-line
@@ -2935,8 +2935,8 @@ See `consult-grep' for more details regarding the asynchronous search."
                              minibuffer-completion-predicate)
         cand))))
 
-(defun consult--default-completion-match (&optional _highlight)
-  "Return default matching function."
+(defun consult--default-completion-filter (&optional _highlight)
+  "Return default filter function."
   (lambda (str cands)
     ;; completion-all-completions returns an improper list
     ;; where the last link is not necessarily nil. Fix this!

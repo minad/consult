@@ -24,8 +24,8 @@
 (require 'consult)
 (require 'selectrum)
 
-(defun consult-selectrum--match (&optional highlight)
-  "Return selectrum matching function with optional HIGHLIGHT."
+(defun consult-selectrum--filter (&optional highlight)
+  "Return selectrum filter function with optional HIGHLIGHT."
   ;; Do not use selectrum-active-p here, since we want to always use
   ;; the Selectrum filtering when Selectrum is installed, even when
   ;; Selectrum is currently not active.
@@ -65,7 +65,7 @@ See `consult--read' for the CANDIDATES and DEFAULT-TOP arguments."
   (setq-local selectrum-highlight-candidates-function
               (consult-selectrum--async-split-wrap selectrum-highlight-candidates-function)))
 
-(add-hook 'consult--completion-match-hook #'consult-selectrum--match)
+(add-hook 'consult--completion-filter-hook #'consult-selectrum--filter)
 (add-hook 'consult--completion-candidate-hook #'consult-selectrum--candidate)
 (add-hook 'consult--completion-refresh-hook #'consult-selectrum--refresh)
 (advice-add #'consult--read-setup :before #'consult-selectrum--read-setup)
