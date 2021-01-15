@@ -138,7 +138,7 @@ variables and functions with their descriptions.
    used to further narrow an exported Embark collect buffer with the same
    completion filtering as during =completing-read=. If the input begins with
    "! SPC", the filter matches the complement.
- - =consult-hide-lines=: Temporarily hide lines by filtering them using the current
+ - =consult-focus-lines=: Temporarily hide lines by filtering them using the current
    completion style. Call with =C-u= prefix argument in order to show the hidden
    lines again. If the input begins with "! SPC", the filter matches the
    complement. In contrast to =consult-keep-lines= this function does not edit
@@ -469,7 +469,7 @@ the box with the default completion, Icomplete and Selectrum.
           ("C-c h" . consult-history)
           ("C-c m" . consult-mode-command)
           ("C-c k" . consult-keep-lines)
-          ("C-c C-k" . consult-hide-lines)
+          ("C-c C-k" . consult-focus-lines)
           ("C-x b" . consult-buffer)
           ("C-x 4 b" . consult-buffer-other-window)
           ("C-x 5 b" . consult-buffer-other-frame)

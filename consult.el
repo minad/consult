@@ -438,8 +438,8 @@ Size of private unicode plane b.")
 (defconst consult--grep-match-regexp "\e\\[[0-9;]+m\\(.*?\\)\e\\[[0-9;]*m"
   "Regexp used to find matches in grep output.")
 
-(defvar-local consult--hide-lines-overlays nil
-  "Overlays used by `consult-hide-lines'.")
+(defvar-local consult--focus-lines-overlays nil
+  "Overlays used by `consult-focus-lines'.")
 
 ;;;; Helper functions and macros
 
@@ -1804,7 +1804,7 @@ INITIAL is the initial input."
          (when (and font-lock-orig (not font-lock-mode))
            (font-lock-mode)))))))
 
-(defun consult-hide-lines (&optional show filter initial)
+(defun consult-focus-lines (&optional show filter initial)
   "Hide or show lines according to FILTER function.
 
 Optionally INITIAL input can be provided.
@@ -1814,8 +1814,8 @@ SHOW must be t in order to show the hidden lines."
   (consult--forbid-minibuffer)
   (if show
       (progn
-       (mapc #'delete-overlay consult--hide-lines-overlays)
-       (setq consult--hide-lines-overlays nil))
+       (mapc #'delete-overlay consult--focus-lines-overlays)
+       (setq consult--focus-lines-overlays nil))
     (consult--with-increased-gc
      (consult--fontify-all)
      (let ((lines) (overlays))
@@ -1844,11 +1844,11 @@ SHOW must be t in order to show the hidden lines."
               nil t))
          (unwind-protect
              (progn
-               (read-from-minibuffer "Visible lines: " initial nil nil 'consult--keep-lines-history)
+               (read-from-minibuffer "Focus on lines: " initial nil nil 'consult--keep-lines-history)
                (dolist (ov overlays)
                  (setq ov (cdr ov))
                  (if (overlay-get ov 'invisible)
-                     (push ov consult--hide-lines-overlays)
+                     (push ov consult--focus-lines-overlays)
                    (delete-overlay ov)))
                (setq overlays nil))
            (mapc (lambda (x) (delete-overlay (cdr x))) overlays)))))))
