@@ -240,7 +240,7 @@ with a space character."
 
 (defcustom consult-preview-key 'any
   "Preview trigger keys, can be nil, 'any, a single key or a list of keys."
-  :type '(choice (const any) vector string (repeat (choice vector string))))
+  :type '(choice (const any) (const nil) vector string (repeat (choice vector string))))
 
 (defcustom consult-preview-max-size 10485760
   "Files larger than this byte limit are not previewed."
