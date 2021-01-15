@@ -438,6 +438,9 @@ Size of private unicode plane b.")
 (defconst consult--grep-match-regexp "\e\\[[0-9;]+m\\(.*?\\)\e\\[[0-9;]*m"
   "Regexp used to find matches in grep output.")
 
+(defvar-local consult--hide-lines-overlays nil
+  "Overlays used by `consult-hide-lines'.")
+
 ;;;; Helper functions and macros
 
 (defun consult--string-hash (strings)
@@ -1765,10 +1768,10 @@ INITIAL is the initial input."
             (lambda (&rest _)
               (let* ((input (minibuffer-contents-no-properties))
                      (filtered-contents
-                      ;; Special case the empty input for performance.
-                      ;; Otherwise it could happen that the minibuffer is empty,
-                      ;; but the buffer has not been updated.
                       (if (string= input "")
+                          ;; Special case the empty input for performance.
+                          ;; Otherwise it could happen that the minibuffer is empty,
+                          ;; but the buffer has not been updated.
                           (string-join lines "\n")
                         ;; Allocate new string candidates since the matching function mutates!
                         (while-no-input
@@ -1797,6 +1800,66 @@ INITIAL is the initial input."
              (goto-char point-orig)))
          (when (and font-lock-orig (not font-lock-mode))
            (font-lock-mode)))))))
+
+(defun consult-hide-lines (&optional show filter initial)
+  "Hide or show lines according to FILTER function.
+
+Optionally INITIAL input can be provided.
+SHOW must be t in order to show the hidden lines."
+  (interactive
+   (list current-prefix-arg (run-hook-with-args-until-success 'consult--completion-filter-hook)))
+  (consult--forbid-minibuffer)
+  (if show
+      (progn
+       (mapc #'delete-overlay consult--hide-lines-overlays)
+       (setq consult--hide-lines-overlays nil))
+    (consult--with-increased-gc
+     (consult--fontify-all)
+     (let ((lines) (overlays))
+       (save-excursion
+         (let ((pos (point-min))
+               (max (point-max))
+               end)
+           (while (< pos max)
+             (goto-char pos)
+             (setq end (line-end-position))
+             (let ((line (buffer-substring pos end)))
+               (push (cons line (make-overlay pos (1+ end))) overlays)
+               (push line lines))
+             (setq pos (1+ end)))))
+       (minibuffer-with-setup-hook
+           (lambda ()
+             (add-hook
+              'after-change-functions
+              (lambda (&rest _)
+                (let* ((input (minibuffer-contents-no-properties))
+                       (filter-str (string-remove-prefix "!" input))
+                       (ht
+                        (if (string= filter-str "")
+                            ;; Special case the empty input for performance.
+                            (progn
+                              (dolist (ov overlays)
+                                (overlay-put (cdr ov) 'invisible nil))
+                              nil)
+                          (while-no-input
+                            (consult--string-hash (funcall filter filter-str lines))))))
+                  (when (hash-table-p ht)
+                    (if (string= filter-str input)
+                        (dolist (ov overlays)
+                          (overlay-put (cdr ov) 'invisible (not (gethash (car ov) ht))))
+                      (dolist (ov overlays)
+                        (overlay-put (cdr ov) 'invisible (gethash (car ov) ht)))))))
+              nil t))
+         (unwind-protect
+             (progn
+               (read-from-minibuffer "Hide lines: " initial nil nil 'consult--keep-lines-history)
+               (dolist (ov overlays)
+                 (setq ov (cdr ov))
+                 (if (overlay-get ov 'invisible)
+                     (push ov consult--hide-lines-overlays)
+                   (delete-overlay ov)))
+               (setq overlays nil))
+           (mapc (lambda (x) (delete-overlay (cdr x))) overlays)))))))
 
 ;;;;; Command: consult-goto-line
 

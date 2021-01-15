@@ -195,6 +195,12 @@ function updates the buffer while typing. In particular, this function can be
 used to further narrow an exported Embark collect buffer with the same
 completion filtering as during @samp{completing-read}. If the first character is
 "!", the filter matches the complement.
+@item
+@samp{consult-hide-lines}: Temporarily hide lines by filtering them using the current
+completion style. Call with @samp{C-u} prefix argument in order to show the hidden
+lines again. If the first character is "!", the filter matches the
+complement. In contrast to @samp{consult-keep-lines} this function does not edit
+the buffer.
 @end itemize
 
 @node Navigation
@@ -566,6 +572,7 @@ the box with the default completion, Icomplete and Selectrum.
          ("C-c h" . consult-history)
          ("C-c m" . consult-mode-command)
          ("C-c k" . consult-keep-lines)
+         ("C-c C-k" . consult-hide-lines)
          ("C-x b" . consult-buffer)
          ("C-x 4 b" . consult-buffer-other-window)
          ("C-x 5 b" . consult-buffer-other-frame)
