@@ -443,6 +443,20 @@ Size of private unicode plane b.")
 
 ;;;; Helper functions and macros
 
+(defmacro consult--each-line (beg end &rest body)
+  "Iterate over each line.
+
+The line beginning/ending BEG/END is bound in BODY."
+  (declare (indent 2))
+  (let ((max (make-symbol "max")))
+    `(save-excursion
+       (let ((,beg (point-min)) (,max (point-max)) end)
+         (while (< ,beg ,max)
+           (goto-char ,beg)
+           (setq ,end (line-end-position))
+           ,@body
+           (setq ,beg (1+ ,end)))))))
+
 (defun consult--string-hash (strings)
   "Create hashtable from STRINGS."
   (let ((ht (make-hash-table :test #'equal :size (length strings))))
@@ -629,7 +643,7 @@ KEY is the key function."
   "Move to position POS and return number of lines."
   (let ((line 0))
     (while (< (point) pos)
-      (forward-line 1)
+      (forward-line)
       (when (<= (point) pos)
         (setq line (1+ line))))
     (goto-char pos)
@@ -1624,29 +1638,22 @@ The symbol at point is added to the future history."
   (consult--fontify-all)
   (let* ((default-cand)
          (candidates)
-         (pos (point-min))
-         (max (point-max))
-         (line (line-number-at-pos pos consult-line-numbers-widen))
+         (line (line-number-at-pos (point-min) consult-line-numbers-widen))
          (curr-line (line-number-at-pos (point) consult-line-numbers-widen))
-         (line-width (length (number-to-string (line-number-at-pos max consult-line-numbers-widen))))
+         (line-width (length (number-to-string (line-number-at-pos (point-max) consult-line-numbers-widen))))
          (default-cand-dist most-positive-fixnum))
-    (save-excursion
-      (goto-char pos)
-      (while (< pos max)
-        (let* ((end (line-end-position))
-               (str (buffer-substring pos end)))
-          (unless (string-blank-p str)
-            (let ((cand (concat
-                         (consult--line-number-prefix (point-marker) line line-width)
-                         str))
-                  (dist (abs (- curr-line line))))
-              (when (< dist default-cand-dist)
-                (setq default-cand cand
-                      default-cand-dist dist))
-              (push cand candidates)))
-          (setq line (1+ line)
-                pos (1+ end))
-          (goto-char pos))))
+    (consult--each-line beg end
+      (let ((str (buffer-substring beg end)))
+        (unless (string-blank-p str)
+          (let ((cand (concat
+                       (consult--line-number-prefix (point-marker) line line-width)
+                       str))
+                (dist (abs (- curr-line line))))
+            (when (< dist default-cand-dist)
+              (setq default-cand cand
+                    default-cand-dist dist))
+            (push cand candidates)))
+        (setq line (1+ line))))
     (unless candidates
       (user-error "No lines"))
     (cons default-cand (nreverse candidates))))
@@ -1754,16 +1761,9 @@ INITIAL is the initial input."
           (undo-limit most-positive-fixnum)
           (undo-strong-limit most-positive-fixnum)
           (changes (prepare-change-group)))
-     (save-excursion
-       (let ((pos (point-min))
-             (max (point-max))
-             end)
-         (while (< pos max)
-           (goto-char pos)
-           (setq end (line-end-position))
-           (push (buffer-substring pos end) lines)
-           (setq pos (1+ end))))
-       (setq lines (nreverse lines)))
+     (consult--each-line beg end
+       (push (buffer-substring beg end) lines))
+     (setq lines (nreverse lines))
      (minibuffer-with-setup-hook
          (lambda ()
            (add-hook
@@ -1819,16 +1819,9 @@ SHOW must be t in order to show the hidden lines."
     (consult--with-increased-gc
      (consult--fontify-all)
      (let ((lines) (overlays))
-       (save-excursion
-         (let ((pos (point-min))
-               (max (point-max))
-               end)
-           (while (< pos max)
-             (goto-char pos)
-             (setq end (line-end-position))
-             (push (buffer-substring pos end) lines)
-             (push (cons (car lines) (make-overlay pos (1+ end))) overlays)
-             (setq pos (1+ end)))))
+       (consult--each-line beg end
+         (push (buffer-substring beg end) lines)
+         (push (cons (car lines) (make-overlay beg (1+ end))) overlays))
        (minibuffer-with-setup-hook
            (lambda ()
              (add-hook
