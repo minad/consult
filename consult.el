@@ -330,7 +330,7 @@ the public API."
   "Face used if asynchronous process has failed.")
 
 (defface consult-async-split
-  '((t :inherit error))
+  '((t :inherit font-lock-negation-char-face))
   "Face used to highlight punctuation character.")
 
 (defface consult-key
