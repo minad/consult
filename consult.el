@@ -843,9 +843,10 @@ FACE is the cursor face."
   "Install TRANSFORM and PREVIEW function for FUN.
 
 PREVIEW-KEY are the keys which trigger the preview."
-  (let ((input ""))
-    (if (and preview preview-key)
-        (minibuffer-with-setup-hook
+  (let ((input "")
+        (selected))
+    (minibuffer-with-setup-hook
+        (if (and preview preview-key)
             (lambda ()
               (setq consult--preview-function
                     (let ((last-preview))
@@ -866,20 +867,18 @@ PREVIEW-KEY are the keys which trigger the preview."
                             (when-let (cand (run-hook-with-args-until-success 'consult--completion-candidate-hook))
                               (funcall consult--preview-function input cand))))
                         nil t))
-          (let ((selected))
-            (unwind-protect
-                (cons (setq selected (when-let (result (funcall fun))
-                                       (funcall transform input result)))
-                      input)
-              (funcall preview selected t))))
-      (minibuffer-with-setup-hook
-          (apply-partially
-           #'add-hook 'post-command-hook
-           (lambda () (setq input (minibuffer-contents-no-properties)))
-           nil t)
-        (cons (when-let (result (funcall fun))
-                (funcall transform input result))
-              input)))))
+          (apply-partially #'add-hook 'post-command-hook
+                           (lambda () (setq input (minibuffer-contents-no-properties)))
+                           nil t))
+      (unwind-protect
+          (cons (setq selected (when-let (result (funcall fun))
+                                 (funcall transform input result)))
+                input)
+        ;; If there is a preview function, always call restore!
+        ;; The preview function should be seen as a stateful object,
+        ;; and we call the destructor here.
+        (when preview
+          (funcall preview selected t))))))
 
 (defmacro consult--with-preview (preview-key preview transform &rest body)
   "Install TRANSFORM and PREVIEW in BODY.
