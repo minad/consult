@@ -829,11 +829,14 @@ PREVIEW-KEY are the keys which trigger the preview."
         (minibuffer-with-setup-hook
             (lambda ()
               (setq consult--preview-function
-                    (lambda (inp cand)
-                      (unless (window-minibuffer-p)
-                        (error "Minibuffer window is not selected in consult--preview-function"))
-                      (with-selected-window (or (minibuffer-selected-window) (next-window))
-                        (funcall preview (funcall transform inp cand) nil))))
+                    (let ((last-preview))
+                      (lambda (inp cand)
+                        (unless (window-minibuffer-p)
+                          (error "Minibuffer window is not selected in consult--preview-function"))
+                        (unless (equal last-preview cand)
+                          (with-selected-window (or (minibuffer-selected-window) (next-window))
+                            (funcall preview (funcall transform inp cand) nil))
+                          (setq last-preview cand)))))
               (add-hook 'post-command-hook
                         (lambda ()
                           (setq input (minibuffer-contents-no-properties))
