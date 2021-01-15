@@ -1823,9 +1823,8 @@ SHOW must be t in order to show the hidden lines."
            (while (< pos max)
              (goto-char pos)
              (setq end (line-end-position))
-             (let ((line (buffer-substring pos end)))
-               (push (cons line (make-overlay pos (1+ end))) overlays)
-               (push line lines))
+             (push (buffer-substring pos end) lines)
+             (push (cons (car lines) (make-overlay pos (1+ end))) overlays)
              (setq pos (1+ end)))))
        (minibuffer-with-setup-hook
            (lambda ()
@@ -1837,10 +1836,8 @@ SHOW must be t in order to show the hidden lines."
                        (ht
                         (if (string= filter-str "")
                             ;; Special case the empty input for performance.
-                            (progn
-                              (dolist (ov overlays)
-                                (overlay-put (cdr ov) 'invisible nil))
-                              nil)
+                            (dolist (ov overlays)
+                              (overlay-put (cdr ov) 'invisible nil))
                           (while-no-input
                             (consult--string-hash (funcall filter filter-str lines))))))
                   (when (hash-table-p ht)
