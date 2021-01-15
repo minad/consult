@@ -921,31 +921,21 @@ to make it available for commands with narrowing."
                              " " (cdr x)))))
       " "))))
 
-(defvar consult-narrow-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map " " consult--narrow-space)
-    (define-key map [127] consult--narrow-delete)
-    map)
-  "Narrowing keymap which is added to the local minibuffer map.
-Note that `consult-narrow-key' and `consult-widen-key' are bound dynamically.")
-
-(defun consult--narrow-setup (settings)
-  "Setup narrowing with SETTINGS."
+(defun consult--narrow-setup (settings map)
+  "Setup narrowing with SETTINGS and keymap MAP."
   (if (functionp (car settings))
       (setq consult--narrow-predicate (car settings)
             consult--narrow-prefixes (cdr settings))
     (setq consult--narrow-predicate nil
           consult--narrow-prefixes settings))
-  (let ((map (make-composed-keymap nil consult-narrow-map)))
-    (when consult-narrow-key
-      (dolist (pair consult--narrow-prefixes)
-        (when (/= (car pair) 32)
-          (consult--define-key map
-                               (vconcat consult-narrow-key (vector (car pair)))
-                               #'consult-narrow (cdr pair)))))
-    (when-let (widen (consult--widen-key))
-      (consult--define-key map widen #'consult-narrow "All"))
-    map))
+  (when consult-narrow-key
+    (dolist (pair consult--narrow-prefixes)
+      (when (/= (car pair) 32)
+        (consult--define-key map
+                             (vconcat consult-narrow-key (vector (car pair)))
+                             #'consult-narrow (cdr pair)))))
+  (when-let (widen (consult--widen-key))
+    (consult--define-key map widen #'consult-narrow "All")))
 
 ;;;; Async support
 
@@ -1224,6 +1214,22 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
      (consult--async-throttle)
      (consult--async-split)))
 
+;;;; Special keymaps
+
+(defvar consult-async-map (make-sparse-keymap)
+  "Keymap added for commands with asynchronous candidates.")
+
+(defvar consult-preview-map (make-sparse-keymap)
+  "Keymap added for commands with preview.")
+
+(defvar consult-narrow-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map " " consult--narrow-space)
+    (define-key map [127] consult--narrow-delete)
+    map)
+  "Narrowing keymap which is added to the local minibuffer map.
+Note that `consult-narrow-key' and `consult-widen-key' are bound dynamically.")
+
 ;;;; Main consult--read API
 
 (defun consult--add-history (items)
@@ -1245,22 +1251,38 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
                                    minibuffer-completion-table
                                    minibuffer-completion-predicate))))))
 
-(defun consult--setup-keymap (narrow preview-key)
-  "Setup keymap for NARROW and PREVIEW-KEY."
-  (use-local-map
-   (make-composed-keymap
-    (append
-     (when narrow
-       (list (consult--narrow-setup narrow)))
-     (when (and preview-key (not (eq preview-key 'any)))
-       (let ((old-map (current-local-map))
-             (map (make-sparse-keymap))
-             (preview-key (if (listp preview-key) preview-key (list preview-key))))
-         (dolist (key preview-key)
-           (unless (lookup-key old-map key)
-             (consult--define-key map key #'ignore "Preview")))
-         (list map))))
-    (current-local-map))))
+(defun consult--setup-keymap (async narrow preview-key)
+  "Setup keymap for ASYNC, NARROW and PREVIEW-KEY."
+  (let ((old-map (current-local-map))
+        (map (make-sparse-keymap)))
+
+    ;; Async keys overwriting some unusable defaults for the default completion
+    (when async
+      (when (eq (lookup-key old-map " ") #'minibuffer-complete-word)
+        (define-key map " " #'self-insert-key))
+      (when (eq (lookup-key old-map "\t") #'minibuffer-complete)
+        (define-key map "\t" #'minibuffer-completion-help)))
+
+    ;; Add narrow keys
+    (when narrow
+      (consult--narrow-setup narrow map))
+
+    ;; Preview trigger keys
+    (when (and preview-key (not (eq preview-key 'any)))
+      (let ((preview-key (if (listp preview-key) preview-key (list preview-key))))
+        (dolist (key preview-key)
+          (unless (lookup-key old-map key)
+            (define-key map key #'ignore)))))
+
+    ;; Put the keymap together
+    (use-local-map
+     (make-composed-keymap
+      (append
+       (when async (list consult-async-map))
+       (when narrow (list consult-narrow-map))
+       (when preview-key (list consult-preview-map))
+       map)
+      old-map))))
 
 (defun consult--fry-the-tofus (&rest _)
   "Fry the tofus in the minibuffer."
@@ -1275,13 +1297,13 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
       (remove-list-of-text-properties min pos '(display))
       (put-text-property min pos 'invisible t))))
 
-(cl-defun consult--read-setup (_prompt _candidates
+(cl-defun consult--read-setup (_prompt candidates
                                        &key add-history narrow preview-key &allow-other-keys)
   "Minibuffer setup for `consult--read'.
 
-See `consult--read' for the ADD-HISTORY, NARROW and PREVIEW-KEY arguments."
+See `consult--read' for the CANDIDATES, ADD-HISTORY, NARROW and PREVIEW-KEY arguments."
   (add-hook 'after-change-functions #'consult--fry-the-tofus nil t)
-  (consult--setup-keymap narrow preview-key)
+  (consult--setup-keymap (functionp candidates) narrow preview-key)
   (consult--add-history add-history))
 
 (cl-defun consult--read (prompt candidates &rest options &key
@@ -1803,7 +1825,7 @@ The command respects narrowing and the settings
                           consult-preview-key)))
       (while (let ((ret (minibuffer-with-setup-hook
                             (:append (lambda ()
-                                       (consult--setup-keymap nil preview-key)
+                                       (consult--setup-keymap nil nil preview-key)
                                        (setq-local consult--completion-candidate-hook
                                                    '(minibuffer-contents-no-properties))))
                           (consult--with-preview
