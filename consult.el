@@ -1734,9 +1734,9 @@ The symbol at point and the last `isearch-string' is added to the future history
   (let ((filter (run-hook-with-args-until-success 'consult--completion-filter-hook 'highlight)))
     (lambda (input lines)
       (cond
-       ((or (string= input "") (string= input "!")) lines)
-       ((string-prefix-p "!" input)
-        (let ((ht (consult--string-hash (funcall filter (substring input 1) lines))))
+       ((string-match-p "^!? ?$" input) lines)
+       ((string-prefix-p "! " input)
+        (let ((ht (consult--string-hash (funcall filter (substring input 2) lines))))
           (seq-remove (lambda (line) (gethash line ht)) lines)))
        (t (funcall filter input lines))))))
 
@@ -1771,7 +1771,7 @@ INITIAL is the initial input."
             (lambda (&rest _)
               (let* ((input (minibuffer-contents-no-properties))
                      (filtered-contents
-                      (if (string= input "")
+                      (if (string-match-p "^!? ?$" input)
                           ;; Special case the empty input for performance.
                           ;; Otherwise it could happen that the minibuffer is empty,
                           ;; but the buffer has not been updated.
@@ -1828,24 +1828,23 @@ SHOW must be t in order to show the hidden lines."
               'after-change-functions
               (lambda (&rest _)
                 (let* ((input (minibuffer-contents-no-properties))
-                       (filter-str (string-remove-prefix "!" input))
                        (ht
-                        (if (string= filter-str "")
+                        (if (string-match-p "^!? ?$" input)
                             ;; Special case the empty input for performance.
                             (dolist (ov overlays)
                               (overlay-put (cdr ov) 'invisible nil))
                           (while-no-input
-                            (consult--string-hash (funcall filter filter-str lines))))))
+                            (consult--string-hash (funcall filter (string-remove-prefix "! " input) lines))))))
                   (when (hash-table-p ht)
-                    (if (string= filter-str input)
+                    (if (string-prefix-p "! " input)
                         (dolist (ov overlays)
-                          (overlay-put (cdr ov) 'invisible (not (gethash (car ov) ht))))
+                          (overlay-put (cdr ov) 'invisible (gethash (car ov) ht)))
                       (dolist (ov overlays)
-                        (overlay-put (cdr ov) 'invisible (gethash (car ov) ht)))))))
+                        (overlay-put (cdr ov) 'invisible (not (gethash (car ov) ht))))))))
               nil t))
          (unwind-protect
              (progn
-               (read-from-minibuffer "Hide lines: " initial nil nil 'consult--keep-lines-history)
+               (read-from-minibuffer "Visible lines: " initial nil nil 'consult--keep-lines-history)
                (dolist (ov overlays)
                  (setq ov (cdr ov))
                  (if (overlay-get ov 'invisible)

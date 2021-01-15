@@ -193,12 +193,12 @@ supported when selecting from the kill-ring.
 which uses the current completion style for filtering the buffer. The
 function updates the buffer while typing. In particular, this function can be
 used to further narrow an exported Embark collect buffer with the same
-completion filtering as during @samp{completing-read}. If the first character is
-"!", the filter matches the complement.
+completion filtering as during @samp{completing-read}. If the input begins with
+"! SPC", the filter matches the complement.
 @item
 @samp{consult-hide-lines}: Temporarily hide lines by filtering them using the current
 completion style. Call with @samp{C-u} prefix argument in order to show the hidden
-lines again. If the first character is "!", the filter matches the
+lines again. If the input begins with "! SPC", the filter matches the
 complement. In contrast to @samp{consult-keep-lines} this function does not edit
 the buffer.
 @end itemize
