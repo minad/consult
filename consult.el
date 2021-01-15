@@ -1835,54 +1835,67 @@ INITIAL is the initial input."
          (when (and font-lock-orig (not font-lock-mode))
            (font-lock-mode)))))))
 
+;;;;; Command: consult-focus-lines
+
+(defun consult--focus-lines-state (filter)
+  "State function for `consult-focus-lines' with FILTER function."
+  (let ((lines) (overlays) (last-input))
+    (consult--each-line beg end
+      (push (buffer-substring beg end) lines)
+      (push (make-overlay beg (1+ end)) overlays))
+    (lambda (input restore)
+      ;; New input provided -> Update
+      (when (and input (not (equal input last-input)))
+        (if (string-match-p "^!? ?$" input)
+            ;; Special case the empty input for performance.
+            (progn
+              (dolist (ov overlays)
+                (overlay-put ov 'invisible nil))
+              (setq last-input input))
+          (let* ((not (string-prefix-p "! " input))
+                 (stripped (string-remove-prefix "! " input))
+                 ;; Heavy computation is interruptible if *not* finalizing!
+                 (ht (if restore
+                         (consult--string-hash (funcall filter stripped lines))
+                       (while-no-input
+                         (consult--string-hash (funcall filter stripped lines))))))
+            (when (hash-table-p ht)
+              (let ((ov overlays) (li lines))
+                (while ov
+                  (overlay-put (car ov) 'invisible (eq not (gethash (car li) ht)))
+                  (setq li (cdr li) ov (cdr ov))))
+              (setq last-input input)))))
+      ;; Sucessfully terminated -> Remember invisible overlays
+      (when (and input restore)
+        (dolist (ov overlays)
+          (if (overlay-get ov 'invisible)
+              (push ov consult--focus-lines-overlays)
+            (delete-overlay ov)))
+        (setq overlays nil))
+      ;; When terminating -> Destroy remaining overlays
+      (when restore
+        (mapc #'delete-overlay overlays)))))
+
 (defun consult-focus-lines (&optional show filter initial)
   "Hide or show lines according to FILTER function.
 
 Optionally INITIAL input can be provided.
 SHOW must be t in order to show the hidden lines."
   (interactive
-   (list current-prefix-arg (run-hook-with-args-until-success 'consult--completion-filter-hook)))
+   (list current-prefix-arg
+         (run-hook-with-args-until-success 'consult--completion-filter-hook)))
   (consult--forbid-minibuffer)
   (if show
       (progn
-       (mapc #'delete-overlay consult--focus-lines-overlays)
-       (setq consult--focus-lines-overlays nil))
+        (mapc #'delete-overlay consult--focus-lines-overlays)
+        (setq consult--focus-lines-overlays nil))
     (consult--with-increased-gc
      (consult--fontify-all)
-     (let ((lines) (overlays))
-       (consult--each-line beg end
-         (push (buffer-substring beg end) lines)
-         (push (cons (car lines) (make-overlay beg (1+ end))) overlays))
-       (minibuffer-with-setup-hook
-           (lambda ()
-             (add-hook
-              'after-change-functions
-              (lambda (&rest _)
-                (let* ((input (minibuffer-contents-no-properties))
-                       (ht
-                        (if (string-match-p "^!? ?$" input)
-                            ;; Special case the empty input for performance.
-                            (dolist (ov overlays)
-                              (overlay-put (cdr ov) 'invisible nil))
-                          (while-no-input
-                            (consult--string-hash (funcall filter (string-remove-prefix "! " input) lines))))))
-                  (when (hash-table-p ht)
-                    (if (string-prefix-p "! " input)
-                        (dolist (ov overlays)
-                          (overlay-put (cdr ov) 'invisible (gethash (car ov) ht)))
-                      (dolist (ov overlays)
-                        (overlay-put (cdr ov) 'invisible (not (gethash (car ov) ht))))))))
-              nil t))
-         (unwind-protect
-             (progn
-               (read-from-minibuffer "Focus on lines: " initial nil nil 'consult--keep-lines-history)
-               (dolist (ov overlays)
-                 (setq ov (cdr ov))
-                 (if (overlay-get ov 'invisible)
-                     (push ov consult--focus-lines-overlays)
-                   (delete-overlay ov)))
-               (setq overlays nil))
-           (mapc (lambda (x) (delete-overlay (cdr x))) overlays)))))))
+     (consult--prompt
+      "Focus on lines: "
+      :initial initial
+      :history 'consult--keep-lines-history
+      :preview (consult--focus-lines-state filter)))))
 
 ;;;;; Command: consult-goto-line
 
