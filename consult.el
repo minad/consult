@@ -696,19 +696,6 @@ MARKER is the cursor position."
    (line-end-position)
    marker))
 
-(defmacro consult--merge-config (arity)
-  "Make function which merges `consult-config' after ARITY arguments."
-  `(defun ,(intern (format "consult--merge-config-%d" arity)) (args)
-     (if-let (config (alist-get this-command consult-config))
-         (let ((options (seq-copy (seq-drop args ,arity))))
-           (while config
-             (setq options (plist-put options (car config) (cadr config))
-                   config (cddr config)))
-           (append (seq-take args ,arity) options))
-       args)))
-(consult--merge-config 1)
-(consult--merge-config 2)
-
 ;;;; Preview support
 
 (defun consult--kill-clean-buffer (buf)
@@ -1257,7 +1244,7 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
   "Narrowing keymap which is added to the local minibuffer map.
 Note that `consult-narrow-key' and `consult-widen-key' are bound dynamically.")
 
-;;;; Internal API: consult--read
+;;;; Main consult--read API
 
 (defun consult--add-history (items)
   "Add ITEMS to the minibuffer history via `minibuffer-default-add-function'."
@@ -1398,21 +1385,17 @@ NARROW is an alist of narrowing prefix strings and description."
           ((pred symbolp)))
         (car result)))))
 
-(advice-add #'consult--read :filter-args #'consult--merge-config-2)
-
-;;;; Internal API: consult--read-string
-
-(cl-defun consult--read-string (prompt &key transform history initial default
-                                       preview (preview-key consult-preview-key))
-  (minibuffer-with-setup-hook
-      (:append (lambda ()
-                 (consult--setup-keymap nil nil preview-key)
-                 (setq-local consult--completion-candidate-hook
-                             '(minibuffer-contents-no-properties))))
-       (consult--with-preview preview-key preview transform
-         (read-from-minibuffer prompt initial nil nil history default))))
-
-(advice-add #'consult--read-string :filter-args #'consult--merge-config-1)
+(defun consult--read-config (args)
+  "Advice for `consult--read' which adjusts ARGS, merging the command configuration."
+  (when-let (config (alist-get this-command consult-config))
+    (setq args (copy-sequence args))
+    (let ((options (cddr args)))
+      (while config
+        (setq options (plist-put options (car config) (cadr config))
+              config (cddr config)))
+      (setf (cddr args) options)))
+  args)
+(advice-add #'consult--read :filter-args #'consult--read-config)
 
 ;;;; Commands
 
@@ -1890,29 +1873,37 @@ The command respects narrowing and the settings
   (consult--forbid-minibuffer)
   (consult--local-let ((display-line-numbers consult-goto-line-numbers)
                        (display-line-numbers-widen consult-line-numbers-widen))
-    (while (let ((ret (consult--read-string
-                       "Go to line: "
-                       :preview
-                       (let ((preview (consult--preview-position)))
-                         (lambda (cand restore)
-                           (funcall preview
-                                    (when-let (pos (and cand (consult--line-position cand)))
-                                      (and (consult--in-range-p pos) pos))
-                                    restore)))
-                       :transform
-                       (lambda (_ cand)
-                         (when (and cand (string-match-p "^[[:digit:]]+$" cand))
-                           (string-to-number cand))))))
-             (if (car ret)
-                 (let ((pos (consult--line-position (car ret))))
-                   (if (consult--in-range-p pos)
-                       (consult--jump pos)
-                     (message "Line number out of range.")
-                     (sit-for 1)
-                     t))
-               (message "Please enter a number.")
-               (sit-for 1)
-               t)))))
+    (let* ((config (alist-get 'consult-goto-line consult-config))
+           (preview-key (if (plist-member config 'preview-key)
+                            (plist-get config 'preview-key)
+                          consult-preview-key)))
+      (while (let ((ret (minibuffer-with-setup-hook
+                            (:append (lambda ()
+                                       (consult--setup-keymap nil nil preview-key)
+                                       (setq-local consult--completion-candidate-hook
+                                                   '(minibuffer-contents-no-properties))))
+                          (consult--with-preview
+                              preview-key
+                              (let ((preview (consult--preview-position)))
+                                (lambda (cand restore)
+                                  (funcall preview
+                                           (when-let (pos (and cand (consult--line-position cand)))
+                                             (and (consult--in-range-p pos) pos))
+                                           restore)))
+                              (lambda (_ cand)
+                                (when (and cand (string-match-p "^[[:digit:]]+$" cand))
+                                  (string-to-number cand)))
+                            (read-from-minibuffer "Go to line: ")))))
+               (if (car ret)
+                   (let ((pos (consult--line-position (car ret))))
+                     (if (consult--in-range-p pos)
+                         (consult--jump pos)
+                       (message "Line number out of range.")
+                       (sit-for 1)
+                       t))
+                 (message "Please enter a number.")
+                 (sit-for 1)
+                 t))))))
 
 ;;;;; Command: consult-recent-file
 
