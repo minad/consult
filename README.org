@@ -132,12 +132,12 @@ variables and functions with their descriptions.
    =yank-pop= which allows selecting from the kill-ring. Live preview is
    supported when selecting from the kill-ring.
  - =consult-kmacro=: Select macro from the macro ring and execute it.
- - =consult-keep-lines=, =consult-flush-lines=: Replacements for =keep-lines=
-   and =flush-lines= which use the current completion style for
-   filtering the buffer. The function updates the buffer while typing.
-   In particular, this function can be used to further narrow an
-   exported Embark collect buffer with the same completion filtering
-   as during =completing-read=.
+ - =consult-keep-lines=: Replacement for =keep/flush-lines=
+   which uses the current completion style for filtering the buffer. The
+   function updates the buffer while typing. In particular, this function can be
+   used to further narrow an exported Embark collect buffer with the same
+   completion filtering as during =completing-read=. If the first character is
+   "!", the filter matches the complement.
 
 ** Navigation
  :properties:
@@ -464,7 +464,6 @@ the box with the default completion, Icomplete and Selectrum.
           ("C-c h" . consult-history)
           ("C-c m" . consult-mode-command)
           ("C-c k" . consult-keep-lines)
-          ("C-c C-k" . consult-flush-lines)
           ("C-x b" . consult-buffer)
           ("C-x 4 b" . consult-buffer-other-window)
           ("C-x 5 b" . consult-buffer-other-frame)

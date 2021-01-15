@@ -367,6 +367,7 @@ the public API."
 
 ;;;; History variables
 
+(defvar consult--keep-lines-history nil)
 (defvar consult--error-history nil)
 (defvar consult--grep-history nil)
 (defvar consult--find-history nil)
@@ -1713,14 +1714,27 @@ The symbol at point and the last `isearch-string' is added to the future history
       :initial initial
       :preview (consult--preview-position)))))
 
-;;;;; Command: consult-keep/flush-lines
+;;;;; Command: consult-keep-lines
 
-(defun consult--filter-lines (prompt filter)
+(defun consult--keep-lines-filter ()
+  "Return default filter function."
+  (let ((filter (run-hook-with-args-until-success 'consult--completion-filter-hook 'highlight)))
+    (lambda (input lines)
+      (cond
+       ((or (string= input "") (string= input "!")) lines)
+       ((string-prefix-p "!" input)
+        (let ((ht (consult--string-hash (funcall filter (substring input 1) lines))))
+          (seq-remove (lambda (line) (gethash line ht)) lines)))
+       (t (funcall filter input lines))))))
+
+(defun consult-keep-lines (&optional filter initial)
   "Select a subset of the lines in the current buffer with live preview.
 
-The lines selected are those that match the minibuffer input
-according to the function FILTER. This command obeys narrowing.
-PROMPT is the prompt shown to the user."
+The lines selected are those that match the minibuffer input.
+This command obeys narrowing.
+FILTER is the filter function.
+INITIAL is the initial input."
+  (interactive (list (consult--keep-lines-filter)))
   (consult--forbid-minibuffer)
   (barf-if-buffer-read-only)
   (consult--with-increased-gc
@@ -1773,7 +1787,7 @@ PROMPT is the prompt shown to the user."
        (unwind-protect
            (progn
              (activate-change-group changes)
-             (read-from-minibuffer prompt)
+             (read-from-minibuffer "Keep lines: " initial nil nil 'consult--keep-lines-history)
              (setq point-orig nil))
          ;; Disable modification hooks for performance
          (let ((inhibit-modification-hooks t))
@@ -1783,33 +1797,6 @@ PROMPT is the prompt shown to the user."
              (goto-char point-orig)))
          (when (and font-lock-orig (not font-lock-mode))
            (font-lock-mode)))))))
-
-;;;###autoload
-(defun consult-keep-lines ()
-  "Select a subset of the lines in the current buffer with live preview.
-
-The lines selected are those that match the minibuffer input
-according to your completion system.  This command obeys
-narrowing."
-  (interactive)
-  (consult--filter-lines
-   "Keep lines: "
-   (run-hook-with-args-until-success 'consult--completion-filter-hook 'highlight)))
-
-;;;###autoload
-(defun consult-flush-lines ()
-  "Remove a subset of the lines in the current buffer with live preview.
-
-The lines removed are those that match the minibuffer input
-according to your completion system.  This command obeys
-narrowing."
-  (interactive)
-  (consult--filter-lines
-   "Flush lines: "
-   (let ((filter (run-hook-with-args-until-success 'consult--completion-filter-hook 'highlight)))
-     (lambda (input lines)
-       (let ((ht (consult--string-hash (funcall filter input lines))))
-         (seq-remove (lambda (line) (gethash line ht)) lines))))))
 
 ;;;;; Command: consult-goto-line
 
