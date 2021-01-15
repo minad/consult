@@ -439,6 +439,13 @@ Size of private unicode plane b.")
 
 ;;;; Helper functions and macros
 
+(defun consult--string-hash (strings)
+  "Create hashtable from STRINGS."
+  (let ((ht (make-hash-table :test #'equal :size (length strings))))
+    (dolist (str strings)
+      (puthash str t ht))
+    ht))
+
 (defmacro consult--local-let (binds &rest body)
   "Buffer local let BINDS of dynamic variables in BODY."
   (declare (indent 1))
@@ -1801,10 +1808,7 @@ narrowing."
    "Flush lines: "
    (let ((match (run-hook-with-args-until-success 'consult--completion-match-hook 'highlight)))
      (lambda (input lines)
-       (let ((filtered (funcall match input lines))
-             (ht (make-hash-table :test #'equal :size (length lines))))
-         (dolist (line filtered)
-           (puthash line t ht))
+       (let ((ht (consult--string-hash (funcall match input lines))))
          (seq-remove (lambda (line) (gethash line ht)) lines))))))
 
 ;;;;; Command: consult-goto-line
@@ -2417,7 +2421,7 @@ FACE is the face for the candidate."
 Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be used to display the item."
   (let* ((curr-buf (current-buffer))
          (all-bufs (append (delq curr-buf (buffer-list)) (list curr-buf)))
-         (buf-file-hash (let ((ht (make-hash-table :test #'equal)))
+         (buf-file-hash (let ((ht (make-hash-table :test #'equal :size (length all-bufs))))
                           (dolist (buf all-bufs ht)
                             (when-let (file (buffer-file-name buf))
                               (puthash file t ht)))))
