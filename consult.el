@@ -329,6 +329,10 @@ the public API."
   '((t :inherit error))
   "Face used if asynchronous process has failed.")
 
+(defface consult-async-split
+  '((t :inherit error))
+  "Face used to highlight punctuation character.")
+
 (defface consult-key
   '((t :inherit font-lock-keyword-face))
   "Face used to highlight keys, e.g., in `consult-register'.")
@@ -1034,12 +1038,20 @@ the comma is passed to ASYNC, the second part is used for filtering."
        (funcall async 'setup))
       ((pred stringp)
        (let* ((pair (consult--async-split-string action))
+              (input-len (length action))
               (async-str (car pair))
-              (async-len (length async-str)))
+              (async-len (length async-str))
+              (end (minibuffer-prompt-end)))
+         ;; Highlight punctuation characters
+         (remove-list-of-text-properties end (+ end input-len) '(face))
+         (when (> input-len async-len)
+           (put-text-property end (1+ end) 'face 'consult-async-split)
+           (when (> input-len (1+ async-len))
+             (put-text-property (+ 1 end async-len) (+ 2 end async-len) 'face 'consult-async-split)))
          (funcall async
                   ;; Pass through if forced by two punctuation characters
                   ;; or if the input is long enough!
-                  (if (or (>= (length action) (+ 2 async-len))
+                  (if (or (>= input-len (+ 2 async-len))
                           (>= async-len consult-async-min-input))
                       async-str
                     ;; Pretend that there is no input
