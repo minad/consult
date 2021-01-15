@@ -816,13 +816,18 @@ FACE is the cursor face."
   (let ((overlays)
         (invisible)
         (face (or face 'consult-preview-cursor))
+        (saved-min (point-min-marker))
+        (saved-max (point-max-marker))
         (saved-pos (point-marker)))
     (lambda (cand restore)
       (consult--invisible-restore invisible)
       (mapc #'delete-overlay overlays)
       (cond
-       ;; Do nothing when restoring
-       (restore)
+       (restore
+        (if (not (buffer-live-p (marker-buffer saved-pos)))
+            (message "Buffer is dead")
+          (narrow-to-region saved-min saved-max)
+          (goto-char saved-pos)))
        ;; Jump to position
        (cand
         (consult--jump-1 cand)
@@ -863,11 +868,9 @@ PREVIEW-KEY are the keys which trigger the preview."
                         nil t))
           (let ((selected))
             (unwind-protect
-                (save-excursion
-                  (save-restriction
-                    (setq selected (when-let (result (funcall fun))
-                                     (funcall transform input result)))
-                    (cons selected input)))
+                (cons (setq selected (when-let (result (funcall fun))
+                                       (funcall transform input result)))
+                      input)
               (funcall preview selected t))))
       (minibuffer-with-setup-hook
           (apply-partially
