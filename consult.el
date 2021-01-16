@@ -443,6 +443,33 @@ Size of private unicode plane b.")
 
 ;;;; Helper functions and macros
 
+(defsubst consult--completion-filter (&optional highlight)
+  "Return filter function used by completion system.
+
+HIGHLIGHT must be t if highlighting is needed."
+  (run-hook-with-args-until-success 'consult--completion-filter-hook highlight))
+
+(defun consult--completion-filter-complement ()
+  "Return complement of the filter function used by the completion system."
+  (let ((filter (consult--completion-filter)))
+    (lambda (input cands)
+      (let ((ht (consult--string-hash (funcall filter input cands))))
+        (seq-remove (lambda (x) (gethash x ht)) cands)))))
+
+(defun consult--completion-filter-dispatch (&optional highlight)
+  "Return dispatching filter function.
+
+Either dispatch to `consult--completion-filter' or to
+`consult--completion-filter-complement'.
+HIGHLIGHT must be t if highlighting is needed."
+  (let ((filter (consult--completion-filter highlight))
+        (filter-not (consult--completion-filter-complement)))
+    (lambda (input cands)
+      (cond
+       ((string-match-p "^!? ?$" input) cands) ;; empty input
+       ((string-prefix-p "! " input) (funcall filter-not (substring input 2) cands))
+       (t (funcall filter input cands))))))
+
 (defmacro consult--each-line (beg end &rest body)
   "Iterate over each line.
 
@@ -1710,7 +1737,7 @@ CAND is the currently selected candidate."
           (setq cand (substring cand i))))
       (let ((beg 0)
             (end (length cand))
-            (filter (run-hook-with-args-until-success 'consult--completion-filter-hook)))
+            (filter (consult--completion-filter)))
         ;; Find match end position, remove characters from line end until matching fails
         (let ((step 16))
           (while (> step 0)
@@ -1759,17 +1786,6 @@ The symbol at point and the last `isearch-string' is added to the future history
       :preview (consult--preview-position)))))
 
 ;;;;; Command: consult-keep-lines
-
-(defun consult--keep-lines-filter ()
-  "Return default filter function."
-  (let ((filter (run-hook-with-args-until-success 'consult--completion-filter-hook 'highlight)))
-    (lambda (input lines)
-      (cond
-       ((string-match-p "^!? ?$" input) lines)
-       ((string-prefix-p "! " input)
-        (let ((ht (consult--string-hash (funcall filter (substring input 2) lines))))
-          (seq-remove (lambda (line) (gethash line ht)) lines)))
-       (t (funcall filter input lines))))))
 
 (defun consult--keep-lines-state (filter)
   "State function for `consult-keep-lines' with FILTER function."
@@ -1828,7 +1844,7 @@ The lines selected are those that match the minibuffer input.
 This command obeys narrowing.
 FILTER is the filter function.
 INITIAL is the initial input."
-  (interactive (list (consult--keep-lines-filter)))
+  (interactive (list (consult--completion-filter-dispatch 'highlight)))
   (consult--forbid-minibuffer)
   (barf-if-buffer-read-only)
   (consult--with-increased-gc
@@ -1890,8 +1906,7 @@ INITIAL is the initial input."
 Optionally INITIAL input can be provided.
 SHOW must be t in order to show the hidden lines."
   (interactive
-   (list current-prefix-arg
-         (run-hook-with-args-until-success 'consult--completion-filter-hook)))
+   (list current-prefix-arg (consult--completion-filter)))
   (consult--forbid-minibuffer)
   (if show
       (progn
