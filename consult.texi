@@ -67,24 +67,27 @@ Configuration
 
 @cindex introduction
 
-This package provides various handy commands based on the Emacs completion
-function @samp{completing-read}, which allows to quickly select from a list of
+Consult provides various handy commands based on the Emacs completion function
+@samp{completing-read}, which allows to quickly select an item from a list of
 candidates. Consult offers in particular a more advanced buffer switching
-command @samp{consult-buffer} which allows to select from buffers, recent files and
-more. Various search commands are provided, like an asynchronous @samp{consult-grep},
-and @samp{consult-line}, which resembles @uref{https://github.com/abo-abo/swiper#swiper, Swiper} or @uref{https://github.com/emacsorphanage/helm-swoop, Helm-Swoop}. Please take a look at
-the @ref{Available commands, , full list of commands}!
+command @samp{consult-buffer} to switch to buffers and recently opened files. Various
+search commands are provided, like an asynchronous @samp{consult-grep}, and
+@samp{consult-line}, which resembles @uref{https://github.com/abo-abo/swiper#swiper, Swiper} or @uref{https://github.com/emacsorphanage/helm-swoop, Helm-Swoop}. Multiple of the offered
+commands are greatly enhanced in comparison to their existing Emacs equivalents.
+The command @samp{consult-imenu} presents a flat list of the Imenu with @ref{Live previews, , live preview}
+and @ref{Narrowing to subsets, , narrowing support}. Please take a look at the @ref{Available commands, , full list of commands}!
 
 All Consult commands are compatible with completion systems based on the
 standard Emacs @samp{completing-read} API, notably the default completion system,
-@uref{https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html, Icomplete}, @uref{https://github.com/raxod502/selectrum, Selectrum} and @uref{https://github.com/oantolin/embark/, Embark}. If Icomplete is used, it is recommended to
-install @uref{https://github.com/oantolin/icomplete-vertical, Icomplete-vertical}. The completion system specifics in this package are
-kept to a minimum. The ability of the Consult commands to work well with
-arbitrary completion systems is one main advantage of the package. This property
-allows Consult to fit well into existing setups and it helps you to create a
-full completion environment out of small and independent components. Note that,
-if you use @uref{https://github.com/abo-abo/swiper#ivy, Ivy} or @uref{https://github.com/emacs-helm/helm, Helm}, you probably don't need Consult, since both packages
-already bring their own rich set of additional commands.
+@uref{https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html, Icomplete}, @uref{https://github.com/raxod502/selectrum, Selectrum} and @uref{https://github.com/oantolin/embark/, Embark}, with which Consult works out of the box. If
+Icomplete is used, it is recommended to install @uref{https://github.com/oantolin/icomplete-vertical, Icomplete-vertical}. The
+completion system specifics in this package are kept to a minimum. The ability
+of the Consult commands to work well with arbitrary completion systems is one
+main advantage of the package. This property allows Consult to fit well into
+existing setups and it helps you to create a full completion environment out of
+small and independent components. Note that, if you use @uref{https://github.com/abo-abo/swiper#ivy, Ivy} or @uref{https://github.com/emacs-helm/helm, Helm}, you
+probably don't need Consult, since both packages already bring their own rich
+set of additional commands.
 
 There are the @uref{https://github.com/minad/marginalia/, Marginalia} and @uref{https://github.com/oantolin/embark/, Embark} packages, which can be combined with
 Consult. The @samp{marginalia-mode} enriches the completion display with annotations.
