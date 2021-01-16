@@ -1771,6 +1771,56 @@ The symbol at point and the last `isearch-string' is added to the future history
           (seq-remove (lambda (line) (gethash line ht)) lines)))
        (t (funcall filter input lines))))))
 
+(defun consult--keep-lines-state (filter)
+  "State function for `consult-keep-lines' with FILTER function."
+  (let ((lines)
+        (buffer-orig (current-buffer))
+        (font-lock-orig font-lock-mode)
+        (point-orig (point))
+        (last-input)
+        (changes (prepare-change-group)))
+     (consult--each-line beg end
+       (push (buffer-substring beg end) lines))
+     (setq lines (nreverse lines))
+     (activate-change-group changes)
+     (lambda (input restore)
+       ;; New input provided -> Update
+       (when (and input (not (equal input last-input)))
+         (let ((filtered-contents
+                (if (string-match-p "^!? ?$" input)
+                    ;; Special case the empty input for performance.
+                    ;; Otherwise it could happen that the minibuffer is empty,
+                    ;; but the buffer has not been updated.
+                    (string-join lines "\n")
+                  ;; Heavy computation is interruptible if *not* finalizing!
+                  ;; Allocate new string candidates since the matching function mutates!
+                  (if restore
+                      (string-join (funcall filter input (mapcar #'copy-sequence lines)) "\n")
+                    (while-no-input
+                      (string-join (funcall filter input (mapcar #'copy-sequence lines)) "\n"))))))
+           (when (stringp filtered-contents)
+             (with-current-buffer buffer-orig
+               (when font-lock-mode (font-lock-mode -1))
+               ;; Disable modification hooks for performance
+               (let ((inhibit-modification-hooks t))
+                 (delete-region (point-min) (point-max))
+                 (insert filtered-contents)
+                 ;; Amalgamate immediately in order to avoid long undo list
+                 (undo-amalgamate-change-group changes)
+                 (goto-char (point-min))
+                 (setq last-input input))))))
+       ;; Terminating
+       (when restore
+         ;; Sucessfully terminated -> Accept changes
+         (if input
+             (accept-change-group changes)
+           ;; Aborted -> Cancel changes
+           (cancel-change-group changes)
+           (goto-char point-orig))
+         ;; Restore font-lock
+         (when (and font-lock-orig (not font-lock-mode))
+           (font-lock-mode))))))
+
 (defun consult-keep-lines (&optional filter initial)
   "Select a subset of the lines in the current buffer with live preview.
 
@@ -1783,57 +1833,15 @@ INITIAL is the initial input."
   (barf-if-buffer-read-only)
   (consult--with-increased-gc
    (consult--fontify-all)
-   (let* ((buffer (current-buffer))
-          (lines)
-          (font-lock-orig font-lock-mode)
-          (point-orig (point))
-          ;; See `atomic-change-group' for these settings
-          (undo-outer-limit nil)
-          (undo-limit most-positive-fixnum)
-          (undo-strong-limit most-positive-fixnum)
-          (changes (prepare-change-group)))
-     (consult--each-line beg end
-       (push (buffer-substring beg end) lines))
-     (setq lines (nreverse lines))
-     (minibuffer-with-setup-hook
-         (lambda ()
-           (add-hook
-            'after-change-functions
-            (lambda (&rest _)
-              (let* ((input (minibuffer-contents-no-properties))
-                     (filtered-contents
-                      (if (string-match-p "^!? ?$" input)
-                          ;; Special case the empty input for performance.
-                          ;; Otherwise it could happen that the minibuffer is empty,
-                          ;; but the buffer has not been updated.
-                          (string-join lines "\n")
-                        ;; Allocate new string candidates since the matching function mutates!
-                        (while-no-input
-                          (string-join (funcall filter input (mapcar #'copy-sequence lines)) "\n")))))
-                (when (stringp filtered-contents)
-                  (with-current-buffer buffer
-                    (when font-lock-mode (font-lock-mode -1))
-                    ;; Disable modification hooks for performance
-                    (let ((inhibit-modification-hooks t))
-                      (delete-region (point-min) (point-max))
-                      (insert filtered-contents)
-                      ;; Amalgamate immediately in order to avoid long undo list
-                      (undo-amalgamate-change-group changes)
-                      (goto-char (point-min)))))))
-            nil t))
-       (unwind-protect
-           (progn
-             (activate-change-group changes)
-             (read-from-minibuffer "Keep lines: " initial nil nil 'consult--keep-lines-history)
-             (setq point-orig nil))
-         ;; Disable modification hooks for performance
-         (let ((inhibit-modification-hooks t))
-           (if (not point-orig)
-               (accept-change-group changes)
-             (cancel-change-group changes)
-             (goto-char point-orig)))
-         (when (and font-lock-orig (not font-lock-mode))
-           (font-lock-mode)))))))
+   ;; See `atomic-change-group' for these settings
+   (let ((undo-outer-limit nil)
+         (undo-limit most-positive-fixnum)
+         (undo-strong-limit most-positive-fixnum))
+     (consult--prompt
+      "Keep lines: "
+      :initial initial
+      :history 'consult--keep-lines-history
+      :preview (consult--keep-lines-state filter)))))
 
 ;;;;; Command: consult-focus-lines
 
