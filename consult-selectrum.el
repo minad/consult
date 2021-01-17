@@ -33,8 +33,8 @@
 (declare-function selectrum-exhibit "selectrum")
 (declare-function selectrum-get-current-candidate "selectrum")
 
-(defun consult-selectrum--filter (&optional highlight)
-  "Return selectrum filter function with optional HIGHLIGHT."
+(defun consult-selectrum--filter (_category highlight)
+  "Return selectrum filter function with HIGHLIGHT."
   ;; Do not use selectrum-active-p here, since we want to always use
   ;; the Selectrum filtering when Selectrum is installed, even when
   ;; Selectrum is currently not active.

@@ -443,27 +443,31 @@ Size of private unicode plane b.")
 
 ;;;; Helper functions and macros
 
-(defsubst consult--completion-filter (&optional highlight)
+(defsubst consult--completion-filter (category highlight)
   "Return filter function used by completion system.
 
+CATEGORY is the completion category.
 HIGHLIGHT must be t if highlighting is needed."
-  (run-hook-with-args-until-success 'consult--completion-filter-hook highlight))
+  (run-hook-with-args-until-success 'consult--completion-filter-hook category highlight))
 
-(defun consult--completion-filter-complement ()
-  "Return complement of the filter function used by the completion system."
-  (let ((filter (consult--completion-filter)))
+(defun consult--completion-filter-complement (category)
+  "Return complement of the filter function used by the completion system.
+
+CATEGORY is the completion category."
+  (let ((filter (consult--completion-filter category nil)))
     (lambda (input cands)
       (let ((ht (consult--string-hash (funcall filter input cands))))
         (seq-remove (lambda (x) (gethash x ht)) cands)))))
 
-(defun consult--completion-filter-dispatch (&optional highlight)
+(defun consult--completion-filter-dispatch (category highlight)
   "Return dispatching filter function.
 
 Either dispatch to `consult--completion-filter' or to
 `consult--completion-filter-complement'.
+CATEGORY is the completion category.
 HIGHLIGHT must be t if highlighting is needed."
-  (let ((filter (consult--completion-filter highlight))
-        (filter-not (consult--completion-filter-complement)))
+  (let ((filter (consult--completion-filter category highlight))
+        (filter-not (consult--completion-filter-complement category)))
     (lambda (input cands)
       (cond
        ((string-match-p "^!? ?$" input) cands) ;; empty input
@@ -1730,7 +1734,8 @@ CAND is the currently selected candidate."
           (setq cand (substring cand i))))
       (let ((beg 0)
             (end (length cand))
-            (filter (consult--completion-filter)))
+            ;; Use consult-location completion category when filtering lines
+            (filter (consult--completion-filter 'consult-location nil)))
         ;; Find match end position, remove characters from line end until matching fails
         (let ((step 16))
           (while (> step 0)
@@ -1837,7 +1842,8 @@ The lines selected are those that match the minibuffer input.
 This command obeys narrowing.
 FILTER is the filter function.
 INITIAL is the initial input."
-  (interactive (list (consult--completion-filter-dispatch 'highlight)))
+  ;; Use consult-location completion category when filtering lines
+  (interactive (list (consult--completion-filter-dispatch 'consult-location 'highlight)))
   (consult--forbid-minibuffer)
   (barf-if-buffer-read-only)
   (consult--with-increased-gc
@@ -1899,7 +1905,8 @@ INITIAL is the initial input."
 Optionally INITIAL input can be provided.
 SHOW must be t in order to show the hidden lines."
   (interactive
-   (list current-prefix-arg (consult--completion-filter)))
+   ;; Use consult-location completion category when filtering lines
+   (list current-prefix-arg (consult--completion-filter 'consult-location nil)))
   (consult--forbid-minibuffer)
   (if show
       (progn
@@ -3019,12 +3026,15 @@ See `consult-grep' for more details regarding the asynchronous search."
                              minibuffer-completion-predicate)
         cand))))
 
-(defun consult--default-completion-filter (&optional _highlight)
-  "Return default filter function."
+(defun consult--default-completion-filter (category _highlight)
+  "Return default filter function given the completion CATEGORY."
   (lambda (str cands)
     ;; completion-all-completions returns an improper list
     ;; where the last link is not necessarily nil. Fix this!
-    (nconc (completion-all-completions str cands nil (length str)) nil)))
+    (nconc (completion-all-completions
+            str cands nil (length str)
+            `(metadata (category . ,category)))
+           nil)))
 
 ;; Announce now that consult has been loaded
 (provide 'consult)
