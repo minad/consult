@@ -631,7 +631,7 @@ KEY is the key function."
 (defun consult--forbid-minibuffer ()
   "Raise an error if executed from the minibuffer."
   (when (minibufferp)
-    (user-error "Consult called inside the minibuffer")))
+    (user-error "`%s' called inside the minibuffer" this-command)))
 
 (defun consult--fontify-all ()
   "Ensure that the whole buffer is fontified."
