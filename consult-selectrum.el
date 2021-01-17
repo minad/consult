@@ -22,7 +22,16 @@
 ;;; Code:
 
 (require 'consult)
-(require 'selectrum)
+
+;; NOTE: It is not guaranteed that Selectrum is available during compilation!
+(defvar selectrum--move-default-candidate-p)
+(defvar selectrum-active-p)
+(defvar selectrum-fix-minibuffer-height)
+(defvar selectrum-highlight-candidates-function)
+(defvar selectrum-refine-candidates-function)
+(declare-function selectrum-completing-read "selectrum")
+(declare-function selectrum-exhibit "selectrum")
+(declare-function selectrum-get-current-candidate "selectrum")
 
 (defun consult-selectrum--filter (&optional highlight)
   "Return selectrum filter function with optional HIGHLIGHT."
