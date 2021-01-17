@@ -1937,14 +1937,13 @@ The command respects narrowing and the settings
                        :preview (consult--preview-position)
                        :transform
                        (lambda (_ str)
-                         (when (and str (string-match-p "^[[:digit:]]+$" str))
-                           (let ((line (string-to-number str)))
-                             (when-let (pos (and line (consult--line-position line)))
-                               (and (consult--in-range-p pos) pos))))))))
+                         (when-let ((line (and str (string-match-p "^[[:digit:]]+$" str) (string-to-number str)))
+                                    (pos (and line (consult--line-position line))))
+                           (and (consult--in-range-p pos) pos))))))
              (if-let (pos (car ret))
                  (consult--jump pos)
                (minibuffer-message (if (string-match-p "^[[:digit:]]+$" (cdr ret))
-                                       "Please enter a number." "Line number out of range."))
+                                       "Line number out of range." "Please enter a number."))
                t)))))
 
 ;;;;; Command: consult-recent-file
