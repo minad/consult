@@ -888,8 +888,7 @@ See consult--with-preview for the arguments PREVIEW-KEY, PREVIEW, TRANSFORM and 
               (setq consult--preview-function
                     (let ((last-preview))
                       (lambda (inp cand)
-                        (unless (window-minibuffer-p)
-                          (error "Minibuffer window is not selected in consult--preview-function"))
+                        (cl-assert (window-minibuffer-p))
                         (unless (equal last-preview cand)
                           (with-selected-window (or (minibuffer-selected-window) (next-window))
                             (funcall preview (funcall transform inp cand) nil))
