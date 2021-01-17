@@ -1373,7 +1373,7 @@ See `consult--read' for the CANDIDATES, ADD-HISTORY, NARROW and PREVIEW-KEY argu
   (consult--setup-keymap (functionp candidates) narrow preview-key)
   (consult--add-history add-history))
 
-(cl-defun consult--read (prompt candidates &rest options &key
+(cl-defun consult--read (prompt candidates &key
                                 predicate require-match history default
                                 category initial narrow add-history
                                 preview (preview-key consult-preview-key)
@@ -1400,7 +1400,6 @@ DEFAULT-TOP must be nil if the default candidate should not be moved to the top.
 PREVIEW is a preview function.
 PREVIEW-KEY are the preview keys (nil, 'any, a single key or a list of keys).
 NARROW is an alist of narrowing prefix strings and description."
-  (ignore default-top add-history narrow)
   ;; supported types
   (cl-assert (or (functionp candidates)     ;; async table
                  (not candidates)           ;; nil, empty list
@@ -1409,7 +1408,11 @@ NARROW is an alist of narrowing prefix strings and description."
                  (symbolp (car candidates)) ;; symbol list
                  (consp (car candidates)))) ;; alist
   (minibuffer-with-setup-hook
-      (:append (lambda () (apply #'consult--read-setup prompt candidates options)))
+      (:append (lambda () (consult--read-setup prompt candidates
+                                               :add-history add-history
+                                               :narrow narrow
+                                               :preview-key preview-key
+                                               :default-top default-top)))
     (consult--with-async (async candidates)
       ;; NOTE: Do not unnecessarily let-bind the lambdas to avoid
       ;; overcapturing in the interpreter. This will make closures and the
