@@ -754,36 +754,28 @@ MARKER is the cursor position."
   (unless (or (eq buf (current-buffer)) (buffer-modified-p buf))
     (kill-buffer buf)))
 
-(defun consult--with-file-preview-1 (fun)
-  "Provide a function to open files temporarily.
-The files are closed automatically in the end.
-
-FUN receives the open function as argument."
+(defun consult--file-preview-setup ()
+  "Return a function to open files temporarily."
   (let* ((new-buffers)
          (recentf-should-restore recentf-mode)
-         (recentf-saved-list (when recentf-should-restore (copy-sequence recentf-list)))
-         (open-file
-          (lambda (name)
-            (or (get-file-buffer name)
-                (when-let (attrs (file-attributes name))
-                  (if (> (file-attribute-size attrs) consult-preview-max-size)
-                      (and (minibuffer-message "File `%s' too large for preview" name) nil)
-                    (let ((buf (find-file-noselect name 'nowarn)))
-                      (push buf new-buffers)
-                      ;; Only keep a few buffers alive
-                      (while (> (length new-buffers) consult-preview-max-count)
-                        (consult--kill-clean-buffer (car (last new-buffers)))
-                        (setq new-buffers (nbutlast new-buffers)))
-                      buf)))))))
-    (unwind-protect
-        (funcall fun open-file)
-      ;; Kill all temporary buffers
-      (mapc #'consult--kill-clean-buffer new-buffers)
-      ;; Restore old recentf-list and record the current buffer
-      (when recentf-should-restore
-        (setq recentf-list recentf-saved-list)
-        (when (member (current-buffer) new-buffers)
-          (recentf-add-file (buffer-file-name (current-buffer))))))))
+         (recentf-saved-list (when recentf-should-restore (copy-sequence recentf-list))))
+    (lambda (&optional name)
+      (if (not name)
+          (when recentf-should-restore
+            (setq recentf-list recentf-saved-list)
+            (when (member (current-buffer) new-buffers)
+              (recentf-add-file (buffer-file-name (current-buffer)))))
+        (or (get-file-buffer name)
+            (when-let (attrs (file-attributes name))
+               (if (> (file-attribute-size attrs) consult-preview-max-size)
+                   (and (minibuffer-message "File `%s' too large for preview" name) nil)
+                 (let ((buf (find-file-noselect name 'nowarn)))
+                   (push buf new-buffers)
+                   ;; Only keep a few buffers alive
+                   (while (> (length new-buffers) consult-preview-max-count)
+                     (consult--kill-clean-buffer (car (last new-buffers)))
+                     (setq new-buffers (nbutlast new-buffers)))
+                   buf))))))))
 
 (defmacro consult--with-file-preview (args &rest body)
   "Provide a function to open files temporarily.
@@ -791,7 +783,10 @@ The files are closed automatically in the end.
 
 ARGS is the open function argument for BODY."
   (declare (indent 1))
-  `(consult--with-file-preview-1 (lambda ,args ,@body)))
+  `(let ((,@args (consult--file-preview-setup)))
+     (unwind-protect
+         ,(macroexp-progn body)
+       (funcall ,@args))))
 
 ;; Derived from ctrlf, originally isearch
 (defun consult--invisible-show (&optional permanently)
@@ -880,8 +875,7 @@ FACE is the cursor face."
   "Add preview support for FUN.
 
 See consult--with-preview for the arguments PREVIEW-KEY, PREVIEW, TRANSFORM and CANDIDATE."
-  (let ((input "")
-        (selected))
+  (let ((input "") (selected))
     (minibuffer-with-setup-hook
         (if (and preview preview-key)
             (lambda ()
