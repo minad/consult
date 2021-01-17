@@ -9,6 +9,7 @@
 
 :badge:
 [[https://melpa.org/#/consult][file:https://melpa.org/packages/consult-badge.svg]]
+[[https://stable.melpa.org/#/consult][file:https://stable.melpa.org/packages/consult-badge.svg]]
 :end:
 
 * Introduction
