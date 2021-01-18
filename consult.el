@@ -2443,8 +2443,7 @@ starts a new Isearch session otherwise."
    (setq isearch-new-string
          (consult--read
           "History: "
-          (or (if isearch-regexp regexp-search-ring search-ring)
-              (user-error "History is empty"))
+          (if isearch-regexp regexp-search-ring search-ring)
           :history t
           :sort nil))
    (setq isearch-new-message
