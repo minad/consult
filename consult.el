@@ -744,11 +744,8 @@ MARKER is the cursor position."
 (defun consult--merge-config (args)
   "Merge `consult-config' plists into the keyword arguments of ARGS."
   (if-let (config (alist-get this-command consult-config))
-      (let ((options (seq-copy (seq-drop-while (lambda (x) (not (keywordp x))) args))))
-        (while config
-          (setq options (plist-put options (car config) (cadr config))
-                config (cddr config)))
-        (append (seq-take-while (lambda (x) (not (keywordp x))) args) options))
+      (append (seq-take-while (lambda (x) (not (keywordp x))) args) config
+              (seq-copy (seq-drop-while (lambda (x) (not (keywordp x))) args)))
     args))
 
 ;;;; Preview support
