@@ -380,6 +380,13 @@ the @samp{command-history} command from chistory.el.
 @samp{consult-history}: Insert a string from the current buffer history.
 This command can be invoked from the minibuffer. In that case the
 history stored in the @samp{minibuffer-history-variable} is used.
+@item
+@samp{consult-isearch}: During an Isearch session, this command picks a
+search string from history. Outside of Isearch, it reads a string
+from the minibuffer and starts searching; this is useful, for
+instance, as an Embark action. (Note that Isearch does not normally
+read from the minibuffer. What you see at the bottom of the screen
+is the echo area!)
 @end itemize
 
 @node Modes
@@ -651,6 +658,14 @@ the box with the default completion, Icomplete and Selectrum.
          ("M-y" . consult-yank-pop)
          ("<help> a" . consult-apropos))
 
+  ;; Bind `consult-isearch' if desired.  The example below overloads
+  ;; it with `consult-history', so that you can access the search
+  ;; history with the same key, but only after starting Isearch.  Of
+  ;; course you can bind the command to a dedicated key in the global
+  ;; map instead.
+  :bind (:map isearch-mode-map
+         ("C-c h" . consult-isearch))
+
   ;; The :init configuration is always executed (Not lazy!)
   :init
 
@@ -714,6 +729,11 @@ the box with the default completion, Icomplete and Selectrum.
 (use-package consult-flycheck
   :bind (:map flycheck-command-map
               ("!" . consult-flycheck)))
+
+;; Optionally integrate `consult-isearch' with Embark.
+(use-package embark
+  :bind (:map embark-general-map
+         ("C-s" . consult-isearch)))
 @end lisp
 
 @node Custom variables

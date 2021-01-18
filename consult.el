@@ -2583,6 +2583,60 @@ In order to select from a specific HISTORY, pass the history variable as argumen
       (delete-minibuffer-contents))
     (insert (substring-no-properties str))))
 
+;;;;; Command: consult-isearch
+
+(defun consult--isearch-category (cand)
+  "The Isearch mode of history element CAND, encoded as a character."
+  (let* ((props (plist-member (text-properties-at 0 cand)
+                              'isearch-regexp-function))
+         (fun (cadr props)))
+    (cond ((null props) ?r)
+          ((null fun) ?l)
+          ((eq fun t) ?w)
+          ((eq fun 'word-search-regexp) ?w)
+          ((eq fun 'isearch-symbol-regexp) ?_)
+          ((eq fun 'char-fold-to-regexp) ?')
+          (t ?c))))
+
+;;;###autoload
+(defun consult-isearch ()
+  "Read a search string with completion from history.
+
+This replaces the current search string if Isearch is active, and
+starts a new Isearch session otherwise."
+  (interactive)
+  (let ((isearch-message-function 'ignore) ;; Avoid flicker in echo area
+        (inhibit-redisplay t))             ;; Avoid flicker in mode line
+    (unless isearch-mode (isearch-mode t))
+    (with-isearch-suspended
+     (let* ((hist (if (eq t search-default-mode)
+                      (append regexp-search-ring search-ring)
+                    (append search-ring regexp-search-ring)))
+            (str (consult--read
+                  "History: "
+                  hist
+                  :category 'isearch-string
+                  :history t
+                  :sort nil
+                  :narrow `(,(lambda (cand)
+                               (eq (consult--isearch-category cand)
+                                   consult--narrow))
+                            (?' . "Char-fold")
+                            (?c . "Custom")
+                            (?l . "Literal")
+                            (?r . "Regexp")
+                            (?_ . "Symbol")
+                            (?w . "Word")))))
+       ;; We need to preserve the `isearch-regexp-function' text property
+       (setq str (or (car (member str hist)) str))
+       (setq isearch-new-string str)
+       (setq isearch-new-message
+             (mapconcat 'isearch-text-char-description str ""))))
+    (when (eq ?r (consult--isearch-category isearch-string))
+      ;; This only works outside of `with-isearch-suspended'!
+      (setq isearch-regexp t)
+      (setq isearch-regexp-function nil))))
+
 ;;;;; Command: consult-minor-mode-menu
 
 (defun consult--minor-mode-candidates ()
