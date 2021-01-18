@@ -1370,11 +1370,19 @@ See `consult--read' for the CANDIDATES, ADD-HISTORY, NARROW and PREVIEW-KEY argu
   (consult--setup-keymap (functionp candidates) narrow preview-key)
   (consult--add-history add-history))
 
-(cl-defun consult--read (prompt candidates &key
+(defmacro consult--read-defaults (&rest default)
+  "Set DEFAULT options."
+  (macroexp-progn
+   (mapcar
+    (pcase-lambda (`(,key ,val))
+      `(unless (plist-member options ,(intern (format ":%s" key)))
+         (setq options (plist-put options ,(intern (format ":%s" key)) (setq ,key ,val)))))
+    default)))
+
+(cl-defun consult--read (prompt candidates &rest options &key
                                 predicate require-match history default
                                 category initial narrow add-history
-                                preview (preview-key consult-preview-key)
-                                (sort t) (default-top t) (lookup (lambda (_input _cands x) x)))
+                                preview preview-key sort default-top lookup)
   "Enhanced completing read function.
 
 Arguments:
@@ -1404,12 +1412,14 @@ NARROW is an alist of narrowing prefix strings and description."
                  (stringp (car candidates)) ;; string list
                  (symbolp (car candidates)) ;; symbol list
                  (consp (car candidates)))) ;; alist
+  (ignore default-top narrow add-history)
+  (consult--read-defaults
+   (preview-key consult-preview-key)
+   (sort t)
+   (default-top t)
+   (lookup (lambda (_input _cands x) x)))
   (minibuffer-with-setup-hook
-      (:append (lambda () (consult--read-setup prompt candidates
-                                               :add-history add-history
-                                               :narrow narrow
-                                               :preview-key preview-key
-                                               :default-top default-top)))
+      (:append (lambda () (apply #'consult--read-setup prompt candidates options)))
     (consult--with-async (async candidates)
       ;; NOTE: Do not unnecessarily let-bind the lambdas to avoid
       ;; overcapturing in the interpreter. This will make closures and the

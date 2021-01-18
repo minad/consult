@@ -57,7 +57,6 @@
   "Advice for `consult--read-setup' for Selectrum specific setup.
 
 See `consult--read' for the CANDIDATES and DEFAULT-TOP arguments."
-  ;; Set mode-default-candidate selectrum option according to :default-top
   (setq-local selectrum--move-default-candidate-p default-top)
   ;; Fix selectrum height for async completion table
   (when (functionp candidates) (setq-local selectrum-fix-minibuffer-height t)))
