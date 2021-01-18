@@ -3037,7 +3037,10 @@ See `consult-grep' for more details regarding the asynchronous search."
         cand))))
 
 (defun consult--default-completion-filter (category _highlight)
-  "Return default filter function given the completion CATEGORY."
+  "Return default filter function given the completion CATEGORY.
+
+The completion category is used to find the completion style via
+`completion-category-defaults' and `completion-category-overrides'."
   (lambda (str cands)
     ;; completion-all-completions returns an improper list
     ;; where the last link is not necessarily nil. Fix this!
