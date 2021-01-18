@@ -2429,6 +2429,26 @@ In order to select from a specific HISTORY, pass the history variable as argumen
       (delete-minibuffer-contents))
     (insert (substring-no-properties str))))
 
+;;;;; Command: consult-isearch-history
+
+;;;###autoload
+(defun consult-isearch-history ()
+  "In Isearch, select a search string from history."
+  (interactive)
+  (unless isearch-mode
+    (user-error "Command must be called during Isearch."))
+  (with-isearch-suspended
+   (setq isearch-new-string
+         (consult--read
+          "History: "
+          (or (if isearch-regexp regexp-search-ring search-ring)
+              (user-error "History is empty"))
+          :history t
+          :sort nil))
+   (setq isearch-new-message
+         (mapconcat 'isearch-text-char-description
+		    isearch-new-string ""))))
+
 ;;;;; Command: consult-minor-mode-menu
 
 (defun consult--minor-mode-candidates ()
