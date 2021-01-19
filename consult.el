@@ -2067,36 +2067,34 @@ The arguments and expected return value are as specified for
 
 ;;;;; Command: consult-mode-command
 
-(defun consult--mode-commands (mode)
-  "Extract commands from MODE.
+(defsubst consult--mode-commands (key modes)
+  "Extract commands from MODES.
 
 The list of features is searched for files belonging to MODE.
 From these files, the commands are extracted."
-  (let ((library-path (symbol-file mode))
-        (filter (consult--regexp-filter consult-mode-command-filter))
-        (key (if (memq mode minor-mode-list)
-                 (if (local-variable-if-set-p mode) ?l ?g)
-               ?m))
-        (mode-rx (regexp-quote
-                  (substring (if (eq major-mode 'c-mode)
-                                 "cc-mode"
-                               (symbol-name major-mode))
-                             0 -5))))
-    (mapcan
-     (lambda (feature)
-       (let ((path (car feature)))
-         (when (or (string= path library-path)
-                   (string-match-p mode-rx (file-name-nondirectory path)))
-           (mapcar
-            (lambda (x) (cons (cdr x) key))
-            (seq-filter
-             (lambda (cmd)
-               (and (consp cmd)
-                    (eq (car cmd) 'defun)
-                    (commandp (cdr cmd))
-                    (not (string-match-p filter (symbol-name (cdr cmd))))))
-             (cdr feature))))))
-     load-history)))
+  (let ((filter (consult--regexp-filter consult-mode-command-filter))
+        (paths-hash (consult--string-hash (mapcar #'symbol-file modes)))
+        (name-regexp (regexp-opt
+                      (mapcar (lambda (m)
+                                (replace-regexp-in-string
+                                 "global-\\(.*\\)-mode" "\\1"
+                                 (replace-regexp-in-string
+                                  "\\(-global\\)?-mode$" ""
+                                  (if (eq m 'c-mode)
+                                      "cc"
+                                    (symbol-name m)))))
+                              modes)))
+        (commands))
+    (dolist (feature load-history commands)
+      (let ((path (car feature)))
+        (when (or (gethash path paths-hash)
+                  (string-match-p name-regexp (file-name-nondirectory path)))
+          (dolist (cmd (cdr feature))
+            (when (and (consp cmd)
+                       (eq (car cmd) 'defun)
+                       (commandp (cdr cmd))
+                       (not (string-match-p filter (symbol-name (cdr cmd)))))
+              (push (cons (cdr cmd) key) commands))))))))
 
 ;;;###autoload
 (defun consult-mode-command (&rest modes)
@@ -2114,7 +2112,20 @@ If no MODES are specified, use currently active major and minor modes."
     (consult--read
      "Mode command: "
      (consult--remove-dups
-      (mapcan #'consult--mode-commands modes) #'car)
+      (let ((ht (consult--string-hash minor-mode-list)))
+        (append
+         (consult--mode-commands ?l (seq-filter (lambda (m)
+                                                  (and (gethash m ht)
+                                                       (local-variable-if-set-p m)))
+                                                modes))
+         (consult--mode-commands ?g (seq-filter (lambda (m)
+                                                  (and (gethash m ht)
+                                                       (not (local-variable-if-set-p m))))
+                                                modes))
+         (consult--mode-commands ?m (seq-remove (lambda (m)
+                                                  (gethash m ht))
+                                                modes))))
+      #'car)
      :predicate
      (lambda (cand)
        (if consult--narrow
