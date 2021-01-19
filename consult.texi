@@ -277,7 +277,7 @@ style like orderless. @samp{consult-grep} supports preview. If
 non-nil, @samp{consult-grep} searches the current project directory.
 Otherwise the @samp{default-directory} is searched. If @samp{consult-grep} is
 invoked with prefix argument, you can specify the directory manually,
-i.e., @samp{C-u M-g r}.
+i.e., @samp{C-u M-s g}.
 @item
 @samp{consult-find}, @samp{consult-locate}: Find file by
 matching the path against a regexp. Like @samp{consult-grep} either the
@@ -571,27 +571,32 @@ the box with the default completion, Icomplete and Selectrum.
 ;; Example configuration for Consult
 (use-package consult
   ;; Replace bindings. Lazily loaded due by `use-package'.
-  :bind (("C-x M-:" . consult-complex-command)
+  :bind (;; C-c bindings (mode-specific-map)
          ("C-c h" . consult-history)
          ("C-c m" . consult-mode-command)
          ("C-c k" . consult-keep-lines)
-         ("C-c C-k" . consult-focus-lines)
+         ("C-c f" . consult-focus-lines)
+         ;; C-x bindings (ctl-x-map)
+         ("C-x M-:" . consult-complex-command)
          ("C-x b" . consult-buffer)
          ("C-x 4 b" . consult-buffer-other-window)
          ("C-x 5 b" . consult-buffer-other-frame)
          ("C-x r x" . consult-register)
          ("C-x r b" . consult-bookmark)
+         ;; M-g bindings (goto-map)
          ("M-g g" . consult-goto-line)
          ("M-g M-g" . consult-goto-line)
-         ("M-g o" . consult-outline)       ;; "M-s o" is a good alternative.
-         ("M-g l" . consult-line)          ;; "M-s l" is a good alternative.
-         ("M-g m" . consult-mark)          ;; I recommend to bind Consult navigation
-         ("M-g k" . consult-global-mark)   ;; commands under the "M-g" prefix.
-         ("M-g r" . consult-git-grep)      ;; or consult-grep, consult-ripgrep
-         ("M-g f" . consult-find)          ;; or consult-locate, my-fdfind
-         ("M-g i" . consult-project-imenu) ;; or consult-imenu
+         ("M-g o" . consult-outline)
+         ("M-g m" . consult-mark)
+         ("M-g k" . consult-global-mark)
+         ("M-g i" . consult-project-imenu) ;; Alternative: consult-imenu
          ("M-g e" . consult-error)
+         ;; M-s bindings (search-map)
+         ("M-s g" . consult-git-grep)      ;; Alternatives: consult-grep, consult-ripgrep
+         ("M-s f" . consult-find)          ;; Alternatives: consult-locate, my-fdfind
+         ("M-s l" . consult-line)
          ("M-s m" . consult-multi-occur)
+         ;; Other bindings
          ("M-y" . consult-yank-pop)
          ("<help> a" . consult-apropos))
 
