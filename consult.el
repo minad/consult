@@ -893,21 +893,23 @@ See consult--with-preview for the arguments PREVIEW-KEY, PREVIEW, TRANSFORM and 
                           (with-selected-window (or (minibuffer-selected-window) (next-window))
                             (funcall preview (funcall transform inp cand) nil))
                           (setq last-preview cand)))))
-              (add-hook 'post-command-hook
-                        (lambda ()
-                          (setq input (minibuffer-contents-no-properties))
-                          (when (or (eq preview-key 'any)
-                                    (let ((keys (this-single-command-keys)))
-                                      (seq-find (lambda (x) (equal (vconcat x) keys))
-                                                (if (listp preview-key)
-                                                    preview-key
-                                                  (list preview-key)))))
-                            (when-let (cand (funcall candidate))
-                              (funcall consult--preview-function input cand))))
-                        nil t))
-          (apply-partially #'add-hook 'post-command-hook
-                           (lambda () (setq input (minibuffer-contents-no-properties)))
-                           nil t))
+              (let ((post-command-sym (make-symbol "consult--with-preview-post-command")))
+                (fset post-command-sym
+                      (lambda ()
+                        (setq input (minibuffer-contents-no-properties))
+                        (when (or (eq preview-key 'any)
+                                  (let ((keys (this-single-command-keys)))
+                                    (seq-find (lambda (x) (equal (vconcat x) keys))
+                                              (if (listp preview-key)
+                                                  preview-key
+                                                (list preview-key)))))
+                          (when-let (cand (funcall candidate))
+                            (funcall consult--preview-function input cand)))))
+                (add-hook 'post-command-hook post-command-sym nil t)))
+          (lambda ()
+            (let ((post-command-sym (make-symbol "consult--with-preview-post-command")))
+              (fset post-command-sym (lambda () (setq input (minibuffer-contents-no-properties))))
+              (add-hook 'post-command-hook post-command-sym nil t))))
       (unwind-protect
           (cons (setq selected (when-let (result (funcall fun))
                                  (funcall transform input result)))
@@ -1016,10 +1018,12 @@ to make it available for commands with narrowing."
     (minibuffer-with-setup-hook
         (lambda ()
           (funcall async 'setup)
-          ;; push input string to request refresh
-          (let ((push (lambda (&rest _) (funcall async (minibuffer-contents-no-properties)))))
-            (run-at-time 0 nil push)
-            (add-hook 'after-change-functions push nil t)))
+          ;; Push input string to request refresh.
+          ;; We use a symbol in order to avoid adding lambdas to the hook variable.
+          (let ((sym (make-symbol "consult--with-async-after-change")))
+            (fset sym (lambda (&rest _) (funcall async (minibuffer-contents-no-properties))))
+            (run-at-time 0 nil sym)
+            (add-hook 'after-change-functions sym nil t)))
       (unwind-protect
           (funcall fun async)
         (funcall async 'destroy)))))
