@@ -209,17 +209,20 @@ with a space character."
   :type '(repeat regexp))
 
 (defcustom consult-git-grep-command
-  '("git" "--no-pager" "grep" "--null" "--color=always" "--extended-regexp" "--line-number" "-I" "-e")
+  '("git" "--no-pager" "grep" "--null" "--color=always" "--extended-regexp"
+    "--line-number" "-I" "-e")
   "Command line arguments for git-grep, see `consult-git-grep'."
   :type '(repeat string))
 
 (defcustom consult-grep-command
-  '("grep" "--null" "--line-buffered" "--color=always" "--extended-regexp" "--exclude-dir=.git" "--line-number" "-I" "-r" "." "-e")
+  '("grep" "--null" "--line-buffered" "--color=always" "--extended-regexp"
+    "--exclude-dir=.git" "--line-number" "-I" "-r" "." "-e")
   "Command line arguments for grep, see `consult-grep'."
   :type '(repeat string))
 
 (defcustom consult-ripgrep-command
-  '("rg" "--null" "--line-buffered" "--color=always" "--max-columns=500" "--no-heading" "--line-number" "." "-e")
+  '("rg" "--null" "--line-buffered" "--color=always" "--max-columns=500"
+    "--no-heading" "--line-number" "." "-e")
   "Command line arguments for ripgrep, see `consult-ripgrep'."
   :type '(repeat string))
 
@@ -867,7 +870,9 @@ FACE is the cursor face."
         (setq invisible (consult--invisible-show))
         (let ((pos (point)))
           (setq overlays
-                (list (consult--overlay (line-beginning-position) (line-end-position) 'face 'consult-preview-line)
+                (list (consult--overlay (line-beginning-position)
+                                        (line-end-position)
+                                        'face 'consult-preview-line)
                       (consult--overlay pos (1+ pos) 'face face)))))
        ;; If position cannot be previewed, return to saved position
        (t (consult--jump-1 saved-pos))))))
@@ -894,7 +899,9 @@ See consult--with-preview for the arguments PREVIEW-KEY, PREVIEW, TRANSFORM and 
                           (when (or (eq preview-key 'any)
                                     (let ((keys (this-single-command-keys)))
                                       (seq-find (lambda (x) (equal (vconcat x) keys))
-                                                (if (listp preview-key) preview-key (list preview-key)))))
+                                                (if (listp preview-key)
+                                                    preview-key
+                                                  (list preview-key)))))
                             (when-let (cand (funcall candidate))
                               (funcall consult--preview-function input cand))))
                         nil t))
@@ -1074,11 +1081,13 @@ the separator. Examples: \"/async/filter\", \"#async#filter\"."
 
 (defun consult--async-split-setup ()
   "Setup `consult--async-split' completion styles."
-  (setq-local completion-styles-alist (cons (list 'consult--async-split
-                                                  (consult--async-split-wrap try-completion)
-                                                  (consult--async-split-wrap all-completions) "")
-                                            completion-styles-alist))
-  (setq-local completion-styles (cons 'consult--async-split completion-styles)))
+  (setq-local completion-styles-alist
+              (cons (list 'consult--async-split
+                          (consult--async-split-wrap try-completion)
+                          (consult--async-split-wrap all-completions) "")
+                    completion-styles-alist))
+  (setq-local completion-styles
+              (cons 'consult--async-split completion-styles)))
 
 (defun consult--async-split (async)
   "Create async function, which splits the input string.
@@ -1101,7 +1110,9 @@ the comma is passed to ASYNC, the second part is used for filtering."
          (when (> input-len async-len)
            (put-text-property end (1+ end) 'face 'consult-async-split)
            (when (> input-len (1+ async-len))
-             (put-text-property (+ 1 end async-len) (+ 2 end async-len) 'face 'consult-async-split)))
+             (put-text-property (+ 1 end async-len)
+                                (+ 2 end async-len)
+                                'face 'consult-async-split)))
          (funcall async
                   ;; Pass through if forced by two punctuation characters
                   ;; or if the input is long enough!
@@ -1180,7 +1191,8 @@ CMD is the command argument list."
          (delete-overlay indicator)
          (funcall async 'destroy))
         ('setup
-         (setq indicator (make-overlay (- (minibuffer-prompt-end) 2) (- (minibuffer-prompt-end) 1)))
+         (setq indicator (make-overlay (- (minibuffer-prompt-end) 2)
+                                       (- (minibuffer-prompt-end) 1)))
          (funcall async 'setup))
         (_ (funcall async action))))))
 
@@ -1947,13 +1959,16 @@ The command respects narrowing and the settings
                        :preview (consult--preview-position)
                        :transform
                        (lambda (_ str)
-                         (when-let ((line (and str (string-match-p "^[[:digit:]]+$" str) (string-to-number str)))
+                         (when-let ((line (and str
+                                               (string-match-p "^[[:digit:]]+$" str)
+                                               (string-to-number str)))
                                     (pos (and line (consult--line-position line))))
                            (and (consult--in-range-p pos) pos))))))
              (if-let (pos (car ret))
                  (consult--jump pos)
                (minibuffer-message (if (string-match-p "^[[:digit:]]+$" (cdr ret))
-                                       "Line number out of range." "Please enter a number."))
+                                       "Line number out of range."
+                                     "Please enter a number."))
                t)))))
 
 ;;;;; Command: consult-recent-file
@@ -2514,7 +2529,8 @@ The command supports previewing the currently selected theme."
 CAND is the candidate string.
 TYPE is the type character.
 FACE is the face for the candidate."
-  (concat (propertize (char-to-string (+ consult--tofu-char type)) 'invisible t) (propertize cand 'face face)))
+  (concat (propertize (char-to-string (+ consult--tofu-char type)) 'invisible t)
+          (propertize cand 'face face)))
 
 (defun consult--buffer (open-buffer open-file open-bookmark)
   "Backend implementation of `consult-buffer'.
