@@ -2067,29 +2067,55 @@ The arguments and expected return value are as specified for
 
 ;;;;; Command: consult-mode-command
 
-(defsubst consult--mode-commands (key modes)
+(defun consult--mode-name (mode)
+  "Return name part of MODE."
+  (replace-regexp-in-string
+   "global-\\(.*\\)-mode" "\\1"
+   (replace-regexp-in-string
+    "\\(-global\\)?-mode$" ""
+    (if (eq mode 'c-mode)
+        "cc"
+      (symbol-name mode)))))
+
+(defun consult--mode-command-candidates (modes)
   "Extract commands from MODES.
 
-The list of features is searched for files belonging to MODE.
-From these files, the commands are extracted.
-KEY is the narrowing key."
-  (let ((filter (consult--regexp-filter consult-mode-command-filter))
-        (paths-hash (consult--string-hash (mapcar #'symbol-file modes)))
-        (name-regexp (regexp-opt
-                      (mapcar (lambda (m)
-                                (replace-regexp-in-string
-                                 "global-\\(.*\\)-mode" "\\1"
-                                 (replace-regexp-in-string
-                                  "\\(-global\\)?-mode$" ""
-                                  (if (eq m 'c-mode)
-                                      "cc"
-                                    (symbol-name m)))))
-                              modes)))
-        (commands))
+The list of features is searched for files belonging to the modes.
+From these files, the commands are extracted."
+  (let* ((filter (consult--regexp-filter consult-mode-command-filter))
+         (minor-hash (consult--string-hash minor-mode-list))
+         (minor-local-modes (seq-filter (lambda (m)
+                                         (and (gethash m minor-hash)
+                                              (local-variable-if-set-p m)))
+                                       modes))
+         (minor-global-modes (seq-filter (lambda (m)
+                                         (and (gethash m minor-hash)
+                                              (not (local-variable-if-set-p m))))
+                                       modes))
+         (major-modes (seq-remove (lambda (m)
+                                    (gethash m minor-hash))
+                                  modes))
+         (major-paths-hash (consult--string-hash (mapcar #'symbol-file major-modes)))
+         (minor-local-paths-hash (consult--string-hash (mapcar #'symbol-file minor-local-modes)))
+         (minor-global-paths-hash (consult--string-hash (mapcar #'symbol-file minor-global-modes)))
+         (major-name-regexp (regexp-opt (mapcar #'consult--mode-name major-modes)))
+         (minor-local-name-regexp (regexp-opt (mapcar #'consult--mode-name minor-local-modes)))
+         (minor-global-name-regexp (regexp-opt (mapcar #'consult--mode-name minor-global-modes)))
+         (commands))
     (dolist (feature load-history commands)
-      (let ((path (car feature)))
-        (when (or (gethash path paths-hash)
-                  (string-match-p name-regexp (file-name-nondirectory path)))
+      (let* ((path (car feature))
+             (file (file-name-nondirectory path))
+             (key (cond
+                   ((or (gethash path major-paths-hash)
+                        (string-match-p major-name-regexp file))
+                    ?m)
+                   ((or (gethash path minor-local-paths-hash)
+                        (string-match-p minor-local-name-regexp file))
+                    ?l)
+                   ((or (gethash path minor-global-paths-hash)
+                        (string-match-p minor-global-name-regexp file))
+                    ?g))))
+        (when key
           (dolist (cmd (cdr feature))
             (when (and (consp cmd)
                        (eq (car cmd) 'defun)
@@ -2113,21 +2139,7 @@ If no MODES are specified, use currently active major and minor modes."
    (intern
     (consult--read
      "Mode command: "
-     (consult--remove-dups
-      (let ((ht (consult--string-hash minor-mode-list)))
-        (append
-         (consult--mode-commands ?l (seq-filter (lambda (m)
-                                                  (and (gethash m ht)
-                                                       (local-variable-if-set-p m)))
-                                                modes))
-         (consult--mode-commands ?g (seq-filter (lambda (m)
-                                                  (and (gethash m ht)
-                                                       (not (local-variable-if-set-p m))))
-                                                modes))
-         (consult--mode-commands ?m (seq-remove (lambda (m)
-                                                  (gethash m ht))
-                                                modes))))
-      #'car)
+     (consult--mode-command-candidates modes)
      :predicate
      (lambda (cand)
        (if consult--narrow
