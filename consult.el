@@ -2071,7 +2071,8 @@ The arguments and expected return value are as specified for
   "Extract commands from MODES.
 
 The list of features is searched for files belonging to MODE.
-From these files, the commands are extracted."
+From these files, the commands are extracted.
+KEY is the narrowing key."
   (let ((filter (consult--regexp-filter consult-mode-command-filter))
         (paths-hash (consult--string-hash (mapcar #'symbol-file modes)))
         (name-regexp (regexp-opt
@@ -2093,7 +2094,8 @@ From these files, the commands are extracted."
             (when (and (consp cmd)
                        (eq (car cmd) 'defun)
                        (commandp (cdr cmd))
-                       (not (string-match-p filter (symbol-name (cdr cmd)))))
+                       (not (string-match-p filter (symbol-name (cdr cmd))))
+                       (not (get (cdr cmd) 'byte-obsolete-info)))
               (push (cons (cdr cmd) key) commands))))))))
 
 ;;;###autoload
