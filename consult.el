@@ -204,9 +204,12 @@ with a space character."
   :type '(repeat regexp))
 
 (defcustom consult-mode-command-filter
-  '("-mode$" "--")
-  "Filter regexps for `consult-mode-command'."
-  :type '(repeat regexp))
+  '(;; Filter commands
+    "-mode$" "--"
+    ;; Filter whole features
+    simple mwheel time so-long recentf)
+  "Filter commands for `consult-mode-command'."
+  :type '(repeat (choice symbol regexp)))
 
 (defcustom consult-git-grep-command
   '("git" "--no-pager" "grep" "--null" "--color=always" "--extended-regexp"
@@ -2082,7 +2085,8 @@ The arguments and expected return value are as specified for
 
 The list of features is searched for files belonging to the modes.
 From these files, the commands are extracted."
-  (let* ((filter (consult--regexp-filter consult-mode-command-filter))
+  (let* ((command-filter (consult--regexp-filter (seq-filter #'stringp consult-mode-command-filter)))
+         (feature-filter (seq-filter #'symbolp consult-mode-command-filter))
          (minor-hash (consult--string-hash minor-mode-list))
          (minor-local-modes (seq-filter (lambda (m)
                                          (and (gethash m minor-hash)
@@ -2103,26 +2107,28 @@ From these files, the commands are extracted."
          (minor-global-name-regexp (regexp-opt (mapcar #'consult--mode-name minor-global-modes)))
          (commands))
     (dolist (feature load-history commands)
-      (let* ((path (car feature))
-             (file (file-name-nondirectory path))
-             (key (cond
-                   ((or (gethash path major-paths-hash)
-                        (string-match-p major-name-regexp file))
-                    ?m)
-                   ((or (gethash path minor-local-paths-hash)
-                        (string-match-p minor-local-name-regexp file))
-                    ?l)
-                   ((or (gethash path minor-global-paths-hash)
-                        (string-match-p minor-global-name-regexp file))
-                    ?g))))
-        (when key
-          (dolist (cmd (cdr feature))
-            (when (and (consp cmd)
-                       (eq (car cmd) 'defun)
-                       (commandp (cdr cmd))
-                       (not (string-match-p filter (symbol-name (cdr cmd))))
-                       (not (get (cdr cmd) 'byte-obsolete-info)))
-              (push (cons (cdr cmd) key) commands))))))))
+      (when-let (name (alist-get 'provide feature))
+        (let* ((path (car feature))
+               (file (file-name-nondirectory path))
+               (key (cond
+                     ((memq name feature-filter) nil)
+                     ((or (gethash path major-paths-hash)
+                          (string-match-p major-name-regexp file))
+                      ?m)
+                     ((or (gethash path minor-local-paths-hash)
+                          (string-match-p minor-local-name-regexp file))
+                      ?l)
+                     ((or (gethash path minor-global-paths-hash)
+                          (string-match-p minor-global-name-regexp file))
+                      ?g))))
+          (when key
+            (dolist (cmd (cdr feature))
+              (when (and (consp cmd)
+                         (eq (car cmd) 'defun)
+                         (commandp (cdr cmd))
+                         (not (string-match-p command-filter (symbol-name (cdr cmd))))
+                         (not (get (cdr cmd) 'byte-obsolete-info)))
+                (push (cons (cdr cmd) key) commands)))))))))
 
 ;;;###autoload
 (defun consult-mode-command (&rest modes)
