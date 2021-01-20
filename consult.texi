@@ -173,8 +173,11 @@ instead, which includes recent files.
 @cindex editing
 
 @findex consult-register
+@findex consult-register-preview
 @findex consult-yank
 @findex consult-kmacro
+@findex consult-keep-lines
+@findex consult-focus-lines
 @itemize
 @item
 @samp{consult-register}: Select from list of registers. The command
@@ -360,6 +363,7 @@ mode via the keys @samp{l/g/m}.
 @findex consult-file-externally
 @findex consult-completion-in-region
 @findex consult-theme
+@findex consult-man
 @itemize
 @item
 @samp{consult-apropos}: Replacement for @samp{apropos} with completion.
@@ -611,9 +615,6 @@ the box with the default completion, Icomplete and Selectrum.
     (interactive "P")
     (let ((consult-find-command '("fdfind" "--color=never" "--full-path")))
       (consult-find dir)))
-
-  ;; Replace `multi-occur' with `consult-multi-occur', which is a drop-in replacement.
-  (fset 'multi-occur #'consult-multi-occur)
 
   ;; Configure register preview function.
   ;; This gives a consistent display for both `consult-register' and

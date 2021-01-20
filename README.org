@@ -119,8 +119,11 @@ variables and functions with their descriptions.
  #+cindex: editing
 
  #+findex: consult-register
+ #+findex: consult-register-preview
  #+findex: consult-yank
  #+findex: consult-kmacro
+ #+findex: consult-keep-lines
+ #+findex: consult-focus-lines
  - =consult-register=: Select from list of registers. The command
    supports narrowing to register types and preview of marker positions. This
    command is useful to search the register contents. For quick access it is
@@ -279,6 +282,7 @@ variables and functions with their descriptions.
  #+findex: consult-file-externally
  #+findex: consult-completion-in-region
  #+findex: consult-theme
+ #+findex: consult-man
  - =consult-apropos=: Replacement for =apropos= with completion.
  - =consult-man=: Find Unix man page, via Unix =apropos= or =man -k=.
    The selected man page is opened using the Emacs =man= command.
@@ -508,9 +512,6 @@ the box with the default completion, Icomplete and Selectrum.
      (interactive "P")
      (let ((consult-find-command '("fdfind" "--color=never" "--full-path")))
        (consult-find dir)))
-
-   ;; Replace `multi-occur' with `consult-multi-occur', which is a drop-in replacement.
-   (fset 'multi-occur #'consult-multi-occur)
 
    ;; Configure register preview function.
    ;; This gives a consistent display for both `consult-register' and
