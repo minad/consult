@@ -1,11 +1,11 @@
 ;;; consult-yasnippet.el --- Provides the command `consult-yasnippet' -*- lexical-binding: t; -*-
 
-;; Author: Mohsin Kaleem, Consult and Selectrum contributors
+;; Author: Michał Krzywkowski, Daniel Mendler, Consult and Selectrum contributors
 ;; Maintainer: Daniel Mendler
 ;; Created: 2021
 ;; License: GPL-3.0-or-later
 ;; Version: 0.1
-;; Package-Requires: ((consult "0.1") (yasnippet "0.14") (emacs "26.1"))
+;; Package-Requires: ((consult "0.2") (yasnippet "0.14") (emacs "26.1"))
 ;; Homepage: https://github.com/minad/consult
 
 ;; This file is not part of GNU Emacs.
@@ -31,97 +31,91 @@
 ;; This is an extra package, to avoid loading yasnippet in the base consult
 ;; package..
 
+;;;; Credits
+
+;; This package has been derived from the ivy-yasnippet[1] package.
+;;
+;;  [1] https://github.com/mkcms/ivy-yasnippet
 
 ;;; Code:
 
 (require 'consult)
 (require 'yasnippet)
 
-(defgroup consult-yasnippet nil
-  "Consulting `completing-read' for yasnippet snippets."
-  :group 'consult
-  :prefix "consult-yasnippet-")
-
-(defvar consult-yasnippet--snippets nil
-  "Snippet collection for current `consult-snippet' session.")
-
-(defvar consult-yasnippet--buffer nil
-  "The buffer in which `consult-yasnippet' was begun")
-
-(defvar consult-yasnippet--region nil
-  "The position (a cons of the start and end `point's) of where `consult-yasnippet' was begun")
-
-(defvar consult-yasnippet--region-contents ""
-  "The original contents of `consult-yasnippet--region'.")
-
-(defun consult-yasnippet--expand-template (template)
+(defun consult-yasnippet--expand-template (template region region-contents)
   "Expand the yasnippet template TEMPLATE at point."
   (deactivate-mark)
-  (goto-char (car consult-yasnippet--region))
-  (when (not (string-equal "" consult-yasnippet--region-contents))
+  (goto-char (car region))
+
+  ;; Restore marked region (when it existed) so that `yas-expand-snippet'
+  ;; overwrites it.
+  (when (not (string-equal "" region-contents))
     (push-mark (point))
-    (push-mark (cdr consult-yasnippet--region) nil t))
+    (push-mark (cdr region) nil t))
 
-  (yas-expand-snippet (yas--template-content template)
-                      nil nil
-                      (yas--template-expand-env template)))
+  (cl-letf (((symbol-function 'yas-completing-read)
+             (lambda (&rest _args) "")))
+    (yas-expand-snippet (yas--template-content template)
+                        nil nil
+                        (yas--template-expand-env template))))
 
-(defun consult-yasnippet--preview (template _)
+(defun consult-yasnippet--preview ()
   "Previewer for `consult--read'.
 This function expands TEMPLATE at point in the buffer
-`consult-yasnippet--read-snippet' was started in. This includes
+`consult-yasnippet--read-template' was started in. This includes
 overwriting any region that was active and removing any previous
 previews that're already active.
 
 When TEMPLATE is not given, this function essentially just resets
 the state of the current buffer to before any snippets were previewed."
-  (with-current-buffer consult-yasnippet--buffer
-    (let ((yas-verbosity 0)
-          (inhibit-redisplay t)
-          (inhibit-read-only t)
-          (orig-offset (- (point-max) (cdr consult-yasnippet--region)))
-          (yas-prompt-functions '(yas-no-prompt)))
+  (let* ((buf (current-buffer))
+         (region (if (region-active-p)
+                     (cons (region-beginning) (region-end))
+                   (cons (point) (point))))
+         (region-contents (buffer-substring (car region) (cdr region))))
+    (lambda (template restore)
+      (with-current-buffer buf
+        (let ((yas-verbosity 0)
+              (inhibit-redisplay t)
+              (inhibit-read-only t)
+              (orig-offset (- (point-max) (cdr region)))
+              (yas-prompt-functions '(yas-no-prompt)))
 
-      ;; We always undo any snippet previews before maybe setting up
-      ;; some new previews.
-      (delete-region (car consult-yasnippet--region)
-                     (cdr consult-yasnippet--region))
-      (goto-char (car consult-yasnippet--region))
-      (setcar consult-yasnippet--region (point))
-      (insert consult-yasnippet--region-contents)
-      (setcdr consult-yasnippet--region (point))
+          ;; We always undo any snippet previews before maybe setting up
+          ;; some new previews.
+          (delete-region (car region) (cdr region))
+          (goto-char (car region))
+          (setcar region (point))
+          (insert region-contents)
+          (setcdr region (point))
 
-      (when template
-        (unwind-protect
-            (consult-yasnippet--expand-template template)
-          (unwind-protect
-              (mapc #'yas--commit-snippet
-                    (yas-active-snippets (point-min) (point-max)))
-            (setcdr consult-yasnippet--region (- (point-max) orig-offset))))
-        (redisplay)))))
+          (when (and template (not restore))
+            (unwind-protect
+                (consult-yasnippet--expand-template template region region-contents)
+              (unwind-protect
+                  (mapc #'yas--commit-snippet
+                        (yas-active-snippets (point-min) (point-max)))
+                (setcdr region (- (point-max) orig-offset))))
+            (redisplay)))))))
 
-(defmacro consult-yasnippet--setup (&rest body)
-  "Setup the local variables and environment for `consult-yasnippet'.
-This environment is used both in `consult-yasnippet--preview'and
-`consult-yasnippet--expand-template'."
-  `(progn
-     (barf-if-buffer-read-only)
-     (unless (bound-and-true-p yas-minor-mode)
-       (error "`yas-minor-mode' not enabled in current buffer"))
+(defun consult-yasnippet--candidates (&rest body)
+  "Retrieve the list of available snippets in the current buffer."
+  (unless (bound-and-true-p yas-minor-mode)
+    (error "`yas-minor-mode' not enabled in current buffer"))
 
-     (let* ((consult-yasnippet--snippets
-             (mapcar (lambda (template)
-                       (cons (yas--template-name template) template))
-                     (yas--all-templates (yas--get-snippet-tables))))
-            (consult-yasnippet--buffer (current-buffer))
-            (consult-yasnippet--region (if (region-active-p)
-                                           (cons (region-beginning) (region-end))
-                                         (cons (point) (point))))
-            (consult-yasnippet--region-contents (buffer-substring (car consult-yasnippet--region)
-                                                                  (cdr consult-yasnippet--region))))
-       ,@body)))
+  (mapcar
+   (lambda (template)
+     (cons (concat (yas--template-name template)
+                   (propertize " "
+                               'display (concat
+                                         " ["
+                                         (propertize (yas--template-key template)
+                                                     'face 'consult-key)
+                                         "]")))
+           template))
+   (yas--all-templates (yas--get-snippet-tables))))
 
-(defun consult-yasnippet--read-snippet ()
+(defun consult-yasnippet--read-template ()
   "Backend implementation of `consult-yasnippet'.
 
 This starts a `completing-read' session with all the snippets in the current
@@ -130,28 +124,38 @@ replacing the active region with the snippet expansion.
 
 This function doesn't actually expand the snippet, it only reads and then
 returns a snippet template from the user."
-  (consult-yasnippet--setup
-   (let ((buffer-undo-list t))                                                  ; Prevent querying user (and showing previews) from updating the undo-history
-     (unwind-protect
-         (consult--read
-          "Choose a snippet: "
-          consult-yasnippet--snippets
-          :lookup 'consult--lookup-cdr
-          :require-match t
-          :preview #'consult-yasnippet--preview
-          :category 'yasnippet)
-       (consult-yasnippet--preview nil t)))))                                   ; Restore contents of region from before preview (while still ignoring undo history).
+  (barf-if-buffer-read-only)
 
-(defun consult-yasnippet-visit-snippet-file (snippet)
-  (interactive (list (consult-yasnippet--read-snippet)))
-  (yas--visit-snippet-file-1 snippet))
+  (let* ((buffer-undo-list t))                                                  ; Prevent querying user (and showing previews) from updating the undo-history
+    (consult--read
+     "Choose a snippet: "
+     (consult-yasnippet--candidates)
+     :lookup 'consult--lookup-cdr
+     :require-match t
+     :preview (consult-yasnippet--preview)
+     :category 'yasnippet)))
+
+(defun consult-yasnippet-visit-snippet-file (template)
+  "Visit the snippet file associated with TEMPLATE.
+When called interactively this command previews snippet completions in
+the current buffer, and then opens the selected snippets template file
+using `yas--visit-snippet-file-1'."
+  (interactive (list (consult-yasnippet--read-template)))
+  (yas--visit-snippet-file-1 template))
 
 (defun consult-yasnippet (template)
-  (interactive (list (consult-yasnippet--read-snippet)))
-  ;; We need to first restore the local environment for
-  ;; `consult-yasnippet--expand-template' to work.
-  (consult-yasnippet--setup
-   (consult-yasnippet--expand-template template)))
+  "Interactively select and expand the yasnippet template TEMPLATE.
+When called interactively this command presents a completing read interface
+containing all currently available snippet expansions, with live previews for
+each snippet. Once selected a chosen snippet will be expanded at point using
+`yas-expand-snippet'."
+  (interactive (list (consult-yasnippet--read-template)))
+  (barf-if-buffer-read-only)
+  (let* ((region (if (region-active-p)
+                     (cons (region-beginning) (region-end))
+                   (cons (point) (point))))
+         (region-contents (buffer-substring (car region) (cdr region))))
+    (consult-yasnippet--expand-template template region region-contents)))
 
 (provide 'consult-yasnippet)
 

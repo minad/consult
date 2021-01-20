@@ -144,6 +144,9 @@ variables and functions with their descriptions.
    lines again. If the input begins with "! SPC", the filter matches the
    complement. In contrast to =consult-keep-lines= this function does not edit
    the buffer.
+ - =consult-yasnippet=: Expand [[https://github.com/joaotavora/yasnippet][yasnippet]] snippets in the current buffer.
+   This command is available from the additional =consult-yasnippet.el=
+   package.
 
 ** Navigation
  :properties:
@@ -237,9 +240,6 @@ variables and functions with their descriptions.
   components.
 - =consult-flymake=: Jump to Flymake diagnostic, like
   =consult-flycheck=.
-- =consult-yasnippet=: Expand [[https://github.com/joaotavora/yasnippet][yasnippet]] snippets in the current buffer.
-  This command is available from the additional =consult-yasnippet.el=
-  package.
 
 ** Histories
  :properties:
