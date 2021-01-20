@@ -22,14 +22,27 @@
 ;;; Code:
 
 (require 'consult)
-(require 'selectrum)
 
-(defun consult-selectrum--filter (&optional highlight)
-  "Return selectrum filter function with optional HIGHLIGHT."
+;; NOTE: It is not guaranteed that Selectrum is available during compilation!
+(defvar selectrum--move-default-candidate-p)
+(defvar selectrum-active-p)
+(defvar selectrum-fix-minibuffer-height)
+(defvar selectrum-highlight-candidates-function)
+(defvar selectrum-refine-candidates-function)
+(declare-function selectrum-exhibit "selectrum")
+(declare-function selectrum-get-current-candidate "selectrum")
+
+(defun consult-selectrum--filter (_category highlight)
+  "Return selectrum filter function with HIGHLIGHT."
   ;; Do not use selectrum-active-p here, since we want to always use
   ;; the Selectrum filtering when Selectrum is installed, even when
   ;; Selectrum is currently not active.
-  (when (eq completing-read-function #'selectrum-completing-read)
+  ;; However if `selectrum-refine-candidates-function' is the default
+  ;; function, which uses the completion styles, the Selectrum filtering
+  ;; is not used and `consult--default-completion-filter' takes over.
+  (when (and (eq completing-read-function 'selectrum-completing-read)
+             (not (eq selectrum-refine-candidates-function
+                      'selectrum-refine-candidates-using-completions-styles)))
     (if highlight
         (lambda (str cands)
           (funcall selectrum-highlight-candidates-function str
@@ -48,7 +61,6 @@
   "Advice for `consult--read-setup' for Selectrum specific setup.
 
 See `consult--read' for the CANDIDATES and DEFAULT-TOP arguments."
-  ;; Set mode-default-candidate selectrum option according to :default-top
   (setq-local selectrum--move-default-candidate-p default-top)
   ;; Fix selectrum height for async completion table
   (when (functionp candidates) (setq-local selectrum-fix-minibuffer-height t)))

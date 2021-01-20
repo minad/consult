@@ -9,6 +9,7 @@
 
 :badge:
 [[https://melpa.org/#/consult][file:https://melpa.org/packages/consult-badge.svg]]
+[[https://stable.melpa.org/#/consult][file:https://stable.melpa.org/packages/consult-badge.svg]]
 :end:
 
 * Introduction
@@ -17,24 +18,27 @@
 :end:
 #+cindex: introduction
 
-This package provides various handy commands based on the Emacs completion
-function =completing-read=, which allows to quickly select from a list of
+Consult provides various handy commands based on the Emacs completion function
+=completing-read=, which allows to quickly select an item from a list of
 candidates. Consult offers in particular a more advanced buffer switching
-command =consult-buffer= which allows to select from buffers, recent files and
-more. Various search commands are provided, like an asynchronous =consult-grep=,
-and =consult-line=, which resembles [[https://github.com/abo-abo/swiper#swiper][Swiper]] or [[https://github.com/emacsorphanage/helm-swoop][Helm-Swoop]]. Please take a look at
-the [[#available-commands][full list of commands]]!
+command =consult-buffer= to switch to buffers and recently opened files. Various
+search commands are provided, like an asynchronous =consult-grep=, and
+=consult-line=, which resembles [[https://github.com/abo-abo/swiper#swiper][Swiper]] or [[https://github.com/emacsorphanage/helm-swoop][Helm-Swoop]]. Multiple of the offered
+commands are greatly enhanced in comparison to their existing Emacs equivalents.
+The command =consult-imenu= presents a flat list of the Imenu with [[#live-previews][live preview]]
+and [[#narrowing-to-subsets][narrowing support]]. Please take a look at the [[#available-commands][full list of commands]]!
 
 All Consult commands are compatible with completion systems based on the
 standard Emacs =completing-read= API, notably the default completion system,
-[[https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html][Icomplete]], [[https://github.com/raxod502/selectrum][Selectrum]] and [[https://github.com/oantolin/embark/][Embark]]. If Icomplete is used, it is recommended to
-install [[https://github.com/oantolin/icomplete-vertical][Icomplete-vertical]]. The completion system specifics in this package are
-kept to a minimum. The ability of the Consult commands to work well with
-arbitrary completion systems is one main advantage of the package. This property
-allows Consult to fit well into existing setups and it helps you to create a
-full completion environment out of small and independent components. Note that,
-if you use [[https://github.com/abo-abo/swiper#ivy][Ivy]] or [[https://github.com/emacs-helm/helm][Helm]], you probably don't need Consult, since both packages
-already bring their own rich set of additional commands.
+[[https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html][Icomplete]], [[https://github.com/raxod502/selectrum][Selectrum]] and [[https://github.com/oantolin/embark/][Embark]], with which Consult works out of the box. If
+Icomplete is used, it is recommended to install [[https://github.com/oantolin/icomplete-vertical][Icomplete-vertical]]. The
+completion system specifics in this package are kept to a minimum. The ability
+of the Consult commands to work well with arbitrary completion systems is one
+main advantage of the package. This property allows Consult to fit well into
+existing setups and it helps you to create a full completion environment out of
+small and independent components. Note that, if you use [[https://github.com/abo-abo/swiper#ivy][Ivy]] or [[https://github.com/emacs-helm/helm][Helm]], you
+probably don't need Consult, since both packages already bring their own rich
+set of additional commands.
 
 There are the [[https://github.com/minad/marginalia/][Marginalia]] and [[https://github.com/oantolin/embark/][Embark]] packages, which can be combined with
 Consult. The =marginalia-mode= enriches the completion display with annotations.
@@ -44,24 +48,21 @@ which can be executed while selecting a candidate in the minibuffer or in other
 contexts. For example, when selecting from a list of files, an action to delete
 the file is offered. Embark offers more than local actions and can also be used
 as a completion system through its live-updating candidate collect buffer. The
-[[#embark-integration][Embark integration]] is described later in greater detail.
+[[#integration-with-embark][Embark integration]] is described later in greater detail.
 
 ** Screenshots :noexport:
 
-consult-grep
-
 #+caption: consult-grep
 [[https://github.com/minad/consult/blob/main/images/consult-grep.gif?raw=true]]
-
-consult-imenu
+Fig. 1: Command =consult-git-grep=
 
 #+caption: consult-imenu
 [[https://github.com/minad/consult/blob/main/images/consult-imenu.png?raw=true]]
-
-consult-line
+Fig. 2: Command =consult-imenu=
 
 #+caption: consult-line
 [[https://github.com/minad/consult/blob/main/images/consult-line.png?raw=true]]
+Fig. 3: Command =consult-line=
 
 * Available commands
 :properties:
@@ -138,7 +139,7 @@ variables and functions with their descriptions.
    used to further narrow an exported Embark collect buffer with the same
    completion filtering as during =completing-read=. If the input begins with
    "! SPC", the filter matches the complement.
- - =consult-hide-lines=: Temporarily hide lines by filtering them using the current
+ - =consult-focus-lines=: Temporarily hide lines by filtering them using the current
    completion style. Call with =C-u= prefix argument in order to show the hidden
    lines again. If the input begins with "! SPC", the filter matches the
    complement. In contrast to =consult-keep-lines= this function does not edit
@@ -205,7 +206,7 @@ variables and functions with their descriptions.
    non-nil, =consult-grep= searches the current project directory.
    Otherwise the =default-directory= is searched. If =consult-grep= is
    invoked with prefix argument, you can specify the directory manually,
-   i.e., =C-u M-g r=.
+   i.e., =C-u M-s g=.
  - =consult-find=, =consult-locate=: Find file by
    matching the path against a regexp. Like =consult-grep= either the
    project root or the current directory is used as root directory for
@@ -312,6 +313,7 @@ variables and functions with their descriptions.
 ** Live previews
  :properties:
  :description: Preview the currently selected candidate
+ :custom_id: live-previews
  :end:
  #+cindex: preview
 
@@ -333,6 +335,7 @@ variables and functions with their descriptions.
 ** Narrowing to subsets
  :properties:
  :description: Restricting the completion to a candidate subset
+ :custom_id: narrowing-to-subsets
  :end:
  #+cindex: narrowing
 
@@ -403,7 +406,7 @@ variables and functions with their descriptions.
 ** Integration with Embark
  :properties:
  :description: Actions, Grep/Occur-buffer export
- :custom_id: embark-integration
+ :custom_id: integration-with-embark
  :end:
  #+cindex: embark
 
@@ -468,27 +471,32 @@ the box with the default completion, Icomplete and Selectrum.
  ;; Example configuration for Consult
  (use-package consult
    ;; Replace bindings. Lazily loaded due by `use-package'.
-   :bind (("C-x M-:" . consult-complex-command)
+   :bind (;; C-c bindings (mode-specific-map)
           ("C-c h" . consult-history)
           ("C-c m" . consult-mode-command)
           ("C-c k" . consult-keep-lines)
-          ("C-c C-k" . consult-hide-lines)
+          ("C-c f" . consult-focus-lines)
+          ;; C-x bindings (ctl-x-map)
+          ("C-x M-:" . consult-complex-command)
           ("C-x b" . consult-buffer)
           ("C-x 4 b" . consult-buffer-other-window)
           ("C-x 5 b" . consult-buffer-other-frame)
           ("C-x r x" . consult-register)
           ("C-x r b" . consult-bookmark)
+          ;; M-g bindings (goto-map)
           ("M-g g" . consult-goto-line)
           ("M-g M-g" . consult-goto-line)
-          ("M-g o" . consult-outline)       ;; "M-s o" is a good alternative.
-          ("M-g l" . consult-line)          ;; "M-s l" is a good alternative.
-          ("M-g m" . consult-mark)          ;; I recommend to bind Consult navigation
-          ("M-g k" . consult-global-mark)   ;; commands under the "M-g" prefix.
-          ("M-g r" . consult-git-grep)      ;; or consult-grep, consult-ripgrep
-          ("M-g f" . consult-find)          ;; or consult-locate, my-fdfind
-          ("M-g i" . consult-project-imenu) ;; or consult-imenu
+          ("M-g o" . consult-outline)
+          ("M-g m" . consult-mark)
+          ("M-g k" . consult-global-mark)
+          ("M-g i" . consult-project-imenu) ;; Alternative: consult-imenu
           ("M-g e" . consult-error)
+          ;; M-s bindings (search-map)
+          ("M-s g" . consult-git-grep)      ;; Alternatives: consult-grep, consult-ripgrep
+          ("M-s f" . consult-find)          ;; Alternatives: consult-locate, my-fdfind
+          ("M-s l" . consult-line)
           ("M-s m" . consult-multi-occur)
+          ;; Other bindings
           ("M-y" . consult-yank-pop)
           ("<help> a" . consult-apropos))
 
