@@ -236,6 +236,9 @@ variables and functions with their descriptions.
   components.
 - =consult-flymake=: Jump to Flymake diagnostic, like
   =consult-flycheck=.
+- =consult-yasnippet=: Expand [[https://github.com/joaotavora/yasnippet][yasnippet]] snippets in the current buffer.
+  This command is available from the additional =consult-yasnippet.el=
+  package.
 
 ** Histories
  :properties:
@@ -644,6 +647,7 @@ It is recommended to install the following package combination:
 
 - consult: This package
 - consult-flycheck: Provides the consult-flycheck command
+- consult-yasnippet: Provides the consult-yasnippet command
 - [[https://github.com/raxod502/selectrum][selectrum]] or [[https://github.com/oantolin/icomplete-vertical][icomplete-vertical]]: Vertical completion systems
 - [[https://github.com/minad/marginalia][marginalia]]: Annotations for the completion candidates
 - [[https://github.com/oantolin/embark][embark and embark-consult]]: Action commands, which can act on the completion candidates
