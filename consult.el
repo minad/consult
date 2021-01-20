@@ -1814,55 +1814,61 @@ The symbol at point and the last `isearch-string' is added to the future history
 
 ;;;;; Command: consult-keep-lines
 
+(defsubst consult--keep-lines-replace (content &optional pos)
+  "Replace buffer content with CONTENT and move point to POS."
+  (delete-region (point-min) (point-max))
+  (insert content)
+  (goto-char (or pos (point-min))))
+
 (defun consult--keep-lines-state (filter)
   "State function for `consult-keep-lines' with FILTER function."
   (let ((lines)
         (buffer-orig (current-buffer))
         (font-lock-orig font-lock-mode)
         (point-orig (point))
-        (last-input)
-        (changes (prepare-change-group)))
-     (consult--each-line beg end
-       (push (buffer-substring beg end) lines))
-     (setq lines (nreverse lines))
-     (activate-change-group changes)
-     (lambda (input restore)
-       ;; New input provided -> Update
-       (when (and input (not (equal input last-input)))
-         (let ((filtered-contents
-                (if (string-match-p "^!? ?$" input)
-                    ;; Special case the empty input for performance.
-                    ;; Otherwise it could happen that the minibuffer is empty,
-                    ;; but the buffer has not been updated.
-                    (string-join lines "\n")
-                  ;; Heavy computation is interruptible if *not* finalizing!
-                  ;; Allocate new string candidates since the matching function mutates!
-                  (if restore
-                      (string-join (funcall filter input (mapcar #'copy-sequence lines)) "\n")
-                    (while-no-input
-                      (string-join (funcall filter input (mapcar #'copy-sequence lines)) "\n"))))))
-           (when (stringp filtered-contents)
-             (with-current-buffer buffer-orig
-               (when font-lock-mode (font-lock-mode -1))
-               ;; Disable modification hooks for performance
-               (let ((inhibit-modification-hooks t))
-                 (delete-region (point-min) (point-max))
-                 (insert filtered-contents)
-                 ;; Amalgamate immediately in order to avoid long undo list
-                 (undo-amalgamate-change-group changes)
-                 (goto-char (point-min))
-                 (setq last-input input))))))
-       ;; Terminating
-       (when restore
-         ;; Sucessfully terminated -> Accept changes
-         (if input
-             (accept-change-group changes)
-           ;; Aborted -> Cancel changes
-           (cancel-change-group changes)
-           (goto-char point-orig))
-         ;; Restore font-lock
-         (when (and font-lock-orig (not font-lock-mode))
-           (font-lock-mode))))))
+        (content-orig (buffer-string))
+        (last-input))
+    (consult--each-line beg end
+      (push (buffer-substring beg end) lines))
+    (setq lines (nreverse lines))
+    (lambda (input restore)
+      (with-current-buffer buffer-orig
+        ;; Restoring content and point position
+        (when (and restore last-input)
+          ;; No undo recording, modification hooks, buffer modified-status
+          (with-silent-modifications (consult--keep-lines-replace content-orig point-orig)))
+        ;; Committing or new input provided -> Update
+        (when (and input ;; Input has been povided
+                   (or
+                    ;; Committing, but not with empty input
+                    (and restore (not (string-match-p "^!? ?$" input)))
+                    ;; Input has changed
+                    (not (equal input last-input))))
+          (let ((filtered-content
+                 (if (string-match-p "^!? ?$" input)
+                     ;; Special case the empty input for performance.
+                     ;; Otherwise it could happen that the minibuffer is empty,
+                     ;; but the buffer has not been updated.
+                     content-orig
+                   (if restore
+                       (string-join (funcall filter input lines) "\n")
+                     (while-no-input
+                       ;; Heavy computation is interruptible if *not* committing!
+                       ;; Allocate new string candidates since the matching function mutates!
+                       (string-join (funcall filter input (mapcar #'copy-sequence lines)) "\n"))))))
+            (when (stringp filtered-content)
+              (when font-lock-mode (font-lock-mode -1))
+              (if restore
+                  (atomic-change-group
+                    (let ((inhibit-modification-hooks t)) ;; Disable modification hooks for performance
+                      (consult--keep-lines-replace filtered-content)))
+                ;; No undo recording, modification hooks, buffer modified-status
+                (with-silent-modifications
+                  (consult--keep-lines-replace filtered-content)
+                  (setq last-input input))))))
+        ;; Restore font-lock
+        (when (and restore font-lock-orig (not font-lock-mode))
+          (font-lock-mode))))))
 
 (defun consult-keep-lines (&optional filter initial)
   "Select a subset of the lines in the current buffer with live preview.
@@ -1877,15 +1883,11 @@ INITIAL is the initial input."
   (barf-if-buffer-read-only)
   (consult--with-increased-gc
    (consult--fontify-all)
-   ;; See `atomic-change-group' for these settings
-   (let ((undo-outer-limit nil)
-         (undo-limit most-positive-fixnum)
-         (undo-strong-limit most-positive-fixnum))
-     (consult--prompt
-      "Keep lines: "
-      :initial initial
-      :history 'consult--keep-lines-history
-      :preview (consult--keep-lines-state filter)))))
+   (consult--prompt
+    "Keep lines: "
+    :initial initial
+    :history 'consult--keep-lines-history
+    :preview (consult--keep-lines-state filter))))
 
 ;;;;; Command: consult-focus-lines
 
@@ -1906,7 +1908,7 @@ INITIAL is the initial input."
               (setq last-input input))
           (let* ((not (string-prefix-p "! " input))
                  (stripped (string-remove-prefix "! " input))
-                 ;; Heavy computation is interruptible if *not* finalizing!
+                 ;; Heavy computation is interruptible if *not* committing!
                  (ht (if restore
                          (consult--string-hash (funcall filter stripped lines))
                        (while-no-input
