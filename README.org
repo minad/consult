@@ -170,11 +170,6 @@ variables and functions with their descriptions.
 
  #+findex: consult-line
  #+findex: consult-multi-occur
- #+findex: consult-grep
- #+findex: consult-ripgrep
- #+findex: consult-git-grep
- #+findex: consult-find
- #+findex: consult-locate
  #+findex: consult-keep-lines
  #+findex: consult-focus-lines
  - =consult-line=: Enter search string and select from matching lines.
@@ -183,6 +178,31 @@ variables and functions with their descriptions.
    accessed by pressing =M-n=.
  - =consult-multi-occur=: Replacement for =multi-occur= which uses
    =completing-read-multiple=.
+ - =consult-keep-lines=: Replacement for =keep/flush-lines=
+   which uses the current completion style for filtering the buffer. The
+   function updates the buffer while typing. In particular, this function can be
+   used to further narrow an exported Embark collect buffer with the same
+   completion filtering as during =completing-read=. If the input begins with
+   "! SPC", the filter matches the complement.
+ - =consult-focus-lines=: Temporarily hide lines by filtering them using the current
+   completion style. Call with =C-u= prefix argument in order to show the hidden
+   lines again. If the input begins with "! SPC", the filter matches the
+   complement. In contrast to =consult-keep-lines= this function does not edit
+   the buffer.
+
+** Grep and Find
+ :properties:
+ :description: Searching through the filesystem
+ :end:
+ #+cindex: grep
+ #+cindex: find
+ #+cindex: locate
+
+ #+findex: consult-grep
+ #+findex: consult-ripgrep
+ #+findex: consult-git-grep
+ #+findex: consult-find
+ #+findex: consult-locate
  - =consult-grep=, =consult-ripgrep=, =consult-git-grep=: Search for
    regular expression in current directory. Grep is invoked
    asynchronously, while you enter the search term. You are required to
@@ -208,17 +228,6 @@ variables and functions with their descriptions.
    =*consult*=, to find all files containing the string "consult". In
    case you want to use another search utility like =fd=, you can write
    wrapper command =my-fdfind= as shown in the [[#example-configuration][example configuration]].
- - =consult-keep-lines=: Replacement for =keep/flush-lines=
-   which uses the current completion style for filtering the buffer. The
-   function updates the buffer while typing. In particular, this function can be
-   used to further narrow an exported Embark collect buffer with the same
-   completion filtering as during =completing-read=. If the input begins with
-   "! SPC", the filter matches the complement.
- - =consult-focus-lines=: Temporarily hide lines by filtering them using the current
-   completion style. Call with =C-u= prefix argument in order to show the hidden
-   lines again. If the input begins with "! SPC", the filter matches the
-   complement. In contrast to =consult-keep-lines= this function does not edit
-   the buffer.
 
 ** Compilation errors
  :properties:
