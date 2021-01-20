@@ -176,8 +176,6 @@ instead, which includes recent files.
 @findex consult-register-preview
 @findex consult-yank
 @findex consult-kmacro
-@findex consult-keep-lines
-@findex consult-focus-lines
 @itemize
 @item
 @samp{consult-register}: Select from list of registers. The command
@@ -194,19 +192,6 @@ used.
 supported when selecting from the kill-ring.
 @item
 @samp{consult-kmacro}: Select macro from the macro ring and execute it.
-@item
-@samp{consult-keep-lines}: Replacement for @samp{keep/flush-lines}
-which uses the current completion style for filtering the buffer. The
-function updates the buffer while typing. In particular, this function can be
-used to further narrow an exported Embark collect buffer with the same
-completion filtering as during @samp{completing-read}. If the input begins with
-"! SPC", the filter matches the complement.
-@item
-@samp{consult-focus-lines}: Temporarily hide lines by filtering them using the current
-completion style. Call with @samp{C-u} prefix argument in order to show the hidden
-lines again. If the input begins with "! SPC", the filter matches the
-complement. In contrast to @samp{consult-keep-lines} this function does not edit
-the buffer.
 @end itemize
 
 @node Navigation
@@ -255,6 +240,8 @@ recursive editing and narrowing. This feature has been inspired by
 @findex consult-git-grep
 @findex consult-find
 @findex consult-locate
+@findex consult-keep-lines
+@findex consult-focus-lines
 @itemize
 @item
 @samp{consult-line}: Enter search string and select from matching lines.
@@ -291,6 +278,19 @@ for Emacs filtering. Note that @samp{find} uses wildcards, e.g. enter
 @samp{*consult*}, to find all files containing the string "consult". In
 case you want to use another search utility like @samp{fd}, you can write
 wrapper command @samp{my-fdfind} as shown in the @ref{Example configuration, , example configuration}.
+@item
+@samp{consult-keep-lines}: Replacement for @samp{keep/flush-lines}
+which uses the current completion style for filtering the buffer. The
+function updates the buffer while typing. In particular, this function can be
+used to further narrow an exported Embark collect buffer with the same
+completion filtering as during @samp{completing-read}. If the input begins with
+"! SPC", the filter matches the complement.
+@item
+@samp{consult-focus-lines}: Temporarily hide lines by filtering them using the current
+completion style. Call with @samp{C-u} prefix argument in order to show the hidden
+lines again. If the input begins with "! SPC", the filter matches the
+complement. In contrast to @samp{consult-keep-lines} this function does not edit
+the buffer.
 @end itemize
 
 @node Compilation errors
