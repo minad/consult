@@ -48,7 +48,7 @@ which can be executed while selecting a candidate in the minibuffer or in other
 contexts. For example, when selecting from a list of files, an action to delete
 the file is offered. Embark offers more than local actions and can also be used
 as a completion system through its live-updating candidate collect buffer. The
-[[#integration-with-embark][Embark integration]] is described later in greater detail.
+[[#embark-integration][Embark integration]] is described later in greater detail.
 
 ** Screenshots :noexport:
 
@@ -257,7 +257,7 @@ variables and functions with their descriptions.
    This command can be invoked from the minibuffer. In that case the
    history stored in the =minibuffer-history-variable= is used.
 
-** Major and minor modes
+** Modes
  :properties:
  :description: Toggling minor modes and executing commands
  :end:
@@ -358,7 +358,7 @@ variables and functions with their descriptions.
  key in the =consult-narrow-map= if this is desired, as shown in the [[#example-configuration][example
  configuration]].
 
-** Asynchronous candidate lists
+** Asynchronous candidates
  :properties:
  :description: Filtering asynchronously generated candidate lists
  :end:
@@ -404,10 +404,10 @@ variables and functions with their descriptions.
  you can access the buffer using =consult-buffer= and =switch-to-buffer= by first pressing =SPC=
  and then selecting the buffer.
 
-** Integration with Embark
+** Embark integration
  :properties:
  :description: Actions, Grep/Occur-buffer export
- :custom_id: integration-with-embark
+ :custom_id: embark-integration
  :end:
  #+cindex: embark
 
@@ -442,7 +442,6 @@ variables and functions with their descriptions.
 :properties:
 :description: Example configuration and customization variables
 :end:
-#+cindex: installation
 
 Consult can be installed from [[https://melpa.org/][MELPA]] via the Emacs built-in package manager.
 Alternatively it can be directly installed from the development repository via
@@ -553,7 +552,7 @@ the box with the default completion, Icomplete and Selectrum.
                ("!" . consult-flycheck)))
  #+end_src
 
-** Customizable variables
+** Custom variables
  :properties:
  :description: Short description of all customization settings
  :end:

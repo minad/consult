@@ -43,20 +43,20 @@ Available commands
 * Search::                       Line search, grep and file search
 * Compilation errors::           Jumping to compilation errors
 * Histories::                    Navigating histories
-* Major and minor modes::        Toggling minor modes and executing commands
+* Modes::                        Toggling minor modes and executing commands
 * Miscellaneous::                Various other useful commands
 
 Special features
 
 * Live previews::                Preview the currently selected candidate
 * Narrowing to subsets::         Restricting the completion to a candidate subset
-* Asynchronous candidate lists:: Filtering asynchronously generated candidate lists
-* Integration with Embark::      Actions, Grep/Occur-buffer export
+* Asynchronous candidates::      Filtering asynchronously generated candidate lists
+* Embark integration::           Actions, Grep/Occur-buffer export
 
 Configuration
 
 * Example configuration::        Configuration proposal based on use-package
-* Customizable variables::       Short description of all customization settings
+* Custom variables::             Short description of all customization settings
 * Fine-tuning::                  Fine-grained configuration for special requirements
 
 @end detailmenu
@@ -97,7 +97,7 @@ which can be executed while selecting a candidate in the minibuffer or in other
 contexts. For example, when selecting from a list of files, an action to delete
 the file is offered. Embark offers more than local actions and can also be used
 as a completion system through its live-updating candidate collect buffer. The
-@ref{Integration with Embark, , Embark integration} is described later in greater detail.
+@ref{Embark integration} is described later in greater detail.
 
 @node Available commands
 @chapter Available commands
@@ -118,7 +118,7 @@ variables and functions with their descriptions.
 * Search::                       Line search, grep and file search
 * Compilation errors::           Jumping to compilation errors
 * Histories::                    Navigating histories
-* Major and minor modes::        Toggling minor modes and executing commands
+* Modes::                        Toggling minor modes and executing commands
 * Miscellaneous::                Various other useful commands
 @end menu
 
@@ -337,8 +337,8 @@ This command can be invoked from the minibuffer. In that case the
 history stored in the @samp{minibuffer-history-variable} is used.
 @end itemize
 
-@node Major and minor modes
-@section Major and minor modes
+@node Modes
+@section Modes
 
 @cindex minor mode
 @cindex major mode
@@ -400,8 +400,8 @@ features.
 @menu
 * Live previews::                Preview the currently selected candidate
 * Narrowing to subsets::         Restricting the completion to a candidate subset
-* Asynchronous candidate lists:: Filtering asynchronously generated candidate lists
-* Integration with Embark::      Actions, Grep/Occur-buffer export
+* Asynchronous candidates::      Filtering asynchronously generated candidate lists
+* Embark integration::           Actions, Grep/Occur-buffer export
 @end menu
 
 @node Live previews
@@ -447,8 +447,8 @@ Furthermore there is the @samp{consult-narrow-help} command which can be bound t
 key in the @samp{consult-narrow-map} if this is desired, as shown in the @ref{Example configuration, , example
 configuration}.
 
-@node Asynchronous candidate lists
-@section Asynchronous candidate lists
+@node Asynchronous candidates
+@section Asynchronous candidates
 
 @cindex asynchronous candidates
 
@@ -506,8 +506,8 @@ There is an ephemeral error log buffer @samp{_*consult-async-stderr*} (note the 
 you can access the buffer using @samp{consult-buffer} and @samp{switch-to-buffer} by first pressing @samp{SPC}
 and then selecting the buffer.
 
-@node Integration with Embark
-@section Integration with Embark
+@node Embark integration
+@section Embark integration
 
 @cindex embark
 
@@ -541,8 +541,6 @@ across files can be edited, if the @uref{https://github.com/mhayashi1120/Emacs-w
 @node Configuration
 @chapter Configuration
 
-@cindex installation
-
 Consult can be installed from @uref{https://melpa.org/, MELPA} via the Emacs built-in package manager.
 Alternatively it can be directly installed from the development repository via
 other non-standard package managers.
@@ -561,7 +559,7 @@ the box with the default completion, Icomplete and Selectrum.
 
 @menu
 * Example configuration::        Configuration proposal based on use-package
-* Customizable variables::       Short description of all customization settings
+* Custom variables::             Short description of all customization settings
 * Fine-tuning::                  Fine-grained configuration for special requirements
 @end menu
 
@@ -656,8 +654,8 @@ the box with the default completion, Icomplete and Selectrum.
               ("!" . consult-flycheck)))
 @end lisp
 
-@node Customizable variables
-@section Customizable variables
+@node Custom variables
+@section Custom variables
 
 @cindex customization
 @cindex configuration
