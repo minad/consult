@@ -474,8 +474,6 @@ the box with the default completion, Icomplete and Selectrum.
    :bind (;; C-c bindings (mode-specific-map)
           ("C-c h" . consult-history)
           ("C-c m" . consult-mode-command)
-          ("C-c k" . consult-keep-lines)
-          ("C-c f" . consult-focus-lines)
           ;; C-x bindings (ctl-x-map)
           ("C-x M-:" . consult-complex-command)
           ("C-x b" . consult-buffer)
@@ -496,6 +494,8 @@ the box with the default completion, Icomplete and Selectrum.
           ("M-s f" . consult-find)          ;; Alternatives: consult-locate, my-fdfind
           ("M-s l" . consult-line)
           ("M-s m" . consult-multi-occur)
+          ("M-s k" . consult-keep-lines)
+          ("M-s u" . consult-focus-lines)
           ;; Other bindings
           ("M-y" . consult-yank-pop)
           ("<help> a" . consult-apropos))
