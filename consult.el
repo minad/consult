@@ -1202,7 +1202,7 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
   "Split command arguments and append to CMD."
   (lambda (input)
     (let ((args (split-string input " +-- +")))
-      (append cmd (list (car args)) grep-popup-args))))
+      (append cmd (list (car args)) (mapcan #'split-string (cdr args))))))
 
 (defmacro consult--async-command (cmd &rest transforms)
   "Asynchronous CMD pipeline with TRANSFORMS."
@@ -2945,25 +2945,6 @@ See `consult-grep' for more details regarding the asynchronous search."
 
 (with-eval-after-load 'icomplete (require 'consult-icomplete))
 (with-eval-after-load 'selectrum (require 'consult-selectrum))
-
-(require 'transient)
-
-(defvar grep-popup-args nil)
-
-(defun grep-popup-update ()
-  "Update current search."
-  (interactive)
-  (let ((args (transient-args 'grep-popup)))
-    (setq grep-popup-args args)))
-
-(define-transient-command grep-popup ()
-  "Search popup."
-  ["Matching control"
-   ("-i" "Ignore case" "--ignore-case")]
-  ["Search"
-   ("s" "update search" grep-popup-update)])
-
-(define-key consult-async-map (kbd "M-h") #'grep-popup)
 
 ;; Local Variables:
 ;; outline-regexp: ";;;;* \\|(def\\(un\\|custom\\|var\\) consult-[a-z]"
