@@ -2431,10 +2431,6 @@ In order to select from a specific HISTORY, pass the history variable as argumen
 
 ;;;;; Command: consult-isearch
 
-(defun consult--isearch-read (hist)
-  (let ((str (consult--read "History: " hist :history t :sort nil)))
-     (cons str (mapconcat 'isearch-text-char-description str ""))))
-
 ;;;###autoload
 (defun consult-isearch ()
   "Read a search string with completion from history.
@@ -2442,24 +2438,20 @@ In order to select from a specific HISTORY, pass the history variable as argumen
 This replaces the current search string if Isearch is active, and
 starts a new Isearch session otherwise."
   (interactive)
-  (let* ((hist (if (if isearch-mode isearch-regexp
-                    (eq t search-default-mode))
-                  regexp-search-ring
-                 search-ring)))
-    (if isearch-mode
-        (with-isearch-suspended
-         (pcase-let ((`(,str . ,msg) (consult--isearch-read
-                                      (if isearch-regexp
-                                          regexp-search-ring
-                                        search-ring))))
-           (setq isearch-new-string str isearch-new-message msg)))
-      (pcase-let ((`(,str . ,msg) (consult--isearch-read
-                                   (if (eq t search-default-mode)
-                                       regexp-search-ring
-                                     search-ring))))
-        (isearch-mode t)
-        (with-isearch-suspended
-         (setq isearch-new-string str isearch-new-message msg))))))
+  (let ((isearch-message-function 'ignore) ;; Avoid flicker in echo area
+        (inhibit-redisplay t))             ;; Avoid flicker in mode line
+    (unless isearch-mode
+      (isearch-mode t))
+    (with-isearch-suspended
+     (setq isearch-new-string
+           (consult--read
+            "History: "
+            (if isearch-regexp regexp-search-ring search-ring)
+            :history t
+            :sort nil))
+     (setq isearch-new-message
+           (mapconcat 'isearch-text-char-description
+		      isearch-new-string "")))))
 
 ;;;;; Command: consult-minor-mode-menu
 
