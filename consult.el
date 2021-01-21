@@ -260,7 +260,8 @@ with a space character."
   `((?n "Number" ,#'numberp)
     (?s "String" ,#'stringp)
     (?r "Rectangle" ,(lambda (x) (stringp (car-safe x))))
-    ;; (?f "Frameset" ,#'frameset-register-p) ;; only 27.1
+    ;; frameset-register-p exists only on 27.1
+    (?f "Framset" ,(lambda (x) (eq (type-of x) 'frameset-register)))
     (?p "Position" ,(lambda (x)
                       (or (markerp x) (eq (car-safe x) 'file-query))))
     (?w "Window" ,(lambda (x) (window-configuration-p (car-safe x)))))
