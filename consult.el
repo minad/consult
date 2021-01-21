@@ -896,7 +896,7 @@ See consult--with-preview for the arguments PREVIEW-KEY, PREVIEW, TRANSFORM and 
                           (with-selected-window (or (minibuffer-selected-window) (next-window))
                             (funcall preview (funcall transform inp cand) nil))
                           (setq last-preview cand)))))
-              (let ((post-command-sym (make-symbol "consult--with-preview-post-command")))
+              (let ((post-command-sym (make-symbol "consult--preview-post-command")))
                 (fset post-command-sym
                       (lambda ()
                         (setq input (minibuffer-contents-no-properties))
@@ -910,7 +910,7 @@ See consult--with-preview for the arguments PREVIEW-KEY, PREVIEW, TRANSFORM and 
                             (funcall consult--preview-function input cand)))))
                 (add-hook 'post-command-hook post-command-sym nil t)))
           (lambda ()
-            (let ((post-command-sym (make-symbol "consult--with-preview-post-command")))
+            (let ((post-command-sym (make-symbol "consult--preview-post-command")))
               (fset post-command-sym (lambda () (setq input (minibuffer-contents-no-properties))))
               (add-hook 'post-command-hook post-command-sym nil t))))
       (unwind-protect
@@ -1023,7 +1023,7 @@ to make it available for commands with narrowing."
           (funcall async 'setup)
           ;; Push input string to request refresh.
           ;; We use a symbol in order to avoid adding lambdas to the hook variable.
-          (let ((sym (make-symbol "consult--with-async-after-change")))
+          (let ((sym (make-symbol "consult--async-after-change")))
             (fset sym (lambda (&rest _) (funcall async (minibuffer-contents-no-properties))))
             (run-at-time 0 nil sym)
             (add-hook 'after-change-functions sym nil t)))
