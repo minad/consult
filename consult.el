@@ -260,8 +260,9 @@ with a space character."
   `((?n "Number" ,#'numberp)
     (?s "String" ,#'stringp)
     (?r "Rectangle" ,(lambda (x) (stringp (car-safe x))))
-    ;; frameset-register-p exists only on 27.1
-    (?f "Framset" ,(lambda (x) (eq (type-of x) 'frameset-register)))
+    ;; frameset-register-p and kmacro-register-p exists since 27.1
+    (?f "Frameset" ,(lambda (x) (eq (type-of x) 'frameset-register)))
+    (?k "Kmacro" ,(lambda (x) (eq (type-of x) 'kmacro-register)))
     (?p "Position" ,(lambda (x)
                       (or (markerp x) (eq (car-safe x) 'file-query))))
     (?w "Window" ,(lambda (x) (window-configuration-p (car-safe x)))))
