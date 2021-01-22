@@ -2342,6 +2342,7 @@ number. With ARG store the frame configuration. Otherwise, store the point."
                           "Store region in register: "))
                        ((numberp current-prefix-arg)
                         (format "Store %s in register: " current-prefix-arg))
+                       ((equal current-prefix-arg '(16)) "Store frameset in register: ")
                        (current-prefix-arg "Store window in register: ")
                        (t "Store point in register: ")))
                      current-prefix-arg))
@@ -2354,6 +2355,7 @@ number. With ARG store the frame configuration. Otherwise, store the point."
           (append-to-register reg beg end del)
         (copy-to-register reg beg end del t))))
    ((numberp arg) (number-to-register arg reg))
+   ((equal arg '(16)) (frameset-to-register reg))
    (arg (window-configuration-to-register reg))
    (t (point-to-register reg))))
 
