@@ -2337,9 +2337,12 @@ number. With ARG store the frame configuration. Otherwise, store the point."
   (interactive (list (register-read-with-preview
                       (cond
                        ((use-region-p)
-                        (if (consp current-prefix-arg)
-                            "Append region to register: "
-                          "Store region in register: "))
+                        (cond
+                         ((or (equal current-prefix-arg '(16))
+                              (equal current-prefix-arg '(-16)))
+                          "Prepend region to register: ")
+                         (current-prefix-arg "Append region to register: ")
+                         (t "Store region in register: ")))
                        ((numberp current-prefix-arg)
                         (format "Store %s in register: " current-prefix-arg))
                        ((equal current-prefix-arg '(16)) "Store frameset in register: ")
@@ -2350,10 +2353,12 @@ number. With ARG store the frame configuration. Otherwise, store the point."
    ((use-region-p)
     (let ((beg (region-beginning))
           (end (region-end))
-          (del (or (equal arg '-)  (equal arg '(-4)))))
-      (if (consp arg)
-          (append-to-register reg beg end del)
-        (copy-to-register reg beg end del t))))
+          (del (or (equal arg '-) (equal arg '(-4)) (equal arg '(-16)))))
+      (cond
+       ((or (equal arg '(16)) (equal arg '(-16)))
+        (prepend-to-register reg beg end del))
+       (arg (append-to-register reg beg end del))
+       (t (copy-to-register reg beg end del t)))))
    ((numberp arg) (number-to-register arg reg))
    ((equal arg '(16)) (frameset-to-register reg))
    (arg (window-configuration-to-register reg))
