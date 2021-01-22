@@ -2295,7 +2295,7 @@ registers it is still recommended to use the register functions
 register access functions. The command supports narrowing, see
 `consult-register-narrow'. Marker positions are previewed. See
 `jump-to-register' and `insert-register' for the meaning of ARG."
-  (interactive "p")
+  (interactive "P")
   (consult-register-load
    (consult--read
     "Register: "
@@ -2367,6 +2367,23 @@ meaning of ARG."
   (condition-case nil
       (jump-to-register reg arg)
     (user-error (insert-register reg arg))))
+
+(defun consult-register-access (arg)
+  (interactive "P")
+  (let ((reg)
+        (store)
+        (register-preview-delay 0)
+        (ev last-input-event))
+    (while (not reg)
+      (condition-case nil
+          (setq reg (register-read-with-preview (if store "Overwrite register: " "Register: ")))
+        (error
+         (unless (eq last-input-event ev)
+           (error "Not a register key"))
+         (setq store (not store)))))
+    (if (or store (not (alist-get reg register-alist)))
+        (consult-register-save reg arg)
+      (consult-register-load reg arg))))
 
 ;;;;; Command: consult-bookmark
 
