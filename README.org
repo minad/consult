@@ -118,22 +118,34 @@ variables and functions with their descriptions.
  :end:
  #+cindex: editing
 
- #+findex: consult-register
- #+findex: consult-register-preview
  #+findex: consult-yank
  #+findex: consult-kmacro
- - =consult-register=: Select from list of registers. The command
-   supports narrowing to register types and preview of marker positions. This
-   command is useful to search the register contents. For quick access it is
-   recommended to use the built-in Emacs commands like =jump-to-register=. There
-   is also the supplementary function =consult-register-preview= which can be
-   used as =register-preview-function= for a consistent display. See the [[#example-configuration][example
-   configuration]] for how the =consult-register-preview= function is meant to be
-   used.
  - =consult-yank=, =consult-yank-pop=: Enhanced version of =yank= and
    =yank-pop= which allows selecting from the kill-ring. Live preview is
    supported when selecting from the kill-ring.
  - =consult-kmacro=: Select macro from the macro ring and execute it.
+
+** Register
+ :properties:
+ :description: Searching through registers and fast access
+ :end:
+ #+cindex: register
+
+ #+findex: consult-register
+ #+findex: consult-register-load
+ #+findex: consult-register-save
+ #+findex: consult-register-preview
+ - =consult-register=: Select from list of registers. The command
+   supports narrowing to register types and preview of marker positions. This
+   command is useful to search the register contents. For quick access it is
+   recommended to use =consult-register-load= or =consult-register-save= or the
+   built-in Emacs register commands.
+ - =consult-register-load=, =consult-register-save=: Utility functions to quickly
+   load a register or save to a register in a dwim fashion.
+ - =consult-register-preview=: Supplementary function which can be
+   used as =register-preview-function= for a consistent display. See the [[#example-configuration][example
+   configuration]] for how the =consult-register-preview= function is meant to be
+   used.
 
 ** Navigation
  :properties:
@@ -483,13 +495,16 @@ the box with the default completion, Icomplete and Selectrum.
    :bind (;; C-c bindings (mode-specific-map)
           ("C-c h" . consult-history)
           ("C-c m" . consult-mode-command)
+          ("C-c b" . consult-bookmark)
           ;; C-x bindings (ctl-x-map)
           ("C-x M-:" . consult-complex-command)
           ("C-x b" . consult-buffer)
           ("C-x 4 b" . consult-buffer-other-window)
           ("C-x 5 b" . consult-buffer-other-frame)
-          ("C-x r x" . consult-register)
-          ("C-x r b" . consult-bookmark)
+          ;; Custom M-# bindings for fast register access
+          ("M-#" . consult-register-load)
+          ("M-'" . consult-register-save)
+          ("C-M-#" . consult-register)
           ;; M-g bindings (goto-map)
           ("M-g g" . consult-goto-line)
           ("M-g M-g" . consult-goto-line)
