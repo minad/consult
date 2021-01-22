@@ -2291,7 +2291,7 @@ This function can be used as `register-preview-function'."
 
 This command is useful to search the register contents. For quick access to
 registers it is still recommended to use the register functions
-`consult-register-load' and `consult-register-save' or the built-in built-in
+`consult-register-load' and `consult-register-store' or the built-in built-in
 register access functions. The command supports narrowing, see
 `consult-register-narrow'. Marker positions are previewed. See
 `jump-to-register' and `insert-register' for the meaning of ARG."
@@ -2328,7 +2328,7 @@ register access functions. The command supports narrowing, see
    arg))
 
 ;;;###autoload
-(defun consult-register-save (reg &optional arg)
+(defun consult-register-store (reg &optional arg)
   "Store what I mean in a REG.
 
 With an active region, store or append (with ARG) the contents, optionally
@@ -2382,7 +2382,7 @@ meaning of ARG."
            (error "Not a register key"))
          (setq store (not store)))))
     (if (or store (not (alist-get reg register-alist)))
-        (consult-register-save reg arg)
+        (consult-register-store reg arg)
       (consult-register-load reg arg))))
 
 ;;;;; Command: consult-bookmark
