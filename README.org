@@ -118,22 +118,39 @@ variables and functions with their descriptions.
  :end:
  #+cindex: editing
 
- #+findex: consult-register
- #+findex: consult-register-preview
  #+findex: consult-yank
  #+findex: consult-kmacro
- - =consult-register=: Select from list of registers. The command
-   supports narrowing to register types and preview of marker positions. This
-   command is useful to search the register contents. For quick access it is
-   recommended to use the built-in Emacs commands like =jump-to-register=. There
-   is also the supplementary function =consult-register-preview= which can be
-   used as =register-preview-function= for a consistent display. See the [[#example-configuration][example
-   configuration]] for how the =consult-register-preview= function is meant to be
-   used.
  - =consult-yank=, =consult-yank-pop=: Enhanced version of =yank= and
    =yank-pop= which allows selecting from the kill-ring. Live preview is
    supported when selecting from the kill-ring.
  - =consult-kmacro=: Select macro from the macro ring and execute it.
+
+** Register
+ :properties:
+ :description: Searching through registers and fast access
+ :end:
+ #+cindex: register
+
+ #+findex: consult-register
+ #+findex: consult-register-load
+ #+findex: consult-register-store
+ #+findex: consult-register-preview
+ - =consult-register=: Select from list of registers. The command
+   supports narrowing to register types and preview of marker positions. This
+   command is useful to search the register contents. For quick access it is
+   recommended to use =consult-register-load= or =consult-register-store= or the
+   built-in Emacs register commands.
+ - =consult-register-load=: Utility command to quickly load a register.
+   The command either jumps to the register value or inserts it.
+ - =consult-register-store=: Improved UI to store registers depending on the current
+   context with an action menu. With a numeric prefix, store/add the number. With an
+   active region, store/append/prepend the contents, optionally deleting the region
+   when a prefx argument is given. Otherwise store point, frameset, window or
+   kmacro.
+ - =consult-register-preview=: Supplementary function which can be
+   used as =register-preview-function= for a consistent display. See the [[#example-configuration][example
+   configuration]] for how the =consult-register-preview= function is meant to be
+   used.
 
 ** Navigation
  :properties:
@@ -483,13 +500,16 @@ the box with the default completion, Icomplete and Selectrum.
    :bind (;; C-c bindings (mode-specific-map)
           ("C-c h" . consult-history)
           ("C-c m" . consult-mode-command)
+          ("C-c b" . consult-bookmark)
           ;; C-x bindings (ctl-x-map)
           ("C-x M-:" . consult-complex-command)
           ("C-x b" . consult-buffer)
           ("C-x 4 b" . consult-buffer-other-window)
           ("C-x 5 b" . consult-buffer-other-frame)
-          ("C-x r x" . consult-register)
-          ("C-x r b" . consult-bookmark)
+          ;; Custom M-# bindings for fast register access
+          ("M-#" . consult-register-load)
+          ("M-'" . consult-register-store)
+          ("C-M-#" . consult-register)
           ;; M-g bindings (goto-map)
           ("M-g g" . consult-goto-line)
           ("M-g M-g" . consult-goto-line)
@@ -526,6 +546,15 @@ the box with the default completion, Icomplete and Selectrum.
    ;; the register preview when editing registers.
    (setq register-preview-delay 0
          register-preview-function #'consult-register-preview)
+   ;; Optionally hide mode-line of register preview window.
+   (add-to-list 'display-buffer-alist
+                '("\\`\\*Register Preview\\*"
+                  nil (window-parameters (mode-line-format . none))))
+   ;; Optionally sort registers in preview window.
+   (advice-add #'register-preview :around
+               (lambda (fun &rest args)
+                 (let ((register-alist (seq-sort #'car-less-than-car register-alist)))
+                   (apply fun args))))
 
    ;; Configure other variables and modes in the :config section, after lazily loading the package
    :config

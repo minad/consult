@@ -263,8 +263,7 @@ with a space character."
     ;; frameset-register-p and kmacro-register-p exists since 27.1
     (?f "Frameset" ,(lambda (x) (eq (type-of x) 'frameset-register)))
     (?k "Kmacro" ,(lambda (x) (eq (type-of x) 'kmacro-register)))
-    (?p "Position" ,(lambda (x)
-                      (or (markerp x) (eq (car-safe x) 'file-query))))
+    (?p "Point" ,(lambda (x) (or (markerp x) (eq (car-safe x) 'file-query))))
     (?w "Window" ,(lambda (x) (window-configuration-p (car-safe x)))))
   "Register narrowing configuration.
 
@@ -340,6 +339,10 @@ the public API."
 (defface consult-async-split
   '((t :inherit font-lock-negation-char-face))
   "Face used to highlight punctuation character.")
+
+(defface consult-help
+  '((t :inherit font-lock-comment-face))
+  "Face used to highlight help, e.g., in `consult-register-store'.")
 
 (defface consult-key
   '((t :inherit font-lock-keyword-face))
@@ -2286,48 +2289,143 @@ This function can be used as `register-preview-function'."
               (user-error "All registers are empty"))))
 
 ;;;###autoload
-(defun consult-register (reg)
-  "Use register REG and either jump to location or insert the stored text.
+(defun consult-register (&optional arg)
+  "Load register and either jump to location or insert the stored text.
 
-This command is useful to search the register contents. For quick
-access to registers it is still recommended to use the built-in
-register access functions, like `jump-to-register',
-`point-to-register', `insert-register' and `copy-to-register'. The
-command supports narrowing, see `consult-register-narrow'. Marker
-positions are previewed."
-  (interactive
-   (list
-    (consult--read
-     "Register: "
-     (consult--register-candidates)
-     :category 'register
-     :preview
-     (let ((preview (consult--preview-position)))
-       (lambda (cand restore)
-         (funcall preview
-                  ;; Preview markers
-                  (when-let (reg (get-register cand))
-                    (when (markerp reg)
-                      reg))
-                  restore)))
-     :narrow
-     (cons
-      (lambda (cand)
-        (let ((reg (get-register (cdr cand))))
-          (seq-find (lambda (x)
-                      (and
-                       (= (car x) consult--narrow)
-                       (funcall (caddr x) reg)))
-                    consult-register-narrow)))
-      (mapcar (pcase-lambda (`(,x ,y ,_)) (cons x y))
-              consult-register-narrow))
-     :sort nil
-     :require-match t
-     :history t ;; disable history
-     :lookup #'consult--lookup-cdr)))
+This command is useful to search the register contents. For quick access to
+registers it is still recommended to use the register functions
+`consult-register-load' and `consult-register-store' or the built-in built-in
+register access functions. The command supports narrowing, see
+`consult-register-narrow'. Marker positions are previewed. See
+`jump-to-register' and `insert-register' for the meaning of ARG."
+  (interactive "P")
+  (consult-register-load
+   (consult--read
+    "Register: "
+    (consult--register-candidates)
+    :category 'register
+    :preview
+    (let ((preview (consult--preview-position)))
+      (lambda (cand restore)
+        (funcall preview
+                 ;; Preview markers
+                 (when-let (reg (get-register cand))
+                   (when (markerp reg)
+                     reg))
+                 restore)))
+    :narrow
+    (cons
+     (lambda (cand)
+       (let ((reg (get-register (cdr cand))))
+         (seq-find (lambda (x)
+                     (and
+                      (= (car x) consult--narrow)
+                      (funcall (caddr x) reg)))
+                   consult-register-narrow)))
+     (mapcar (pcase-lambda (`(,x ,y ,_)) (cons x y))
+             consult-register-narrow))
+    :sort nil
+    :require-match t
+    :history t ;; disable history
+    :lookup #'consult--lookup-cdr)
+   arg))
+
+;;;###autoload
+(defun consult-register-load (reg &optional arg)
+  "Do what I mean with a REG.
+
+For a window configuration, restore it. For a number or text, insert it. For a
+location, jump to it. See `jump-to-register' and `insert-register' for the
+meaning of ARG."
+  (interactive (list (register-read-with-preview "Load register: ")
+                     current-prefix-arg))
   (condition-case nil
-      (jump-to-register reg)
-    (error (insert-register reg))))
+      (jump-to-register reg arg)
+    (user-error (insert-register reg arg))))
+
+(defun consult--register-action (action-list)
+  "Read register key and execute action from ACTION-LIST.
+
+This function is derived from `register-read-with-preview'."
+  (let* ((buffer "*Register Preview*")
+         (prefix (car action-list))
+         (action-list (cdr action-list))
+         (action (car (nth 0 action-list)))
+         (reg)
+	 (timer
+          (when (numberp register-preview-delay)
+	    (run-with-timer
+             register-preview-delay nil
+	     (lambda ()
+	       (unless (get-buffer-window buffer)
+		 (register-preview buffer 'show-empty)
+                 (when-let (win (get-buffer-window buffer))
+                   (with-selected-window win
+                     (enlarge-window 1)
+                     (let ((inhibit-read-only t))
+                       (goto-char (point-max))
+                       (insert
+                        (concat
+                         (propertize (concat prefix ":  ") 'face 'consult-help)
+                         (mapconcat
+                          (lambda (x)
+                            (concat (propertize (format "M-%c" (car x)) 'face 'consult-key)
+                                    " " (propertize (cadr x) 'face 'consult-help)))
+                          action-list "  ")))))))))))
+	 (help-chars (seq-remove #'get-register (cons help-char help-event-list))))
+    (unwind-protect
+        (while (not reg)
+	  (while (memq (read-key (propertize (caddr (assq action action-list)) 'face 'minibuffer-prompt))
+		       help-chars)
+	    (unless (get-buffer-window buffer)
+	      (register-preview buffer 'show-empty)))
+          (cond
+           ((or (eq ?\C-g last-input-event)
+                (eq 'escape last-input-event)
+                (eq ?\C-\[ last-input-event))
+            (keyboard-quit))
+           ((and (numberp last-input-event) (assq (logxor #x8000000 last-input-event) action-list))
+            (setq action (logxor #x8000000 last-input-event)))
+	   ((characterp last-input-event)
+            (setq reg last-input-event))
+           (t (error "Non-character input-event"))))
+      (when (timerp timer)
+        (cancel-timer timer))
+      (let ((w (get-buffer-window buffer)))
+        (when (window-live-p w)
+          (delete-window w)))
+      (when (get-buffer buffer)
+        (kill-buffer buffer)))
+    (when reg
+      (funcall (cadddr (assq action action-list)) reg))))
+
+;;;###autoload
+(defun consult-register-store (arg)
+  "Store register dependent on current context, showing an action menu.
+
+With a numeric prefix ARG, store/add the number. With an active region,
+store/append/prepend the contents, optionally deleting the region when a prefix
+ARG is given. Otherwise store point, frameset, window or kmacro."
+  (interactive "P")
+  (consult--register-action
+   (cond
+    ((use-region-p)
+     (let ((beg (region-beginning))
+           (end (region-end)))
+       `("Region"
+         (?c "copy" "Copy region to register: " ,(lambda (r) (copy-to-register r beg end arg t)))
+         (?a "append" "Append region to register: " ,(lambda (r) (append-to-register r beg end arg)))
+         (?p "prepend" "Prepend region to register: " ,(lambda (r) (prepend-to-register r beg end arg))))))
+    ((numberp arg)
+     `(,(format "Number %s" arg)
+       (?s "store" ,(format "Store %s in register: " arg) ,(lambda (r) (number-to-register arg r)))
+       (?a "add" ,(format "Add %s to register: " arg) ,(lambda (r) (increment-register arg r)))))
+    (t
+     `("Store"
+       (?p "point" "Point to register: " ,#'point-to-register)
+       (?f "frameset" "Frameset to register: " ,#'frameset-to-register)
+       (?w "window" "Window to register: " ,#'window-configuration-to-register)
+       ,@(and last-kbd-macro `((?k "kmacro" "Kmacro to register: " ,#'kmacro-to-register))))))))
 
 ;;;;; Command: consult-bookmark
 
