@@ -348,9 +348,9 @@ the public API."
   '((t :inherit font-lock-keyword-face))
   "Face used to highlight keys, e.g., in `consult-register'.")
 
-(defface consult-imenu-prefix
+(defface consult-type
   '((t :inherit consult-key))
-  "Face used to highlight imenu prefix in `consult-imenu'.")
+  "Face used to highlight type prefix in `consult-imenu' or `consult-isearch'.")
 
 (defface consult-line-number
   '((t :inherit consult-key))
@@ -2583,18 +2583,29 @@ In order to select from a specific HISTORY, pass the history variable as argumen
 
 ;;;;; Command: consult-isearch
 
-(defun consult--isearch-category (cand)
+(defun consult--isearch-candidates ()
   "The Isearch mode of history element CAND, encoded as a character."
-  (let* ((props (plist-member (text-properties-at 0 cand)
-                              'isearch-regexp-function))
-         (fun (cadr props)))
-    (cond ((null props) ?r)
-          ((null fun) ?l)
-          ((eq fun t) ?w)
-          ((eq fun 'word-search-regexp) ?w)
-          ((eq fun 'isearch-symbol-regexp) ?_)
-          ((eq fun 'char-fold-to-regexp) ?')
-          (t ?c))))
+  (mapcar
+   (lambda (cand)
+     (let* ((props (plist-member (text-properties-at 0 cand)
+                                 'isearch-regexp-function))
+            (cat (pcase (cadr props)
+                   ((and 'nil (guard (not props))) '(?r . "Regexp  "))
+                   ('nil                           '(?l . "Literal "))
+                   ('word-search-regexp            '(?w . "Word    "))
+                   ('isearch-symbol-regexp         '(?s . "Symbol  "))
+                   ('char-fold-to-regexp           '(?c . "Char    "))
+                   (_                              '(?u . "Custom  ")))))
+       (list (concat (propertize
+                      " "
+                      'display
+                      (propertize (cdr cat) 'face 'consult-type))
+                     cand)
+             (car cat)
+             cand)))
+   (if (eq t search-default-mode)
+       (append regexp-search-ring search-ring)
+     (append search-ring regexp-search-ring))))
 
 ;;;###autoload
 (defun consult-isearch ()
@@ -2605,35 +2616,31 @@ starts a new Isearch session otherwise."
   (interactive)
   (let ((isearch-message-function 'ignore) ;; Avoid flicker in echo area
         (inhibit-redisplay t))             ;; Avoid flicker in mode line
-    (unless isearch-mode (isearch-mode t))
+    (unless isearch-mode
+      (isearch-mode t))
     (with-isearch-suspended
-     (let* ((hist (if (eq t search-default-mode)
-                      (append regexp-search-ring search-ring)
-                    (append search-ring regexp-search-ring)))
-            (str (consult--read
-                  "History: "
-                  hist
-                  :category 'isearch-string
-                  :history t
-                  :sort nil
-                  :narrow `(,(lambda (cand)
-                               (eq (consult--isearch-category cand)
-                                   consult--narrow))
-                            (?' . "Char-fold")
-                            (?c . "Custom")
-                            (?l . "Literal")
-                            (?r . "Regexp")
-                            (?_ . "Symbol")
-                            (?w . "Word")))))
-       ;; We need to preserve the `isearch-regexp-function' text property
-       (setq str (or (car (member str hist)) str))
-       (setq isearch-new-string str)
-       (setq isearch-new-message
-             (mapconcat 'isearch-text-char-description str ""))))
-    (when (eq ?r (consult--isearch-category isearch-string))
-      ;; This only works outside of `with-isearch-suspended'!
-      (setq isearch-regexp t)
-      (setq isearch-regexp-function nil))))
+     (setq isearch-new-string
+           (consult--read
+            "I-search: "
+            (consult--isearch-candidates)
+            :category 'isearch-string
+            :history t ;; disable history
+            :sort nil
+            :lookup (lambda (_ candidates cand)
+                      (or (caddr (assoc cand candidates)) cand))
+            :narrow `(,(lambda (cand) (eq (cadr cand) consult--narrow))
+                      (?c . "Char")
+                      (?u . "Custom")
+                      (?l . "Literal")
+                      (?r . "Regexp")
+                      (?s . "Symbol")
+                      (?w . "Word")))
+           isearch-new-message
+           (mapconcat #'isearch-text-char-description isearch-new-string "")))
+    ;; Setting `isearch-regexp' etc only works outside of `with-isearch-suspended'.
+    (unless (plist-member (text-properties-at 0 isearch-string) 'isearch-regexp-function)
+      (setq isearch-regexp t
+            isearch-regexp-function nil))))
 
 ;;;;; Command: consult-minor-mode-menu
 
@@ -2943,7 +2950,7 @@ Prepend PREFIX in front of all items."
           (concat prefix (and prefix "/") (car item))
           (cdr item))
        (let ((key (concat
-                   (and prefix (concat (propertize prefix 'face 'consult-imenu-prefix) " "))
+                   (and prefix (concat (propertize prefix 'face 'consult-type) " "))
                    (car item)))
              (payload (cdr item)))
          (list (cons key
@@ -3209,7 +3216,7 @@ See `consult-grep' for more details regarding the asynchronous search."
                 (desc (match-string 2 str)))
             (push (cons
                    (format "%-30s %s"
-                           (propertize name 'face 'consult-key)
+                           (propertize name 'face 'consult-type)
                            desc)
                    name)
                   candidates)))))
