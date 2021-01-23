@@ -204,8 +204,14 @@ command is useful to search the register contents. For quick access it is
 recommended to use @samp{consult-register-load} or @samp{consult-register-store} or the
 built-in Emacs register commands.
 @item
-@samp{consult-register-load}, @samp{consult-register-store}: Utility functions to quickly
-load a register or save to a register in a dwim fashion.
+@samp{consult-register-load}: Utility command to quickly load a register.
+The command either jumps to the register value or inserts it.
+@item
+@samp{consult-register-store}: Improved UI to store registers depending on the current
+context with an action menu. With a numeric prefix, store/add the number. With an
+active region, store/append/prepend the contents, optionally deleting the region
+when a prefx argument is given. Otherwise store point, frameset, window or
+kmacro.
 @item
 @samp{consult-register-preview}: Supplementary function which can be
 used as @samp{register-preview-function} for a consistent display. See the @ref{Example configuration, , example
@@ -786,6 +792,9 @@ an overview of all Consult variables and functions with their descriptions.
 @item consult-register-narrow
 @tab @dots{}
 @tab Narrowing configuration for @samp{consult-register}
+@item consult-register-store-hook
+@tab @dots{}
+@tab Register store actions for @samp{consult-register-store}
 @item consult-ripgrep-command
 @tab '(@dots{})
 @tab Command line arguments for ripgrep

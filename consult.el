@@ -271,6 +271,13 @@ with a space character."
 Each element of the list must have the form '(char name predicate)."
   :type 'list)
 
+(defcustom consult-register-store-hook
+  '(consult--register-store-number
+    consult--register-store-region
+    consult--register-store-default)
+  "Store functions to be tried in order by `consult-register-store'."
+  :type 'hook)
+
 (defcustom consult-bookmark-narrow
   `((?f "File" #'bookmark-default-handler)
     (?h "Help" #'help-bookmark-jump)
@@ -2327,60 +2334,64 @@ register access functions. The command supports narrowing, see
     :lookup #'consult--lookup-cdr)
    arg))
 
-(defun consult--register-action (actions)
-  (let* ((buffer "*Register Preview*")
-         (prefix (car actions))
-         (actions (cdr actions))
-	 (timer (when (numberp register-preview-delay)
-		  (run-with-timer register-preview-delay nil
-				  (lambda ()
-				    (unless (get-buffer-window buffer)
-				      (register-preview buffer 'show-empty)
-                                      (with-current-buffer buffer
-                                        (let ((inhibit-read-only t))
-                                          (goto-char (point-max))
-                                          (insert
-                                            (concat prefix
-                                                    ":   "
-                                                    (mapconcat (lambda (x)
-                                                                 (concat
-                                                                  (propertize
-                                                                   (format "M-%c" (car x))
-                                                                   'face 'consult-key)
-                                                                  " "
-                                                                   (cadr x)
-                                                                  )
-                                                                 )
-                                                               actions "   "))
-                                            ))))))))
-         (action (car (nth 0 actions)))
-         (result)
-	 (help-chars (cl-loop for c in (cons help-char help-event-list)
-			      when (not (get-register c))
-			      collect c)))
-    (unwind-protect
-        (progn
-          (while (not result)
-	    (while (memq (read-key (propertize (caddr (assq action actions)) 'face 'minibuffer-prompt))
-		         help-chars)
-	      (unless (get-buffer-window buffer)
-	        (register-preview buffer 'show-empty)))
-            (when (or (eq ?\C-g last-input-event)
-                      (eq 'escape last-input-event)
-                      (eq ?\C-\[ last-input-event))
-              (keyboard-quit))
-            (if (and (numberp last-input-event) (assq (logxor #x8000000 last-input-event) actions))
-                (setq action (logxor #x8000000 last-input-event))
-	      (if (characterp last-input-event)
-                  (setq result last-input-event)
-                (error "Non-character input-event"))))
-          (funcall (cadddr (assq action actions)) result))
-      (and (timerp timer) (cancel-timer timer))
-      (let ((w (get-buffer-window buffer)))
-        (and (window-live-p w) (delete-window w)))
-      (and (get-buffer buffer) (kill-buffer buffer)))))
+(defun consult--register-action (action-list)
+  "Read register key and execute action from ACTION-LIST.
 
-(defun consult--register-store-region ()
+This function is derived from `register-read-with-preview'."
+  (let* ((buffer "*Register Preview*")
+         (prefix (car action-list))
+         (action-list (cdr action-list))
+         (action (car (nth 0 action-list)))
+         (reg)
+	 (timer
+          (when (numberp register-preview-delay)
+	    (run-with-timer
+             register-preview-delay nil
+	     (lambda ()
+	       (unless (get-buffer-window buffer)
+		 (register-preview buffer 'show-empty)
+                 (with-current-buffer buffer
+                   (let ((inhibit-read-only t))
+                     (goto-char (point-max))
+                     (insert
+                      (concat prefix ":  "
+                              (mapconcat
+                               (lambda (x)
+                                 (concat (propertize (format "M-%c" (car x))
+                                                     'face 'consult-key)
+                                         " " (cadr x)))
+                               action-list "  "))))))))))
+	 (help-chars (seq-remove #'get-register (cons help-char help-event-list))))
+    (unwind-protect
+        (while (not reg)
+	  (while (memq (read-key (propertize (caddr (assq action action-list)) 'face 'minibuffer-prompt))
+		       help-chars)
+	    (unless (get-buffer-window buffer)
+	      (register-preview buffer 'show-empty)))
+          (cond
+           ((or (eq ?\C-g last-input-event)
+                (eq 'escape last-input-event)
+                (eq ?\C-\[ last-input-event))
+            (keyboard-quit))
+           ((and (numberp last-input-event) (assq (logxor #x8000000 last-input-event) action-list))
+            (setq action (logxor #x8000000 last-input-event)))
+	   ((characterp last-input-event)
+            (setq reg last-input-event))
+           (t (error "Non-character input-event"))))
+      (when (timerp timer)
+        (cancel-timer timer))
+      (let ((w (get-buffer-window buffer)))
+        (when (window-live-p w)
+          (delete-window w)))
+      (when (get-buffer buffer)
+        (kill-buffer buffer)))
+    (when reg
+      (funcall (cadddr (assq action action-list)) reg))))
+
+(defun consult--register-store-region (arg)
+  "Return register store actions when a region is active.
+
+ARG is the prefix argument. When t, the region is deleted."
   (when (use-region-p)
     (let ((beg (region-beginning))
           (end (region-end)))
@@ -2389,34 +2400,32 @@ register access functions. The command supports narrowing, see
         (?a "append" "Append region to register: " ,(lambda (r) (append-to-register r beg end arg)))
         (?p "prepend" "Prepend region to register: " ,(lambda (r) (prepend-to-register r beg end arg)))))))
 
-(defun consult--register-store-number ()
-  (when (numberp current-prefix-arg)
-    (let ((num current-prefix-arg))
-      `(,(format "Number %s" num)
-        (?s "store" ,(format "Store %s in register: " num) ,(lambda (r) (number-to-register num r)))
-        (?a "add" ,(format "Add %s to register: " num) ,(lambda (r) (increment-register num r)))))))
+(defun consult--register-store-number (arg)
+  "Return number store actions when a numeric prefix argument ARG has been given."
+  (when (numberp arg)
+    `(,(format "Number %s" arg)
+      (?s "store" ,(format "Store %s in register: " arg) ,(lambda (r) (number-to-register arg r)))
+      (?a "add" ,(format "Add %s to register: " arg) ,(lambda (r) (increment-register arg r))))))
 
-(defun consult--register-store-default ()
+(defun consult--register-store-default (_arg)
+  "Return default register store actions."
   `("Store"
     (?p "point" "Point to register: " ,#'point-to-register)
     (?f "frameset" "Frameset to register: " ,#'frameset-to-register)
     (?w "window" "Window to register: " ,#'window-configuration-to-register)
-    ,@(when last-kbd-macro
-        `((?k "kmacro" "Kmacro to register: " ,#'kmacro-to-register)))))
-
-(defcustom consult-register-store-hook '(consult--register-store-number consult--register-store-region consult--register-store-default)
-  "Store functions to be tried in order by `consult-register-store'."
-  :type 'hook)
+    ,@(and last-kbd-macro `((?k "kmacro" "Kmacro to register: " ,#'kmacro-to-register)))))
 
 ;;;###autoload
-(defun consult-register-store ()
-  "Store what I mean in a REG.
+(defun consult-register-store (arg)
+  "Store register dependent on current context, showing an action menu.
 
-With an active region, store or append (with ARG) the contents, optionally
-deleting the region (with a negative argument). With a numeric prefix, store the
-number. With ARG store the frame configuration. Otherwise, store the point."
-  (interactive)
-  (consult--register-action (run-hook-with-args-until-success 'consult-register-store-hook)))
+The `consult-register-store-hook' is tried until success to retrieve the context
+dependent store action. With a numeric prefix ARG, store/add the number. With an
+active region, store/append/prepend the contents, optionally deleting the region
+when a prefx ARG is given. Otherwise store point, frameset, window or
+kmacro."
+  (interactive "P")
+  (consult--register-action (run-hook-with-args-until-success 'consult-register-store-hook arg)))
 
 ;;;###autoload
 (defun consult-register-load (reg &optional arg)

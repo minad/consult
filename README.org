@@ -140,8 +140,13 @@ variables and functions with their descriptions.
    command is useful to search the register contents. For quick access it is
    recommended to use =consult-register-load= or =consult-register-store= or the
    built-in Emacs register commands.
- - =consult-register-load=, =consult-register-store=: Utility functions to quickly
-   load a register or save to a register in a dwim fashion.
+ - =consult-register-load=: Utility command to quickly load a register.
+   The command either jumps to the register value or inserts it.
+ - =consult-register-store=: Improved UI to store registers depending on the current
+   context with an action menu. With a numeric prefix, store/add the number. With an
+   active region, store/append/prepend the contents, optionally deleting the region
+   when a prefx argument is given. Otherwise store point, frameset, window or
+   kmacro.
  - =consult-register-preview=: Supplementary function which can be
    used as =register-preview-function= for a consistent display. See the [[#example-configuration][example
    configuration]] for how the =consult-register-preview= function is meant to be
@@ -621,6 +626,7 @@ the box with the default completion, Icomplete and Selectrum.
  | consult-preview-max-size        | 10485760           | Size limit for previewed files                           |
  | consult-project-root-function   | nil                | Function which returns current project root              |
  | consult-register-narrow         | ...                | Narrowing configuration for =consult-register=           |
+ | consult-register-store-hook     | ...                | Register store actions for =consult-register-store=      |
  | consult-ripgrep-command         | '(...)             | Command line arguments for ripgrep                       |
  | consult-themes                  | nil                | List of themes to be presented for selection             |
  | consult-view-list-function      | nil                | Function which returns a list of view names as strings   |
