@@ -464,7 +464,7 @@ ongoing.
 Previews are enabled by default but can be disabled via the
 @samp{consult-preview-key} variable. Furthermore it is possible to specify
 keybindings which trigger the preview manually as shown in the @ref{Example configuration, , example
-configuration}. The default setting of @samp{consult-preview-key} is @samp{'any} which
+configuration}. The default setting of @samp{consult-preview-key} is @samp{any} which
 means that the preview will be triggered on any keypress when the selected
 candidate changes. Each command can be configured individually with its own
 @samp{:preview-key}, such that preview can be manual for some commands, for some

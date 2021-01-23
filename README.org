@@ -357,7 +357,7 @@ variables and functions with their descriptions.
  Previews are enabled by default but can be disabled via the
  =consult-preview-key= variable. Furthermore it is possible to specify
  keybindings which trigger the preview manually as shown in the [[#example-configuration][example
- configuration]]. The default setting of =consult-preview-key= is ='any= which
+ configuration]]. The default setting of =consult-preview-key= is =any= which
  means that the preview will be triggered on any keypress when the selected
  candidate changes. Each command can be configured individually with its own
  =:preview-key=, such that preview can be manual for some commands, for some
