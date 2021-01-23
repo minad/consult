@@ -903,6 +903,8 @@ Additional recommended packages for wider integration:
 @uref{https://github.com/justbur/emacs-which-key, which-key}: Helpful mode showing keybindings, also shows the Consult narrowing keys
 @item
 @uref{https://github.com/mhayashi1120/Emacs-wgrep, wgrep}: Editing of grep buffers, can be used together with @samp{consult-grep} via Embark
+@item
+@uref{https://github.com/minad/bookmark-view, bookmark-view}: Store window configuration as bookmarks, integrates with @samp{consult-buffer}
 @end itemize
 
 Note that all packages are independent and can potentially be exchanged

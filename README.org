@@ -704,6 +704,7 @@ Additional recommended packages for wider integration:
 
 - [[https://github.com/justbur/emacs-which-key][which-key]]: Helpful mode showing keybindings, also shows the Consult narrowing keys
 - [[https://github.com/mhayashi1120/Emacs-wgrep][wgrep]]: Editing of grep buffers, can be used together with =consult-grep= via Embark
+- [[https://github.com/minad/bookmark-view][bookmark-view]]: Store window configuration as bookmarks, integrates with =consult-buffer=
 
 Note that all packages are independent and can potentially be exchanged
 with alternative components, since there exist no hard dependencies.
