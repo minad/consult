@@ -779,15 +779,15 @@ MARKER is the cursor position."
               (recentf-add-file (buffer-file-name (current-buffer)))))
         (or (get-file-buffer name)
             (when-let (attrs (file-attributes name))
-               (if (> (file-attribute-size attrs) consult-preview-max-size)
-                   (and (minibuffer-message "File `%s' too large for preview" name) nil)
-                 (let ((buf (find-file-noselect name 'nowarn)))
-                   (push buf new-buffers)
-                   ;; Only keep a few buffers alive
-                   (while (> (length new-buffers) consult-preview-max-count)
-                     (consult--kill-clean-buffer (car (last new-buffers)))
-                     (setq new-buffers (nbutlast new-buffers)))
-                   buf))))))))
+              (if (> (file-attribute-size attrs) consult-preview-max-size)
+                  (and (minibuffer-message "File `%s' too large for preview" name) nil)
+                (let ((buf (find-file-noselect name 'nowarn)))
+                  (push buf new-buffers)
+                  ;; Only keep a few buffers alive
+                  (while (> (length new-buffers) consult-preview-max-count)
+                    (consult--kill-clean-buffer (car (last new-buffers)))
+                    (setq new-buffers (nbutlast new-buffers)))
+                  buf))))))))
 
 (defmacro consult--with-file-preview (args &rest body)
   "Provide a function to open files temporarily.
@@ -1495,8 +1495,8 @@ PREVIEW-KEY are the preview keys (nil, 'any, a single key or a list of keys)."
       (:append (lambda ()
                  (consult--setup-keymap nil nil preview-key)
                  (consult--add-history add-history)))
-       (consult--with-preview preview-key preview transform #'minibuffer-contents-no-properties
-         (read-from-minibuffer prompt initial nil nil history default))))
+    (consult--with-preview preview-key preview transform #'minibuffer-contents-no-properties
+      (read-from-minibuffer prompt initial nil nil history default))))
 
 (advice-add #'consult--prompt :filter-args #'consult--merge-config)
 
@@ -2096,13 +2096,13 @@ From these files, the commands are extracted."
          (feature-filter (seq-filter #'symbolp consult-mode-command-filter))
          (minor-hash (consult--string-hash minor-mode-list))
          (minor-local-modes (seq-filter (lambda (m)
-                                         (and (gethash m minor-hash)
-                                              (local-variable-if-set-p m)))
-                                       modes))
+                                          (and (gethash m minor-hash)
+                                               (local-variable-if-set-p m)))
+                                        modes))
          (minor-global-modes (seq-filter (lambda (m)
-                                         (and (gethash m minor-hash)
-                                              (not (local-variable-if-set-p m))))
-                                       modes))
+                                           (and (gethash m minor-hash)
+                                                (not (local-variable-if-set-p m))))
+                                         modes))
          (major-modes (seq-remove (lambda (m)
                                     (gethash m minor-hash))
                                   modes))
