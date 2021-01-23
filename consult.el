@@ -2280,13 +2280,11 @@ This function can be used as `register-preview-function'."
       ;; Default printing for the other types
       (t (register-describe-oneline key))))))
 
-(defun consult--register-candidates ()
-  "Return alist of register descriptions and register names."
-  (mapcar (lambda (reg) (cons (consult--register-format reg) (car reg)))
-          ;; Sometimes, registers are made without a `cdr'.
-          ;; Such registers don't do anything, and can be ignored.
-          (or (sort (seq-filter #'cdr register-alist) #'car-less-than-car)
-              (user-error "All registers are empty"))))
+(defun consult--register-alist ()
+  "Return register list or raise an error if the list is empty."
+  ;; Sometimes, registers are made without a `cdr'.
+  ;; Such registers don't do anything, and can be ignored.
+  (or (seq-filter #'cdr register-alist) (user-error "All registers are empty")))
 
 ;;;###autoload
 (defun consult-register (&optional arg)
@@ -2302,7 +2300,8 @@ register access functions. The command supports narrowing, see
   (consult-register-load
    (consult--read
     "Register: "
-    (consult--register-candidates)
+    (mapcar (lambda (reg) (cons (consult--register-format reg) (car reg)))
+            (consult--register-alist))
     :category 'register
     :preview
     (let ((preview (consult--preview-position)))
@@ -2337,8 +2336,11 @@ register access functions. The command supports narrowing, see
 For a window configuration, restore it. For a number or text, insert it. For a
 location, jump to it. See `jump-to-register' and `insert-register' for the
 meaning of ARG."
-  (interactive (list (register-read-with-preview "Load register: ")
-                     current-prefix-arg))
+  (interactive
+   (list
+    (and (consult--register-alist)
+         (register-read-with-preview "Load register: "))
+    current-prefix-arg))
   (condition-case nil
       (jump-to-register reg arg)
     (user-error (insert-register reg arg))))
