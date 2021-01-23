@@ -551,10 +551,10 @@ the box with the default completion, Icomplete and Selectrum.
    ;; * resize such that it fits exactly the contents
    ;; * sort the registers
    (advice-add #'register-preview :around
-               (lambda (fun &rest args)
+               (lambda (fun buffer &optional show-empty)
                  (let ((register-alist (seq-sort #'car-less-than-car register-alist)))
-                   (apply fun args)
-                   (when-let (win (get-buffer-window "*Register Preview*"))
+                   (funcall fun buffer show-empty)
+                   (when-let (win (get-buffer-window buffer))
                      (with-selected-window win
                        (setq-local mode-line-format nil)
                        (setq-local window-min-height 1)
