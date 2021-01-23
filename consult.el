@@ -2373,7 +2373,7 @@ register access functions. The command supports narrowing, see
       (and (get-buffer buffer) (kill-buffer buffer)))))
 
 ;;;###autoload
-(defun consult-register-store-action (&optional arg)
+(defun consult-register-store (&optional arg)
   "Store what I mean in a REG.
 
 With an active region, store or append (with ARG) the contents, optionally
@@ -2400,43 +2400,6 @@ number. With ARG store the frame configuration. Otherwise, store the point."
            (list ?w "window" "Window to register: " #'window-configuration-to-register))))))
 
 ;;;###autoload
-(defun consult-register-store-prefix (reg &optional arg)
-  "Store what I mean in a REG.
-
-With an active region, store or append (with ARG) the contents, optionally
-deleting the region (with a negative argument). With a numeric prefix, store the
-number. With ARG store the frame configuration. Otherwise, store the point."
-  (interactive (list (register-read-with-preview
-                      (cond
-                       ((use-region-p)
-                        (cond
-                         ((or (equal current-prefix-arg '(16))
-                              (equal current-prefix-arg '(-16)))
-                          "Prepend region to register: ")
-                         (current-prefix-arg "Append region to register: ")
-                         (t "Store region in register: ")))
-                       ((numberp current-prefix-arg)
-                        (format "Store %s in register: " current-prefix-arg))
-                       ((equal current-prefix-arg '(16)) "Store frameset in register: ")
-                       (current-prefix-arg "Store window in register: ")
-                       (t "Store point in register: ")))
-                     current-prefix-arg))
-  (cond
-   ((use-region-p)
-    (let ((beg (region-beginning))
-          (end (region-end))
-          (del (or (equal arg '-) (equal arg '(-4)) (equal arg '(-16)))))
-      (cond
-       ((or (equal arg '(16)) (equal arg '(-16)))
-        (prepend-to-register reg beg end del))
-       (arg (append-to-register reg beg end del))
-       (t (copy-to-register reg beg end del t)))))
-   ((numberp arg) (number-to-register arg reg))
-   ((equal arg '(16)) (frameset-to-register reg))
-   (arg (window-configuration-to-register reg))
-   (t (point-to-register reg))))
-
-;;;###autoload
 (defun consult-register-load (reg &optional arg)
   "Do what I mean with a REG.
 
@@ -2448,24 +2411,6 @@ meaning of ARG."
   (condition-case nil
       (jump-to-register reg arg)
     (user-error (insert-register reg arg))))
-
-(defun consult-register-access (arg)
-  "Experiment. Will be removed."
-  (interactive "P")
-  (let ((reg)
-        (store)
-        (register-preview-delay 0)
-        (ev last-input-event))
-    (while (not reg)
-      (condition-case nil
-          (setq reg (register-read-with-preview (if store "Overwrite register: " "Register: ")))
-        (error
-         (unless (eq last-input-event ev)
-           (error "Not a register key"))
-         (setq store (not store)))))
-    (if (or store (not (alist-get reg register-alist)))
-        (consult-register-store reg arg)
-      (consult-register-load reg arg))))
 
 ;;;;; Command: consult-bookmark
 
