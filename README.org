@@ -722,7 +722,8 @@ Consult and add more components later to the mix.
 
 If you find a bug or suspect that there is a problem with Consult, please check
 first that you have updated all the relevant packages, this includes Selectrum,
-Embark and Icomplete-vertical, in case you are using these packages.
+Icomplete-vertical, Embark, Orderless and Prescient in case you are using any of
+those packages.
 
 Please provide the necessary important information with your bug report, e.g.,
 the Emacs version, your operating system and the package manager you are using.
