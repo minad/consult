@@ -1405,7 +1405,7 @@ See `consult--read' for the CANDIDATES, ADD-HISTORY, NARROW and PREVIEW-KEY argu
 
 (cl-defun consult--read (prompt candidates &rest options &key
                                 predicate require-match history default
-                                category initial narrow add-history
+                                category initial narrow add-history annotate
                                 preview preview-key sort default-top lookup)
   "Enhanced completing read function.
 
@@ -1424,6 +1424,7 @@ ADD-HISTORY is a list of items to add to the history.
 CATEGORY is the completion category.
 SORT should be set to nil if the candidates are already sorted.
 LOOKUP is a function which is applied to the result.
+ANNOTATE is the annotation function.
 INITIAL is initial input.
 DEFAULT-TOP must be nil if the default candidate should not be moved to the top.
 PREVIEW is a preview function.
@@ -1460,6 +1461,7 @@ NARROW is an alist of narrowing prefix strings and description."
                                 (lambda (str pred action)
                                   (if (eq action 'metadata)
                                       `(metadata
+                                        ,@(when annotate `((annotation-function . ,annotate)))
                                         ,@(when category `((category . ,category)))
                                         ,@(unless sort '((cycle-sort-function . identity)
                                                          (display-sort-function . identity))))
@@ -2802,33 +2804,32 @@ is obtained by calling `consult-view-list-function'."
 
 (defun consult--kmacro-candidates ()
   "Return alist of kmacros and indices."
-  (consult--remove-dups
-   (thread-last
-       ;; List of macros
-       (append (when last-kbd-macro
-                 `((,last-kbd-macro ,kmacro-counter ,kmacro-counter-format)))
-               kmacro-ring)
-     ;; Add indices
-     (seq-map-indexed #'cons)
-     ;; Filter mouse clicks
-     (seq-remove (lambda (x) (seq-some #'mouse-event-p (caar x))))
-     ;; Format macros
-     (mapcar (pcase-lambda (`((,keys ,counter ,format) . ,index))
-               (cons
-                (concat
-                 ;; If the counter is 0 and the counter format is its default,
-                 ;; then there is a good chance that the counter isn't actually
-                 ;; being used.  This can only be wrong when a user
-                 ;; intentionally starts the counter with a negative value and
-                 ;; then increments it to 0.
-                 (cond
-                  ((not (string= format "%d")) ;; show counter for non-default format
-                   (propertize " " 'display (format "%d(%s) " counter format)))
-                  ((/= counter 0) ;; show counter if non-zero
-                   (propertize " " 'display (format "%d " counter))))
-                 (format-kbd-macro keys 1))
-                index))))
-   #'car))
+  (thread-last
+      ;; List of macros
+      (append (when last-kbd-macro
+                `((,last-kbd-macro ,kmacro-counter ,kmacro-counter-format)))
+              kmacro-ring)
+    ;; Add indices
+    (seq-map-indexed #'cons)
+    ;; Filter mouse clicks
+    (seq-remove (lambda (x) (seq-some #'mouse-event-p (caar x))))
+    ;; Format macros
+    (mapcar (pcase-lambda (`((,keys ,counter ,format) . ,index))
+              (propertize
+               (format-kbd-macro keys 1)
+               'consult--kmacro-index index
+               'consult--kmacro-annotation
+               ;; If the counter is 0 and the counter format is its default,
+               ;; then there is a good chance that the counter isn't actually
+               ;; being used.  This can only be wrong when a user
+               ;; intentionally starts the counter with a negative value and
+               ;; then increments it to 0.
+               (cond
+                ((not (string= format "%d")) ;; show counter for non-default format
+                 (format " (counter=%d, format=%s) " counter format))
+                ((/= counter 0) ;; show counter if non-zero
+                 (format " (counter=%d)" counter))))))
+    (consult--remove-dups)))
 
 ;;;###autoload
 (defun consult-kmacro (arg)
@@ -2845,8 +2846,13 @@ Macros containing mouse clicks are omitted."
                    :require-match t
                    :sort nil
                    :history 'consult--kmacro-history
-                   :lookup #'consult--lookup-cdr)))
-    (if (zerop selected)
+                   :annotate
+                   (lambda (cand) (get-text-property 0 'consult--kmacro-annotation cand))
+                   :lookup
+                   (lambda (_ candidates cand)
+                     (get-text-property 0 'consult--kmacro-index
+                                        (car (member cand candidates)))))))
+    (if (= 0 selected)
         ;; If the first element has been selected, just run the last macro.
         (kmacro-call-macro (or arg 1) t nil)
       ;; Otherwise, run a kmacro from the ring.
