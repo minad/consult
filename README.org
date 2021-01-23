@@ -152,8 +152,8 @@ variables and functions with their descriptions.
    With a numeric prefix argument, store/add the number. Otherwise store point,
    frameset, window or kmacro. Usage examples:
    * =M-' x=: If no region is active, store point in register =x=.
+     If a region is active, store the region in register =x=.
    * =M-' M-w x=: Store window configuration in register =x=.
-   * =M-' x=: If a region is active, store region in register =x=.
    * =C-u 100 M-' x=: Store number in register =x=.
 
 ** Navigation

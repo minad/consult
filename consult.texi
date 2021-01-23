@@ -221,10 +221,9 @@ frameset, window or kmacro. Usage examples:
 @itemize
 @item
 @samp{M-' x}: If no region is active, store point in register @samp{x}.
+If a region is active, store the region in register @samp{x}.
 @item
 @samp{M-' M-w x}: Store window configuration in register @samp{x}.
-@item
-@samp{M-' x}: If a region is active, store region in register @samp{x}.
 @item
 @samp{C-u 100 M-' x}: Store number in register @samp{x}.
 @end itemize
