@@ -2358,7 +2358,6 @@ This function is derived from `register-read-with-preview'."
 	      (register-preview buffer 'show-empty)
               (when-let (win (get-buffer-window buffer))
                 (with-selected-window win
-                  (enlarge-window 1)
                   (let ((inhibit-read-only t))
                     (goto-char (point-max))
                     (insert
@@ -2368,7 +2367,8 @@ This function is derived from `register-read-with-preview'."
                        (lambda (x)
                          (concat (propertize (format "M-%c" (car x)) 'face 'consult-key)
                                  " " (propertize (cadr x) 'face 'consult-help)))
-                       action-list "  ")))))))))
+                       action-list "  ")))
+                    (fit-window-to-buffer)))))))
 	 (timer (when (numberp register-preview-delay)
 	          (run-with-timer register-preview-delay nil preview)))
 	 (help-chars (seq-remove #'get-register (cons help-char help-event-list))))

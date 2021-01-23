@@ -546,15 +546,19 @@ the box with the default completion, Icomplete and Selectrum.
    ;; the register preview when editing registers.
    (setq register-preview-delay 0
          register-preview-function #'consult-register-preview)
-   ;; Optionally hide mode-line of register preview window.
-   (add-to-list 'display-buffer-alist
-                '("\\`\\*Register Preview\\*"
-                  nil (window-parameters (mode-line-format . none))))
-   ;; Optionally sort registers in preview window.
+   ;; Optionally tweak the register preview window.
+   ;; * hide the mode line
+   ;; * resize such that it fits exactly the contents
+   ;; * sort the registers
    (advice-add #'register-preview :around
                (lambda (fun &rest args)
                  (let ((register-alist (seq-sort #'car-less-than-car register-alist)))
-                   (apply fun args))))
+                   (apply fun args)
+                   (when-let (win (get-buffer-window "*Register Preview*"))
+                     (with-selected-window win
+                       (setq-local mode-line-format nil)
+                       (setq-local window-min-height 1)
+                       (fit-window-to-buffer))))))
 
    ;; Configure other variables and modes in the :config section, after lazily loading the package
    :config
