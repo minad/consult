@@ -2327,7 +2327,7 @@ register access functions. The command supports narrowing, see
     :lookup #'consult--lookup-cdr)
    arg))
 
-(defun register-read-with-preview-and-action (actions)
+(defun register-read-with-preview-and-action (prefix actions)
   (let* ((buffer "*Register Preview*")
 	 (timer (when (numberp register-preview-delay)
 		  (run-with-timer register-preview-delay nil
@@ -2338,12 +2338,18 @@ register access functions. The command supports narrowing, see
                                         (let ((inhibit-read-only t))
                                           (goto-char (point-max))
                                           (insert
-                                           (propertize
-                                            (concat "["
-                                                    (mapconcat (lambda (x) (format "M-%c %s" (car x) (cadr x)))
-                                                               actions "    ")
-                                                    "]")
-                                            'face 'font-lock-comment-face)
+                                            (concat prefix
+                                                    ":   "
+                                                    (mapconcat (lambda (x)
+                                                                 (concat
+                                                                  (propertize
+                                                                   (format "M-%c" (car x))
+                                                                   'face 'consult-key)
+                                                                  " "
+                                                                   (cadr x)
+                                                                  )
+                                                                 )
+                                                               actions "   "))
                                             ))))))))
          (action (car (nth 0 actions)))
          (result)
@@ -2385,19 +2391,23 @@ number. With ARG store the frame configuration. Otherwise, store the point."
     (let ((beg (region-beginning))
           (end (region-end)))
       (register-read-with-preview-and-action
-       (list (list ?c "copy" "Copy region to register: " (lambda (r) (copy-to-register r beg end arg t)))
-             (list ?a "append" "Append region to register: " (lambda (r) (append-to-register r beg end arg)))
-             (list ?p "prepend" "Prepend region to register: " (lambda (r) (prepend-to-register r beg end arg)))))))
+       "Region"
+       `((?c "copy" "Copy region to register: " ,(lambda (r) (copy-to-register r beg end arg t)))
+         (?a "append" "Append region to register: " ,(lambda (r) (append-to-register r beg end arg)))
+         (?p "prepend" "Prepend region to register: " ,(lambda (r) (prepend-to-register r beg end arg)))))))
    ((numberp arg)
     (register-read-with-preview-and-action
-     (list (list ?n "number" (format "Number %s to register: " arg) (lambda (r) (number-to-register arg r)))
-           (list ?a "add" (format "Add %s to register: " arg) (lambda (r) (increment-register arg r))))))
+     (format "Number %s" arg)
+     `((?s "store" ,(format "Store %s in register: " arg) ,(lambda (r) (number-to-register arg r)))
+       (?a "add" ,(format "Add %s to register: " arg) ,(lambda (r) (increment-register arg r))))))
    (t
     (register-read-with-preview-and-action
-     (list (list ?p "point" "Point to register: " #'point-to-register)
-           (list ?f "frameset" "Frameset to register: " #'frameset-to-register)
-           (list ?k "kmacro" "Kmacro to register: " #'kmacro-to-register)
-           (list ?w "window" "Window to register: " #'window-configuration-to-register))))))
+     "Store"
+     `((?p "point" "Point to register: " ,#'point-to-register)
+       (?f "frameset" "Frameset to register: " ,#'frameset-to-register)
+       (?w "window" "Window to register: " ,#'window-configuration-to-register)
+       ,@(when last-kbd-macro
+          `((?k "kmacro" "Kmacro to register: " ,#'kmacro-to-register))))))))
 
 ;;;###autoload
 (defun consult-register-load (reg &optional arg)
