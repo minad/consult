@@ -2352,33 +2352,31 @@ This function is derived from `register-read-with-preview'."
          (action-list (cdr action-list))
          (action (car (nth 0 action-list)))
          (reg)
-	 (timer
-          (when (numberp register-preview-delay)
-	    (run-with-timer
-             register-preview-delay nil
-	     (lambda ()
-	       (unless (get-buffer-window buffer)
-		 (register-preview buffer 'show-empty)
-                 (when-let (win (get-buffer-window buffer))
-                   (with-selected-window win
-                     (enlarge-window 1)
-                     (let ((inhibit-read-only t))
-                       (goto-char (point-max))
-                       (insert
-                        (concat
-                         (propertize (concat prefix ":  ") 'face 'consult-help)
-                         (mapconcat
-                          (lambda (x)
-                            (concat (propertize (format "M-%c" (car x)) 'face 'consult-key)
-                                    " " (propertize (cadr x) 'face 'consult-help)))
-                          action-list "  ")))))))))))
+         (preview
+          (lambda ()
+	    (unless (get-buffer-window buffer)
+	      (register-preview buffer 'show-empty)
+              (when-let (win (get-buffer-window buffer))
+                (with-selected-window win
+                  (enlarge-window 1)
+                  (let ((inhibit-read-only t))
+                    (goto-char (point-max))
+                    (insert
+                     (concat
+                      (propertize (concat prefix ":  ") 'face 'consult-help)
+                      (mapconcat
+                       (lambda (x)
+                         (concat (propertize (format "M-%c" (car x)) 'face 'consult-key)
+                                 " " (propertize (cadr x) 'face 'consult-help)))
+                       action-list "  ")))))))))
+	 (timer (when (numberp register-preview-delay)
+	          (run-with-timer register-preview-delay nil preview)))
 	 (help-chars (seq-remove #'get-register (cons help-char help-event-list))))
     (unwind-protect
         (while (not reg)
 	  (while (memq (read-key (propertize (caddr (assq action action-list)) 'face 'minibuffer-prompt))
 		       help-chars)
-	    (unless (get-buffer-window buffer)
-	      (register-preview buffer 'show-empty)))
+            (funcall preview))
           (cond
            ((or (eq ?\C-g last-input-event)
                 (eq 'escape last-input-event)
