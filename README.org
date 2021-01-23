@@ -140,17 +140,21 @@ variables and functions with their descriptions.
    command is useful to search the register contents. For quick access it is
    recommended to use =consult-register-load= or =consult-register-store= or the
    built-in Emacs register commands.
+ - =consult-register-preview=: Supplementary function which can be
+   used as =register-preview-function= for a consistent display. See the [[#example-configuration][example
+   configuration]] for how the =consult-register-preview= function is meant to be
+   used.
  - =consult-register-load=: Utility command to quickly load a register.
    The command either jumps to the register value or inserts it.
  - =consult-register-store=: Improved UI to store registers depending on the current
    context with an action menu. With an active region, store/append/prepend the
    contents, optionally deleting the region when a prefix argument is given.
    With a numeric prefix argument, store/add the number. Otherwise store point,
-   frameset, window or kmacro.
- - =consult-register-preview=: Supplementary function which can be
-   used as =register-preview-function= for a consistent display. See the [[#example-configuration][example
-   configuration]] for how the =consult-register-preview= function is meant to be
-   used.
+   frameset, window or kmacro. Usage examples:
+   * =M-' x=: If no region is active, store point in register =x=.
+   * =M-' M-w x=: Store window configuration in register =x=.
+   * =M-' x=: If a region is active, store region in register =x=.
+   * =C-u 100 M-' x=: Store number in register =x=.
 
 ** Navigation
  :properties:

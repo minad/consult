@@ -205,6 +205,11 @@ command is useful to search the register contents. For quick access it is
 recommended to use @samp{consult-register-load} or @samp{consult-register-store} or the
 built-in Emacs register commands.
 @item
+@samp{consult-register-preview}: Supplementary function which can be
+used as @samp{register-preview-function} for a consistent display. See the @ref{Example configuration, , example
+configuration} for how the @samp{consult-register-preview} function is meant to be
+used.
+@item
 @samp{consult-register-load}: Utility command to quickly load a register.
 The command either jumps to the register value or inserts it.
 @item
@@ -212,12 +217,17 @@ The command either jumps to the register value or inserts it.
 context with an action menu. With an active region, store/append/prepend the
 contents, optionally deleting the region when a prefix argument is given.
 With a numeric prefix argument, store/add the number. Otherwise store point,
-frameset, window or kmacro.
+frameset, window or kmacro. Usage examples:
+@itemize
 @item
-@samp{consult-register-preview}: Supplementary function which can be
-used as @samp{register-preview-function} for a consistent display. See the @ref{Example configuration, , example
-configuration} for how the @samp{consult-register-preview} function is meant to be
-used.
+@samp{M-' x}: If no region is active, store point in register @samp{x}.
+@item
+@samp{M-' M-w x}: Store window configuration in register @samp{x}.
+@item
+@samp{M-' x}: If a region is active, store region in register @samp{x}.
+@item
+@samp{C-u 100 M-' x}: Store number in register @samp{x}.
+@end itemize
 @end itemize
 
 @node Navigation
