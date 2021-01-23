@@ -208,10 +208,10 @@ built-in Emacs register commands.
 The command either jumps to the register value or inserts it.
 @item
 @samp{consult-register-store}: Improved UI to store registers depending on the current
-context with an action menu. With a numeric prefix, store/add the number. With an
-active region, store/append/prepend the contents, optionally deleting the region
-when a prefx argument is given. Otherwise store point, frameset, window or
-kmacro.
+context with an action menu. With an active region, store/append/prepend the
+contents, optionally deleting the region when a prefix argument is given.
+With a numeric prefix argument, store/add the number. Otherwise store point,
+frameset, window or kmacro.
 @item
 @samp{consult-register-preview}: Supplementary function which can be
 used as @samp{register-preview-function} for a consistent display. See the @ref{Example configuration, , example

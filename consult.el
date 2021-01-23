@@ -2403,9 +2403,9 @@ This function is derived from `register-read-with-preview'."
 (defun consult-register-store (arg)
   "Store register dependent on current context, showing an action menu.
 
-With a numeric prefix ARG, store/add the number. With an active region,
-store/append/prepend the contents, optionally deleting the region when a prefix
-ARG is given. Otherwise store point, frameset, window or kmacro."
+With an active region, store/append/prepend the contents, optionally deleting
+the region when a prefix ARG is given. With a numeric prefix ARG, store/add the
+number. Otherwise store point, frameset, window or kmacro."
   (interactive "P")
   (consult--register-action
    (cond
