@@ -655,12 +655,17 @@ the box with the default completion, Icomplete and Selectrum.
   ;; Configure register preview function.
   ;; This gives a consistent display for both `consult-register' and
   ;; the register preview when editing registers.
-  ;; Hide mode-line of register preview window.
   (setq register-preview-delay 0
         register-preview-function #'consult-register-preview)
+  ;; Optionally hide mode-line of register preview window.
   (add-to-list 'display-buffer-alist
                '("\\`\\*Register Preview\\*"
                  nil (window-parameters (mode-line-format . none))))
+  ;; Optionally sort registers in preview window.
+  (advice-add #'register-preview :around
+              (lambda (fun &rest args)
+                (let ((register-alist (seq-sort #'car-less-than-car register-alist)))
+                  (apply fun args))))
 
   ;; Configure other variables and modes in the :config section, after lazily loading the package
   :config

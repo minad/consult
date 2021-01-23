@@ -348,6 +348,10 @@ the public API."
   '((t :inherit font-lock-negation-char-face))
   "Face used to highlight punctuation character.")
 
+(defface consult-help
+  '((t :inherit font-lock-comment-face))
+  "Face used to highlight help, e.g., in `consult-register-store'.")
+
 (defface consult-key
   '((t :inherit font-lock-keyword-face))
   "Face used to highlight keys, e.g., in `consult-register'.")
@@ -2334,6 +2338,19 @@ register access functions. The command supports narrowing, see
     :lookup #'consult--lookup-cdr)
    arg))
 
+;;;###autoload
+(defun consult-register-load (reg &optional arg)
+  "Do what I mean with a REG.
+
+For a window configuration, restore it. For a number or text, insert it. For a
+location, jump to it. See `jump-to-register' and `insert-register' for the
+meaning of ARG."
+  (interactive (list (register-read-with-preview "Load register: ")
+                     current-prefix-arg))
+  (condition-case nil
+      (jump-to-register reg arg)
+    (user-error (insert-register reg arg))))
+
 (defun consult--register-action (action-list)
   "Read register key and execute action from ACTION-LIST.
 
@@ -2350,17 +2367,19 @@ This function is derived from `register-read-with-preview'."
 	     (lambda ()
 	       (unless (get-buffer-window buffer)
 		 (register-preview buffer 'show-empty)
-                 (with-current-buffer buffer
-                   (let ((inhibit-read-only t))
-                     (goto-char (point-max))
-                     (insert
-                      (concat prefix ":  "
-                              (mapconcat
-                               (lambda (x)
-                                 (concat (propertize (format "M-%c" (car x))
-                                                     'face 'consult-key)
-                                         " " (cadr x)))
-                               action-list "  "))))))))))
+                 (when-let (win (get-buffer-window buffer))
+                   (with-selected-window win
+                     (enlarge-window 1)
+                     (let ((inhibit-read-only t))
+                       (goto-char (point-max))
+                       (insert
+                        (concat
+                         (propertize (concat prefix ":  ") 'face 'consult-help)
+                         (mapconcat
+                          (lambda (x)
+                            (concat (propertize (format "M-%c" (car x)) 'face 'consult-key)
+                                    " " (propertize (cadr x) 'face 'consult-help)))
+                          action-list "  ")))))))))))
 	 (help-chars (seq-remove #'get-register (cons help-char help-event-list))))
     (unwind-protect
         (while (not reg)
@@ -2426,19 +2445,6 @@ when a prefx ARG is given. Otherwise store point, frameset, window or
 kmacro."
   (interactive "P")
   (consult--register-action (run-hook-with-args-until-success 'consult-register-store-hook arg)))
-
-;;;###autoload
-(defun consult-register-load (reg &optional arg)
-  "Do what I mean with a REG.
-
-For a window configuration, restore it. For a number or text, insert it. For a
-location, jump to it. See `jump-to-register' and `insert-register' for the
-meaning of ARG."
-  (interactive (list (register-read-with-preview "Load register: ")
-                     current-prefix-arg))
-  (condition-case nil
-      (jump-to-register reg arg)
-    (user-error (insert-register reg arg))))
 
 ;;;;; Command: consult-bookmark
 
