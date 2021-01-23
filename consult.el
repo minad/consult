@@ -2327,8 +2327,10 @@ register access functions. The command supports narrowing, see
     :lookup #'consult--lookup-cdr)
    arg))
 
-(defun register-read-with-preview-and-action (prefix actions)
+(defun consult--register-action (actions)
   (let* ((buffer "*Register Preview*")
+         (prefix (car actions))
+         (actions (cdr actions))
 	 (timer (when (numberp register-preview-delay)
 		  (run-with-timer register-preview-delay nil
 				  (lambda ()
@@ -2378,36 +2380,43 @@ register access functions. The command supports narrowing, see
         (and (window-live-p w) (delete-window w)))
       (and (get-buffer buffer) (kill-buffer buffer)))))
 
+(defun consult--register-store-region ()
+  (when (use-region-p)
+    (let ((beg (region-beginning))
+          (end (region-end)))
+      `("Region"
+        (?c "copy" "Copy region to register: " ,(lambda (r) (copy-to-register r beg end arg t)))
+        (?a "append" "Append region to register: " ,(lambda (r) (append-to-register r beg end arg)))
+        (?p "prepend" "Prepend region to register: " ,(lambda (r) (prepend-to-register r beg end arg)))))))
+
+(defun consult--register-store-number ()
+  (when (numberp current-prefix-arg)
+    (let ((num current-prefix-arg))
+      `(,(format "Number %s" num)
+        (?s "store" ,(format "Store %s in register: " num) ,(lambda (r) (number-to-register num r)))
+        (?a "add" ,(format "Add %s to register: " num) ,(lambda (r) (increment-register num r)))))))
+
+(defun consult--register-store-default ()
+  `("Store"
+    (?p "point" "Point to register: " ,#'point-to-register)
+    (?f "frameset" "Frameset to register: " ,#'frameset-to-register)
+    (?w "window" "Window to register: " ,#'window-configuration-to-register)
+    ,@(when last-kbd-macro
+        `((?k "kmacro" "Kmacro to register: " ,#'kmacro-to-register)))))
+
+(defcustom consult-register-store-hook '(consult--register-store-number consult--register-store-region consult--register-store-default)
+  "Store functions to be tried in order by `consult-register-store'."
+  :type 'hook)
+
 ;;;###autoload
-(defun consult-register-store (&optional arg)
+(defun consult-register-store ()
   "Store what I mean in a REG.
 
 With an active region, store or append (with ARG) the contents, optionally
 deleting the region (with a negative argument). With a numeric prefix, store the
 number. With ARG store the frame configuration. Otherwise, store the point."
-  (interactive "P")
-  (cond
-   ((use-region-p)
-    (let ((beg (region-beginning))
-          (end (region-end)))
-      (register-read-with-preview-and-action
-       "Region"
-       `((?c "copy" "Copy region to register: " ,(lambda (r) (copy-to-register r beg end arg t)))
-         (?a "append" "Append region to register: " ,(lambda (r) (append-to-register r beg end arg)))
-         (?p "prepend" "Prepend region to register: " ,(lambda (r) (prepend-to-register r beg end arg)))))))
-   ((numberp arg)
-    (register-read-with-preview-and-action
-     (format "Number %s" arg)
-     `((?s "store" ,(format "Store %s in register: " arg) ,(lambda (r) (number-to-register arg r)))
-       (?a "add" ,(format "Add %s to register: " arg) ,(lambda (r) (increment-register arg r))))))
-   (t
-    (register-read-with-preview-and-action
-     "Store"
-     `((?p "point" "Point to register: " ,#'point-to-register)
-       (?f "frameset" "Frameset to register: " ,#'frameset-to-register)
-       (?w "window" "Window to register: " ,#'window-configuration-to-register)
-       ,@(when last-kbd-macro
-          `((?k "kmacro" "Kmacro to register: " ,#'kmacro-to-register))))))))
+  (interactive)
+  (consult--register-action (run-hook-with-args-until-success 'consult-register-store-hook)))
 
 ;;;###autoload
 (defun consult-register-load (reg &optional arg)
