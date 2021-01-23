@@ -30,6 +30,7 @@
 * Special features::             Enhancements over built-in `completing-read'
 * Configuration::                Example configuration and customization variables
 * Recommended packages::         Related packages recommended for installation
+* Bug reports and contributions:: Instructions on how to create reproducible bugreports
 * Acknowledgements::             Contributors and Sources of Inspiration
 
 @detailmenu
@@ -912,6 +913,31 @@ with alternative components, since there exist no hard dependencies.
 Furthermore it is possible to get started with only Selectrum and
 Consult and add more components later to the mix.
 
+@node Bug reports and contributions
+@chapter Bug reports and contributions
+
+If you find a bug or suspect that there is a problem with Consult, please check
+first that you have updated all the relevant packages, this includes Selectrum,
+Embark and Icomplete-vertical, in case you are using these packages.
+
+Please provide the necessary important information with your bug report, e.g.,
+the Emacs version, your operating system and the package manager you are using.
+Please try to reproduce the issue by starting Emacs with @samp{emacs -Q} on the
+command line and executing the following code in the scratch buffer. This way we
+can exclude side effects due to configuration settings.
+
+@lisp
+(package-initialize)
+(require 'consult)
+(require 'selectrum)
+(selectrum-mode)
+(setq completion-styles '(substring partial-completion))
+@end lisp
+
+Consult is intended to be a community effort, please participate in the
+discussions. Contributions are very welcome. If you have a proposal, please take a look
+first at the @uref{https://github.com/consult/issues, Consult issue tracker} and the @uref{https://github.com/minad/consult/issues/6, Consult wishlist}.
+
 @node Acknowledgements
 @chapter Acknowledgements
 
@@ -920,10 +946,6 @@ You probably guessed from the name that this package took inspiration from
 wiki}. The commands have been rewritten and greatly enhanced in comparison to the
 wiki versions. In particular all Selectrum-specific code has been removed, such
 that the commands are compatible with the @samp{completing-read} API@.
-
-Consult is intended to be a community effort, please participate in the
-discussions. Contributions are very welcome. If you have a proposal, take a look
-at the @uref{https://github.com/minad/consult/issues/6, Consult wishlist}.
 
 Code contributions:
 @itemize
