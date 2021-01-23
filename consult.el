@@ -640,7 +640,7 @@ KEY is the key function."
 
 (defun consult--lookup-location (_ candidates cand)
   "Lookup CAND in CANDIDATES list of 'consult-location category, return the marker."
-  (when-let (found (seq-find (lambda (x) (string= x cand)) candidates))
+  (when-let (found (car (member cand candidates)))
     (car (get-text-property 0 'consult-location found))))
 
 (defun consult--forbid-minibuffer ()
