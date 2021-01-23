@@ -797,9 +797,6 @@ an overview of all Consult variables and functions with their descriptions.
 @item consult-register-narrow
 @tab @dots{}
 @tab Narrowing configuration for @samp{consult-register}
-@item consult-register-store-hook
-@tab @dots{}
-@tab Register store actions for @samp{consult-register-store}
 @item consult-ripgrep-command
 @tab '(@dots{})
 @tab Command line arguments for ripgrep
