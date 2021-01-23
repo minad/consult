@@ -919,7 +919,7 @@ See consult--with-preview for the arguments PREVIEW-KEY, PREVIEW, TRANSFORM and 
               (fset post-command-sym (lambda () (setq input (minibuffer-contents-no-properties))))
               (add-hook 'post-command-hook post-command-sym nil t))))
       (unwind-protect
-          (cons (setq selected (when-let (result (funcall fun))
+          (cons (setq selected (when-let (result (save-window-excursion (funcall fun)))
                                  (funcall transform input result)))
                 input)
         ;; If there is a preview function, always call restore!
