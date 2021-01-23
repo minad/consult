@@ -2779,56 +2779,56 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                                     ?q
                                     (concat hidden-root (substring x len))
                                     'consult-file))
-                                 (seq-filter (lambda (x) (string-prefix-p proj-root x)) all-files)))))
-         (selected
-          (consult--read
-           "Switch to: " (append bufs files proj-bufs proj-files views bookmarks)
-           :history 'consult--buffer-history
-           :sort nil
-           :predicate
-           (lambda (cand)
-             (let ((type (- (aref cand 0) consult--tofu-char)))
-               (when (= type ?q) (setq type ?p)) ;; q=project files
-               (if (eq consult--narrow 32) ;; narrowed to hidden buffers
-                   (= type ?h)
-                 (and
-                  (/= type ?h) ;; non-hidden buffers
-                  (or (not consult--narrow) ;; narrowed
-                      (= type consult--narrow))))))
-           :narrow `((32 . "Hidden")
-                     (?b . "Buffer")
-                     (?f . "File")
-                     (?m . "Bookmark")
-                     ,@(when proj-root '((?p . "Project")))
-                     ,@(when consult-view-list-function '((?v . "View"))))
-           :category 'consult-buffer
-           :lookup
-           (lambda (_ candidates cand)
-             (if (member cand candidates)
-                 (cons (pcase-exhaustive (- (aref cand 0) consult--tofu-char)
-                         (?b open-buffer)
-                         (?h open-buffer)
-                         (?m open-bookmark)
-                         (?v consult-view-open-function)
-                         (?p open-buffer)
-                         (?q open-file)
-                         (?f open-file))
-                       (substring cand 1))
-               ;; When candidate is not found in the alist,
-               ;; default to creating a new buffer.
-               (and (not (string-blank-p cand)) (cons open-buffer cand))))
-           :preview
-           (lambda (cand restore)
-             (cond
-              (restore)
-              ;; In order to avoid slowness and unnecessary complexity, we
-              ;; only preview buffers. Loading recent files, bookmarks or
-              ;; views can result in expensive operations.
-              ((and (or (eq (car cand) #'switch-to-buffer)
-                        (eq (car cand) #'switch-to-buffer-other-window))
-                    (get-buffer (cdr cand)))
-               (funcall (car cand) (cdr cand) 'norecord)))))))
-    (when selected (funcall (car selected) (cdr selected)))))
+                                 (seq-filter (lambda (x) (string-prefix-p proj-root x)) all-files))))))
+    (consult--read
+     "Switch to: " (append bufs files proj-bufs proj-files views bookmarks)
+     :history 'consult--buffer-history
+     :sort nil
+     :predicate
+     (lambda (cand)
+       (let ((type (- (aref cand 0) consult--tofu-char)))
+         (when (= type ?q) (setq type ?p)) ;; q=project files
+         (if (eq consult--narrow 32) ;; narrowed to hidden buffers
+             (= type ?h)
+           (and
+            (/= type ?h) ;; non-hidden buffers
+            (or (not consult--narrow) ;; narrowed
+                (= type consult--narrow))))))
+     :narrow `((32 . "Hidden")
+               (?b . "Buffer")
+               (?f . "File")
+               (?m . "Bookmark")
+               ,@(when proj-root '((?p . "Project")))
+               ,@(when consult-view-list-function '((?v . "View"))))
+     :category 'consult-buffer
+     :lookup
+     (lambda (_ candidates cand)
+       (if (member cand candidates)
+           (cons (pcase-exhaustive (- (aref cand 0) consult--tofu-char)
+                   (?b open-buffer)
+                   (?h open-buffer)
+                   (?m open-bookmark)
+                   (?v consult-view-open-function)
+                   (?p open-buffer)
+                   (?q open-file)
+                   (?f open-file))
+                 (substring cand 1))
+         ;; When candidate is not found in the alist,
+         ;; default to creating a new buffer.
+         (and (not (string-blank-p cand)) (cons open-buffer cand))))
+     :preview
+     (lambda (cand restore)
+       (cond
+        (restore
+         (when cand
+           (funcall (car cand) (cdr cand))))
+        ;; In order to avoid slowness and unnecessary complexity, we
+        ;; only preview buffers. Loading recent files, bookmarks or
+        ;; views can result in expensive operations.
+        ((and (or (eq (car cand) #'switch-to-buffer)
+                  (eq (car cand) #'switch-to-buffer-other-window))
+              (get-buffer (cdr cand)))
+         (funcall (car cand) (cdr cand) 'norecord)))))))
 
 ;;;###autoload
 (defun consult-buffer-other-frame ()
