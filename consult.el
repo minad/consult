@@ -2327,8 +2327,80 @@ register access functions. The command supports narrowing, see
     :lookup #'consult--lookup-cdr)
    arg))
 
+(defun register-read-with-preview-and-action (actions)
+  (let* ((buffer "*Register Preview*")
+	 (timer (when (numberp register-preview-delay)
+		  (run-with-timer register-preview-delay nil
+				  (lambda ()
+				    (unless (get-buffer-window buffer)
+				      (register-preview buffer 'show-empty)
+                                      (with-current-buffer buffer
+                                        (let ((inhibit-read-only t))
+                                          (goto-char (point-max))
+                                          (insert
+                                           (propertize
+                                            (concat "["
+                                                    (mapconcat (lambda (x) (format "M-%c %s" (car x) (cadr x)))
+                                                               actions "    ")
+                                                    "]")
+                                            'face 'font-lock-comment-face)
+                                            ))))))))
+         (action (car (nth 0 actions)))
+         (result)
+	 (help-chars (cl-loop for c in (cons help-char help-event-list)
+			      when (not (get-register c))
+			      collect c)))
+    (unwind-protect
+        (progn
+          (while (not result)
+	    (while (memq (read-key (propertize (caddr (assq action actions)) 'face 'minibuffer-prompt))
+		         help-chars)
+	      (unless (get-buffer-window buffer)
+	        (register-preview buffer 'show-empty)))
+            (when (or (eq ?\C-g last-input-event)
+                      (eq 'escape last-input-event)
+                      (eq ?\C-\[ last-input-event))
+              (keyboard-quit))
+            (if (and (numberp last-input-event) (assq (logxor #x8000000 last-input-event) actions))
+                (setq action (logxor #x8000000 last-input-event))
+	      (if (characterp last-input-event)
+                  (setq result last-input-event)
+                (error "Non-character input-event"))))
+          (funcall (cadddr (assq action actions)) result))
+      (and (timerp timer) (cancel-timer timer))
+      (let ((w (get-buffer-window buffer)))
+        (and (window-live-p w) (delete-window w)))
+      (and (get-buffer buffer) (kill-buffer buffer)))))
+
 ;;;###autoload
-(defun consult-register-store (reg &optional arg)
+(defun consult-register-store-action (&optional arg)
+  "Store what I mean in a REG.
+
+With an active region, store or append (with ARG) the contents, optionally
+deleting the region (with a negative argument). With a numeric prefix, store the
+number. With ARG store the frame configuration. Otherwise, store the point."
+  (interactive "P")
+  (cond
+   ((use-region-p)
+    (let ((beg (region-beginning))
+          (end (region-end)))
+      (register-read-with-preview-and-action
+       (list (list ?c "copy" "Copy region to register: " (lambda (r) (copy-to-register r beg end arg t)))
+             (list ?a "append" "Append region to register: " (lambda (r) (append-to-register r beg end arg)))
+             (list ?p "prepend" "Prepend region to register: " (lambda (r) (prepend-to-register r beg end arg)))))))
+   ((numberp arg)
+    (register-read-with-preview-and-action
+     (list (list ?n "number" (format "Number %s to register: " arg) (lambda (r) (number-to-register arg r)))
+           (list ?a "add" (format "Add %s to register: " arg) (lambda (r) (increment-register arg r))))))
+   (t
+    (register-read-with-preview-and-action
+     (list (list ?p "point" "Point to register: " #'point-to-register)
+           (list ?f "frameset" "Frameset to register: " #'frameset-to-register)
+           (list ?k "kmacro" "Kmacro to register: " #'kmacro-to-register)
+           (list ?w "window" "Window to register: " #'window-configuration-to-register))))))
+
+;;;###autoload
+(defun consult-register-store-prefix (reg &optional arg)
   "Store what I mean in a REG.
 
 With an active region, store or append (with ARG) the contents, optionally
@@ -2378,6 +2450,7 @@ meaning of ARG."
     (user-error (insert-register reg arg))))
 
 (defun consult-register-access (arg)
+  "Experiment. Will be removed."
   (interactive "P")
   (let ((reg)
         (store)
