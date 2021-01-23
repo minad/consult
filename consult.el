@@ -2805,10 +2805,9 @@ is obtained by calling `consult-view-list-function'."
   (consult--remove-dups
    (thread-last
        ;; List of macros
-       (cons (list last-kbd-macro
-                   kmacro-counter
-                   kmacro-counter-format)
-             kmacro-ring)
+       (append (when last-kbd-macro
+                 `((,last-kbd-macro ,kmacro-counter ,kmacro-counter-format)))
+               kmacro-ring)
      ;; Add indices
      (seq-map-indexed #'cons)
      ;; Filter mouse clicks
