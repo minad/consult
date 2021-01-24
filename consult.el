@@ -2584,17 +2584,39 @@ In order to select from a specific HISTORY, pass the history variable as argumen
 
 ;;;;; Command: consult-isearch
 
-(defun consult--isearch-category (cand)
-  "The Isearch mode of history element CAND, encoded as a character."
-  (let ((props (plist-member (text-properties-at 0 cand)
-                             'isearch-regexp-function)))
-    (pcase (cadr props)
-      ((and 'nil (guard (not props))) ?r)
-      ('nil                           ?l)
-      ('word-search-regexp            ?w)
-      ('isearch-symbol-regexp         ?s)
-      ('char-fold-to-regexp           ?c)
-      (_                              ?u))))
+(defun consult--isearch-candidates (narrow)
+  "Return isearch history candidates categorized by NARROW."
+  ;; NOTE: Do not throw an error on empty history,
+  ;; in order to allow starting a search.
+  ;; We do not :require-match here!
+  (let* ((history (if (eq t search-default-mode)
+                      (append regexp-search-ring search-ring)
+                    (append search-ring regexp-search-ring)))
+         (max-len (if history
+                      (+ 4 (apply #'max (mapcar #'length history)))
+                    0)))
+    (consult--remove-dups
+     (mapcar
+      (lambda (cand)
+        (let* ((props (plist-member (text-properties-at 0 cand)
+                                    'isearch-regexp-function))
+               (type (pcase (cadr props)
+                       ((and 'nil (guard (not props))) ?r)
+                       ('nil                           ?l)
+                       ('word-search-regexp            ?w)
+                       ('isearch-symbol-regexp         ?s)
+                       ('char-fold-to-regexp           ?c)
+                       (_                              ?u))))
+          (concat (propertize
+                   ;; Disambiguate history items. The same string could
+                   ;; occur with different search types.
+                   (char-to-string (+ consult--tofu-char type))
+                   'invisible t
+                   'consult--isearch-annotation
+                   (concat (make-string (- max-len (length cand)) 32)
+                           (alist-get type narrow)))
+                  cand)))
+      history))))
 
 ;;;###autoload
 (defun consult-isearch ()
@@ -2605,40 +2627,33 @@ starts a new Isearch session otherwise."
   (interactive)
   (consult--forbid-minibuffer)
   (let ((isearch-message-function 'ignore) ;; Avoid flicker in echo area
-        (inhibit-redisplay t))             ;; Avoid flicker in mode line
+        (inhibit-redisplay t)              ;; Avoid flicker in mode line
+        (narrow '((?c . "Char")
+                  (?u . "Custom")
+                  (?l . "Literal")
+                  (?r . "Regexp")
+                  (?s . "Symbol")
+                  (?w . "Word"))))
     (unless isearch-mode (isearch-mode t))
     (with-isearch-suspended
-     (let* ((narrow '((?c . "Char")
-                      (?u . "Custom")
-                      (?l . "Literal")
-                      (?r . "Regexp")
-                      (?s . "Symbol")
-                      (?w . "Word")))
-            ;; NOTE: Do not throw an error on empty history,
-            ;; in order to allow starting a search.
-            ;; We do not :require-match here!
-            (history (consult--remove-dups
-                      (if (eq t search-default-mode)
-                          (append regexp-search-ring search-ring)
-                        (append search-ring regexp-search-ring))))
-            (max-len (+ 4 (apply #'max (mapcar #'length history))))
-            (str (consult--read
-                  "I-search: " history
-                  :category 'isearch-string
-                  :history t ;; disable history
-                  :sort nil
-                  :annotate
-                  (lambda (cand)
-                    (concat (make-string (- max-len (length cand)) 32)
-                            (alist-get (consult--isearch-category cand) narrow)))
-                  :narrow
-                  (cons
-                   (lambda (cand)
-                     (eq (consult--isearch-category cand) consult--narrow))
-                   narrow))))
-       (setq isearch-new-string (or (car (member str history)) str)
-             isearch-new-message
-             (mapconcat 'isearch-text-char-description isearch-new-string ""))))
+     (setq isearch-new-string
+           (consult--read
+            "I-search: "
+            (consult--isearch-candidates narrow)
+            :category 'consult-isearch
+            :history t ;; disable history
+            :sort nil
+            :annotate
+            (lambda (cand) (get-text-property 0 'consult--isearch-annotation cand))
+            :lookup
+            (lambda (_ candidates str)
+              (if-let (cand (car (member str candidates))) (substring cand 1) str))
+            :narrow
+            (cons
+             (lambda (cand) (eq (- (aref cand 0) consult--tofu-char) consult--narrow))
+             narrow))
+           isearch-new-message
+           (mapconcat 'isearch-text-char-description isearch-new-string "")))
     ;; Setting `isearch-regexp' etc only works outside of `with-isearch-suspended'.
     (unless (plist-member (text-properties-at 0 isearch-string) 'isearch-regexp-function)
       (setq isearch-regexp t
