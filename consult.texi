@@ -335,13 +335,13 @@ invoked with prefix argument, you can specify the directory manually,
 i.e., @samp{C-u M-s g}.
 @item
 @samp{consult-find}, @samp{consult-locate}: Find file by
-matching the path against a regexp. Like @samp{consult-grep} either the
-project root or the current directory is used as root directory for
-the search. The input string is treated similarly to @samp{consult-grep},
-where the first part is passed to find, and the second part is used
-for Emacs filtering. Note that @samp{find} uses wildcards, e.g. enter
-@samp{*consult*}, to find all files containing the string "consult". In
-case you want to use another search utility like @samp{fd}, you can write
+matching the path against a regexp. Like @samp{consult-grep} either the project
+root or the current directory is used as root directory for the search. The
+input string is treated similarly to @samp{consult-grep}, where the first part is
+passed to find, and the second part is used for Emacs filtering. Note that
+the standard @samp{find} command uses wildcards in contrast to the popular @samp{fd},
+which uses regular expressions. In case you want to use @samp{fd}, you can either
+change the @samp{consult-find-command} configuration variable or define a small
 wrapper command @samp{find-fd} as shown in the @ref{Use-package example, , example configuration}.
 @end itemize
 
@@ -666,10 +666,10 @@ the box with the default completion, Icomplete and Selectrum.
   ;; commands based on the Consult commands. Some commands have arguments which
   ;; allow tweaking. Furthermore global configuration variables can be set
   ;; locally in a let-binding.
-  (defun find-fd (&optional dir)
+  (defun find-fd (&optional dir initial)
     (interactive "P")
     (let ((consult-find-command "fd --color=never --full-path ARG OPTS"))
-      (consult-find dir)))
+      (consult-find dir initial)))
 
   ;; Optionally configure the register preview function. This gives a
   ;; consistent display for both `consult-register', `consult-register-load',
@@ -767,7 +767,7 @@ an overview of all Consult variables and functions with their descriptions.
 @tab nil
 @tab Invididual command option configuration
 @item consult-find-command
-@tab '(@dots{})
+@tab "find @dots{}"
 @tab Command line arguments for find
 @item consult-fontify-max-size
 @tab 1048576
@@ -779,7 +779,7 @@ an overview of all Consult variables and functions with their descriptions.
 @tab t
 @tab Show line numbers for @samp{consult-goto-line}
 @item consult-grep-command
-@tab '(@dots{})
+@tab "grep @dots{}"
 @tab Command line arguments for grep
 @item consult-imenu-narrow
 @tab @dots{}
@@ -794,7 +794,7 @@ an overview of all Consult variables and functions with their descriptions.
 @tab 'match-beginning
 @tab Placement of the point used by @samp{consult-line}
 @item consult-locate-command
-@tab '(@dots{})
+@tab "locate @dots{}"
 @tab Command line arguments for locate
 @item consult-mode-command-filter
 @tab @dots{}
@@ -821,7 +821,7 @@ an overview of all Consult variables and functions with their descriptions.
 @tab @dots{}
 @tab Narrowing configuration for @samp{consult-register}
 @item consult-ripgrep-command
-@tab '(@dots{})
+@tab "rg @dots{}"
 @tab Command line arguments for ripgrep
 @item consult-themes
 @tab nil

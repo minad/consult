@@ -247,13 +247,13 @@ variables and functions with their descriptions.
    invoked with prefix argument, you can specify the directory manually,
    i.e., =C-u M-s g=.
  - =consult-find=, =consult-locate=: Find file by
-   matching the path against a regexp. Like =consult-grep= either the
-   project root or the current directory is used as root directory for
-   the search. The input string is treated similarly to =consult-grep=,
-   where the first part is passed to find, and the second part is used
-   for Emacs filtering. Note that =find= uses wildcards, e.g. enter
-   =*consult*=, to find all files containing the string "consult". In
-   case you want to use another search utility like =fd=, you can write
+   matching the path against a regexp. Like =consult-grep= either the project
+   root or the current directory is used as root directory for the search. The
+   input string is treated similarly to =consult-grep=, where the first part is
+   passed to find, and the second part is used for Emacs filtering. Note that
+   the standard =find= command uses wildcards in contrast to the popular =fd=,
+   which uses regular expressions. In case you want to use =fd=, you can either
+   change the =consult-find-command= configuration variable or define a small
    wrapper command =find-fd= as shown in the [[#use-package-example][example configuration]].
 
 ** Compilation errors
@@ -548,10 +548,10 @@ the box with the default completion, Icomplete and Selectrum.
    ;; commands based on the Consult commands. Some commands have arguments which
    ;; allow tweaking. Furthermore global configuration variables can be set
    ;; locally in a let-binding.
-   (defun find-fd (&optional dir)
+   (defun find-fd (&optional dir initial)
      (interactive "P")
      (let ((consult-find-command "fd --color=never --full-path ARG OPTS"))
-       (consult-find dir)))
+       (consult-find dir initial)))
 
    ;; Optionally configure the register preview function. This gives a
    ;; consistent display for both `consult-register', `consult-register-load',
@@ -629,16 +629,16 @@ the box with the default completion, Icomplete and Selectrum.
  | consult-bookmark-narrow         | ...                | Narrowing configuration for =consult-bookmark=           |
  | consult-buffer-filter           | ...                | Filter for =consult-buffer=                              |
  | consult-config                  | nil                | Invididual command option configuration                  |
- | consult-find-command            | '(...)             | Command line arguments for find                          |
+ | consult-find-command            | "find ..."         | Command line arguments for find                          |
  | consult-fontify-max-size        | 1048576            | Buffers larger than this limit are not fontified         |
  | consult-git-grep-command        | '(...)             | Command line arguments for git-grep                      |
  | consult-goto-line-numbers       | t                  | Show line numbers for =consult-goto-line=                |
- | consult-grep-command            | '(...)             | Command line arguments for grep                          |
+ | consult-grep-command            | "grep ..."         | Command line arguments for grep                          |
  | consult-imenu-narrow            | ...                | Mode-specific narrowing keys for =consult-imenu=         |
  | consult-imenu-toplevel          | ...                | Mode-specific toplevel names used by =consult-imenu=     |
  | consult-line-numbers-widen      | t                  | Show absolute line numbers when narrowing is active.     |
  | consult-line-point-placement    | 'match-beginning   | Placement of the point used by =consult-line=            |
- | consult-locate-command          | '(...)             | Command line arguments for locate                        |
+ | consult-locate-command          | "locate ..."       | Command line arguments for locate                        |
  | consult-mode-command-filter     | ...                | Filter for =consult-mode-command=                        |
  | consult-mode-histories          | ...                | Mode-specific history variables                          |
  | consult-narrow-key              | nil                | Narrowing prefix key during completion                   |
@@ -647,7 +647,7 @@ the box with the default completion, Icomplete and Selectrum.
  | consult-preview-max-size        | 10485760           | Size limit for previewed files                           |
  | consult-project-root-function   | nil                | Function which returns current project root              |
  | consult-register-narrow         | ...                | Narrowing configuration for =consult-register=           |
- | consult-ripgrep-command         | '(...)             | Command line arguments for ripgrep                       |
+ | consult-ripgrep-command         | "rg ..."           | Command line arguments for ripgrep                       |
  | consult-themes                  | nil                | List of themes to be presented for selection             |
  | consult-view-list-function      | nil                | Function which returns a list of view names as strings   |
  | consult-view-open-function      | nil                | Function to open a view by name                          |
