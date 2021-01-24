@@ -1293,8 +1293,13 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
 (defun consult--command-args (cmd)
   "Split command arguments and append to CMD."
   (lambda (input)
-    (let ((args (split-string input " +-- +")))
-      (append cmd (list (car args)) (mapcan #'split-string (cdr args))))))
+    (if (string-match " +--\\( +\\|$\\)" input)
+        ;; split-string-and-unquote fails if the quotes are invalid. Ignore it.
+        (ignore-errors
+          (append cmd
+                  (list (substring input 0 (match-beginning 0)))
+                  (split-string-and-unquote (substring input (match-end 0)))))
+      (append cmd (list input)))))
 
 (defmacro consult--async-command (cmd &rest transforms)
   "Asynchronous CMD pipeline with TRANSFORMS."
