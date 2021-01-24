@@ -2605,8 +2605,8 @@ This replaces the current search string if Isearch is active, and
 starts a new Isearch session otherwise."
   (interactive)
   (consult--forbid-minibuffer)
-  (let* ((isearch-message-function 'ignore) ;; Avoid flicker in echo area
-         (inhibit-redisplay t))             ;; Avoid flicker in mode line
+  (let ((isearch-message-function 'ignore) ;; Avoid flicker in echo area
+        (inhibit-redisplay t))             ;; Avoid flicker in mode line
     (unless isearch-mode (isearch-mode t))
     (with-isearch-suspended
      (let* ((narrow '((?c . "Char")
@@ -2615,13 +2615,13 @@ starts a new Isearch session otherwise."
                       (?r . "Regexp")
                       (?s . "Symbol")
                       (?w . "Word")))
-            (history (or
-                      (consult--remove-dups
-                       (if (eq t search-default-mode)
-                           (append regexp-search-ring search-ring)
-                         (append search-ring regexp-search-ring))
-                       (lambda (x) (cons x (consult--isearch-category x))))
-                      (user-error "History is empty")))
+            ;; NOTE: Do not throw an error on empty history,
+            ;; in order to allow starting a search.
+            ;; We do not :require-match here!
+            (history (consult--remove-dups
+                      (if (eq t search-default-mode)
+                          (append regexp-search-ring search-ring)
+                        (append search-ring regexp-search-ring))))
             (max-len (+ 4 (apply #'max (mapcar #'length history))))
             (str (consult--read
                   "I-search: " history
