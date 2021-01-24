@@ -254,7 +254,7 @@ variables and functions with their descriptions.
    for Emacs filtering. Note that =find= uses wildcards, e.g. enter
    =*consult*=, to find all files containing the string "consult". In
    case you want to use another search utility like =fd=, you can write
-   wrapper command =my-fdfind= as shown in the [[#use-package-example][example configuration]].
+   wrapper command =find-fd= as shown in the [[#use-package-example][example configuration]].
 
 ** Compilation errors
  :properties:
@@ -531,7 +531,7 @@ the box with the default completion, Icomplete and Selectrum.
           ("M-g e" . consult-error)
           ;; M-s bindings (search-map)
           ("M-s g" . consult-git-grep)      ;; Alternatives: consult-grep, consult-ripgrep
-          ("M-s f" . consult-find)          ;; Alternatives: consult-locate, my-fdfind
+          ("M-s f" . consult-find)          ;; Alternatives: consult-locate, find-fd
           ("M-s l" . consult-line)
           ("M-s m" . consult-multi-occur)
           ("M-s k" . consult-keep-lines)
@@ -548,9 +548,9 @@ the box with the default completion, Icomplete and Selectrum.
    ;; commands based on the Consult commands. Some commands have arguments which
    ;; allow tweaking. Furthermore global configuration variables can be set
    ;; locally in a let-binding.
-   (defun my-fdfind (&optional dir)
+   (defun find-fd (&optional dir)
      (interactive "P")
-     (let ((consult-find-command '("fdfind" "--color=never" "--full-path")))
+     (let ((consult-find-command '("fd" "--color=never" "--full-path")))
        (consult-find dir)))
 
    ;; Optionally configure the register preview function. This gives a
