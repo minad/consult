@@ -672,7 +672,7 @@ KEY is the key function."
   ;; See https://github.com/justbur/emacs-which-key/issues/177
   (let ((idx (- (length key) 1)))
     (define-key map (vconcat (seq-take key idx) (vector 'which-key (elt key idx)))
-      `(which-key (,desc)))))
+      `(which-key (,(copy-sequence desc))))))
 
 (defmacro consult--with-increased-gc (&rest body)
   "Temporarily increase the gc limit in BODY to optimize for throughput."
