@@ -626,6 +626,10 @@ KEY is the key function."
   "Return t if position POS lies in range `point-min' to `point-max'."
   (<= (point-min) pos (point-max)))
 
+(defun consult--get-annotation (cand)
+  "Return 'consult--annotation property from CAND."
+  (get-text-property 0 'consult--annotation cand))
+
 (defun consult--lookup-elem (_ candidates cand)
   "Lookup CAND in CANDIDATES alist, return element."
   (assoc cand candidates))
@@ -2612,7 +2616,7 @@ In order to select from a specific HISTORY, pass the history variable as argumen
                    ;; occur with different search types.
                    (char-to-string (+ consult--tofu-char type))
                    'invisible t
-                   'consult--isearch-annotation
+                   'consult--annotation
                    (concat (make-string (- max-len (length cand)) 32)
                            (alist-get type narrow)))
                   cand)))
@@ -2643,8 +2647,7 @@ starts a new Isearch session otherwise."
             :category 'consult-isearch
             :history t ;; disable history
             :sort nil
-            :annotate
-            (lambda (cand) (get-text-property 0 'consult--isearch-annotation cand))
+            :annotate #'consult--get-annotation
             :lookup
             (lambda (_ candidates str)
               (if-let (cand (car (member str candidates))) (substring cand 1) str))
@@ -2893,7 +2896,7 @@ is obtained by calling `consult-view-list-function'."
               (propertize
                (format-kbd-macro keys 1)
                'consult--kmacro-index index
-               'consult--kmacro-annotation
+               'consult--annotation
                ;; If the counter is 0 and the counter format is its default,
                ;; then there is a good chance that the counter isn't actually
                ;; being used.  This can only be wrong when a user
@@ -2921,8 +2924,7 @@ Macros containing mouse clicks are omitted."
                    :require-match t
                    :sort nil
                    :history 'consult--kmacro-history
-                   :annotate
-                   (lambda (cand) (get-text-property 0 'consult--kmacro-annotation cand))
+                   :annotate #'consult--get-annotation
                    :lookup
                    (lambda (_ candidates cand)
                      (get-text-property 0 'consult--kmacro-index
