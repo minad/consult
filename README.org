@@ -550,7 +550,7 @@ the box with the default completion, Icomplete and Selectrum.
    ;; locally in a let-binding.
    (defun find-fd (&optional dir)
      (interactive "P")
-     (let ((consult-find-command '("fd" "--color=never" "--full-path")))
+     (let ((consult-find-command "fd --color=never --full-path ARG OPTS"))
        (consult-find dir)))
 
    ;; Optionally configure the register preview function. This gives a

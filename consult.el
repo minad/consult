@@ -212,37 +212,37 @@ with a space character."
   :type '(repeat (choice symbol regexp)))
 
 (defcustom consult-git-grep-command
-  '("git" "--no-pager" "grep" "--null" "--color=always" "--extended-regexp"
-    "--line-number" "-I" "-e")
+  "git --no-pager grep --null --color=always --extended-regexp\
+   --line-number -I -e ARG OPTS"
   "Command line arguments for git-grep, see `consult-git-grep'."
-  :type '(repeat string))
+  :type 'string)
 
 (defcustom consult-grep-command
-  '("grep" "--null" "--line-buffered" "--color=always" "--extended-regexp"
-    "--exclude-dir=.git" "--line-number" "-I" "-r" "." "-e")
+  "grep --null --line-buffered --color=always --extended-regexp\
+   --exclude-dir=.git --line-number -I -r . -e ARG OPTS"
   "Command line arguments for grep, see `consult-grep'."
-  :type '(repeat string))
+  :type 'string)
 
 (defcustom consult-ripgrep-command
-  '("rg" "--null" "--line-buffered" "--color=always" "--max-columns=500"
-    "--no-heading" "--line-number" "." "-e")
+  "rg --null --line-buffered --color=always --max-columns=500\
+   --no-heading --line-number . -e ARG OPTS"
   "Command line arguments for ripgrep, see `consult-ripgrep'."
-  :type '(repeat string))
+  :type 'string)
 
 (defcustom consult-find-command
-  '("find" "." "-not" "(" "-wholename" "*/.*" "-prune" ")" "-ipath")
+  "find . -not ( -wholename */.* -prune ) -ipath *ARG* OPTS"
   "Command line arguments for find, see `consult-find'."
-  :type '(repeat string))
+  :type 'string)
 
 (defcustom consult-locate-command
-  '("locate" "--ignore-case" "--existing" "--regexp")
+  "locate --ignore-case --existing --regexp ARG OPTS"
   "Command line arguments for locate, see `consult-locate'."
-  :type '(repeat string))
+  :type 'string)
 
 (defcustom consult-man-command
-  '("man" "-k")
+  "man -k ARG OPTS"
   "Command line arguments for man apropos, see `consult-man'."
-  :type '(repeat string))
+  :type 'string)
 
 (defcustom consult-preview-key 'any
   "Preview trigger keys, can be nil, 'any, a single key or a list of keys."
@@ -1292,14 +1292,22 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
 
 (defun consult--command-args (cmd)
   "Split command arguments and append to CMD."
+  ;; TODO remove this after a while
+  (unless (stringp cmd)
+    (user-error "Consult: Deprecated command configuration for %S. Use a string instead" (car cmd)))
+  (setq cmd (split-string-and-unquote cmd))
   (lambda (input)
-    (if (string-match " +--\\( +\\|$\\)" input)
+    (save-match-data
+      (let ((opts))
+        (when (string-match " +--\\( +\\|$\\)" input)
         ;; split-string-and-unquote fails if the quotes are invalid. Ignore it.
-        (ignore-errors
-          (append cmd
-                  (list (substring input 0 (match-beginning 0)))
-                  (split-string-and-unquote (substring input (match-end 0)))))
-      (append cmd (list input)))))
+          (setq opts (ignore-errors (split-string-and-unquote (substring input (match-end 0))))
+                input (substring input 0 (match-beginning 0))))
+        (mapcan (lambda (x)
+                  (if (string= x "OPTS")
+                      opts
+                    (list (replace-regexp-in-string "ARG" input x t))))
+                cmd)))))
 
 (defmacro consult--async-command (cmd &rest transforms)
   "Asynchronous CMD pipeline with TRANSFORMS."
@@ -3196,7 +3204,7 @@ See `consult-grep' for more details."
   "Run find CMD in current directory with INITIAL input.
 
 PROMPT is the prompt.
-CMD is the find argument list.
+CMD is the find argument string.
 The filename at point is added to the future history."
   (find-file
    (consult--read
