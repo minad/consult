@@ -25,11 +25,6 @@
 (require 'consult)
 (require 'flymake)
 
-(defcustom consult-preview-flymake t
-  "Enable Flymake preview during selection."
-  :type 'boolean
-  :group 'consult-preview)
-
 (defun consult-flymake--candidates ()
   "Return Flymake errors as alist."
   (consult--forbid-minibuffer)
@@ -89,8 +84,7 @@
                             (?w . "Warning")
                             (?n . "Note"))
                   :lookup #'consult--lookup-cadr
-                  :preview (and consult-preview-flymake
-                                (consult--preview-position 'consult-preview-error)))))
+                  :preview (consult--preview-position 'consult-preview-error))))
 
 (provide 'consult-flymake)
 ;;; consult-flymake.el ends here

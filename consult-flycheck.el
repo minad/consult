@@ -33,11 +33,6 @@
 (require 'consult)
 (require 'flycheck)
 
-(defcustom consult-preview-flycheck t
-  "Enable flycheck preview during selection."
-  :type 'boolean
-  :group 'consult-preview)
-
 (defun consult-flycheck--candidates ()
   "Return flycheck errors as alist."
   (consult--forbid-minibuffer)
@@ -90,8 +85,7 @@
                             (?w . "Warning")
                             (?i . "Info"))
                   :lookup #'consult--lookup-cadr
-                  :preview (and consult-preview-flycheck
-                                (consult--preview-position 'consult-preview-error)))))
+                  :preview (consult--preview-position 'consult-preview-error))))
 
 (provide 'consult-flycheck)
 ;;; consult-flycheck.el ends here
