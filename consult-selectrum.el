@@ -26,7 +26,7 @@
 ;; NOTE: It is not guaranteed that Selectrum is available during compilation!
 (defvar selectrum--move-default-candidate-p)
 (defvar selectrum-active-p)
-(defvar selectrum-fix-minibuffer-height)
+(defvar selectrum-fix-vertical-window-height)
 (defvar selectrum-highlight-candidates-function)
 (defvar selectrum-refine-candidates-function)
 (declare-function selectrum-exhibit "selectrum")
@@ -63,7 +63,7 @@
 See `consult--read' for the CANDIDATES and DEFAULT-TOP arguments."
   (setq-local selectrum--move-default-candidate-p default-top)
   ;; Fix selectrum height for async completion table
-  (when (functionp candidates) (setq-local selectrum-fix-minibuffer-height t)))
+  (when (functionp candidates) (setq-local selectrum-fix-vertical-window-height t)))
 
 (defun consult-selectrum--async-split-wrap (orig)
   "Wrap selectrum candidates highlight/refinement ORIG function for `consult--async-split'."
