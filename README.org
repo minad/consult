@@ -193,10 +193,16 @@ variables and functions with their descriptions.
  #+findex: consult-multi-occur
  #+findex: consult-keep-lines
  #+findex: consult-focus-lines
+ #+findex: consult-isearch
  - =consult-line=: Enter search string and select from matching lines.
    Supports live preview and recursive editing. The symbol at point and
-   the recent isearch string are added to the "future history" and can be
+   the recent Isearch string are added to the "future history" and can be
    accessed by pressing =M-n=.
+ - =consult-isearch=: During an Isearch session, this command picks a
+   search string from history and continues the search with the newly selected
+   string. Outside of Isearch, the command allows to pick a string from the
+   history and starts a new Isearch. This is useful, for instance, as an Embark
+   action.
  - =consult-multi-occur=: Replacement for =multi-occur= which uses
    =completing-read-multiple=.
  - =consult-keep-lines=: Replacement for =keep/flush-lines=
@@ -286,10 +292,6 @@ variables and functions with their descriptions.
  - =consult-history=: Insert a string from the current buffer history.
    This command can be invoked from the minibuffer. In that case the
    history stored in the =minibuffer-history-variable= is used.
- - =consult-isearch=: During an Isearch session, this command picks a
-   search string from history. Outside of Isearch, it reads a string
-   from the minibuffer and starts searching; this is useful, for
-   instance, as an Embark action.
 
 ** Modes
  :properties:
