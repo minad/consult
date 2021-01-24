@@ -57,7 +57,7 @@
   "Refresh selectrum view."
   (and selectrum-active-p (selectrum-exhibit 'keep-selected)))
 
-(cl-defun consult-selectrum--read-setup (_prompt candidates &key default-top &allow-other-keys)
+(cl-defun consult-selectrum--setup (_prompt candidates &key default-top &allow-other-keys)
   "Advice for `consult--read-setup' for Selectrum specific setup.
 
 See `consult--read' for the CANDIDATES and DEFAULT-TOP arguments."
@@ -80,7 +80,7 @@ See `consult--read' for the CANDIDATES and DEFAULT-TOP arguments."
 (add-hook 'consult--completion-filter-hook #'consult-selectrum--filter)
 (add-hook 'consult--completion-candidate-hook #'consult-selectrum--candidate)
 (add-hook 'consult--completion-refresh-hook #'consult-selectrum--refresh)
-(advice-add #'consult--read-setup :before #'consult-selectrum--read-setup)
+(advice-add #'consult--read-setup :before #'consult-selectrum--setup)
 (advice-add #'consult--async-split-setup :before #'consult-selectrum--async-split-setup)
 
 (provide 'consult-selectrum)
