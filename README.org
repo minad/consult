@@ -102,9 +102,9 @@ variables and functions with their descriptions.
    - f Files
    - m Bookmarks
    - p Project (only available if =consult-project-root-function= is
-     configured as shown in the [[#example-configuration][example configuration]])
+     configured as shown in the [[#use-package-example][example configuration]])
    - v Views (only available if =consult-view-*-function= is
-     configured as shown in the [[#example-configuration][example configuration]])
+     configured as shown in the [[#use-package-example][example configuration]])
  - =consult-bookmark=: Select or create bookmark. You might consider the
    powerful =consult-buffer= instead as an alternative, which includes bookmarks.
    However =consult-bookmark= supports preview of bookmarks and narrowing.
@@ -141,7 +141,7 @@ variables and functions with their descriptions.
    recommended to use =consult-register-load= or =consult-register-store= or the
    built-in Emacs register commands.
  - =consult-register-preview=: Supplementary function which can be
-   used as =register-preview-function= for a consistent display. See the [[#example-configuration][example
+   used as =register-preview-function= for a consistent display. See the [[#use-package-example][example
    configuration]] for how the =consult-register-preview= function is meant to be
    used.
  - =consult-register-load=: Utility command to quickly load a register.
@@ -235,7 +235,7 @@ variables and functions with their descriptions.
    the /fast/ Emacs filtering to further narrow down the list of matches.
    This is particularily useful if you are using an advanced completion
    style like orderless. =consult-grep= supports preview. If
-   =consult-project-root-function= is [[#example-configuration][configured]] and the function returns
+   =consult-project-root-function= is [[#use-package-example][configured]] and the function returns
    non-nil, =consult-grep= searches the current project directory.
    Otherwise the =default-directory= is searched. If =consult-grep= is
    invoked with prefix argument, you can specify the directory manually,
@@ -248,7 +248,7 @@ variables and functions with their descriptions.
    for Emacs filtering. Note that =find= uses wildcards, e.g. enter
    =*consult*=, to find all files containing the string "consult". In
    case you want to use another search utility like =fd=, you can write
-   wrapper command =my-fdfind= as shown in the [[#example-configuration][example configuration]].
+   wrapper command =my-fdfind= as shown in the [[#use-package-example][example configuration]].
 
 ** Compilation errors
  :properties:
@@ -360,7 +360,7 @@ variables and functions with their descriptions.
 
  Previews are enabled by default but can be disabled via the
  =consult-preview-key= variable. Furthermore it is possible to specify
- keybindings which trigger the preview manually as shown in the [[#example-configuration][example
+ keybindings which trigger the preview manually as shown in the [[#use-package-example][example
  configuration]]. The default setting of =consult-preview-key= is =any= which
  means that the preview will be triggered on any keypress when the selected
  candidate changes. Each command can be configured individually with its own
@@ -389,7 +389,7 @@ variables and functions with their descriptions.
  If [[https://github.com/justbur/emacs-which-key][which-key]] is installed, the possible narrowing keys are shown in the
  which-key window after pressing the prefix key =consult-narrow-key=.
  Furthermore there is the =consult-narrow-help= command which can be bound to a
- key in the =consult-narrow-map= if this is desired, as shown in the [[#example-configuration][example
+ key in the =consult-narrow-map= if this is desired, as shown in the [[#use-package-example][example
  configuration]].
 
 ** Asynchronous candidates
@@ -493,10 +493,10 @@ Note that there are two packages as of now: =consult= and =consult-flycheck=.
 only depends on Emacs core components. The =consult= package will work out of
 the box with the default completion, Icomplete and Selectrum.
 
-** Example configuration
+** Use-package example
  :properties:
- :description: Configuration proposal based on use-package
- :custom_id: example-configuration
+ :description: Configuration example based on use-package
+ :custom_id: use-package-example
  :end:
  #+cindex: configuration
  #+cindex: use-package
@@ -721,21 +721,25 @@ with alternative components, since there exist no hard dependencies.
 Furthermore it is possible to get started with only Selectrum and
 Consult and add more components later to the mix.
 
-* Bug reports and contributions
+* Contributions
 :properties:
-:description: Instructions on how to create reproducible bugreports
+:description: Reproducible bug reports and pull requests
 :end:
 
+Consult is intended to be a community effort, please participate in the
+discussions. Contributions are very welcome. If you have a proposal, please take a look
+first at the [[https://github.com/consult/issues][Consult issue tracker]] and the [[https://github.com/minad/consult/issues/6][Consult wishlist]].
+
 If you find a bug or suspect that there is a problem with Consult, please check
-first that you have updated all the relevant packages, this includes Selectrum,
+first that you have updated all the relevant packages. This includes Selectrum,
 Icomplete-vertical, Embark, Orderless and Prescient in case you are using any of
 those packages.
 
 Please provide the necessary important information with your bug report, e.g.,
 the Emacs version, your operating system and the package manager you are using.
-Please try to reproduce the issue by starting Emacs with =emacs -Q= on the
-command line and executing the following code in the scratch buffer. This way we
-can exclude side effects due to configuration settings.
+Please try to reproduce the issue by starting a barebone Emacs instance with
+=emacs -Q= on the command line. Then execute the following code in the scratch
+buffer. This way we can exclude side effects due to configuration settings.
 
 #+begin_src emacs-lisp
 (package-initialize)
@@ -744,10 +748,6 @@ can exclude side effects due to configuration settings.
 (selectrum-mode)
 (setq completion-styles '(substring partial-completion))
 #+end_src
-
-Consult is intended to be a community effort, please participate in the
-discussions. Contributions are very welcome. If you have a proposal, please take a look
-first at the [[https://github.com/consult/issues][Consult issue tracker]] and the [[https://github.com/minad/consult/issues/6][Consult wishlist]].
 
 * Acknowledgements
 :properties:

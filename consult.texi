@@ -30,7 +30,7 @@
 * Special features::             Enhancements over built-in `completing-read'
 * Configuration::                Example configuration and customization variables
 * Recommended packages::         Related packages recommended for installation
-* Bug reports and contributions:: Instructions on how to create reproducible bugreports
+* Contributions::                Reproducible bug reports and pull requests
 * Acknowledgements::             Contributors and Sources of Inspiration
 
 @detailmenu
@@ -58,7 +58,7 @@ Special features
 
 Configuration
 
-* Example configuration::        Configuration proposal based on use-package
+* Use-package example::          Configuration example based on use-package
 * Custom variables::             Short description of all customization settings
 * Fine-tuning::                  Fine-grained configuration for special requirements
 
@@ -157,10 +157,10 @@ f Files
 m Bookmarks
 @item
 p Project (only available if @samp{consult-project-root-function} is
-configured as shown in the @ref{Example configuration, , example configuration})
+configured as shown in the @ref{Use-package example, , example configuration})
 @item
 v Views (only available if @samp{consult-view-*-function} is
-configured as shown in the @ref{Example configuration, , example configuration})
+configured as shown in the @ref{Use-package example, , example configuration})
 @end itemize
 @item
 @samp{consult-bookmark}: Select or create bookmark. You might consider the
@@ -206,7 +206,7 @@ recommended to use @samp{consult-register-load} or @samp{consult-register-store}
 built-in Emacs register commands.
 @item
 @samp{consult-register-preview}: Supplementary function which can be
-used as @samp{register-preview-function} for a consistent display. See the @ref{Example configuration, , example
+used as @samp{register-preview-function} for a consistent display. See the @ref{Use-package example, , example
 configuration} for how the @samp{consult-register-preview} function is meant to be
 used.
 @item
@@ -321,7 +321,7 @@ the first character is a punctuation character, like @samp{#}. For example
 the @emph{fast} Emacs filtering to further narrow down the list of matches.
 This is particularily useful if you are using an advanced completion
 style like orderless. @samp{consult-grep} supports preview. If
-@samp{consult-project-root-function} is @ref{Example configuration, , configured} and the function returns
+@samp{consult-project-root-function} is @ref{Use-package example, , configured} and the function returns
 non-nil, @samp{consult-grep} searches the current project directory.
 Otherwise the @samp{default-directory} is searched. If @samp{consult-grep} is
 invoked with prefix argument, you can specify the directory manually,
@@ -335,7 +335,7 @@ where the first part is passed to find, and the second part is used
 for Emacs filtering. Note that @samp{find} uses wildcards, e.g. enter
 @samp{*consult*}, to find all files containing the string "consult". In
 case you want to use another search utility like @samp{fd}, you can write
-wrapper command @samp{my-fdfind} as shown in the @ref{Example configuration, , example configuration}.
+wrapper command @samp{my-fdfind} as shown in the @ref{Use-package example, , example configuration}.
 @end itemize
 
 @node Compilation errors
@@ -467,7 +467,7 @@ ongoing.
 
 Previews are enabled by default but can be disabled via the
 @samp{consult-preview-key} variable. Furthermore it is possible to specify
-keybindings which trigger the preview manually as shown in the @ref{Example configuration, , example
+keybindings which trigger the preview manually as shown in the @ref{Use-package example, , example
 configuration}. The default setting of @samp{consult-preview-key} is @samp{any} which
 means that the preview will be triggered on any keypress when the selected
 candidate changes. Each command can be configured individually with its own
@@ -494,7 +494,7 @@ to achieve the same effect, see the configuration variables
 If @uref{https://github.com/justbur/emacs-which-key, which-key} is installed, the possible narrowing keys are shown in the
 which-key window after pressing the prefix key @samp{consult-narrow-key}.
 Furthermore there is the @samp{consult-narrow-help} command which can be bound to a
-key in the @samp{consult-narrow-map} if this is desired, as shown in the @ref{Example configuration, , example
+key in the @samp{consult-narrow-map} if this is desired, as shown in the @ref{Use-package example, , example
 configuration}.
 
 @node Asynchronous candidates
@@ -608,13 +608,13 @@ only depends on Emacs core components. The @samp{consult} package will work out 
 the box with the default completion, Icomplete and Selectrum.
 
 @menu
-* Example configuration::        Configuration proposal based on use-package
+* Use-package example::          Configuration example based on use-package
 * Custom variables::             Short description of all customization settings
 * Fine-tuning::                  Fine-grained configuration for special requirements
 @end menu
 
-@node Example configuration
-@section Example configuration
+@node Use-package example
+@section Use-package example
 
 @cindex configuration
 @cindex use-package
@@ -929,19 +929,23 @@ with alternative components, since there exist no hard dependencies.
 Furthermore it is possible to get started with only Selectrum and
 Consult and add more components later to the mix.
 
-@node Bug reports and contributions
-@chapter Bug reports and contributions
+@node Contributions
+@chapter Contributions
+
+Consult is intended to be a community effort, please participate in the
+discussions. Contributions are very welcome. If you have a proposal, please take a look
+first at the @uref{https://github.com/consult/issues, Consult issue tracker} and the @uref{https://github.com/minad/consult/issues/6, Consult wishlist}.
 
 If you find a bug or suspect that there is a problem with Consult, please check
-first that you have updated all the relevant packages, this includes Selectrum,
+first that you have updated all the relevant packages. This includes Selectrum,
 Icomplete-vertical, Embark, Orderless and Prescient in case you are using any of
 those packages.
 
 Please provide the necessary important information with your bug report, e.g.,
 the Emacs version, your operating system and the package manager you are using.
-Please try to reproduce the issue by starting Emacs with @samp{emacs -Q} on the
-command line and executing the following code in the scratch buffer. This way we
-can exclude side effects due to configuration settings.
+Please try to reproduce the issue by starting a barebone Emacs instance with
+@samp{emacs -Q} on the command line. Then execute the following code in the scratch
+buffer. This way we can exclude side effects due to configuration settings.
 
 @lisp
 (package-initialize)
@@ -950,10 +954,6 @@ can exclude side effects due to configuration settings.
 (selectrum-mode)
 (setq completion-styles '(substring partial-completion))
 @end lisp
-
-Consult is intended to be a community effort, please participate in the
-discussions. Contributions are very welcome. If you have a proposal, please take a look
-first at the @uref{https://github.com/consult/issues, Consult issue tracker} and the @uref{https://github.com/minad/consult/issues/6, Consult wishlist}.
 
 @node Acknowledgements
 @chapter Acknowledgements

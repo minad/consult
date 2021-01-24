@@ -640,8 +640,8 @@ KEY is the key function."
 
 (defun consult--lookup-location (_ candidates cand)
   "Lookup CAND in CANDIDATES list of 'consult-location category, return the marker."
-  (when-let (found (car (member cand candidates)))
-    (car (get-text-property 0 'consult-location found))))
+  (when-let (found (member cand candidates))
+    (car (get-text-property 0 'consult-location (car found)))))
 
 (defun consult--forbid-minibuffer ()
   "Raise an error if executed from the minibuffer."
@@ -2311,8 +2311,7 @@ register access functions. The command supports narrowing, see
         (funcall preview
                  ;; Preview markers
                  (when-let (reg (get-register cand))
-                   (when (markerp reg)
-                     reg))
+                   (and (markerp reg) reg))
                  restore)))
     :narrow
     (cons
@@ -2651,8 +2650,7 @@ starts a new Isearch session otherwise."
   "Return list of minor-mode candidate strings."
   (mapcar
    (pcase-lambda (`(,name . ,sym))
-     (list name
-           sym
+     (list name sym
            (concat
             (if (local-variable-if-set-p sym) "l" "g")
             (if (and (boundp sym) (symbol-value sym)) "i" "o"))))
