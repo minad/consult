@@ -984,6 +984,8 @@ Code contributions:
 @uref{https://github.com/aspiers/, Adam Spiers}
 @item
 @uref{https://github.com/omar-polo, Omar Polo}
+@item
+@uref{https://github.com/astoff, Augusto Stoffel}
 @end itemize
 
 Advice and useful discussions:

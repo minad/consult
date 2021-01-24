@@ -770,6 +770,7 @@ Code contributions:
 - [[https://github.com/inigoserna/][inigoserna]]
 - [[https://github.com/aspiers/][Adam Spiers]]
 - [[https://github.com/omar-polo][Omar Polo]]
+- [[https://github.com/astoff][Augusto Stoffel]]
 
 Advice and useful discussions:
 - [[https://github.com/clemera/][Clemens Radermacher]]
