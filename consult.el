@@ -2651,7 +2651,6 @@ starts a new Isearch session otherwise."
                   (?r . "Regexp")
                   (?s . "Symbol")
                   (?w . "Word"))))
-    (unless isearch-mode (isearch-mode t))
     (with-isearch-suspended
      (setq isearch-new-string
            (consult--read
