@@ -1144,19 +1144,18 @@ the comma is passed to ASYNC, the second part is used for filtering."
 
 ASYNC is the async function which receives the candidates.
 CMD is the command argument list."
-  (let* ((rest) (proc) (flush) (last-args) (indicator))
+  (let* ((proc) (last-args) (indicator))
     (lambda (action)
       (pcase action
-        (""
-         ;; If no input is provided kill current process
+        ("" ;; If no input is provided kill current process
          (ignore-errors (delete-process proc))
-         (setq last-args nil
-               rest nil))
+         (setq last-args nil))
         ((pred stringp)
-         (let ((args (funcall cmd action)))
+         (let ((args (funcall cmd action))
+               (flush t)
+               (rest ""))
            (unless (equal args last-args)
-             (setq last-args args
-                   rest nil)
+             (setq last-args args)
              (ignore-errors (delete-process proc))
              (when args
                (overlay-put indicator 'display (propertize "*" 'face 'consult-async-running))
@@ -1164,8 +1163,6 @@ CMD is the command argument list."
                  (goto-char (point-max))
                  (insert (format "consult--async-process: %S\n" args)))
                (setq
-                rest ""
-                flush t
                 proc
                 (make-process
                  :name (car args)
