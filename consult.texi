@@ -952,10 +952,18 @@ Please try to reproduce the issue by starting a barebone Emacs instance with
 buffer. This way we can exclude side effects due to configuration settings.
 
 @lisp
+;; Minimal setup using Selectrum
 (package-initialize)
 (require 'consult)
 (require 'selectrum)
 (selectrum-mode)
+(setq completion-styles '(substring partial-completion))
+@end lisp
+
+@lisp
+;; Minimal setup using the default completion system
+(package-initialize)
+(require 'consult)
 (setq completion-styles '(substring partial-completion))
 @end lisp
 
