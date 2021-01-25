@@ -2276,7 +2276,9 @@ This function can be used as `register-preview-function'."
        ;; Special printing for certain register types
        (cond
         ;; Display full string
-        ((stringp val)
+        ((or (stringp val) (stringp (car-safe val)))
+         (when (consp val)
+           (setq val (mapconcat #'identity val "\n")))
          (if multiline
              (mapconcat #'identity
                         (seq-take (split-string (string-trim val) "\n") 3)
