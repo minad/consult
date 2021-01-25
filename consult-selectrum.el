@@ -72,10 +72,15 @@ See `consult--read' for the CANDIDATES and DEFAULT-TOP arguments."
 
 (defun consult-selectrum--async-split-setup ()
   "Advice for `consult--async-split-setup' to be used by Selectrum."
-  (setq-local selectrum-refine-candidates-function
-              (consult-selectrum--async-split-wrap selectrum-refine-candidates-function))
-  (setq-local selectrum-highlight-candidates-function
-              (consult-selectrum--async-split-wrap selectrum-highlight-candidates-function)))
+  ;; Only overwrite the Selectrum refine/highlight functions if Selectrum does not use the completion-style
+  (unless (eq selectrum-refine-candidates-function
+              'selectrum-refine-candidates-using-completions-styles)
+    (setq-local selectrum-refine-candidates-function
+                (consult-selectrum--async-split-wrap selectrum-refine-candidates-function)))
+  (unless (eq selectrum-highlight-candidates-function
+              'selectrum-candidates-identity)
+    (setq-local selectrum-highlight-candidates-function
+                (consult-selectrum--async-split-wrap selectrum-highlight-candidates-function))))
 
 (add-hook 'consult--completion-filter-hook #'consult-selectrum--filter)
 (add-hook 'consult--completion-candidate-hook #'consult-selectrum--candidate)
