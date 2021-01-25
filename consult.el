@@ -340,6 +340,10 @@ the public API."
   '((t :inherit font-lock-negation-char-face))
   "Face used to highlight punctuation character.")
 
+(defface consult-async-short
+  '((t :inherit font-lock-comment-face))
+  "Face used to highlight async string if it is too short.")
+
 (defface consult-help
   '((t :inherit font-lock-comment-face))
   "Face used to highlight help, e.g., in `consult-register-store'.")
@@ -1121,14 +1125,25 @@ the comma is passed to ASYNC, the second part is used for filtering."
               (async-str (car pair))
               (async-len (length async-str))
               (end (minibuffer-prompt-end)))
-         ;; Highlight punctuation characters
          (remove-list-of-text-properties end (+ end input-len) '(face))
-         (when (> input-len async-len)
+         (cond
+          ;; There are punctuation characters
+          ((> input-len async-len)
+           ;; Highlight first punctuation character
            (put-text-property end (1+ end) 'face 'consult-async-split)
-           (when (> input-len (1+ async-len))
+           (cond
+            ((> input-len (1+ async-len))
+             ;; Highlight second punctuation character
              (put-text-property (+ 1 end async-len)
                                 (+ 2 end async-len)
-                                'face 'consult-async-split)))
+                                'face 'consult-async-split))
+            ((< async-len consult-async-min-input)
+             ;; Highlight too short async string
+             (put-text-property (1+ end) (+ 1 end async-len) 'face 'consult-async-short))))
+          ;; There are no punctuation characters
+          ((< async-len consult-async-min-input)
+           ;; Highlight too short async string
+           (put-text-property end (+ end async-len) 'face 'consult-async-short)))
          (funcall async
                   ;; Pass through if forced by two punctuation characters
                   ;; or if the input is long enough!
