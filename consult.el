@@ -1140,8 +1140,10 @@ The DEBOUNCE delay defaults to `consult-async-input-debounce'."
          (when debounce-timer
            (cancel-timer debounce-timer))
          (unless (string= action input)
-           (funcall async (setq input "")) ;; cancel running process
-           (unless (string= action "")
+           (setq input "")
+           (if (string= action "")
+               (funcall async 'flush)
+             (funcall async input) ;; cancel running process
              (setq debounce-timer (run-at-time
                                    (+ debounce (if unlocked 0 throttle)) nil
                                    (lambda () (funcall async (setq unlocked nil input action))))))))
