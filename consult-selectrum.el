@@ -57,7 +57,7 @@
   "Refresh selectrum view."
   (and selectrum-active-p (selectrum-exhibit 'keep-selected)))
 
-(cl-defun consult-selectrum--setup (_prompt candidates &key default-top &allow-other-keys)
+(cl-defun consult-selectrum--read-setup-adv (_prompt candidates &key default-top &allow-other-keys)
   "Advice for `consult--read-setup' for Selectrum specific setup.
 
 See `consult--read' for the CANDIDATES and DEFAULT-TOP arguments."
@@ -70,18 +70,22 @@ See `consult--read' for the CANDIDATES and DEFAULT-TOP arguments."
   (lambda (str cands)
     (funcall orig (substring str (cdr (consult--async-split-string str))) cands)))
 
-(defun consult-selectrum--async-split-setup ()
-  "Advice for `consult--async-split-setup' to be used by Selectrum."
-  (setq-local selectrum-refine-candidates-function
-              (consult-selectrum--async-split-wrap selectrum-refine-candidates-function))
-  (setq-local selectrum-highlight-candidates-function
-              (consult-selectrum--async-split-wrap selectrum-highlight-candidates-function)))
+(defun consult-selectrum--async-split-setup-adv (fun)
+  "Advice for `consult--async-split-setup' to be used by Selectrum.
+
+FUN is the original function."
+  (if (not selectrum-active-p)
+      (funcall fun)
+    (setq-local selectrum-refine-candidates-function
+		(consult-selectrum--async-split-wrap selectrum-refine-candidates-function))
+    (setq-local selectrum-highlight-candidates-function
+		(consult-selectrum--async-split-wrap selectrum-highlight-candidates-function))))
 
 (add-hook 'consult--completion-filter-hook #'consult-selectrum--filter)
 (add-hook 'consult--completion-candidate-hook #'consult-selectrum--candidate)
 (add-hook 'consult--completion-refresh-hook #'consult-selectrum--refresh)
-(advice-add #'consult--read-setup :before #'consult-selectrum--setup)
-(advice-add #'consult--async-split-setup :before #'consult-selectrum--async-split-setup)
+(advice-add #'consult--read-setup :before #'consult-selectrum--read-setup-adv)
+(advice-add #'consult--async-split-setup :around #'consult-selectrum--async-split-setup-adv)
 
 (provide 'consult-selectrum)
 ;;; consult-selectrum.el ends here
