@@ -1144,38 +1144,28 @@ the comma is passed to ASYNC, the second part is used for filtering."
 
 ASYNC is the async function which receives the candidates.
 CMD is the command argument list."
-  (let* ((proc) (last-args) (indicator))
+  (let* ((rest) (proc) (flush) (last-args) (indicator))
     (lambda (action)
       (pcase action
-        ('setup
-         (setq indicator (make-overlay (- (minibuffer-prompt-end) 2)
-                                       (- (minibuffer-prompt-end) 1)))
-         (funcall async 'setup))
-        ('destroy
+        (""
+         ;; If no input is provided kill current process
          (ignore-errors (delete-process proc))
-         (delete-overlay indicator)
-         (funcall async 'destroy))
-        ('flush ;; Kill current process and reset overlay
-         (ignore-errors (delete-process proc))
-         (setq last-args nil)
-         (overlay-put indicator 'display nil)
-         (funcall async 'flush))
-        ("" ;; If no input is provided kill current process
-         (ignore-errors (delete-process proc))
-         (setq last-args nil))
+         (setq last-args nil
+               rest nil))
         ((pred stringp)
-         (let ((args (funcall cmd action))
-               (flush t)
-               (rest ""))
+         (let ((args (funcall cmd action)))
            (unless (equal args last-args)
+             (setq last-args args
+                   rest nil)
              (ignore-errors (delete-process proc))
-             (setq last-args args)
              (when args
                (overlay-put indicator 'display (propertize "*" 'face 'consult-async-running))
                (with-current-buffer (get-buffer-create consult--async-stderr)
                  (goto-char (point-max))
                  (insert (format "consult--async-process: %S\n" args)))
                (setq
+                rest ""
+                flush t
                 proc
                 (make-process
                  :name (car args)
@@ -1212,6 +1202,14 @@ CMD is the command argument list."
                    (when (string-prefix-p "finished" event)
                      (unless (string= rest "")
                        (funcall async (list rest)))))))))))
+        ('destroy
+         (ignore-errors (delete-process proc))
+         (delete-overlay indicator)
+         (funcall async 'destroy))
+        ('setup
+         (setq indicator (make-overlay (- (minibuffer-prompt-end) 2)
+                                       (- (minibuffer-prompt-end) 1)))
+         (funcall async 'setup))
         (_ (funcall async action))))))
 
 (defun consult--async-throttle (async &optional throttle debounce)
@@ -1221,7 +1219,7 @@ The THROTTLE delay defaults to `consult-async-input-throttle'.
 The DEBOUNCE delay defaults to `consult-async-input-debounce'."
   (let* ((throttle (or throttle consult-async-input-throttle))
          (debounce (or debounce consult-async-input-debounce))
-         (input)
+         (input "")
          (unlocked t)
          (throttle-timer)
          (debounce-timer))
@@ -1234,8 +1232,7 @@ The DEBOUNCE delay defaults to `consult-async-input-debounce'."
          (when debounce-timer
            (cancel-timer debounce-timer))
          (unless (string= action input)
-           (setq input nil)
-           (funcall async (if (string= action "") 'flush "")) ;; cancel running process
+           (funcall async (setq input "")) ;; cancel running process
            (unless (string= action "")
              (setq debounce-timer (run-at-time
                                    (+ debounce (if unlocked 0 throttle)) nil
