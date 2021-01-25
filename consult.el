@@ -2262,39 +2262,46 @@ Otherwise replace the just-yanked text with the selected text."
   "Enhanced preview of register REG.
 
 This function can be used as `register-preview-function'."
-  (concat (truncate-string-to-width (consult--register-format reg) 100 0 nil "…") "\n"))
+  (apply #'concat
+         (mapcar (lambda (s) (concat (truncate-string-to-width s 100 0 nil "…") "\n"))
+                 (split-string (consult--register-format reg t) "\n"))))
 
-(defun consult--register-format (reg)
-  "Format register REG for preview."
+(defun consult--register-format (reg multiline)
+  "Format register REG for preview with optional MULTILINE formatting."
   (pcase-let ((`(,key . ,val) reg))
-    (concat
-     (propertize (single-key-description key) 'face 'consult-key)
-     " "
-     ;; Special printing for certain register types
-     (cond
-      ;; Display full string
-      ((stringp val)
-       (string-trim
-        (replace-regexp-in-string
-         "[ \t\n]+" " "
-         val)))
-      ;; Display 'file-query
-      ((eq (car-safe val) 'file-query)
-       (format "%s at position %d"
-               (propertize (abbreviate-file-name (cadr val)) 'face 'consult-file)
-               (caddr val)))
-      ;; Display full line of buffer
-      ((and (markerp val) (buffer-live-p (marker-buffer val)))
-       (with-current-buffer (marker-buffer val)
-         (save-restriction
-           (save-excursion
-             (widen)
-             (goto-char val)
-             (concat
-              (consult--format-location (buffer-name) (line-number-at-pos))
-              (consult--line-with-cursor val))))))
-      ;; Default printing for the other types
-      (t (register-describe-oneline key))))))
+    (let* ((key-str (single-key-description key))
+           (fmt (format "%%-%ds " (max 3 (length key-str)))))
+      (concat
+       (format fmt (propertize key-str 'face 'consult-key))
+       ;; Special printing for certain register types
+       (cond
+        ;; Display full string
+        ((stringp val)
+         (if multiline
+             (mapconcat #'identity
+                        (seq-take (split-string (string-trim val) "\n") 3)
+                        (format fmt "\n"))
+           (string-trim
+            (replace-regexp-in-string
+             "[ \t\n]+" " "
+             val))))
+        ;; Display 'file-query
+        ((eq (car-safe val) 'file-query)
+         (format "%s at position %d"
+                 (propertize (abbreviate-file-name (cadr val)) 'face 'consult-file)
+                 (caddr val)))
+        ;; Display full line of buffer
+        ((and (markerp val) (buffer-live-p (marker-buffer val)))
+         (with-current-buffer (marker-buffer val)
+           (save-restriction
+             (save-excursion
+               (widen)
+               (goto-char val)
+               (concat
+                (consult--format-location (buffer-name) (line-number-at-pos))
+                (consult--line-with-cursor val))))))
+        ;; Default printing for the other types
+        (t (register-describe-oneline key)))))))
 
 (defun consult--register-alist ()
   "Return register list or raise an error if the list is empty."
@@ -2316,7 +2323,7 @@ register access functions. The command supports narrowing, see
   (consult-register-load
    (consult--read
     "Register: "
-    (mapcar (lambda (reg) (cons (consult--register-format reg) (car reg)))
+    (mapcar (lambda (reg) (cons (consult--register-format reg nil) (car reg)))
             (consult--register-alist))
     :category 'register
     :preview
