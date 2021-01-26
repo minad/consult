@@ -2264,10 +2264,10 @@ Otherwise replace the just-yanked text with the selected text."
 This function can be used as `register-preview-function'."
   (apply #'concat
          (mapcar (lambda (s) (concat (truncate-string-to-width s 100 0 nil "…") "\n"))
-                 (split-string (consult--register-format reg t) "\n"))))
+                 (split-string (consult--register-format reg) "\n"))))
 
-(defun consult--register-format (reg multiline)
-  "Format register REG for preview with optional MULTILINE formatting."
+(defun consult--register-format (reg)
+  "Format register REG for preview."
   (pcase-let ((`(,key . ,val) reg))
     (let* ((key-str (single-key-description key))
            (fmt (format "%%-%ds " (max 3 (length key-str)))))
@@ -2279,14 +2279,9 @@ This function can be used as `register-preview-function'."
         ((or (stringp val) (stringp (car-safe val)))
          (when (consp val)
            (setq val (mapconcat #'identity val "\n")))
-         (if multiline
-             (mapconcat #'identity
-                        (seq-take (split-string (string-trim val) "\n") 3)
-                        (format fmt "\n"))
-           (string-trim
-            (replace-regexp-in-string
-             "[ \t\n]+" " "
-             val))))
+         (mapconcat #'identity
+                    (seq-take (split-string (string-trim val) "\n") 3)
+                    (format fmt "\n")))
         ;; Display 'file-query
         ((eq (car-safe val) 'file-query)
          (format "%s at position %d"
@@ -2325,8 +2320,8 @@ register access functions. The command supports narrowing, see
   (consult-register-load
    (consult--read
     "Register: "
-    (mapcar (lambda (reg) (cons (consult--register-format reg nil) (car reg)))
-            (consult--register-alist))
+    (mapcar (lambda (reg) (cons (consult--register-format reg) (car reg)))
+            (sort (consult--register-alist) #'car-less-than-car))
     :category 'register
     :preview
     (let ((preview (consult--preview-position)))
