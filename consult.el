@@ -341,7 +341,7 @@ the public API."
   "Face used to highlight punctuation character.")
 
 (defface consult-help
-  '((t :inherit font-lock-comment-face))
+  '((t :inherit shadow))
   "Face used to highlight help, e.g., in `consult-register-store'.")
 
 (defface consult-key
@@ -999,11 +999,12 @@ to make it available for commands with narrowing."
   (let ((minibuffer-message-timeout 1000000))
     (minibuffer-message
      (string-join
-      (thread-last consult--narrow-prefixes
-        (seq-filter (lambda (x) (/= (car x) 32)))
-        (mapcar (lambda (x) (concat
-                             (propertize (char-to-string (car x)) 'face 'consult-key)
-                             " " (cdr x)))))
+      (mapcar (lambda (x) (concat
+                           (propertize (char-to-string (car x)) 'face 'consult-key)
+                           " "
+                           (propertize (cdr x) 'face 'consult-help)))
+              (seq-filter (lambda (x) (/= (car x) 32))
+                          consult--narrow-prefixes))
       " "))))
 
 (defun consult--narrow-setup (settings map)
