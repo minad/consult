@@ -558,7 +558,7 @@ indicator showing the process status:
 @samp{;} with error face, interrupted, for example if more input is provided.
 @end itemize
 
-There is an ephemeral error log buffer @samp{_*consult-async-stderr*} (note the leading space!),
+There is an ephemeral error log buffer @samp{_*consult-async-log*} (note the leading space!),
 you can access the buffer using @samp{consult-buffer} and @samp{switch-to-buffer} by first pressing @samp{SPC}
 and then selecting the buffer.
 

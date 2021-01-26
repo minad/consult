@@ -445,9 +445,9 @@ Size of private unicode plane b.")
 (defvar consult--gc-percentage 0.5
   "Large gc percentage for temporary increase.")
 
-(defvar consult--async-stderr
-  " *consult-async-stderr*"
-  "Buffer for stderr output used by `consult--async-process'.")
+(defvar consult--async-log
+  " *consult-async-log*"
+  "Buffer for async logging output used by `consult--async-process'.")
 
 (defvar-local consult--imenu-cache nil
   "Buffer local cached imenu.")
@@ -1149,6 +1149,12 @@ the comma is passed to ASYNC, the second part is used for filtering."
                     ""))))
       (_ (funcall async action)))))
 
+(defun consult--async-log (formatted &rest args)
+  "Log FORMATTED ARGS to `consult--async-log'."
+  (with-current-buffer (get-buffer-create consult--async-log)
+    (goto-char (point-max))
+    (insert (apply #'format formatted args))))
+
 (defun consult--async-process (async cmd)
   "Create process source async function.
 
@@ -1169,14 +1175,12 @@ CMD is the command argument list."
              (ignore-errors (delete-process proc))
              (when args
                (overlay-put indicator 'display (propertize "*" 'face 'consult-async-running))
-               (with-current-buffer (get-buffer-create consult--async-stderr)
-                 (goto-char (point-max))
-                 (insert (format "consult--async-process: %S\n" args)))
+               (consult--async-log "consult--async-process started %S\n" args)
                (setq
                 proc
                 (make-process
                  :name (car args)
-                 :stderr consult--async-stderr
+                 :stderr consult--async-log
                  :noquery t
                  :command args
                  :filter
@@ -1185,17 +1189,14 @@ CMD is the command argument list."
                      (setq flush nil)
                      (funcall async 'flush))
                    (let ((lines (split-string out "\n")))
-                     (if (cdr lines)
-                         (progn
-                           (setcar lines (concat rest (car lines)))
-                           (setq rest (car (last lines)))
-                           (funcall async (nbutlast lines)))
-                       (setq rest (concat rest (car lines))))))
+                     (if (not (cdr lines))
+                         (setq rest (concat rest (car lines)))
+                       (setcar lines (concat rest (car lines)))
+                       (setq rest (car (last lines)))
+                       (funcall async (nbutlast lines)))))
                  :sentinel
                  (lambda (_ event)
-                   (with-current-buffer (get-buffer-create consult--async-stderr)
-                     (goto-char (point-max))
-                     (insert (format "consult--async-process sentinel: %s\n" event)))
+                   (consult--async-log "consult--async-process sentinel: %s\n" event)
                    (when flush
                      (setq flush nil)
                      (funcall async 'flush))
@@ -1206,9 +1207,8 @@ CMD is the command argument list."
                                  ((string-prefix-p "finished" event)
                                   (propertize ":" 'face 'consult-async-finished))
                                  (t (propertize "!" 'face 'consult-async-failed))))
-                   (when (string-prefix-p "finished" event)
-                     (unless (string= rest "")
-                       (funcall async (list rest)))))))))))
+                   (when (and (string-prefix-p "finished" event) (not (string= rest "")))
+                     (funcall async (list rest))))))))))
         ('destroy
          (ignore-errors (delete-process proc))
          (delete-overlay indicator)

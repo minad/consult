@@ -439,7 +439,7 @@ variables and functions with their descriptions.
  - =!= with error face, failure, process exited with a nonzero error code.
  - =;= with error face, interrupted, for example if more input is provided.
 
- There is an ephemeral error log buffer =_*consult-async-stderr*= (note the leading space!),
+ There is an ephemeral error log buffer =_*consult-async-log*= (note the leading space!),
  you can access the buffer using =consult-buffer= and =switch-to-buffer= by first pressing =SPC=
  and then selecting the buffer.
 
