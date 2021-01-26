@@ -675,12 +675,13 @@ the box with the default completion, Icomplete and Selectrum.
     (let ((consult-find-command "fd --color=never --full-path ARG OPTS"))
       (consult-find dir initial)))
 
-  ;; Optionally configure the register preview function. This gives a
-  ;; consistent display for both `consult-register', `consult-register-load',
+  ;; Optionally configure the register formatting. This improves the register
+  ;; preview for `consult-register', `consult-register-load',
   ;; `consult-register-store' and the Emacs built-ins.
   (setq register-preview-delay 0
         register-preview-function #'consult-register-format)
-  ;; Optionally tweak the register preview window (Stripes, Sorting, Hide mode line, ...)
+  ;; Optionally tweak the register preview window.
+  ;; This adds stripes, sorting and hides the mode line of the window.
   (advice-add #'register-preview :override #'consult-register-window)
 
   ;; Configure other variables and modes in the :config section, after lazily loading the package
