@@ -2200,7 +2200,7 @@ If no MODES are specified, use currently active major and minor modes."
    (consult--remove-dups kill-ring)
    :history t ;; disable history
    :sort nil
-   :category 'kill-ring
+   :category 'consult-yank
    :require-match t
    :preview
    ;; If previous command is yank, hide previously yanked text
@@ -2358,7 +2358,7 @@ register access functions. The command supports narrowing, see
     "Register: "
     (mapcar (lambda (reg) (cons (consult--register-format reg) (car reg)))
             (sort (consult--register-alist) #'car-less-than-car))
-    :category 'register
+    :category 'consult-register
     :preview
     (let ((preview (consult--preview-position)))
       (lambda (cand restore)
@@ -2970,7 +2970,7 @@ Macros containing mouse clicks are omitted."
                    "Keyboard macro: "
                    (or (consult--kmacro-candidates)
                        (user-error "No keyboard macros defined"))
-                   :category 'kmacro
+                   :category 'consult-kmacro
                    :require-match t
                    :sort nil
                    :history 'consult--kmacro-history
