@@ -134,16 +134,19 @@ variables and functions with their descriptions.
  #+findex: consult-register
  #+findex: consult-register-load
  #+findex: consult-register-store
- #+findex: consult-register-preview
+ #+findex: consult-register-format
+ #+findex: consult-register-window
  - =consult-register=: Select from list of registers. The command
    supports narrowing to register types and preview of marker positions. This
    command is useful to search the register contents. For quick access it is
    recommended to use =consult-register-load= or =consult-register-store= or the
    built-in Emacs register commands.
- - =consult-register-preview=: Supplementary function which can be
-   used as =register-preview-function= for a consistent display. See the [[#use-package-example][example
-   configuration]] for how the =consult-register-preview= function is meant to be
-   used.
+ - =consult-register-format=: Supplementary register formatting function which can be
+   used as =register-preview-function= for an enhanced register formatting. See
+   the [[#use-package-example][example configuration]].
+ - =consult-register-window=: Supplementary function which can be used
+   as replacement for =register-preview= for a better register window. See the
+   [[#use-package-example][example configuration]].
  - =consult-register-load=: Utility command to quickly load a register.
    The command either jumps to the register value or inserts it.
  - =consult-register-store=: Improved UI to store registers depending on the current
@@ -557,20 +560,9 @@ the box with the default completion, Icomplete and Selectrum.
    ;; consistent display for both `consult-register', `consult-register-load',
    ;; `consult-register-store' and the Emacs built-ins.
    (setq register-preview-delay 0
-         register-preview-function #'consult-register-preview)
-   ;; Optionally tweak the register preview window.
-   ;; * Sort the registers
-   ;; * Hide the mode line
-   ;; * Resize the window, such that the contents fit exactly
-   (advice-add #'register-preview :around
-               (lambda (fun buffer &optional show-empty)
-                 (let ((register-alist (seq-sort #'car-less-than-car register-alist)))
-                   (funcall fun buffer show-empty))
-                 (when-let (win (get-buffer-window buffer))
-                   (with-selected-window win
-                     (setq-local mode-line-format nil)
-                     (setq-local window-min-height 1)
-                     (fit-window-to-buffer)))))
+         register-preview-function #'consult-register-format)
+   ;; Optionally tweak the register preview window (Stripes, Sorting, Hide mode line, ...)
+   (advice-add #'register-preview :override #'consult-register-window)
 
    ;; Configure other variables and modes in the :config section, after lazily loading the package
    :config

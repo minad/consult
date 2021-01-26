@@ -376,6 +376,15 @@ the public API."
   '((t :inherit line-number))
   "Face used to highlight line numbers in selections.")
 
+;; face definition taken from Embark
+(defface consult-zebra
+  '((default :extend t)
+    (((class color) (min-colors 88) (background light))
+     :background "#efefef")
+    (((class color) (min-colors 88) (background dark))
+     :background "#242424"))
+  "Face to highlight alternating rows in `consult-register-window'.")
+
 ;;;; History variables
 
 (defvar consult--keep-lines-history nil)
@@ -1290,7 +1299,7 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
 
 (defun consult--command-args (cmd)
   "Split command arguments and append to CMD."
-  ;; TODO remove this after a while
+  ;; TODO obsolete, remove this after a while
   (unless (stringp cmd)
     (user-error "Consult: Deprecated command configuration for %S. Use a string instead" (car cmd)))
   (setq cmd (split-string-and-unquote cmd))
@@ -2259,13 +2268,39 @@ Otherwise replace the just-yanked text with the selected text."
 ;;;;; Command: consult-register
 
 ;;;###autoload
-(defun consult-register-preview (reg)
+(defun consult-register-window (buffer &optional show-empty)
+  "Enhanced drop-in replacement for `register-preview'.
+
+BUFFER is the window buffer.
+SHOW-EMPTY must be t if the window should be shown for an empty register list."
+  (let ((regs (seq-filter #'cdr register-alist)))
+    (when (or show-empty regs)
+      (with-current-buffer-window buffer
+          (cons 'display-buffer-below-selected
+                '((window-height . fit-window-to-buffer)
+	          (preserve-size . (nil . t))))
+          nil
+        (setq-local cursor-in-non-selected-windows nil)
+        (setq-local mode-line-format nil)
+        (setq-local window-min-height 1)
+        (seq-do-indexed
+         (lambda (reg idx)
+           (let ((beg (point)))
+             (insert (funcall register-preview-function reg))
+             (when (/= 0 (% idx 2))
+               (consult--overlay beg (point) 'face 'consult-zebra))))
+         (seq-sort #'car-less-than-car regs))))))
+
+;;;###autoload
+(defun consult-register-format (reg)
   "Enhanced preview of register REG.
 
 This function can be used as `register-preview-function'."
   (apply #'concat
          (mapcar (lambda (s) (concat (truncate-string-to-width s 100 0 nil "…") "\n"))
                  (split-string (consult--register-format reg) "\n"))))
+
+(define-obsolete-function-alias 'consult-register-preview 'consult-register-format "0.3")
 
 (defun consult--register-format (reg)
   "Format register REG for preview."
