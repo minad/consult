@@ -1160,7 +1160,7 @@ the comma is passed to ASYNC, the second part is used for filtering."
 
 ASYNC is the async function which receives the candidates.
 CMD is the command argument list."
-  (let* ((proc) (last-args) (indicator))
+  (let ((proc) (last-args) (indicator))
     (lambda (action)
       (pcase action
         ("" ;; If no input is provided kill current process
