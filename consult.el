@@ -1183,6 +1183,7 @@ CMD is the command argument list."
                (setq
                 proc
                 (make-process
+                 :connection-type 'pipe
                  :name (car args)
                  :stderr consult--async-log
                  :noquery t
