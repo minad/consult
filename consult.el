@@ -2418,13 +2418,12 @@ This function is derived from `register-read-with-preview'."
                   (let ((inhibit-read-only t))
                     (goto-char (point-max))
                     (insert
-                     (concat
-                      (propertize (concat prefix ":  ") 'face 'consult-help)
-                      (mapconcat
-                       (lambda (x)
-                         (concat (propertize (format "M-%c" (car x)) 'face 'consult-key)
-                                 " " (propertize (cadr x) 'face 'consult-help)))
-                       action-list "  ")))
+                     (propertize (concat prefix ":  ") 'face 'consult-help)
+                     (mapconcat
+                      (lambda (x)
+                        (concat (propertize (format "M-%c" (car x)) 'face 'consult-key)
+                                " " (propertize (cadr x) 'face 'consult-help)))
+                      action-list "  "))
                     (fit-window-to-buffer)))))))
 	 (timer (when (numberp register-preview-delay)
 	          (run-with-timer register-preview-delay nil preview)))
