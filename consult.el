@@ -1367,8 +1367,13 @@ Note that `consult-narrow-key' and `consult-widen-key' are bound dynamically.")
                                    minibuffer-completion-table
                                    minibuffer-completion-predicate))))))
 
-(defun consult--setup-keymap (async narrow preview-key)
-  "Setup keymap for ASYNC, NARROW and PREVIEW-KEY."
+(defun consult--setup-keymap (keymap async narrow preview-key)
+  "Setup minibuffer keymap.
+
+KEYMAP is a command-specific KEYMAP.
+ASYNC must be t for async.
+NARROW are the narrow settings.
+PREVIEW-KEY is the preview key."
   (let ((old-map (current-local-map))
         (map (make-sparse-keymap)))
 
@@ -1394,9 +1399,10 @@ Note that `consult-narrow-key' and `consult-widen-key' are bound dynamically.")
     (use-local-map
      (make-composed-keymap
       (append
-       (when async (list consult-async-map))
-       (when narrow (list consult-narrow-map))
-       (when preview-key (list consult-preview-map))
+       (and keymap (list keymap))
+       (and async (list consult-async-map))
+       (and narrow (list consult-narrow-map))
+       (and preview-key (list consult-preview-map))
        map)
       old-map))))
 
@@ -1414,12 +1420,12 @@ Note that `consult-narrow-key' and `consult-widen-key' are bound dynamically.")
       (put-text-property min pos 'invisible t))))
 
 (cl-defun consult--read-setup (_prompt candidates
-                                       &key add-history narrow preview-key &allow-other-keys)
+                                       &key keymap add-history narrow preview-key &allow-other-keys)
   "Minibuffer setup for `consult--read'.
 
-See `consult--read' for the CANDIDATES, ADD-HISTORY, NARROW and PREVIEW-KEY arguments."
+See `consult--read' for the CANDIDATES, KEYMAP, ADD-HISTORY, NARROW and PREVIEW-KEY arguments."
   (add-hook 'after-change-functions #'consult--fry-the-tofus nil t)
-  (consult--setup-keymap (functionp candidates) narrow preview-key)
+  (consult--setup-keymap keymap (functionp candidates) narrow preview-key)
   (consult--add-history add-history))
 
 (defmacro consult--read-defaults (&rest default)
@@ -1432,7 +1438,7 @@ See `consult--read' for the CANDIDATES, ADD-HISTORY, NARROW and PREVIEW-KEY argu
     default)))
 
 (cl-defun consult--read (prompt candidates &rest options &key
-                                predicate require-match history default
+                                predicate require-match history default keymap
                                 category initial narrow add-history annotate
                                 preview preview-key sort default-top lookup)
   "Enhanced completing read function.
@@ -1457,7 +1463,8 @@ INITIAL is initial input.
 DEFAULT-TOP must be nil if the default candidate should not be moved to the top.
 PREVIEW is a preview function.
 PREVIEW-KEY are the preview keys (nil, 'any, a single key or a list of keys).
-NARROW is an alist of narrowing prefix strings and description."
+NARROW is an alist of narrowing prefix strings and description.
+KEYMAP is a command-specific keymap."
   ;; supported types
   (cl-assert (or (functionp candidates)     ;; async table
                  (not candidates)           ;; nil, empty list
@@ -1465,7 +1472,7 @@ NARROW is an alist of narrowing prefix strings and description."
                  (stringp (car candidates)) ;; string list
                  (symbolp (car candidates)) ;; symbol list
                  (consp (car candidates)))) ;; alist
-  (ignore default-top narrow add-history)
+  (ignore default-top narrow add-history keymap)
   (consult--read-defaults
    (preview-key consult-preview-key)
    (sort t)
@@ -1509,7 +1516,7 @@ NARROW is an alist of narrowing prefix strings and description."
 ;;;; Internal API: consult--prompt
 
 (cl-defun consult--prompt (prompt &key history add-history initial default
-                                  preview (preview-key consult-preview-key)
+                                  keymap preview (preview-key consult-preview-key)
                                   (transform (lambda (_ x) x)))
   "Read from minibuffer.
 
@@ -1520,10 +1527,11 @@ INITIAL is initial input.
 DEFAULT is the default selected value.
 ADD-HISTORY is a list of items to add to the history.
 PREVIEW is a preview function.
-PREVIEW-KEY are the preview keys (nil, 'any, a single key or a list of keys)."
+PREVIEW-KEY are the preview keys (nil, 'any, a single key or a list of keys).
+KEYMAP is a command-specific keymap."
   (minibuffer-with-setup-hook
       (:append (lambda ()
-                 (consult--setup-keymap nil nil preview-key)
+                 (consult--setup-keymap keymap nil nil preview-key)
                  (consult--add-history add-history)))
     (consult--with-preview preview-key preview transform #'minibuffer-contents-no-properties
       (read-from-minibuffer prompt initial nil nil history default))))
