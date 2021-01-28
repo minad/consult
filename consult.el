@@ -3093,15 +3093,17 @@ Prepend PREFIX in front of all items."
     (setq consult--imenu-cache (cons (buffer-modified-tick) (consult--imenu-compute))))
   (cdr consult--imenu-cache))
 
-(defun consult--project-imenu-items ()
-  "Return imenu items from every buffer with the same `major-mode'."
+(defun consult--imenu-all-items (buffers)
+  "Return all imenu items from each BUFFERS."
+  (seq-mapcat (lambda (buf) (with-current-buffer buf (consult--imenu-items))) buffers))
+
+(defun consult--imenu-project-buffers ()
+  "Return project buffers with the same `major-mode' as the current buffer."
   (let ((proj-root (and consult-project-root-function (funcall consult-project-root-function))))
-    (seq-mapcat (lambda (buf)
+    (seq-filter (lambda (buf)
                   (when-let (file (buffer-file-name buf))
-                    (when (and (eq (buffer-local-value 'major-mode buf) major-mode)
-                               (or (not proj-root) (string-prefix-p proj-root file)))
-                      (with-current-buffer buf
-                        (consult--imenu-items)))))
+                    (and (eq (buffer-local-value 'major-mode buf) major-mode)
+                         (or (not proj-root) (string-prefix-p proj-root file)))))
                 (buffer-list))))
 
 (defun consult--imenu-jump (item)
@@ -3165,7 +3167,7 @@ In order to determine the buffers belonging to the same project, the
 same major mode as the current buffer are used. See also
 `consult-imenu' for more details."
   (interactive)
-  (consult--imenu (consult--project-imenu-items)))
+  (consult--imenu (consult--imenu-all-items (consult--imenu-project-buffers))))
 
 (defun consult--grep-matches (lines)
   "Find grep match for REGEXP in LINES."
