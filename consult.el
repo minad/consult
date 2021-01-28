@@ -661,6 +661,11 @@ KEY is the key function."
   (when (minibufferp)
     (user-error "`%s' called inside the minibuffer" this-command)))
 
+(defun consult--require-minibuffer ()
+  "Raise an error if executed outside the minibuffer."
+  (unless (minibufferp)
+    (user-error "`%s' called inside the minibuffer" this-command)))
+
 (defun consult--fontify-all ()
   "Ensure that the whole buffer is fontified."
   ;; Font-locking is lazy, i.e., if a line has not been looked at yet, the line is not font-locked.
@@ -964,7 +969,7 @@ This command is used internally by the narrowing system of `consult--read'."
   (interactive
    (list (unless (equal (this-single-command-keys) (consult--widen-key))
            last-command-event)))
-  (unless (minibufferp) (error "Command must be executed in minibuffer"))
+  (consult--require-minibuffer)
   (setq consult--narrow key)
   (when consult--narrow-predicate
     (setq minibuffer-completion-predicate (and consult--narrow consult--narrow-predicate)))
@@ -1003,8 +1008,7 @@ This command is used internally by the narrowing system of `consult--read'."
 This command can be bound to a key in `consult-narrow-map',
 to make it available for commands with narrowing."
   (interactive)
-  (unless (minibufferp)
-    (user-error "Narrow help must be called in the minibuffer"))
+  (consult--require-minibuffer)
   (let ((minibuffer-message-timeout 1000000))
     (minibuffer-message
      (string-join
