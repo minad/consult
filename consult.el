@@ -2649,6 +2649,25 @@ In order to select from a specific HISTORY, pass the history variable as argumen
 
 ;;;;; Command: consult-isearch
 
+(defun consult-isearch-forward (&optional reverse)
+  "Continue isearch forward optionally in REVERSE."
+  (interactive)
+  (consult--require-minibuffer)
+  (setq isearch-new-forward (not reverse) isearch-new-nonincremental nil)
+  (funcall (or (command-remapping #'exit-minibuffer) #'exit-minibuffer)))
+
+(defun consult-isearch-reverse (&optional reverse)
+  "Continue isearch backward optionally in REVERSE."
+  (interactive)
+  (consult-isearch-forward (not reverse)))
+
+(defvar consult-isearch-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map "\C-s" #'consult-isearch-forward)
+    (define-key map "\C-r" #'consult-isearch-reverse)
+    map)
+  "Additional keymap used by `consult-isearch'.")
+
 (defun consult--isearch-candidates (narrow)
   "Return isearch history candidates categorized by NARROW."
   ;; NOTE: Do not throw an error on empty history,
@@ -2709,6 +2728,8 @@ starts a new Isearch session otherwise."
             :history t ;; disable history
             :sort nil
             :annotate #'consult--get-annotation
+            :initial isearch-string
+            :keymap consult-isearch-map
             :lookup
             (lambda (_ candidates str)
               (if-let (cand (car (member str candidates))) (substring cand 1) str))
