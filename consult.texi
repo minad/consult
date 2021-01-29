@@ -709,7 +709,7 @@ the box with the default completion, Icomplete and Selectrum.
   ;; (add-to-list 'consult-buffer-sources
   ;;               (list ?v
   ;;                    :name     "View"
-  ;;                    :category 'consult-view
+  ;;                    :category 'bookmark
   ;;                    :face     'font-lock-keyword-face
   ;;                    :open     #'bookmark-jump
   ;;                    :items    #'bookmark-view-names)
