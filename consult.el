@@ -2823,16 +2823,17 @@ The command supports previewing the currently selected theme."
 
 ;;;;; Command: consult-buffer
 
-(defsubst consult--buffer-candidate (type cand face cat)
-  "Format virtual buffer candidate.
+(defsubst consult--multi-candidate (cand face cat type)
+  "Format candidate for `consult-multi'.
 
 CAND is the candidate string.
-TYPE is the type character.
 FACE is the face for the candidate.
-CAT is the candidate category."
-  (concat (propertize (char-to-string (+ consult--tofu-char type))
-                      'invisible t 'consult-multi cat)
-          (propertize cand 'face face)))
+CAT is the candidate category.
+TYPE is the type character."
+  (let ((str (concat (char-to-string (+ consult--tofu-char type)) cand)))
+    (add-text-properties 0 1 (list 'invisible t 'consult-multi cat) str)
+    (put-text-property 1 (length str) 'face face str)
+    str))
 
 (defun consult--buffer (open-buffer open-file open-bookmark)
   "Backend implementation of `consult-buffer'.
@@ -2847,35 +2848,32 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
          (buf-filter (consult--regexp-filter consult-buffer-filter))
          (bufs (mapcar (lambda (x)
                          (let ((name (buffer-name x)))
-                           (consult--buffer-candidate
-                            (if (string-match-p buf-filter name) 32 ?b)
-                            name 'consult-buffer 'buffer)))
+                           (consult--multi-candidate
+                            name 'consult-buffer 'buffer
+                            (if (string-match-p buf-filter name) 32 ?b))))
                        all-bufs))
          (views (when consult-view-list-function
                   (mapcar (lambda (x)
-                            (consult--buffer-candidate
-                             ?v x 'consult-view 'consult-view))
+                            (consult--multi-candidate
+                             x 'consult-view 'consult-view ?v))
                           (funcall consult-view-list-function))))
          (bookmarks (progn
                       (bookmark-maybe-load-default-file)
                       (mapcar (lambda (x)
-                                (consult--buffer-candidate
-                                 ?m (car x)
-                                 'consult-bookmark 'bookmark))
+                                (consult--multi-candidate
+                                 (car x) 'consult-bookmark 'bookmark ?m))
                               bookmark-alist)))
          (all-files (seq-remove (lambda (x) (gethash x buf-file-hash)) recentf-list))
          (files (mapcar (lambda (x)
-                          (consult--buffer-candidate
-                           ?f (abbreviate-file-name x)
-                           'consult-file 'file))
+                          (consult--multi-candidate
+                           (abbreviate-file-name x) 'consult-file 'file ?f))
                         all-files))
          (proj-root (and consult-project-root-function
                          (funcall consult-project-root-function)))
          (proj-bufs (when proj-root
                       (mapcar (lambda (x)
-                                (consult--buffer-candidate
-                                 ?p (buffer-name x)
-                                 'consult-buffer 'buffer))
+                                (consult--multi-candidate
+                                 (buffer-name x) 'consult-buffer 'buffer ?p))
                               (seq-filter (lambda (x)
                                             (when-let (file (buffer-file-name x))
                                               (string-prefix-p proj-root file)))
@@ -2884,9 +2882,8 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                        (let ((len (length proj-root))
                              (hidden-root (propertize proj-root 'invisible t)))
                          (mapcar (lambda (x)
-                                   (consult--buffer-candidate
-                                    ?q (concat hidden-root (substring x len))
-                                    'consult-file 'file))
+                                   (consult--multi-candidate
+                                    (concat hidden-root (substring x len)) 'consult-file 'file ?q))
                                  (seq-filter (lambda (x) (string-prefix-p proj-root x)) all-files)))))
          (candidates (append bufs files proj-bufs proj-files views bookmarks))
          (max-len (+ 4 (apply #'max (mapcar #'length candidates)))))
