@@ -1556,20 +1556,22 @@ MAX-LEN is the maximum candidate length."
 
 (defun consult--multi-candidates (sources)
   "Return candidates from SOURCES for `consult--multi'."
-  (mapcan
-   (lambda (source)
-     (let* ((type (car source))
-            (props (cdr source))
-            (face (plist-get props :face))
-            (cat (plist-get props :category))
-            (items (plist-get props :items)))
-       (mapcar (lambda (cand)
-                 (let ((str (concat (char-to-string (+ consult--tofu-char type)) cand)))
-                   (add-text-properties 0 1 (list 'invisible t 'consult-multi cat) str)
-                   (put-text-property 1 (length str) 'face face str)
-                   str))
-               (if (functionp items) (funcall items) items))))
-   sources))
+  (let ((max-len 0) (candidates))
+    (dolist (src sources (cons (+ 4 max-len) (nreverse candidates)))
+      (let* ((type (car src))
+             (props (cdr src))
+             (face (plist-get props :face))
+             (cat (plist-get props :category))
+             (items (plist-get props :items))
+             (items (if (functionp items) (funcall items) items)))
+        (dolist (cand items)
+          (let* ((str (concat (char-to-string (+ consult--tofu-char type)) cand))
+                 (len (length str)))
+            (add-text-properties 0 1 (list 'invisible t 'consult-multi cat) str)
+            (put-text-property 1 len 'face face str)
+            (when (> len max-len)
+              (setq max-len len))
+            (push str candidates)))))))
 
 (defun consult--multi-preprocess (sources)
   "Preprocess SOURCES, filter by predicate."
@@ -1590,14 +1592,13 @@ PROMPT is the minibuffer prompt.
 OPTIONS is the plist of options."
   (let* ((sources (consult--multi-preprocess sources))
          (candidates (let ((consult--memo))
-                       (consult--multi-candidates sources)))
-         (max-len (+ 4 (if candidates (apply #'max (mapcar #'length candidates)) 0))))
+                       (consult--multi-candidates sources))))
     (apply #'consult--read prompt
-           candidates
+           (cdr candidates)
            :category  'consult-multi
            :predicate (consult--multi-predicate sources)
            :narrow    (consult--multi-narrow sources)
-           :annotate  (consult--multi-annotate sources max-len)
+           :annotate  (consult--multi-annotate sources (car candidates))
            :lookup    (consult--multi-lookup sources)
            options)))
 
