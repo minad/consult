@@ -1305,9 +1305,6 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
 
 (defun consult--command-args (cmd)
   "Split command arguments and append to CMD."
-  ;; TODO obsolete, remove this after a while
-  (unless (stringp cmd)
-    (user-error "Consult: Deprecated command configuration for %S. Use a string instead" (car cmd)))
   (setq cmd (split-string-and-unquote cmd))
   (lambda (input)
     (save-match-data
@@ -2402,8 +2399,6 @@ This function can be used as `register-preview-function'."
   (apply #'concat
          (mapcar (lambda (s) (concat (truncate-string-to-width s 100 0 nil "…") "\n"))
                  (split-string (consult--register-format reg) "\n"))))
-
-(define-obsolete-function-alias 'consult-register-preview 'consult-register-format "0.3")
 
 (defun consult--register-format (reg)
   "Format register REG for preview."
