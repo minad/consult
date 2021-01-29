@@ -1399,12 +1399,11 @@ PREVIEW-KEY is the preview key."
     ;; Put the keymap together
     (use-local-map
      (make-composed-keymap
-      (append
-       (and keymap (list keymap))
-       (and async (list consult-async-map))
-       (and narrow (list consult-narrow-map))
-       (and preview-key (list consult-preview-map))
-       map)
+      (delq nil (list keymap
+                      (and async consult-async-map)
+                      (and narrow consult-narrow-map)
+                      (and preview-key consult-preview-map)
+                      map))
       old-map))))
 
 (defun consult--fry-the-tofus (&rest _)
