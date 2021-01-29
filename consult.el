@@ -2886,7 +2886,14 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                                     (concat hidden-root (substring x len)) 'consult-file 'file ?q))
                                  (seq-filter (lambda (x) (string-prefix-p proj-root x)) all-files)))))
          (candidates (append bufs files proj-bufs proj-files views bookmarks))
-         (max-len (+ 4 (apply #'max (mapcar #'length candidates)))))
+         (max-len (+ 4 (apply #'max (mapcar #'length candidates))))
+         (candidate-types `((32 "Hidden Buffer"  ,open-buffer)
+                            (?b "Buffer"         ,open-buffer)
+                            (?m "Bookmark"       ,open-bookmark)
+                            (?v "View"           ,consult-view-open-function)
+                            (?p "Project Buffer" ,open-buffer)
+                            (?q "Project File"   ,open-file)
+                            (?f "File"           ,open-file))))
     (consult--read
      "Switch to: " candidates
      :history 'consult--buffer-history
@@ -2908,31 +2915,16 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                ,@(when proj-root '((?p . "Project")))
                ,@(when consult-view-list-function '((?v . "View"))))
      :annotate (lambda (cand)
-                 (concat (make-string
-                          (- (+ max-len (next-single-char-property-change
-                                         0 'invisible cand))
-                             (length cand))
-                          32)
-                         (pcase-exhaustive (- (aref cand 0) consult--tofu-char)
-                           (32 "Hidden Buffer")
-                           (?b "Buffer")
-                           (?m "Bookmark")
-                           (?v "View")
-                           (?p "Project Buffer")
-                           (?q "Project File")
-                           (?f "File"))))
+                 (concat
+                  (make-string (- (+ max-len (next-single-char-property-change 0 'invisible cand))
+                                  (length cand))
+                               32)
+                  (cadr (assq (- (aref cand 0) consult--tofu-char) candidate-types))))
      :category 'consult-multi
      :lookup
      (lambda (_ candidates cand)
        (if (member cand candidates)
-           (cons (pcase-exhaustive (- (aref cand 0) consult--tofu-char)
-                   (32 open-buffer)
-                   (?b open-buffer)
-                   (?m open-bookmark)
-                   (?v consult-view-open-function)
-                   (?p open-buffer)
-                   (?q open-file)
-                   (?f open-file))
+           (cons (caddr (assq (- (aref cand 0) consult--tofu-char) candidate-types))
                  (substring cand 1))
          ;; When candidate is not found in the alist,
          ;; default to creating a new buffer.
