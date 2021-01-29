@@ -147,7 +147,6 @@ preview and recursive editing while previewing. The command supports
 narrowing. You can type @samp{f SPC} in order to narrow to recent files.
 Ephemeral buffers can be shown by pressing @samp{SPC} - it works the same
 way as @samp{switch-buffer}. Supported narrowing keys:
-
 @itemize
 @item
 b Buffers
@@ -159,8 +158,7 @@ m Bookmarks
 p Project (only available if @samp{consult-project-root-function} is
 configured as shown in the @ref{Use-package example, , example configuration})
 @item
-v Views (only available if @samp{consult-view-*-function} is
-configured as shown in the @ref{Use-package example, , example configuration})
+Arbitrary other sources can be configured via @samp{consult-buffer-sources}
 @end itemize
 @item
 @samp{consult-bookmark}: Select or create bookmark. You might consider the
@@ -706,12 +704,16 @@ the box with the default completion, Icomplete and Selectrum.
   ;; Probably not needed if you are using which-key.
   ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
 
-  ;; Optional configure a view library to be used by `consult-buffer'.
-  ;; The view library must provide two functions, one to open the view by name,
-  ;; and one function which must return a list of views as strings.
-  ;; Example: https://github.com/minad/bookmark-view/
-  ;; (setq consult-view-open-function #'bookmark-jump
-  ;;       consult-view-list-function #'bookmark-view-names)
+  ;; Optional configure additional sources for `consult-buffer',
+  ;; for example a view library like https://github.com/minad/bookmark-view/.
+  ;; (add-to-list 'consult-buffer-sources
+  ;;               (list ?v
+  ;;                    :name     "View"
+  ;;                    :category 'consult-view
+  ;;                    :face     'font-lock-keyword-face
+  ;;                    :open     #'bookmark-jump
+  ;;                    :items    #'bookmark-view-names)
+  ;;              'append)
 
   ;; Optionally configure a function which returns the project root directory
   (autoload 'projectile-project-root "projectile")
@@ -734,7 +736,7 @@ the box with the default completion, Icomplete and Selectrum.
 values and abbreviated description! Alternatively, type @samp{C-h a ^consult} to get
 an overview of all Consult variables and functions with their descriptions.
 
-@multitable {aaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+@multitable {aaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
 @headitem Variable
 @tab Default
 @tab Description
@@ -762,6 +764,9 @@ an overview of all Consult variables and functions with their descriptions.
 @item consult-buffer-filter
 @tab @dots{}
 @tab Filter for @samp{consult-buffer}
+@item consult-buffer-sources
+@tab @dots{}
+@tab List of virtual buffer sources
 @item consult-config
 @tab nil
 @tab Invididual command option configuration
@@ -825,12 +830,6 @@ an overview of all Consult variables and functions with their descriptions.
 @item consult-themes
 @tab nil
 @tab List of themes to be presented for selection
-@item consult-view-list-function
-@tab nil
-@tab Function which returns a list of view names as strings
-@item consult-view-open-function
-@tab nil
-@tab Function to open a view by name
 @item consult-widen-key
 @tab nil
 @tab Widening key during completion

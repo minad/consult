@@ -97,14 +97,12 @@ variables and functions with their descriptions.
    narrowing. You can type =f SPC= in order to narrow to recent files.
    Ephemeral buffers can be shown by pressing =SPC= - it works the same
    way as =switch-buffer=. Supported narrowing keys:
-
    - b Buffers
    - f Files
    - m Bookmarks
    - p Project (only available if =consult-project-root-function= is
      configured as shown in the [[#use-package-example][example configuration]])
-   - v Views (only available if =consult-view-*-function= is
-     configured as shown in the [[#use-package-example][example configuration]])
+   - Arbitrary other sources can be configured via =consult-buffer-sources=
  - =consult-bookmark=: Select or create bookmark. You might consider the
    powerful =consult-buffer= instead as an alternative, which includes bookmarks.
    However =consult-bookmark= supports preview of bookmarks and narrowing.
@@ -587,12 +585,16 @@ the box with the default completion, Icomplete and Selectrum.
    ;; Probably not needed if you are using which-key.
    ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
 
-   ;; Optional configure a view library to be used by `consult-buffer'.
-   ;; The view library must provide two functions, one to open the view by name,
-   ;; and one function which must return a list of views as strings.
-   ;; Example: https://github.com/minad/bookmark-view/
-   ;; (setq consult-view-open-function #'bookmark-jump
-   ;;       consult-view-list-function #'bookmark-view-names)
+   ;; Optional configure additional sources for `consult-buffer',
+   ;; for example a view library like https://github.com/minad/bookmark-view/.
+   ;; (add-to-list 'consult-buffer-sources
+   ;;               (list ?v
+   ;;                    :name     "View"
+   ;;                    :category 'consult-view
+   ;;                    :face     'font-lock-keyword-face
+   ;;                    :open     #'bookmark-jump
+   ;;                    :items    #'bookmark-view-names)
+   ;;              'append)
 
    ;; Optionally configure a function which returns the project root directory
    (autoload 'projectile-project-root "projectile")
@@ -626,6 +628,7 @@ the box with the default completion, Icomplete and Selectrum.
  | consult-async-refresh-delay     | 0.25               | Refresh delay for asynchronous commands                  |
  | consult-bookmark-narrow         | ...                | Narrowing configuration for =consult-bookmark=           |
  | consult-buffer-filter           | ...                | Filter for =consult-buffer=                              |
+ | consult-buffer-sources          | ...                | List of virtual buffer sources                           |
  | consult-config                  | nil                | Invididual command option configuration                  |
  | consult-find-command            | "find ..."         | Command line arguments for find                          |
  | consult-fontify-max-size        | 1048576            | Buffers larger than this limit are not fontified         |
@@ -647,8 +650,6 @@ the box with the default completion, Icomplete and Selectrum.
  | consult-register-narrow         | ...                | Narrowing configuration for =consult-register=           |
  | consult-ripgrep-command         | "rg ..."           | Command line arguments for ripgrep                       |
  | consult-themes                  | nil                | List of themes to be presented for selection             |
- | consult-view-list-function      | nil                | Function which returns a list of view names as strings   |
- | consult-view-open-function      | nil                | Function to open a view by name                          |
  | consult-widen-key               | nil                | Widening key during completion                           |
 
 ** Fine-tuning of individual commands

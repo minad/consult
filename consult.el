@@ -81,14 +81,6 @@ The key must be either a string or a vector.
 This is the key representation accepted by `define-key'."
   :type '(choice vector string (const nil)))
 
-(defcustom consult-view-list-function nil
-  "Function which returns a list of view names as strings, used by `consult-buffer'."
-  :type '(choice function (const nil)))
-
-(defcustom consult-view-open-function nil
-  "Function which opens a view, used by `consult-buffer'."
-  :type '(choice function (const nil)))
-
 (defcustom consult-project-root-function nil
   "Function which returns project root directory, used by `consult-buffer' and `consult-grep'."
   :type '(choice function (const nil)))
@@ -202,6 +194,16 @@ under the category specified by this variable."
 The default setting is to filter only ephemeral buffer names beginning
 with a space character."
   :type '(repeat regexp))
+
+(defcustom consult-buffer-sources
+  '((32 . consult--source-hidden-buffer)
+    (?b . consult--source-buffer)
+    (?f . consult--source-file)
+    (?m . consult--source-bookmark)
+    (?p . consult--source-project-buffer)
+    (?q . consult--source-project-file))
+  "Sources used by `consult-buffer'."
+  :type 'alist)
 
 (defcustom consult-mode-command-filter
   '(;; Filter commands
@@ -368,10 +370,6 @@ the public API."
   '((t))
   "Face used to highlight buffers in `consult-buffer'.")
 
-(defface consult-view
-  '((t :inherit font-lock-keyword-face))
-  "Face used to highlight views in `consult-buffer'.")
-
 (defface consult-line-number-prefix
   '((t :inherit line-number))
   "Face used to highlight line numbers in selections.")
@@ -402,6 +400,9 @@ the public API."
 (defvar consult--imenu-history nil)
 
 ;;;; Internal variables
+
+(defvar consult--memo nil
+  "Memoized data populated by `consult--define-memo'.")
 
 (defvar consult--completion-filter-hook
   (list #'consult--default-completion-filter)
@@ -1512,6 +1513,96 @@ KEYMAP is a command-specific keymap."
         (car result)))))
 
 (advice-add #'consult--read :filter-args #'consult--merge-config)
+
+;;;; Internal API: consult--multi
+
+(defun consult--multi-predicate (sources)
+  "Return predicate function used by `consult--multi' with SOURCES."
+  (lambda (cand)
+    (let ((type (- (aref cand 0) consult--tofu-char)))
+      (setq type (or (car (plist-get (cdr (assq type sources)) :narrow)) type))
+      (if (eq consult--narrow 32) ;; narrowed to hidden candidates
+          (= type 32)
+        (and
+         (/= type 32) ;; non-hidden candidates
+         (or (not consult--narrow) (= type consult--narrow)))))))
+
+(defun consult--multi-narrow (sources)
+  "Return narrow list used by `consult--multi' with SOURCES."
+  (mapcar (lambda (x)
+            (or (plist-get (cdr x) :narrow)
+                (cons (car x) (plist-get (cdr x) :name))))
+          sources))
+
+(defsubst consult--multi-properties (sources cand)
+  "Lookup source properties for CAND from SOURCES list."
+  (cdr (assq (- (aref cand 0) consult--tofu-char) sources)))
+
+(defun consult--multi-annotate (sources max-len)
+  "Return annotation function used by `consult--multi' with SOURCES.
+
+MAX-LEN is the maximum candidate length."
+  (lambda (cand)
+    (concat
+     (make-string (- (+ max-len (next-single-char-property-change 0 'invisible cand))
+                     (length cand))
+                  32)
+     (plist-get (consult--multi-properties sources cand) :name))))
+
+(defun consult--multi-lookup (sources)
+  "Lookup function used by `consult--multi' with SOURCES."
+  (lambda (_ candidates cand)
+    (cond
+     ((member cand candidates) (cons (substring cand 1)
+                                     (consult--multi-properties sources cand)))
+     ((not (string-blank-p cand)) (list cand)))))
+
+(defun consult--multi-candidates (sources)
+  "Return candidates from SOURCES for `consult--multi'."
+  (mapcan
+   (lambda (source)
+     (let* ((type (car source))
+            (props (cdr source))
+            (face (plist-get props :face))
+            (cat (plist-get props :category))
+            (items (plist-get props :items)))
+       (mapcar (lambda (cand)
+                 (let ((str (concat (char-to-string (+ consult--tofu-char type)) cand)))
+                   (add-text-properties 0 1 (list 'invisible t 'consult-multi cat) str)
+                   (put-text-property 1 (length str) 'face face str)
+                   str))
+               (if (functionp items) (funcall items) items))))
+   sources))
+
+(defun consult--multi-preprocess (sources)
+  "Preprocess SOURCES, filter by predicate."
+  (seq-filter (lambda (src)
+                (if-let (pred (plist-get (cdr src) :predicate))
+                    (funcall pred)
+                  t))
+              (mapcar (lambda (src)
+                        (if (symbolp (cdr src))
+                            (cons (car src) (symbol-value (cdr src)))
+                          src))
+                      sources)))
+
+(defun consult--multi (prompt sources &rest options)
+  "Select from candidates taken from multiple SOURCES.
+
+PROMPT is the minibuffer prompt.
+OPTIONS is the plist of options."
+  (let* ((sources (consult--multi-preprocess sources))
+         (candidates (let ((consult--memo))
+                       (consult--multi-candidates sources)))
+         (max-len (+ 4 (if candidates (apply #'max (mapcar #'length candidates)) 0))))
+    (apply #'consult--read prompt
+           candidates
+           :category  'consult-multi
+           :predicate (consult--multi-predicate sources)
+           :narrow    (consult--multi-narrow sources)
+           :annotate  (consult--multi-annotate sources max-len)
+           :lookup    (consult--multi-lookup sources)
+           options)))
 
 ;;;; Internal API: consult--prompt
 
@@ -2822,157 +2913,156 @@ The command supports previewing the currently selected theme."
 
 ;;;;; Command: consult-buffer
 
-(defsubst consult--multi-candidate (cand face cat type)
-  "Format candidate for `consult-multi'.
+(defmacro consult--define-memo (name &rest body)
+  "Define memoizing function with NAME and BODY."
+  (declare (indent 1))
+  `(defun ,name ()
+     (or (alist-get ',name consult--memo)
+         (setf (alist-get ',name consult--memo)
+               ,(macroexp-progn body)))))
 
-CAND is the candidate string.
-FACE is the face for the candidate.
-CAT is the candidate category.
-TYPE is the type character."
-  (let ((str (concat (char-to-string (+ consult--tofu-char type)) cand)))
-    (add-text-properties 0 1 (list 'invisible t 'consult-multi cat) str)
-    (put-text-property 1 (length str) 'face face str)
-    str))
+(consult--define-memo consult--memo-buffers
+  (let ((curr-buf (current-buffer)))
+    (append (delq curr-buf (buffer-list)) (list curr-buf))))
 
-(defun consult--buffer (open-buffer open-file open-bookmark)
-  "Backend implementation of `consult-buffer'.
+(consult--define-memo consult--memo-buffer-names
+  (mapcar #'buffer-name (consult--memo-buffers)))
 
-Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be used to display the item."
-  (let* ((curr-buf (current-buffer))
-         (all-bufs (append (delq curr-buf (buffer-list)) (list curr-buf)))
-         (buf-file-hash (let ((ht (make-hash-table :test #'equal :size (length all-bufs))))
-                          (dolist (buf all-bufs ht)
-                            (when-let (file (buffer-file-name buf))
-                              (puthash file t ht)))))
-         (buf-filter (consult--regexp-filter consult-buffer-filter))
-         (bufs (mapcar (lambda (x)
-                         (let ((name (buffer-name x)))
-                           (consult--multi-candidate
-                            name 'consult-buffer 'buffer
-                            (if (string-match-p buf-filter name) 32 ?b))))
-                       all-bufs))
-         (views (when consult-view-list-function
-                  (mapcar (lambda (x)
-                            (consult--multi-candidate
-                             x 'consult-view 'consult-view ?v))
-                          (funcall consult-view-list-function))))
-         (bookmarks (progn
-                      (bookmark-maybe-load-default-file)
-                      (mapcar (lambda (x)
-                                (consult--multi-candidate
-                                 (car x) 'consult-bookmark 'bookmark ?m))
-                              bookmark-alist)))
-         (all-files (seq-remove (lambda (x) (gethash x buf-file-hash)) recentf-list))
-         (files (mapcar (lambda (x)
-                          (consult--multi-candidate
-                           (abbreviate-file-name x) 'consult-file 'file ?f))
-                        all-files))
-         (proj-root (and consult-project-root-function
-                         (funcall consult-project-root-function)))
-         (proj-bufs (when proj-root
-                      (mapcar (lambda (x)
-                                (consult--multi-candidate
-                                 (buffer-name x) 'consult-buffer 'buffer ?p))
-                              (seq-filter (lambda (x)
-                                            (when-let (file (buffer-file-name x))
-                                              (string-prefix-p proj-root file)))
-                                          all-bufs))))
-         (proj-files (when proj-root
-                       (let ((len (length proj-root))
-                             (hidden-root (propertize proj-root 'invisible t)))
-                         (mapcar (lambda (x)
-                                   (consult--multi-candidate
-                                    (concat hidden-root (substring x len)) 'consult-file 'file ?q))
-                                 (seq-filter (lambda (x) (string-prefix-p proj-root x)) all-files)))))
-         (candidates (append bufs files proj-bufs proj-files views bookmarks))
-         (max-len (+ 4 (apply #'max (mapcar #'length candidates))))
-         (candidate-types `((32 "Hidden Buffer"  ,open-buffer)
-                            (?b "Buffer"         ,open-buffer)
-                            (?m "Bookmark"       ,open-bookmark)
-                            (?v "View"           ,consult-view-open-function)
-                            (?p "Project Buffer" ,open-buffer)
-                            (?q "Project File"   ,open-file)
-                            (?f "File"           ,open-file))))
-    (consult--read
-     "Switch to: " candidates
-     :history 'consult--buffer-history
-     :sort nil
-     :predicate
-     (lambda (cand)
-       (let ((type (- (aref cand 0) consult--tofu-char)))
-         (when (= type ?q) (setq type ?p)) ;; q=project files
-         (if (eq consult--narrow 32) ;; narrowed to hidden buffers
-             (= type 32)
-           (and
-            (/= type 32) ;; non-hidden buffers
-            (or (not consult--narrow) ;; narrowed
-                (= type consult--narrow))))))
-     :narrow `((32 . "Hidden")
-               (?b . "Buffer")
-               (?f . "File")
-               (?m . "Bookmark")
-               ,@(when proj-root '((?p . "Project")))
-               ,@(when consult-view-list-function '((?v . "View"))))
-     :annotate (lambda (cand)
-                 (concat
-                  (make-string (- (+ max-len (next-single-char-property-change 0 'invisible cand))
-                                  (length cand))
-                               32)
-                  (cadr (assq (- (aref cand 0) consult--tofu-char) candidate-types))))
-     :category 'consult-multi
-     :lookup
-     (lambda (_ candidates cand)
-       (if (member cand candidates)
-           (cons (caddr (assq (- (aref cand 0) consult--tofu-char) candidate-types))
-                 (substring cand 1))
-         ;; When candidate is not found in the alist,
-         ;; default to creating a new buffer.
-         (and (not (string-blank-p cand)) (cons open-buffer cand))))
-     :preview
-     (lambda (cand restore)
+(consult--define-memo consult--memo-buffer-file-hash
+  (consult--string-hash (delq nil (mapcar #'buffer-file-name (consult--memo-buffers)))))
+
+(defun consult--source-file-open (file display)
+  "Open FILE via DISPLAY function."
+  (pcase-exhaustive display
+    ('switch-to-buffer (find-file file))
+    ('switch-to-buffer-other-window (find-file-other-window file))
+    ('switch-to-buffer-other-frame (find-file-other-frame file))))
+
+(defun consult--source-buffer-open (buffer display)
+  "Open BUFFER via DISPLAY function."
+  (funcall display buffer))
+
+(defvar consult--source-bookmark
+  `(:name     "Bookmark"
+    :category bookmark
+    :face     consult-bookmark
+    :items    ,#'bookmark-all-names
+    :open     ,#'bookmark-jump))
+
+(defvar consult--source-project-buffer
+  `(:name      "Project Buffer"
+    :category  buffer
+    :face      consult-buffer
+    :narrow    (?p . "Project")
+    :open      ,#'consult--source-buffer-open
+    :predicate ,(lambda () consult-project-root-function)
+    :items
+    ,(lambda ()
+       (when-let (root (funcall consult-project-root-function))
+         (mapcar #'buffer-name
+                 (seq-filter (lambda (x)
+                               (when-let (file (buffer-file-name x))
+                                 (string-prefix-p root file)))
+                             (consult--memo-buffers)))))))
+
+(defvar consult--source-project-file
+  `(:name      "Project File"
+    :category  file
+    :face      consult-file
+    :narrow    (?p . "Project")
+    :open      ,#'consult--source-file-open
+    :predicate ,(lambda () consult-project-root-function)
+    :items
+    ,(lambda ()
+      (when-let (root (funcall consult-project-root-function))
+        (let ((len (length root))
+              (inv-root (propertize root 'invisible t))
+              (ht (consult--memo-buffer-file-hash)))
+          (mapcar (lambda (x)
+                    (concat inv-root (substring x len)))
+                  (seq-filter (lambda (x)
+                                (and (string-prefix-p root x)
+                                     (not (gethash x ht))))
+                              recentf-list)))))))
+
+(defvar consult--source-hidden-buffer
+  `(:name     "Hidden Buffer"
+    :category buffer
+    :face     consult-buffer
+    :open     ,#'consult--source-buffer-open
+    :items
+    ,(lambda ()
+       (let ((filter (consult--regexp-filter consult-buffer-filter)))
+         (seq-filter (lambda (x) (string-match-p filter x))
+                     (consult--memo-buffer-names))))))
+
+(defvar consult--source-buffer
+  `(:name     "Buffer"
+    :category buffer
+    :face     consult-buffer
+    :open     ,#'consult--source-buffer-open
+    :items
+    ,(lambda ()
+       (let ((filter (consult--regexp-filter consult-buffer-filter)))
+         (seq-remove (lambda (x) (string-match-p filter x))
+                     (consult--memo-buffer-names))))))
+
+(defvar consult--source-file
+  `(:name     "File"
+    :category file
+    :face     consult-file
+    :open     ,#'consult--source-file-open
+    :items
+    ,(lambda ()
+       (let ((ht (consult--memo-buffer-file-hash)))
+         (seq-remove (lambda (x) (gethash x ht)) recentf-list)))))
+
+(defun consult--buffer (display)
+  "Backend implementation of `consult-buffer' with DISPLAY function."
+  (consult--multi
+   "Switch to: "
+   consult-buffer-sources
+   :history 'consult--buffer-history
+   :sort nil
+   :preview
+   (lambda (cand restore)
+     (when cand
+       (let ((name (car cand))
+             (action (or (plist-get (cdr cand) :open) #'consult--source-buffer-open)))
        (cond
-        (restore
-         (when cand
-           (funcall (car cand) (cdr cand))))
+        (restore (funcall action name display))
         ;; In order to avoid slowness and unnecessary complexity, we
         ;; only preview buffers. Loading recent files, bookmarks or
         ;; views can result in expensive operations.
-        ((and (or (eq (car cand) #'switch-to-buffer)
-                  (eq (car cand) #'switch-to-buffer-other-window))
-              (get-buffer (cdr cand)))
-         (funcall (car cand) (cdr cand) 'norecord)))))))
-
-;;;###autoload
-(defun consult-buffer-other-frame ()
-  "Enhanced `switch-to-buffer-other-frame' with support for virtual buffers.
-
-See `consult-buffer'."
-  (interactive)
-  (consult--buffer #'switch-to-buffer-other-frame #'find-file-other-frame
-                   ;; bookmark-jump-other-frame is supported on Emacs >= 27.1, we want to support at least 26
-                   (lambda (bm) (bookmark-jump bm #'switch-to-buffer-other-frame))))
-
-;;;###autoload
-(defun consult-buffer-other-window ()
-  "Enhanced `switch-to-buffer-other-window' with support for virtual buffers.
-
-See `consult-buffer'."
-  (interactive)
-  (consult--buffer #'switch-to-buffer-other-window #'find-file-other-window #'bookmark-jump-other-window))
+        ((and (eq action #'consult--source-buffer-open)
+              (or (eq display #'switch-to-buffer) (eq display #'switch-to-buffer-other-window))
+              (get-buffer name))
+         (funcall display name 'norecord))))))))
 
 ;;;###autoload
 (defun consult-buffer ()
   "Enhanced `switch-to-buffer' command with support for virtual buffers.
 
-The command supports recent files, bookmarks, views and project files
-as virtual buffers. Buffers are previewed. Furthermore narrowing to
-buffers (b), files (f), bookmarks (m), views (v) and project files (p)
-is supported via the corresponding keys. In order to determine the
-project-specific files and buffers, the
-`consult-project-root-function' is used. The list of available views
-is obtained by calling `consult-view-list-function'."
+The command supports recent files, bookmarks, views and project files as virtual
+buffers. Buffers are previewed. Furthermore narrowing to buffers (b), files (f),
+bookmarks (m) and project files (p) is supported via the corresponding keys. In
+order to determine the project-specific files and buffers, the
+`consult-project-root-function' is used. See `consult-buffer-sources' for the
+configuration of the virtual buffer sources."
   (interactive)
-  (consult--buffer #'switch-to-buffer #'find-file #'bookmark-jump))
+  (consult--buffer #'switch-to-buffer))
+
+;;;###autoload
+(defun consult-buffer-other-window ()
+  "Variant of `consult-buffer' which opens in other window."
+  (interactive)
+  (consult--buffer #'switch-to-buffer-other-window))
+
+;;;###autoload
+(defun consult-buffer-other-frame ()
+  "Variant of `consult-buffer' which opens in other frame."
+  (interactive)
+  (consult--buffer #'switch-to-buffer-other-frame))
 
 ;;;;; Command: consult-kmacro
 
@@ -3112,11 +3202,11 @@ Prepend PREFIX in front of all items."
 
 (defun consult--imenu-project-buffers ()
   "Return project buffers with the same `major-mode' as the current buffer."
-  (let ((proj-root (and consult-project-root-function (funcall consult-project-root-function))))
+  (let ((root (and consult-project-root-function (funcall consult-project-root-function))))
     (seq-filter (lambda (buf)
                   (when-let (file (buffer-file-name buf))
                     (and (eq (buffer-local-value 'major-mode buf) major-mode)
-                         (or (not proj-root) (string-prefix-p proj-root file)))))
+                         (or (not root) (string-prefix-p root file)))))
                 (buffer-list))))
 
 (defun consult--imenu-jump (item)
