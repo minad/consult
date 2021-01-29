@@ -2823,13 +2823,15 @@ The command supports previewing the currently selected theme."
 
 ;;;;; Command: consult-buffer
 
-(defsubst consult--buffer-candidate (type cand face)
+(defsubst consult--buffer-candidate (type cand face cat)
   "Format virtual buffer candidate.
 
 CAND is the candidate string.
 TYPE is the type character.
-FACE is the face for the candidate."
-  (concat (propertize (char-to-string (+ consult--tofu-char type)) 'invisible t)
+FACE is the face for the candidate.
+CAT is the candidate category."
+  (concat (propertize (char-to-string (+ consult--tofu-char type))
+                      'invisible t 'consult-multi cat)
           (propertize cand 'face face)))
 
 (defun consult--buffer (open-buffer open-file open-bookmark)
@@ -2846,26 +2848,34 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
          (bufs (mapcar (lambda (x)
                          (let ((name (buffer-name x)))
                            (consult--buffer-candidate
-                            (if (string-match-p buf-filter name) ?h ?b)
-                            name 'consult-buffer)))
+                            (if (string-match-p buf-filter name) 32 ?b)
+                            name 'consult-buffer 'buffer)))
                        all-bufs))
          (views (when consult-view-list-function
                   (mapcar (lambda (x)
-                            (consult--buffer-candidate ?v x 'consult-view))
+                            (consult--buffer-candidate
+                             ?v x 'consult-view 'consult-view))
                           (funcall consult-view-list-function))))
          (bookmarks (progn
                       (bookmark-maybe-load-default-file)
                       (mapcar (lambda (x)
-                                (consult--buffer-candidate ?m (car x) 'consult-bookmark))
+                                (consult--buffer-candidate
+                                 ?m (car x)
+                                 'consult-bookmark 'bookmark))
                               bookmark-alist)))
          (all-files (seq-remove (lambda (x) (gethash x buf-file-hash)) recentf-list))
          (files (mapcar (lambda (x)
-                          (consult--buffer-candidate ?f (abbreviate-file-name x) 'consult-file))
+                          (consult--buffer-candidate
+                           ?f (abbreviate-file-name x)
+                           'consult-file 'file))
                         all-files))
-         (proj-root (and consult-project-root-function (funcall consult-project-root-function)))
+         (proj-root (and consult-project-root-function
+                         (funcall consult-project-root-function)))
          (proj-bufs (when proj-root
                       (mapcar (lambda (x)
-                                (consult--buffer-candidate ?p (buffer-name x) 'consult-buffer))
+                                (consult--buffer-candidate
+                                 ?p (buffer-name x)
+                                 'consult-buffer 'buffer))
                               (seq-filter (lambda (x)
                                             (when-let (file (buffer-file-name x))
                                               (string-prefix-p proj-root file)))
@@ -2875,12 +2885,13 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                              (hidden-root (propertize proj-root 'invisible t)))
                          (mapcar (lambda (x)
                                    (consult--buffer-candidate
-                                    ?q
-                                    (concat hidden-root (substring x len))
-                                    'consult-file))
-                                 (seq-filter (lambda (x) (string-prefix-p proj-root x)) all-files))))))
+                                    ?q (concat hidden-root (substring x len))
+                                    'consult-file 'file))
+                                 (seq-filter (lambda (x) (string-prefix-p proj-root x)) all-files)))))
+         (candidates (append bufs files proj-bufs proj-files views bookmarks))
+         (max-len (+ 4 (apply #'max (mapcar #'length candidates)))))
     (consult--read
-     "Switch to: " (append bufs files proj-bufs proj-files views bookmarks)
+     "Switch to: " candidates
      :history 'consult--buffer-history
      :sort nil
      :predicate
@@ -2888,9 +2899,9 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
        (let ((type (- (aref cand 0) consult--tofu-char)))
          (when (= type ?q) (setq type ?p)) ;; q=project files
          (if (eq consult--narrow 32) ;; narrowed to hidden buffers
-             (= type ?h)
+             (= type 32)
            (and
-            (/= type ?h) ;; non-hidden buffers
+            (/= type 32) ;; non-hidden buffers
             (or (not consult--narrow) ;; narrowed
                 (= type consult--narrow))))))
      :narrow `((32 . "Hidden")
@@ -2899,13 +2910,27 @@ Depending on the selected item OPEN-BUFFER, OPEN-FILE or OPEN-BOOKMARK will be u
                (?m . "Bookmark")
                ,@(when proj-root '((?p . "Project")))
                ,@(when consult-view-list-function '((?v . "View"))))
-     :category 'consult-buffer
+     :annotate (lambda (cand)
+                 (concat (make-string
+                          (- (+ max-len (next-single-char-property-change
+                                         0 'invisible cand))
+                             (length cand))
+                          32)
+                         (pcase-exhaustive (- (aref cand 0) consult--tofu-char)
+                           (32 "Hidden Buffer")
+                           (?b "Buffer")
+                           (?m "Bookmark")
+                           (?v "View")
+                           (?p "Project Buffer")
+                           (?q "Project File")
+                           (?f "File"))))
+     :category 'consult-multi
      :lookup
      (lambda (_ candidates cand)
        (if (member cand candidates)
            (cons (pcase-exhaustive (- (aref cand 0) consult--tofu-char)
+                   (32 open-buffer)
                    (?b open-buffer)
-                   (?h open-buffer)
                    (?m open-bookmark)
                    (?v consult-view-open-function)
                    (?p open-buffer)
