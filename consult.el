@@ -82,7 +82,9 @@ This is the key representation accepted by `define-key'."
   :type '(choice vector string (const nil)))
 
 (defcustom consult-project-root-function nil
-  "Function which returns project root directory, used by `consult-buffer' and `consult-grep'."
+  "Function which returns project root directory.
+
+The root directory is used by `consult-buffer' and `consult-grep'."
   :type '(choice function (const nil)))
 
 (defcustom consult-async-refresh-delay 0.25
@@ -401,8 +403,8 @@ the public API."
 
 ;;;; Internal variables
 
-(defvar consult--memo nil
-  "Memoized data populated by `consult--define-memo'.")
+(defvar consult--cache nil
+  "Cached data populated by `consult--define-cache'.")
 
 (defvar consult--completion-filter-hook
   (list #'consult--default-completion-filter)
@@ -669,10 +671,11 @@ KEY is the key function."
 
 (defun consult--fontify-all ()
   "Ensure that the whole buffer is fontified."
-  ;; Font-locking is lazy, i.e., if a line has not been looked at yet, the line is not font-locked.
-  ;; We would observe this if consulting an unfontified line. Therefore we have to enforce
-  ;; font-locking now, which is slow. In order to prevent is hang-up we check the buffer size
-  ;; against `consult-fontify-max-size'.
+  ;; Font-locking is lazy, i.e., if a line has not been looked at yet, the line
+  ;; is not font-locked. We would observe this if consulting an unfontified
+  ;; line. Therefore we have to enforce font-locking now, which is slow. In
+  ;; order to prevent is hang-up we check the buffer size against
+  ;; `consult-fontify-max-size'.
   (when (and jit-lock-mode (< (buffer-size) consult-fontify-max-size))
     (jit-lock-fontify-now)))
 
@@ -710,17 +713,18 @@ KEY is the key function."
     (goto-char pos)
     line))
 
-;; We must disambiguate the lines by adding a prefix such that two lines with the same text can be
-;; distinguished. In order to avoid matching the line number, such that the user can search for
-;; numbers with `consult-line', we encode the line number as unicode characters in the supplementary
-;; private use plane b. By doing that, it is unlikely that accidential matching occurs.
+;; We must disambiguate the lines by adding a prefix such that two lines with
+;; the same text can be distinguished. In order to avoid matching the line
+;; number, such that the user can search for numbers with `consult-line', we
+;; encode the line number as unicode characters in the supplementary private use
+;; plane b. By doing that, it is unlikely that accidential matching occurs.
 (defsubst consult--encode-location (marker)
   "Generate unique string for MARKER.
 DISPLAY is the string to display instead of the unique string."
   (let ((str "") (n marker))
     (while (progn
-             (setq str (concat str
-                               (char-to-string (+ consult--tofu-char (% n consult--tofu-range)))))
+             (setq str (concat str (char-to-string (+ consult--tofu-char
+                                                      (% n consult--tofu-range)))))
              (and (>= n consult--tofu-range) (setq n (/ n consult--tofu-range)))))
     str))
 
@@ -761,7 +765,8 @@ MARKER is the cursor position."
   (let ((str (buffer-substring begin end)))
     (if (>= marker end)
         (concat str (propertize " " 'face 'consult-preview-cursor))
-      (put-text-property (- marker begin) (- (1+ marker) begin) 'face 'consult-preview-cursor str)
+      (put-text-property (- marker begin) (- (1+ marker) begin)
+                         'face 'consult-preview-cursor str)
       str)))
 
 (defsubst consult--line-with-cursor (marker)
@@ -978,10 +983,11 @@ This command is used internally by the narrowing system of `consult--read'."
     (delete-overlay consult--narrow-overlay))
   (when consult--narrow
     (setq consult--narrow-overlay
-          (consult--overlay (- (minibuffer-prompt-end) 1) (minibuffer-prompt-end)
-                            'before-string
-                            (propertize (format " [%s]" (cdr (assoc key consult--narrow-prefixes)))
-                                        'face 'consult-narrow-indicator))))
+          (consult--overlay
+           (- (minibuffer-prompt-end) 1) (minibuffer-prompt-end)
+           'before-string
+           (propertize (format " [%s]" (cdr (assoc key consult--narrow-prefixes)))
+                       'face 'consult-narrow-indicator))))
   (run-hooks 'consult--completion-refresh-hook))
 
 (defconst consult--narrow-delete
@@ -997,8 +1003,10 @@ This command is used internally by the narrowing system of `consult--read'."
     "" nil :filter
     ,(lambda (&optional _)
        (let ((str (minibuffer-contents-no-properties)))
-         (when-let (pair (or (and (= 1 (length str)) (assoc (aref str 0) consult--narrow-prefixes))
-                             (and (string= str "") (assoc 32 consult--narrow-prefixes))))
+         (when-let (pair (or (and (= 1 (length str))
+                                  (assoc (aref str 0) consult--narrow-prefixes))
+                             (and (string= str "")
+                                  (assoc 32 consult--narrow-prefixes))))
            (delete-minibuffer-contents)
            (consult-narrow (car pair))
            #'ignore)))))
@@ -1310,7 +1318,7 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
     (save-match-data
       (let ((opts))
         (when (string-match " +--\\( +\\|$\\)" input)
-        ;; split-string-and-unquote fails if the quotes are invalid. Ignore it.
+          ;; split-string-and-unquote fails if the quotes are invalid. Ignore it.
           (setq opts (ignore-errors (split-string-and-unquote (substring input (match-end 0))))
                 input (substring input 0 (match-beginning 0))))
         (mapcan (lambda (x)
@@ -1591,7 +1599,7 @@ MAX-LEN is the maximum candidate length."
 PROMPT is the minibuffer prompt.
 OPTIONS is the plist of options."
   (let* ((sources (consult--multi-preprocess sources))
-         (candidates (let ((consult--memo))
+         (candidates (let ((consult--cache))
                        (consult--multi-candidates sources))))
     (apply #'consult--read prompt
            (cdr candidates)
@@ -1856,7 +1864,9 @@ The symbol at point is added to the future history."
          (candidates)
          (line (line-number-at-pos (point-min) consult-line-numbers-widen))
          (curr-line (line-number-at-pos (point) consult-line-numbers-widen))
-         (line-width (length (number-to-string (line-number-at-pos (point-max) consult-line-numbers-widen))))
+         (line-width (length (number-to-string (line-number-at-pos
+                                                (point-max)
+                                                consult-line-numbers-widen))))
          (default-cand-dist most-positive-fixnum))
     (consult--each-line beg end
       (let ((str (buffer-substring beg end)))
@@ -1897,14 +1907,16 @@ CAND is the currently selected candidate."
             (end (length cand))
             ;; Use consult-location completion category when filtering lines
             (filter (consult--completion-filter 'consult-location nil)))
-        ;; Find match end position, remove characters from line end until matching fails
+        ;; Find match end position, remove characters from line end until
+        ;; matching fails
         (let ((step 16))
           (while (> step 0)
             (while (and (> (- end step) 0)
                         (funcall filter input (list (substring cand 0 (- end step)))))
               (setq end (- end step)))
             (setq step (/ step 2))))
-        ;; Find match beginning position, remove characters from line beginning until matching fails
+        ;; Find match beginning position, remove characters from line beginning
+        ;; until matching fails
         (when (eq consult-line-point-placement 'match-beginning)
           (let ((step 16))
             (while (> step 0)
@@ -1992,7 +2004,8 @@ The symbol at point and the last `isearch-string' is added to the future history
               (when font-lock-mode (font-lock-mode -1))
               (if restore
                   (atomic-change-group
-                    (let ((inhibit-modification-hooks t)) ;; Disable modification hooks for performance
+                    ;; Disable modification hooks for performance
+                    (let ((inhibit-modification-hooks t))
                       (consult--keep-lines-replace filtered-content)))
                 ;; No undo recording, modification hooks, buffer modified-status
                 (with-silent-modifications
@@ -2529,7 +2542,8 @@ This function is derived from `register-read-with-preview'."
 	 (help-chars (seq-remove #'get-register (cons help-char help-event-list))))
     (unwind-protect
         (while (not reg)
-	  (while (memq (read-key (propertize (caddr (assq action action-list)) 'face 'minibuffer-prompt))
+	  (while (memq (read-key (propertize (caddr (assq action action-list))
+                                             'face 'minibuffer-prompt))
 		       help-chars)
             (funcall preview))
           (cond
@@ -2909,23 +2923,22 @@ The command supports previewing the currently selected theme."
 
 ;;;;; Command: consult-buffer
 
-(defmacro consult--define-memo (name &rest body)
-  "Define memoizing function with NAME and BODY."
+(defmacro consult--define-cache (name &rest body)
+  "Define cached value with NAME and BODY."
   (declare (indent 1))
   `(defun ,name ()
-     (or (alist-get ',name consult--memo)
-         (setf (alist-get ',name consult--memo)
+     (or (alist-get ',name consult--cache)
+         (setf (alist-get ',name consult--cache)
                ,(macroexp-progn body)))))
 
-(consult--define-memo consult--memo-buffers
-  (let ((curr-buf (current-buffer)))
-    (append (delq curr-buf (buffer-list)) (list curr-buf))))
+(consult--define-cache consult--cached-buffers
+  (append (delq (current-buffer) (buffer-list)) (list (current-buffer))))
 
-(consult--define-memo consult--memo-buffer-names
-  (mapcar #'buffer-name (consult--memo-buffers)))
+(consult--define-cache consult--cached-buffer-names
+  (mapcar #'buffer-name (consult--cached-buffers)))
 
-(consult--define-memo consult--memo-buffer-file-hash
-  (consult--string-hash (delq nil (mapcar #'buffer-file-name (consult--memo-buffers)))))
+(consult--define-cache consult--cached-buffer-file-hash
+  (consult--string-hash (delq nil (mapcar #'buffer-file-name (consult--cached-buffers)))))
 
 (defun consult--source-file-open (file display)
   "Open FILE via DISPLAY function."
@@ -2959,7 +2972,7 @@ The command supports previewing the currently selected theme."
                  (seq-filter (lambda (x)
                                (when-let (file (buffer-file-name x))
                                  (string-prefix-p root file)))
-                             (consult--memo-buffers)))))))
+                             (consult--cached-buffers)))))))
 
 (defvar consult--source-project-file
   `(:name      "Project File"
@@ -2973,12 +2986,12 @@ The command supports previewing the currently selected theme."
       (when-let (root (funcall consult-project-root-function))
         (let ((len (length root))
               (inv-root (propertize root 'invisible t))
-              (ht (consult--memo-buffer-file-hash)))
+              (ht (consult--cached-buffer-file-hash)))
           (mapcar (lambda (x)
                     (concat inv-root (substring x len)))
                   (seq-filter (lambda (x)
-                                (and (string-prefix-p root x)
-                                     (not (gethash x ht))))
+                                (and (not (gethash x ht))
+                                     (string-prefix-p root x)))
                               recentf-list)))))))
 
 (defvar consult--source-hidden-buffer
@@ -2990,7 +3003,7 @@ The command supports previewing the currently selected theme."
     ,(lambda ()
        (let ((filter (consult--regexp-filter consult-buffer-filter)))
          (seq-filter (lambda (x) (string-match-p filter x))
-                     (consult--memo-buffer-names))))))
+                     (consult--cached-buffer-names))))))
 
 (defvar consult--source-buffer
   `(:name     "Buffer"
@@ -3001,7 +3014,7 @@ The command supports previewing the currently selected theme."
     ,(lambda ()
        (let ((filter (consult--regexp-filter consult-buffer-filter)))
          (seq-remove (lambda (x) (string-match-p filter x))
-                     (consult--memo-buffer-names))))))
+                     (consult--cached-buffer-names))))))
 
 (defvar consult--source-file
   `(:name     "File"
@@ -3010,7 +3023,7 @@ The command supports previewing the currently selected theme."
     :open     ,#'consult--source-file-open
     :items
     ,(lambda ()
-       (let ((ht (consult--memo-buffer-file-hash)))
+       (let ((ht (consult--cached-buffer-file-hash)))
          (seq-remove (lambda (x) (gethash x ht)) recentf-list)))))
 
 (defun consult--buffer (display)
@@ -3025,15 +3038,16 @@ The command supports previewing the currently selected theme."
      (when cand
        (let ((name (car cand))
              (action (or (plist-get (cdr cand) :open) #'consult--source-buffer-open)))
-       (cond
-        (restore (funcall action name display))
-        ;; In order to avoid slowness and unnecessary complexity, we
-        ;; only preview buffers. Loading recent files, bookmarks or
-        ;; views can result in expensive operations.
-        ((and (eq action #'consult--source-buffer-open)
-              (or (eq display #'switch-to-buffer) (eq display #'switch-to-buffer-other-window))
-              (get-buffer name))
-         (funcall display name 'norecord))))))))
+         (cond
+          (restore (funcall action name display))
+          ;; In order to avoid slowness and unnecessary complexity, we
+          ;; only preview buffers. Loading recent files, bookmarks or
+          ;; views can result in expensive operations.
+          ((and (eq action #'consult--source-buffer-open)
+                (or (eq display #'switch-to-buffer)
+                    (eq display #'switch-to-buffer-other-window))
+                (get-buffer name))
+           (funcall display name 'norecord))))))))
 
 ;;;###autoload
 (defun consult-buffer ()
@@ -3180,7 +3194,9 @@ Prepend PREFIX in front of all items."
          (items (imenu--make-index-alist t)))
     (setq items (remove imenu--rescan-item items))
     ;; Fix toplevel items, e.g., emacs-lisp-mode toplevel items are functions
-    (when-let (toplevel (cdr (seq-find (lambda (x) (derived-mode-p (car x))) consult-imenu-toplevel)))
+    (when-let (toplevel (cdr (seq-find (lambda (x)
+                                         (derived-mode-p (car x)))
+                                       consult-imenu-toplevel)))
       (let ((tops (seq-remove (lambda (x) (listp (cdr x))) items))
             (rest (seq-filter (lambda (x) (listp (cdr x))) items)))
         (setq items (append rest (and tops (list (cons toplevel tops)))))))
