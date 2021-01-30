@@ -534,8 +534,9 @@ the box with the default completion, Icomplete and Selectrum.
           ("M-g i" . consult-project-imenu) ;; Alternative: consult-imenu
           ("M-g e" . consult-error)
           ;; M-s bindings (search-map)
-          ("M-s g" . consult-git-grep)              ;; alt. consult-grep, consult-ripgrep
           ("M-s f" . consult-find)                  ;; alt. consult-locate, find-fd
+          ("M-s g" . consult-git-grep)              ;; alt. consult-grep
+          ("M-s r" . consult-ripgrep)
           ("M-s l" . consult-line)
           ("M-s m" . consult-multi-occur)
           ("M-s k" . consult-keep-lines)
