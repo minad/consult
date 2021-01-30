@@ -278,9 +278,10 @@ recursive editing and narrowing. This feature has been inspired by
 @itemize
 @item
 @samp{consult-line}: Enter search string and select from matching lines.
-Supports live preview and recursive editing. The symbol at point and
-the recent Isearch string are added to the "future history" and can be
-accessed by pressing @samp{M-n}.
+Supports live preview and recursive editing. The symbol at point and the
+recent Isearch string are added to the "future history" and can be accessed
+by pressing @samp{M-n}. When @samp{consult-line} is bound to the @samp{isearch-mode-map} and
+is invoked during a running Isearch, it will use the current Isearch string.
 @item
 @samp{consult-isearch}: During an Isearch session, this command picks a
 search string from history and continues the search with the newly selected
@@ -660,11 +661,12 @@ the box with the default completion, Icomplete and Selectrum.
          ("M-s m" . consult-multi-occur)
          ("M-s k" . consult-keep-lines)
          ("M-s u" . consult-focus-lines)
-         ;; Replacement for isearch-edit-string
+         ;; Isearch integration
          ("M-s e" . consult-isearch)
          :map isearch-mode-map
          ("M-e" . consult-isearch)                 ;; orig. isearch-edit-string
-         ("M-s e" . consult-isearch))              ;; orig. isearch-edit-string
+         ("M-s e" . consult-isearch)               ;; orig. isearch-edit-string
+         ("M-s l" . consult-line))                 ;; required by consult-line to detect isearch
 
   ;; The :init configuration is always executed (Not lazy)
   :init

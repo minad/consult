@@ -1973,16 +1973,13 @@ The symbol at point and the last `isearch-string' is added to the future history
       :sort nil
       :default-top nil
       :require-match t
-      :add-history (list
-                    (thing-at-point 'symbol)
-                    (when isearch-string
-                      (if isearch-regexp
-                          isearch-string
-                        (regexp-quote isearch-string))))
+      ;; Always add last isearch string to future history
+      :add-history (list (thing-at-point 'symbol) isearch-string)
       :history '(:input consult--line-history)
       :lookup #'consult--line-match
       :default (car candidates)
-      :initial initial
+      ;; Add isearch-string as initial input if starting from isearch
+      :initial (or initial (and isearch-mode isearch-string))
       :preview (consult--preview-position)))))
 
 ;;;;; Command: consult-keep-lines
