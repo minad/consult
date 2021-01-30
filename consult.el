@@ -966,7 +966,13 @@ See consult--with-preview for the arguments PREVIEW-KEY, PREVIEW, TRANSFORM and 
 PREVIEW is the preview function.
 TRANSFORM is the transformation function.
 CANDIDATE is the function returning the current candidate.
-PREVIEW-KEY are the keys which triggers the preview."
+PREVIEW-KEY are the keys which triggers the preview.
+
+The preview function takes two arguments, the selected candidate and a restore
+flag. It is called every time with restore=nil after a preview-key keypress, as
+long as a new candidate is selected. Finally the preview function is called in
+any case with restore=t even if no preview has actually taken place. The
+candidate argument can be nil if the selection has been aborted."
   (declare (indent 4))
   `(consult--with-preview-1 ,preview-key ,preview ,transform ,candidate (lambda () ,@body)))
 
@@ -1475,7 +1481,7 @@ LOOKUP is a function which is applied to the result.
 ANNOTATE is the annotation function.
 INITIAL is initial input.
 DEFAULT-TOP must be nil if the default candidate should not be moved to the top.
-PREVIEW is a preview function.
+PREVIEW is a preview function, see `consult--with-preview'.
 PREVIEW-KEY are the preview keys (nil, 'any, a single key or a list of keys).
 NARROW is an alist of narrowing prefix strings and description.
 KEYMAP is a command-specific keymap."
@@ -1631,7 +1637,7 @@ HISTORY is the symbol of the history variable.
 INITIAL is initial input.
 DEFAULT is the default selected value.
 ADD-HISTORY is a list of items to add to the history.
-PREVIEW is a preview function.
+PREVIEW is a preview function, see `consult--with-preview'.
 PREVIEW-KEY are the preview keys (nil, 'any, a single key or a list of keys).
 KEYMAP is a command-specific keymap."
   (minibuffer-with-setup-hook
