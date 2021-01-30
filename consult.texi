@@ -53,7 +53,7 @@ Special features
 
 * Live previews::                Preview the currently selected candidate
 * Narrowing to subsets::         Restricting the completion to a candidate subset
-* Asynchronous candidates::      Filtering asynchronously generated candidate lists
+* Asynchronous search::          Filtering asynchronously generated candidate lists
 * Embark integration::           Actions, Grep/Occur-buffer export
 
 Configuration
@@ -454,7 +454,7 @@ features.
 @menu
 * Live previews::                Preview the currently selected candidate
 * Narrowing to subsets::         Restricting the completion to a candidate subset
-* Asynchronous candidates::      Filtering asynchronously generated candidate lists
+* Asynchronous search::          Filtering asynchronously generated candidate lists
 * Embark integration::           Actions, Grep/Occur-buffer export
 @end menu
 
@@ -501,17 +501,17 @@ Furthermore there is the @samp{consult-narrow-help} command which can be bound t
 key in the @samp{consult-narrow-map} if this is desired, as shown in the @ref{Use-package example, , example
 configuration}.
 
-@node Asynchronous candidates
-@section Asynchronous candidates
+@node Asynchronous search
+@section Asynchronous search
 
-@cindex asynchronous candidates
+@cindex asynchronous search
 
 Consult has support for asynchronous generation of candidate lists. This
-feature is used for example by @samp{consult-grep}, where the list of matches is
-generated dynamically while the user is typing a grep regular expression. The
-grep process is executed in the background. When modifying the grep regular
-expression, the background process is terminated and a new process is started
-with the modified regular expression.
+feature is used for search commands like @samp{consult-grep}, where the list of
+matches is generated dynamically while the user is typing a grep regular
+expression. The grep process is executed in the background. When modifying the
+grep regular expression, the background process is terminated and a new process
+is started with the modified regular expression.
 
 The matches, which have been found, can then be narrowed using the installed
 Emacs completion-style. This can be very powerful if you are using for example

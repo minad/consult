@@ -395,18 +395,18 @@ variables and functions with their descriptions.
  key in the =consult-narrow-map= if this is desired, as shown in the [[#use-package-example][example
  configuration]].
 
-** Asynchronous candidates
+** Asynchronous search
    :properties:
    :description: Filtering asynchronously generated candidate lists
    :end:
- #+cindex: asynchronous candidates
+ #+cindex: asynchronous search
 
  Consult has support for asynchronous generation of candidate lists. This
- feature is used for example by =consult-grep=, where the list of matches is
- generated dynamically while the user is typing a grep regular expression. The
- grep process is executed in the background. When modifying the grep regular
- expression, the background process is terminated and a new process is started
- with the modified regular expression.
+ feature is used for search commands like =consult-grep=, where the list of
+ matches is generated dynamically while the user is typing a grep regular
+ expression. The grep process is executed in the background. When modifying the
+ grep regular expression, the background process is terminated and a new process
+ is started with the modified regular expression.
 
  The matches, which have been found, can then be narrowed using the installed
  Emacs completion-style. This can be very powerful if you are using for example
