@@ -204,7 +204,9 @@ with a space character."
     (?m . consult--source-bookmark)
     (?p . consult--source-project-buffer)
     (?q . consult--source-project-file))
-  "Sources used by `consult-buffer'."
+  "Sources used by `consult-buffer'.
+
+See `consult--multi' for a description of the source values."
   :type 'alist)
 
 (defcustom consult-mode-command-filter
@@ -1615,14 +1617,15 @@ OPTIONS is the plist of options passed to `consult--read'.
 
 The function returns the selected candidate in the form (cons candidate
 source-value). The source alist contains (character . source) pairs, where the
-character is used for disambiguation of candidates. The source can either be the
-symbol of a source variable or a source value. Source values must be plists with
-the following fields:
+character is used for narrowing and disambiguation of candidates. The source can
+either be the symbol of a source variable or a source value. Source values must
+be plists with the following fields:
 
-* :name - Name of the source, used for annotation (REQUIRED)
+* :name - Name of the source, used for narrowing and annotation (REQUIRED)
 * :category - Completion category (REQUIRED)
 * items - List of candidate strings or function returning list of strings (REQUIRED)
 * :face - Face used for highlighting the candidates (OPTIONAL)
+* :narrow - Pair (character . string) to use for narrowing instead of the key (OPTIONAL)
 * Arbitrary other fields specific to your use case."
   (let* ((sources (consult--multi-preprocess sources))
          (candidates (let ((consult--cache))
@@ -2976,7 +2979,8 @@ The command supports previewing the currently selected theme."
     :category bookmark
     :face     consult-bookmark
     :items    ,#'bookmark-all-names
-    :open     ,#'bookmark-jump))
+    :open     ,#'bookmark-jump)
+  "Bookmark candidate source for `consult-buffer'.")
 
 (defvar consult--source-project-buffer
   `(:name      "Project Buffer"
@@ -2992,7 +2996,8 @@ The command supports previewing the currently selected theme."
                  (seq-filter (lambda (x)
                                (when-let (file (buffer-file-name x))
                                  (string-prefix-p root file)))
-                             (consult--cached-buffers)))))))
+                             (consult--cached-buffers))))))
+  "Project buffer candidate source for `consult-buffer'.")
 
 (defvar consult--source-project-file
   `(:name      "Project File"
@@ -3012,7 +3017,8 @@ The command supports previewing the currently selected theme."
                   (seq-filter (lambda (x)
                                 (and (not (gethash x ht))
                                      (string-prefix-p root x)))
-                              recentf-list)))))))
+                              recentf-list))))))
+  "Project file candidate source for `consult-buffer'.")
 
 (defvar consult--source-hidden-buffer
   `(:name     "Hidden Buffer"
@@ -3023,7 +3029,8 @@ The command supports previewing the currently selected theme."
     ,(lambda ()
        (let ((filter (consult--regexp-filter consult-buffer-filter)))
          (seq-filter (lambda (x) (string-match-p filter x))
-                     (consult--cached-buffer-names))))))
+                     (consult--cached-buffer-names)))))
+  "Hidden buffer candidate source for `consult-buffer'.")
 
 (defvar consult--source-buffer
   `(:name     "Buffer"
@@ -3034,7 +3041,8 @@ The command supports previewing the currently selected theme."
     ,(lambda ()
        (let ((filter (consult--regexp-filter consult-buffer-filter)))
          (seq-remove (lambda (x) (string-match-p filter x))
-                     (consult--cached-buffer-names))))))
+                     (consult--cached-buffer-names)))))
+  "Buffer candidate source for `consult-buffer'.")
 
 (defvar consult--source-file
   `(:name     "File"
@@ -3044,7 +3052,8 @@ The command supports previewing the currently selected theme."
     :items
     ,(lambda ()
        (let ((ht (consult--cached-buffer-file-hash)))
-         (seq-remove (lambda (x) (gethash x ht)) recentf-list)))))
+         (seq-remove (lambda (x) (gethash x ht)) recentf-list))))
+  "Recent file candidate source for `consult-buffer'.")
 
 (defun consult--buffer (display)
   "Backend implementation of `consult-buffer' with DISPLAY function."
@@ -3077,8 +3086,8 @@ The command supports recent files, bookmarks, views and project files as virtual
 buffers. Buffers are previewed. Furthermore narrowing to buffers (b), files (f),
 bookmarks (m) and project files (p) is supported via the corresponding keys. In
 order to determine the project-specific files and buffers, the
-`consult-project-root-function' is used. See `consult-buffer-sources' for the
-configuration of the virtual buffer sources."
+`consult-project-root-function' is used. See `consult-buffer-sources' and
+`consult--multi' for the configuration of the virtual buffer sources."
   (interactive)
   (consult--buffer #'switch-to-buffer))
 
