@@ -1324,7 +1324,7 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
         (mapcan (lambda (x)
                   (if (string= x "OPTS")
                       opts
-                    (list (replace-regexp-in-string "ARG" input x t))))
+                    (list (replace-regexp-in-string "ARG" input x 'fixedcase 'literal))))
                 cmd)))))
 
 (defmacro consult--async-command (cmd &rest transforms)
@@ -2225,7 +2225,9 @@ The arguments and expected return value are as specified for
     "\\(-global\\)?-mode$" ""
     (if (eq mode 'c-mode)
         "cc"
-      (symbol-name mode)))))
+      (symbol-name mode))
+    'fixedcase)
+   'fixedcase))
 
 (defun consult--mode-command-candidates (modes)
   "Extract commands from MODES.
