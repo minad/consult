@@ -1553,8 +1553,8 @@ KEYMAP is a command-specific keymap."
                 (cons (car x) (plist-get (cdr x) :name))))
           sources))
 
-(defsubst consult--multi-properties (sources cand)
-  "Lookup source properties for CAND from SOURCES list."
+(defsubst consult--multi-source (sources cand)
+  "Lookup source for CAND from SOURCES list."
   (cdr (assq (- (aref cand 0) consult--tofu-char) sources)))
 
 (defun consult--multi-annotate (sources max-len)
@@ -1566,14 +1566,14 @@ MAX-LEN is the maximum candidate length."
      (make-string (- (+ max-len (next-single-char-property-change 0 'invisible cand))
                      (length cand))
                   32)
-     (plist-get (consult--multi-properties sources cand) :name))))
+     (plist-get (consult--multi-source sources cand) :name))))
 
 (defun consult--multi-lookup (sources)
   "Lookup function used by `consult--multi' with SOURCES."
   (lambda (_ candidates cand)
     (cond
      ((member cand candidates) (cons (substring cand 1)
-                                     (consult--multi-properties sources cand)))
+                                     (consult--multi-source sources cand)))
      ((not (string-blank-p cand)) (list cand)))))
 
 (defun consult--multi-candidates (sources)
@@ -1608,10 +1608,22 @@ MAX-LEN is the maximum candidate length."
                       sources)))
 
 (defun consult--multi (prompt sources &rest options)
-  "Select from candidates taken from multiple SOURCES.
+  "Select from candidates taken from an alist of SOURCES.
 
 PROMPT is the minibuffer prompt.
-OPTIONS is the plist of options."
+OPTIONS is the plist of options passed to `consult--read'.
+
+The function returns the selected candidate in the form (cons candidate
+source-value). The source alist contains (character . source) pairs, where the
+character is used for disambiguation of candidates. The source can either be the
+symbol of a source variable or a source value. Source values must be plists with
+the following fields:
+
+* :name - Name of the source, used for annotation (REQUIRED)
+* :category - Completion category (REQUIRED)
+* items - List of candidate strings or function returning list of strings (REQUIRED)
+* :face - Face used for highlighting the candidates (OPTIONAL)
+* Arbitrary other fields specific to your use case."
   (let* ((sources (consult--multi-preprocess sources))
          (candidates (let ((consult--cache))
                        (consult--multi-candidates sources))))
