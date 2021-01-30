@@ -26,7 +26,7 @@ search commands are provided, like an asynchronous =consult-grep=, and
 =consult-line=, which resembles [[https://github.com/abo-abo/swiper#swiper][Swiper]] or [[https://github.com/emacsorphanage/helm-swoop][Helm-Swoop]]. Multiple of the offered
 commands are greatly enhanced in comparison to their existing Emacs equivalents.
 The command =consult-imenu= presents a flat list of the Imenu with [[#live-previews][live preview]]
-and [[#narrowing-to-subsets][narrowing support]]. Please take a look at the [[#available-commands][full list of commands]]!
+and [[#narrowing-to-subsets][narrowing support]]. Please take a look at the [[#available-commands][full list of commands]].
 
 All Consult commands are compatible with completion systems based on the
 standard Emacs =completing-read= API, notably the default completion system,
@@ -74,7 +74,7 @@ Fig. 3: Command =consult-line=
 Most provided commands follow the meaningful naming scheme =consult-<thing>=.
 
 *TIP:* If you have [[https://github.com/minad/marginalia][Marginalia]] installed and heavy annotators enabled, type =M-x
-^consult= to see all Consult commands with their abbreviated description!
+^consult= to see all Consult commands with their abbreviated description.
 Alternatively, type =C-h a ^consult= to get an overview of all Consult
 variables and functions with their descriptions.
 
@@ -409,8 +409,8 @@ variables and functions with their descriptions.
  is started with the modified regular expression.
 
  The matches, which have been found, can then be narrowed using the installed
- Emacs completion-style. This can be very powerful if you are using for example
- the =orderless= completion style.
+ Emacs completion-style. This can be powerful if you are using for example the
+ =orderless= completion style.
 
  This two-level filtering is possible by splitting the input string. Part of the
  input string is treated as input to grep and part of the input is used for
@@ -437,7 +437,7 @@ variables and functions with their descriptions.
  - =!= with error face, failure, process exited with a nonzero error code.
  - =;= with error face, interrupted, for example if more input is provided.
 
- There is an ephemeral error log buffer =_*consult-async-log*= (note the leading space!),
+ There is an ephemeral error log buffer =_*consult-async-log*= (note the leading space),
  you can access the buffer using =consult-buffer= and =switch-to-buffer= by first pressing =SPC=
  and then selecting the buffer.
 
@@ -489,7 +489,7 @@ It is recommended to manage package configurations with the excellent
 any keybindings or modes. In order to use the Consult commands, you must
 configure the keybindings yourself. As a result, the package is not intrusive
 but requires a little setup effort. Feel free to only bind the commands you
-consider useful to your workflow!
+consider useful to your workflow.
 
 Note that there are two packages as of now: =consult= and =consult-flycheck=.
 =consult-flycheck= is a separate package such that the core =consult= package
@@ -520,7 +520,7 @@ the box with the default completion, Icomplete and Selectrum.
           ("C-x 5 b" . consult-buffer-other-frame)  ;; orig. switch-to-buffer-other-frame
           ;; Custom M-# bindings for fast register access
           ("M-#" . consult-register-load)
-          ("M-'" . consult-register-store)          ;; orig. abbrev-prefix-mark (UNRELATED!)
+          ("M-'" . consult-register-store)          ;; orig. abbrev-prefix-mark (unrelated)
           ("C-M-#" . consult-register)
           ;; Other custom bindings
           ("M-y" . consult-yank-pop)                ;; orig. yank-pop
@@ -547,7 +547,7 @@ the box with the default completion, Icomplete and Selectrum.
           ("M-e" . consult-isearch)                 ;; orig. isearch-edit-string
           ("M-s e" . consult-isearch))              ;; orig. isearch-edit-string
 
-   ;; The :init configuration is always executed (Not lazy!)
+   ;; The :init configuration is always executed (Not lazy)
    :init
 
    ;; Custom command wrappers. It is generally encouraged to write your own
@@ -565,29 +565,30 @@ the box with the default completion, Icomplete and Selectrum.
    (setq register-preview-delay 0
          register-preview-function #'consult-register-format)
    ;; Optionally tweak the register preview window.
-   ;; This adds stripes, sorting and hides the mode line of the window.
+   ;; This adds zebra stripes, sorting and hides the mode line of the window.
    (advice-add #'register-preview :override #'consult-register-window)
 
    ;; Configure other variables and modes in the :config section,
    ;; after lazily loading the package.
    :config
 
-   ;; Configure preview. Note that the preview-key can also be configured on a
-   ;; per-command basis via `consult-config'.
-   ;; The default value is 'any, such that any key triggers the preview.
+   ;; Optionally configure preview. Note that the preview-key can also be
+   ;; configured on a per-command basis via `consult-config'. The default value
+   ;; is 'any, such that any key triggers the preview.
    ;; (setq consult-preview-key 'any)
    ;; (setq consult-preview-key (kbd "M-p"))
    ;; (setq consult-preview-key (list (kbd "<S-down>") (kbd "<S-up>")))
 
-   ;; Optionally configure narrowing key.
+   ;; Optionally configure the narrowing key.
    ;; Both < and C-+ work reasonably well.
    (setq consult-narrow-key "<") ;; (kbd "C-+")
    ;; Optionally make narrowing help available in the minibuffer.
    ;; Probably not needed if you are using which-key.
    ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
 
-   ;; Optional configure additional sources for `consult-buffer',
-   ;; for example a view library like https://github.com/minad/bookmark-view/.
+   ;; Optionally configure additional sources for `consult-buffer',
+   ;; for example add views to the list of virtual buffers
+   ;; from a library like https://github.com/minad/bookmark-view/.
    ;; (add-to-list 'consult-buffer-sources
    ;;               (list ?v
    ;;                    :name     "View"
@@ -597,9 +598,16 @@ the box with the default completion, Icomplete and Selectrum.
    ;;                    :items    #'bookmark-view-names)
    ;;              'append)
 
-   ;; Optionally configure a function which returns the project root directory
+   ;; Optionally configure a function which returns the project root directory.
+   ;; You can either use `projectile-project-root', `project-roots' or `vc-root-dir'.
    (autoload 'projectile-project-root "projectile")
-   (setq consult-project-root-function #'projectile-project-root))
+   (setq consult-project-root-function #'projectile-project-root)
+   ;; (setq consult-project-root-function
+   ;;       (lambda ()
+   ;;         (when-let (project (project-current))
+   ;;           (car (project-roots project)))))
+   ;; (setq consult-project-root-function #'vc-root-dir)
+ )
 
  ;; Optionally add the `consult-flycheck' command.
  (use-package consult-flycheck
@@ -616,7 +624,7 @@ the box with the default completion, Icomplete and Selectrum.
 
  *TIP:* If you have [[https://github.com/minad/marginalia][Marginalia]] installed, type =M-x customize-variable RET
  ^consult= to see all Consult-specific customizable variables with their current
- values and abbreviated description! Alternatively, type =C-h a ^consult= to get
+ values and abbreviated description. Alternatively, type =C-h a ^consult= to get
  an overview of all Consult variables and functions with their descriptions.
 
  | Variable                        | Default            | Description                                              |
@@ -683,7 +691,7 @@ the box with the default completion, Icomplete and Selectrum.
  ;; For `consult-line' specify multiple keybindings.
  ;; Note that you should bind the <S-up> and <S-down> in the
  ;; `minibuffer-local-completion-map' or `selectrum-minibuffer-map'
- ;; to the commands which select the previous or next candidate!
+ ;; to the commands which select the previous or next candidate.
  (setq consult-config `((consult-theme :preview-key nil)
                         (consult-buffer :preview-key ,(kbd "M-p"))
                         (consult-line :preview-key (list ,(kbd "<S-down>") ,(kbd "<S-up>")))))
@@ -695,7 +703,7 @@ the box with the default completion, Icomplete and Selectrum.
  1. Create your own wrapper function which passes modified arguments to the Consult functions.
  2. Modify =consult-config= in order to change the =consult--read= settings.
  3. Create advices to modify some internal behavior.
- 4. Write or propose a patch!
+ 4. Write or propose a patch.
 
 * Recommended packages
   :properties:
@@ -730,8 +738,8 @@ Consult and add more components later to the mix.
   :end:
 
 Consult is intended to be a community effort, please participate in the
-discussions. Contributions are very welcome. If you have a proposal, please take a look
-first at the [[https://github.com/consult/issues][Consult issue tracker]] and the [[https://github.com/minad/consult/issues/6][Consult wishlist]].
+discussions. Contributions are welcome. If you have a proposal, please take a
+look first at the [[https://github.com/consult/issues][Consult issue tracker]] and the [[https://github.com/minad/consult/issues/6][Consult wishlist]].
 
 If you find a bug or suspect that there is a problem with Consult, please check
 first that you have updated all the relevant packages. This includes Selectrum,
