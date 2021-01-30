@@ -466,6 +466,14 @@ Size of private unicode plane b.")
 
 ;;;; Helper functions and macros
 
+(defmacro consult--define-cache (name &rest body)
+  "Define cached value with NAME and BODY."
+  (declare (indent 1))
+  `(defun ,name ()
+     (or (alist-get ',name consult--cache)
+         (setf (alist-get ',name consult--cache)
+               ,(macroexp-progn body)))))
+
 (defsubst consult--completion-filter (category highlight)
   "Return filter function used by completion system.
 
@@ -2924,14 +2932,6 @@ The command supports previewing the currently selected theme."
         (load-theme theme :no-confirm)))))
 
 ;;;;; Command: consult-buffer
-
-(defmacro consult--define-cache (name &rest body)
-  "Define cached value with NAME and BODY."
-  (declare (indent 1))
-  `(defun ,name ()
-     (or (alist-get ',name consult--cache)
-         (setf (alist-get ',name consult--cache)
-               ,(macroexp-progn body)))))
 
 (consult--define-cache consult--cached-buffers
   (append (delq (current-buffer) (buffer-list)) (list (current-buffer))))
