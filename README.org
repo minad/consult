@@ -442,6 +442,53 @@ variables and functions with their descriptions.
  you can access the buffer using =consult-buffer= and =switch-to-buffer= by first pressing =SPC=
  and then selecting the buffer.
 
+** Multiple sources
+   :properties:
+   :description: Combining candidates from different sources
+   :end:
+  #+cindex: multiple sources
+
+  Consult allows combining multiple candidate sources. This feature is used by
+  the =consult-buffer= command to present buffer-like candidates in a single
+  menu for quick access. By default =consult-buffer= includes buffers,
+  bookmarks, recent files and project-specific buffers and files. It is possible
+  to configure the list of sources via the =consult-buffer-sources= variable.
+  Furthermore arbitrary custom sources can be defined.
+
+  As an example, the bookmark source is defined as follows:
+
+  #+begin_src elisp
+  (defvar consult--source-bookmark
+    `(:name     "Bookmark"
+      :narrow   ?m
+      :category bookmark
+      :face     consult-bookmark
+      :history  bookmark-history
+      :items    ,#'bookmark-all-names
+      :open     ,#'bookmark-jump))
+  #+end_src
+
+  Sources can be added directly to the =consult-buffer-source= list for
+  convenience. For example views can be added to the list of virtual buffers
+  from a library like https://github.com/minad/bookmark-view/.
+
+  #+begin_src elisp
+  (add-to-list 'consult-buffer-sources
+                (list :name     "View"
+                      :narrow   ?v
+                      :category 'bookmark
+                      :face     'font-lock-keyword-face
+                      :history  'bookmark-view-history
+                      :open     #'bookmark-jump
+                      :items    #'bookmark-view-names)
+                'append)
+  #+end_src
+
+  For more details, see the documentation of =consult-buffer= and of the
+  internal =consult--multi= API. The =consult--multi= function can be used to
+  create new multi-source commands, but is part of the internal API as of now,
+  since some details may still change.
+
 ** Embark integration
    :properties:
    :description: Actions, Grep/Occur-buffer export

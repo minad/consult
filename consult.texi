@@ -54,6 +54,7 @@ Special features
 * Live previews::                Preview the currently selected candidate
 * Narrowing to subsets::         Restricting the completion to a candidate subset
 * Asynchronous search::          Filtering asynchronously generated candidate lists
+* Multiple sources::             Combining candidates from different sources
 * Embark integration::           Actions, Grep/Occur-buffer export
 
 Configuration
@@ -456,6 +457,7 @@ features.
 * Live previews::                Preview the currently selected candidate
 * Narrowing to subsets::         Restricting the completion to a candidate subset
 * Asynchronous search::          Filtering asynchronously generated candidate lists
+* Multiple sources::             Combining candidates from different sources
 * Embark integration::           Actions, Grep/Occur-buffer export
 @end menu
 
@@ -560,6 +562,52 @@ indicator showing the process status:
 There is an ephemeral error log buffer @samp{_*consult-async-log*} (note the leading space),
 you can access the buffer using @samp{consult-buffer} and @samp{switch-to-buffer} by first pressing @samp{SPC}
 and then selecting the buffer.
+
+@node Multiple sources
+@section Multiple sources
+
+@cindex multiple sources
+
+Consult allows combining multiple candidate sources. This feature is used by
+the @samp{consult-buffer} command to present buffer-like candidates in a single
+menu for quick access. By default @samp{consult-buffer} includes buffers,
+bookmarks, recent files and project-specific buffers and files. It is possible
+to configure the list of sources via the @samp{consult-buffer-sources} variable.
+Furthermore arbitrary custom sources can be defined.
+
+As an example, the bookmark source is defined as follows:
+
+@lisp
+(defvar consult--source-bookmark
+  `(:name     "Bookmark"
+    :narrow   ?m
+    :category bookmark
+    :face     consult-bookmark
+    :history  bookmark-history
+    :items    ,#'bookmark-all-names
+    :open     ,#'bookmark-jump))
+@end lisp
+
+Sources can be added directly to the @samp{consult-buffer-source} list for
+convenience. For example views can be added to the list of virtual buffers
+from a library like @uref{https://github.com/minad/bookmark-view/}.
+
+@lisp
+(add-to-list 'consult-buffer-sources
+              (list :name     "View"
+                    :narrow   ?v
+                    :category 'bookmark
+                    :face     'font-lock-keyword-face
+                    :history  'bookmark-view-history
+                    :open     #'bookmark-jump
+                    :items    #'bookmark-view-names)
+              'append)
+@end lisp
+
+For more details, see the documentation of @samp{consult-buffer} and of the
+internal @samp{consult--multi} API@. The @samp{consult--multi} function can be used to
+create new multi-source commands, but is part of the internal API as of now,
+since some details may still change.
 
 @node Embark integration
 @section Embark integration
