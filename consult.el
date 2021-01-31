@@ -1564,11 +1564,15 @@ KEYMAP is a command-specific keymap."
 
 MAX-LEN is the maximum candidate length."
   (lambda (cand)
-    (concat
-     (make-string (- (+ max-len (next-single-char-property-change 0 'invisible cand))
-                     (length cand))
-                  32)
-     (plist-get (consult--multi-source sources cand) :name))))
+    (let ((src (consult--multi-source sources cand)))
+      (concat
+       (make-string
+        (- (+ max-len (next-single-char-property-change 0 'invisible cand))
+           (length cand))
+        32)
+       (if-let (annotate (plist-get src :annotate))
+           (funcall annotate cand)
+         (plist-get src :name))))))
 
 (defun consult--multi-lookup (sources)
   "Lookup function used by `consult--multi' with SOURCES."
@@ -1630,6 +1634,7 @@ Optional source fields:
 * :predicate - Function which must return t if the source is enabled.
 * :face - Face used for highlighting the candidates
 * :narrow - Pair (character . string) to use for narrowing instead of the key
+* :annotate - Annotation function for the source candidates.
 * Arbitrary other fields specific to your use case."
   (let* ((sources (consult--multi-preprocess sources))
          (candidates (let ((consult--cache))
