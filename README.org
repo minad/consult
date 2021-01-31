@@ -504,6 +504,13 @@ variables and functions with their descriptions.
   buffers if they do not exist yet.
 
   #+begin_src elisp
+  (defun mode-buffer-exists-p (mode)
+    (seq-some (lambda (buf)
+                (provided-mode-derived-p
+                 (buffer-local-value 'major-mode buf)
+                 mode))
+              (buffer-list)))
+
   (defvar eshell-source
     `(:category 'consult-new
       :face     'font-lock-constant-face
@@ -511,11 +518,7 @@ variables and functions with their descriptions.
       ,(lambda (&rest _) (eshell))
       :items
       ,(lambda ()
-         (unless (seq-some (lambda (buf)
-                             (provided-mode-derived-p
-                              (buffer-local-value 'major-mode buf)
-                              'eshell-mode))
-                           (buffer-list))
+         (unless (mode-buffer-exists-p 'eshell-mode)
            '("*eshell* (new)")))))
 
   (defvar term-source
@@ -526,12 +529,11 @@ variables and functions with their descriptions.
          (ansi-term (or (getenv "SHELL") "/bin/sh")))
       :items
       ,(lambda ()
-         (unless (seq-some (lambda (buf)
-                             (provided-mode-derived-p
-                              (buffer-local-value 'major-mode buf)
-                              'term-mode))
-                           (buffer-list))
+         (unless (mode-buffer-exists-p 'term-mode)
            '("*ansi-term* (new)")))))
+
+  (add-to-list 'consult-buffer-sources 'eshell-source 'append)
+  (add-to-list 'consult-buffer-sources 'term-source 'append)
   #+end_src
 
   For more details, see the documentation of =consult-buffer= and of the

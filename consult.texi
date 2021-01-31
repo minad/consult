@@ -637,6 +637,13 @@ Other useful sources allow the creation of terminal and eshell
 buffers if they do not exist yet.
 
 @lisp
+(defun mode-buffer-exists-p (mode)
+  (seq-some (lambda (buf)
+              (provided-mode-derived-p
+               (buffer-local-value 'major-mode buf)
+               mode))
+            (buffer-list)))
+
 (defvar eshell-source
   `(:category 'consult-new
     :face     'font-lock-constant-face
@@ -644,11 +651,7 @@ buffers if they do not exist yet.
     ,(lambda (&rest _) (eshell))
     :items
     ,(lambda ()
-       (unless (seq-some (lambda (buf)
-                           (provided-mode-derived-p
-                            (buffer-local-value 'major-mode buf)
-                            'eshell-mode))
-                         (buffer-list))
+       (unless (mode-buffer-exists-p 'eshell-mode)
          '("*eshell* (new)")))))
 
 (defvar term-source
@@ -659,12 +662,11 @@ buffers if they do not exist yet.
        (ansi-term (or (getenv "SHELL") "/bin/sh")))
     :items
     ,(lambda ()
-       (unless (seq-some (lambda (buf)
-                           (provided-mode-derived-p
-                            (buffer-local-value 'major-mode buf)
-                            'term-mode))
-                         (buffer-list))
+       (unless (mode-buffer-exists-p 'term-mode)
          '("*ansi-term* (new)")))))
+
+(add-to-list 'consult-buffer-sources 'eshell-source 'append)
+(add-to-list 'consult-buffer-sources 'term-source 'append)
 @end lisp
 
 For more details, see the documentation of @samp{consult-buffer} and of the
