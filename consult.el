@@ -2874,6 +2874,13 @@ starts a new Isearch session otherwise."
             :lookup
             (lambda (_ candidates str)
               (if-let (cand (car (member str candidates))) (substring cand 1) str))
+            :preview
+            (lambda (cand restore)
+              (unless restore
+                (setq isearch-string cand)
+                (when (fboundp 'isearch-update-from-string-properties) ;; Emacs 27.1
+                  (isearch-update-from-string-properties cand))
+                (isearch-update)))
             :narrow
             (cons
              (lambda (cand) (eq (- (aref cand 0) consult--tofu-char) consult--narrow))
