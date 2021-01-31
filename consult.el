@@ -1334,9 +1334,11 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
     (save-match-data
       (let ((opts))
         (when (string-match " +--\\( +\\|$\\)" input)
-          ;; split-string-and-unquote fails if the quotes are invalid. Ignore it.
-          (setq opts (ignore-errors (split-string-and-unquote (substring input (match-end 0))))
-                input (substring input 0 (match-beginning 0))))
+          ;; split-string-and-unquote modifies the match data
+          ;; and fails if the quotes are invalid. Ignore it.
+          (setq opts (substring input (match-end 0))
+                input (substring input 0 (match-beginning 0))
+                opts (ignore-errors (split-string-and-unquote opts))))
         (mapcan (lambda (x)
                   (if (string= x "OPTS")
                       opts
