@@ -468,6 +468,27 @@ Size of private unicode plane b.")
 
 ;;;; Helper functions and macros
 
+(defmacro consult--minibuffer-with-setup-hook (fun &rest body)
+  "Variant of `minibuffer-with-setup-hook' using a symbol and `fset'.
+
+This macro is only needed to prevent memory leaking issues with
+the upstream `minibuffer-with-setup-hook' macro.
+FUN is the hook function and BODY opens the minibuffer."
+  (declare (indent 1) (debug t))
+  (let ((hook (make-symbol "hook"))
+        (append))
+    (when (eq (car-safe fun) :append)
+      (setq append '(t) fun (cadr fun)))
+    `(let ((,hook (make-symbol "consult--minibuffer-setup")))
+       (fset ,hook (lambda ()
+                     (remove-hook 'minibuffer-setup-hook ,hook)
+                     (funcall ,fun)))
+       (unwind-protect
+           (progn
+             (add-hook 'minibuffer-setup-hook ,hook ,@append)
+             ,@body)
+         (remove-hook 'minibuffer-setup-hook ,hook)))))
+
 (defmacro consult--define-cache (name &rest body)
   "Define cached value with NAME and BODY."
   (declare (indent 1))
@@ -924,7 +945,7 @@ FACE is the cursor face."
 
 See consult--with-preview for the arguments PREVIEW-KEY, PREVIEW, TRANSFORM and CANDIDATE."
   (let ((input "") (selected))
-    (minibuffer-with-setup-hook
+    (consult--minibuffer-with-setup-hook
         (if (and preview preview-key)
             (lambda ()
               (setq consult--preview-function
@@ -1066,7 +1087,7 @@ to make it available for commands with narrowing."
 (defun consult--with-async-1 (async fun)
   "Setup ASYNC for FUN."
   (if (not (functionp async)) (funcall fun (lambda (_) async))
-    (minibuffer-with-setup-hook
+    (consult--minibuffer-with-setup-hook
         (lambda ()
           (funcall async 'setup)
           ;; Push input string to request refresh.
@@ -1502,7 +1523,7 @@ KEYMAP is a command-specific keymap."
    (sort t)
    (default-top t)
    (lookup (lambda (_input _cands x) x)))
-  (minibuffer-with-setup-hook
+  (consult--minibuffer-with-setup-hook
       (:append (lambda () (apply #'consult--read-setup prompt candidates options)))
     (consult--with-async (async candidates)
       ;; NOTE: Do not unnecessarily let-bind the lambdas to avoid
@@ -1670,7 +1691,7 @@ ADD-HISTORY is a list of items to add to the history.
 PREVIEW is a preview function, see `consult--with-preview'.
 PREVIEW-KEY are the preview keys (nil, 'any, a single key or a list of keys).
 KEYMAP is a command-specific keymap."
-  (minibuffer-with-setup-hook
+  (consult--minibuffer-with-setup-hook
       (:append (lambda ()
                  (consult--setup-keymap keymap nil nil preview-key)
                  (consult--add-history add-history)))
