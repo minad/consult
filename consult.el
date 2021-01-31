@@ -1621,11 +1621,15 @@ character is used for narrowing and disambiguation of candidates. The source can
 either be the symbol of a source variable or a source value. Source values must
 be plists with the following fields:
 
-* :name - Name of the source, used for narrowing and annotation (REQUIRED)
-* :category - Completion category (REQUIRED)
-* items - List of candidate strings or function returning list of strings (REQUIRED)
-* :face - Face used for highlighting the candidates (OPTIONAL)
-* :narrow - Pair (character . string) to use for narrowing instead of the key (OPTIONAL)
+Required source fields:
+* :name - Name of the source, used for narrowing and annotation
+* :category - Completion category
+* :items - List of candidate strings or function returning list of strings
+
+Optional source fields:
+* :predicate - Function which must return t if the source is enabled.
+* :face - Face used for highlighting the candidates
+* :narrow - Pair (character . string) to use for narrowing instead of the key
 * Arbitrary other fields specific to your use case."
   (let* ((sources (consult--multi-preprocess sources))
          (candidates (let ((consult--cache))
