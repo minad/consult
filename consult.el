@@ -2960,14 +2960,14 @@ The command supports previewing the currently selected theme."
 (consult--define-cache consult--cached-buffer-file-hash
   (consult--string-hash (delq nil (mapcar #'buffer-file-name (consult--cached-buffers)))))
 
-(defun consult--source-file-open (file display)
+(defun consult--open-file (file display)
   "Open FILE via DISPLAY function."
   (pcase-exhaustive display
     ('switch-to-buffer (find-file file))
     ('switch-to-buffer-other-window (find-file-other-window file))
     ('switch-to-buffer-other-frame (find-file-other-frame file))))
 
-(defun consult--source-buffer-open (buffer display)
+(defun consult--open-buffer (buffer display)
   "Open BUFFER via DISPLAY function."
   (funcall display buffer))
 
@@ -2984,7 +2984,7 @@ The command supports previewing the currently selected theme."
     :category  buffer
     :face      consult-buffer
     :narrow    (?p . "Project")
-    :open      ,#'consult--source-buffer-open
+    :open      ,#'consult--open-buffer
     :predicate ,(lambda () consult-project-root-function)
     :items
     ,(lambda ()
@@ -3001,7 +3001,7 @@ The command supports previewing the currently selected theme."
     :category  file
     :face      consult-file
     :narrow    (?p . "Project")
-    :open      ,#'consult--source-file-open
+    :open      ,#'consult--open-file
     :predicate ,(lambda () consult-project-root-function)
     :items
     ,(lambda ()
@@ -3021,7 +3021,7 @@ The command supports previewing the currently selected theme."
   `(:name     "Hidden Buffer"
     :category buffer
     :face     consult-buffer
-    :open     ,#'consult--source-buffer-open
+    :open     ,#'consult--open-buffer
     :items
     ,(lambda ()
        (let ((filter (consult--regexp-filter consult-buffer-filter)))
@@ -3033,7 +3033,7 @@ The command supports previewing the currently selected theme."
   `(:name     "Buffer"
     :category buffer
     :face     consult-buffer
-    :open     ,#'consult--source-buffer-open
+    :open     ,#'consult--open-buffer
     :items
     ,(lambda ()
        (let ((filter (consult--regexp-filter consult-buffer-filter)))
@@ -3045,7 +3045,7 @@ The command supports previewing the currently selected theme."
   `(:name     "File"
     :category file
     :face     consult-file
-    :open     ,#'consult--source-file-open
+    :open     ,#'consult--open-file
     :items
     ,(lambda ()
        (let ((ht (consult--cached-buffer-file-hash)))
@@ -3063,13 +3063,13 @@ The command supports previewing the currently selected theme."
    (lambda (cand restore)
      (when cand
        (let ((name (car cand))
-             (action (or (plist-get (cdr cand) :open) #'consult--source-buffer-open)))
+             (action (or (plist-get (cdr cand) :open) #'consult--open-buffer)))
          (cond
           (restore (funcall action name display))
           ;; In order to avoid slowness and unnecessary complexity, we
           ;; only preview buffers. Loading recent files, bookmarks or
           ;; views can result in expensive operations.
-          ((and (eq action #'consult--source-buffer-open)
+          ((and (eq action #'consult--open-buffer)
                 (or (eq display #'switch-to-buffer)
                     (eq display #'switch-to-buffer-other-window))
                 (get-buffer name))
