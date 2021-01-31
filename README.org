@@ -596,6 +596,7 @@ the box with the default completion, Icomplete and Selectrum.
    ;;                    :name     "View"
    ;;                    :category 'bookmark
    ;;                    :face     'font-lock-keyword-face
+   ;;                    :history  'bookmark-view-history
    ;;                    :open     #'bookmark-jump
    ;;                    :items    #'bookmark-view-names)
    ;;              'append)

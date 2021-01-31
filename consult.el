@@ -1635,18 +1635,22 @@ Optional source fields:
 * :face - Face used for highlighting the candidates
 * :narrow - Pair (character . string) to use for narrowing instead of the key
 * :annotate - Annotation function for the source candidates.
+* :history - Name of history variable to add selected candidate.
 * Arbitrary other fields specific to your use case."
   (let* ((sources (consult--multi-preprocess sources))
          (candidates (let ((consult--cache))
-                       (consult--multi-candidates sources))))
-    (apply #'consult--read prompt
-           (cdr candidates)
-           :category  'consult-multi
-           :predicate (consult--multi-predicate sources)
-           :narrow    (consult--multi-narrow sources)
-           :annotate  (consult--multi-annotate sources (car candidates))
-           :lookup    (consult--multi-lookup sources)
-           options)))
+                       (consult--multi-candidates sources)))
+         (selected (apply #'consult--read prompt
+                          (cdr candidates)
+                          :category  'consult-multi
+                          :predicate (consult--multi-predicate sources)
+                          :narrow    (consult--multi-narrow sources)
+                          :annotate  (consult--multi-annotate sources (car candidates))
+                          :lookup    (consult--multi-lookup sources)
+                          options)))
+    (when-let (history (plist-get (cdr selected) :history))
+      (add-to-history history (car selected)))
+    selected))
 
 ;;;; Internal API: consult--prompt
 
@@ -2984,6 +2988,7 @@ The command supports previewing the currently selected theme."
   `(:name     "Bookmark"
     :category bookmark
     :face     consult-bookmark
+    :history  bookmark-history
     :items    ,#'bookmark-all-names
     :open     ,#'bookmark-jump)
   "Bookmark candidate source for `consult-buffer'.")
@@ -2992,6 +2997,7 @@ The command supports previewing the currently selected theme."
   `(:name      "Project Buffer"
     :category  buffer
     :face      consult-buffer
+    :history   buffer-name-history
     :narrow    (?p . "Project")
     :open      ,#'consult--open-buffer
     :predicate ,(lambda () consult-project-root-function)
@@ -3009,6 +3015,7 @@ The command supports previewing the currently selected theme."
   `(:name      "Project File"
     :category  file
     :face      consult-file
+    :history   file-name-history
     :narrow    (?p . "Project")
     :open      ,#'consult--open-file
     :predicate ,(lambda () consult-project-root-function)
@@ -3030,6 +3037,7 @@ The command supports previewing the currently selected theme."
   `(:name     "Hidden Buffer"
     :category buffer
     :face     consult-buffer
+    :history  buffer-name-history
     :open     ,#'consult--open-buffer
     :items
     ,(lambda ()
@@ -3042,6 +3050,7 @@ The command supports previewing the currently selected theme."
   `(:name     "Buffer"
     :category buffer
     :face     consult-buffer
+    :history  buffer-name-history
     :open     ,#'consult--open-buffer
     :items
     ,(lambda ()
@@ -3054,6 +3063,7 @@ The command supports previewing the currently selected theme."
   `(:name     "File"
     :category file
     :face     consult-file
+    :history  file-name-history
     :open     ,#'consult--open-file
     :items
     ,(lambda ()
