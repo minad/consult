@@ -500,6 +500,40 @@ variables and functions with their descriptions.
                 'append)
   #+end_src
 
+  Other useful sources allow the creation of terminal and eshell
+  buffers if they do not exist yet.
+
+  #+begin_src elisp
+  (defvar eshell-source
+    `(:category 'consult-new
+      :face     'font-lock-constant-face
+      :open
+      ,(lambda (&rest _) (eshell))
+      :items
+      ,(lambda ()
+         (unless (seq-some (lambda (buf)
+                             (provided-mode-derived-p
+                              (buffer-local-value 'major-mode buf)
+                              'eshell-mode))
+                           (buffer-list))
+           '("*eshell* (new)")))))
+
+  (defvar term-source
+    `(:category 'consult-new
+      :face     'font-lock-constant-face
+      :open
+      ,(lambda (&rest _)
+         (ansi-term (or (getenv "SHELL") "/bin/sh")))
+      :items
+      ,(lambda ()
+         (unless (seq-some (lambda (buf)
+                             (provided-mode-derived-p
+                              (buffer-local-value 'major-mode buf)
+                              'term-mode))
+                           (buffer-list))
+           '("*ansi-term* (new)")))))
+  #+end_src
+
   For more details, see the documentation of =consult-buffer= and of the
   internal =consult--multi= API. The =consult--multi= function can be used to
   create new multi-source commands, but is part of the internal API as of now,
