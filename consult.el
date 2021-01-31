@@ -497,7 +497,7 @@ FUN is the hook function and BODY opens the minibuffer."
          (setf (alist-get ',name consult--cache)
                ,(macroexp-progn body)))))
 
-(defsubst consult--completion-filter (category highlight)
+(defun consult--completion-filter (category highlight)
   "Return filter function used by completion system.
 
 CATEGORY is the completion category.
@@ -710,7 +710,7 @@ KEY is the key function."
   (when (and jit-lock-mode (< (buffer-size) consult-fontify-max-size))
     (jit-lock-fontify-now)))
 
-(defsubst consult--fontify-region (start end)
+(defun consult--fontify-region (start end)
   "Ensure that region between START and END is fontified."
   (when jit-lock-mode
     (jit-lock-fontify-now start end)))
@@ -749,7 +749,7 @@ KEY is the key function."
 ;; number, such that the user can search for numbers with `consult-line', we
 ;; encode the line number as unicode characters in the supplementary private use
 ;; plane b. By doing that, it is unlikely that accidential matching occurs.
-(defsubst consult--encode-location (marker)
+(defun consult--encode-location (marker)
   "Generate unique string for MARKER.
 DISPLAY is the string to display instead of the unique string."
   (let ((str "") (n marker))
@@ -759,7 +759,7 @@ DISPLAY is the string to display instead of the unique string."
              (and (>= n consult--tofu-range) (setq n (/ n consult--tofu-range)))))
     str))
 
-(defsubst consult--line-number-prefix (marker line width)
+(defun consult--line-number-prefix (marker line width)
   "Format LINE number prefix number with padding.
 
 MARKER and LINE are added as 'consult-location text property.
@@ -787,7 +787,7 @@ Since the line number is part of the candidate it will be matched-on during comp
                str))
             candidates)))
 
-(defsubst consult--region-with-cursor (begin end marker)
+(defun consult--region-with-cursor (begin end marker)
   "Return region string with a marking at the cursor position.
 
 BEGIN is the begin position.
@@ -800,7 +800,7 @@ MARKER is the cursor position."
                          'face 'consult-preview-cursor str)
       str)))
 
-(defsubst consult--line-with-cursor (marker)
+(defun consult--line-with-cursor (marker)
   "Return current line where the cursor MARKER is highlighted."
   (consult--region-with-cursor
    (line-beginning-position)
@@ -2020,7 +2020,7 @@ The symbol at point and the last `isearch-string' is added to the future history
 
 ;;;;; Command: consult-keep-lines
 
-(defsubst consult--keep-lines-replace (content &optional pos)
+(defun consult--keep-lines-replace (content &optional pos)
   "Replace buffer content with CONTENT and move point to POS."
   (delete-region (point-min) (point-max))
   (insert content)
