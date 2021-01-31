@@ -729,10 +729,11 @@ KEY is the key function."
 
 (defmacro consult--with-increased-gc (&rest body)
   "Temporarily increase the gc limit in BODY to optimize for throughput."
-  `(let* ((overwrite (> consult--gc-threshold gc-cons-threshold))
-          (gc-cons-threshold (if overwrite consult--gc-threshold gc-cons-threshold))
-          (gc-cons-percentage (if overwrite consult--gc-percentage gc-cons-percentage)))
-     ,@body))
+  (let ((overwrite (make-symbol "overwrite")))
+    `(let* ((,overwrite (> consult--gc-threshold gc-cons-threshold))
+            (gc-cons-threshold (if ,overwrite consult--gc-threshold gc-cons-threshold))
+            (gc-cons-percentage (if ,overwrite consult--gc-percentage gc-cons-percentage)))
+       ,@body)))
 
 (defun consult--count-lines (pos)
   "Move to position POS and return number of lines."
