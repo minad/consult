@@ -159,7 +159,7 @@ m Bookmarks
 p Project (only available if @samp{consult-project-root-function} is
 configured as shown in the @ref{Use-package example, , example configuration})
 @item
-Arbitrary other sources can be configured via @samp{consult-buffer-sources}
+Arbitrary @ref{Multiple sources, , other sources} can be configured via @samp{consult-buffer-sources}
 @end itemize
 @item
 @samp{consult-bookmark}: Select or create bookmark. You might consider the
@@ -488,7 +488,7 @@ commands automatic and for some commands completely disabled.
 
 Consult has special support to narrow to candidate subsets. This functionality
 is useful if the list of candidates consists of candidates of multiple types or
-candidates from multiple sources, like the @samp{consult-buffer} command, which
+candidates from @ref{Multiple sources, , multiple sources}, like the @samp{consult-buffer} command, which
 shows both buffers and recently opened files.
 
 When you use the @samp{consult-buffer} command, you can press @samp{b SPC} and the list

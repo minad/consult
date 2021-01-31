@@ -102,7 +102,7 @@ variables and functions with their descriptions.
    - m Bookmarks
    - p Project (only available if =consult-project-root-function= is
      configured as shown in the [[#use-package-example][example configuration]])
-   - Arbitrary other sources can be configured via =consult-buffer-sources=
+   - Arbitrary [[#multiple-sources][other sources]] can be configured via =consult-buffer-sources=
  - =consult-bookmark=: Select or create bookmark. You might consider the
    powerful =consult-buffer= instead as an alternative, which includes bookmarks.
    However =consult-bookmark= supports preview of bookmarks and narrowing.
@@ -380,7 +380,7 @@ variables and functions with their descriptions.
 
  Consult has special support to narrow to candidate subsets. This functionality
  is useful if the list of candidates consists of candidates of multiple types or
- candidates from multiple sources, like the =consult-buffer= command, which
+ candidates from [[#multiple-sources][multiple sources]], like the =consult-buffer= command, which
  shows both buffers and recently opened files.
 
  When you use the =consult-buffer= command, you can press =b SPC= and the list
@@ -445,6 +445,7 @@ variables and functions with their descriptions.
 ** Multiple sources
    :properties:
    :description: Combining candidates from different sources
+   :custom_id: multiple-sources
    :end:
   #+cindex: multiple sources
 
