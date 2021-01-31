@@ -2823,6 +2823,7 @@ In order to select from a specific HISTORY, pass the history variable as argumen
     (consult--remove-dups
      (mapcar
       (lambda (cand)
+        ;; Emacs 27.1 uses settings on the search string, we can use that for narrowing.
         (let* ((props (plist-member (text-properties-at 0 cand)
                                     'isearch-regexp-function))
                (type (pcase (cadr props)
@@ -2878,7 +2879,8 @@ starts a new Isearch session otherwise."
             (lambda (cand restore)
               (unless restore
                 (setq isearch-string cand)
-                (when (fboundp 'isearch-update-from-string-properties) ;; Emacs 27.1
+                ;; Emacs 27.1 uses properties on the search string to store settings
+                (when (fboundp 'isearch-update-from-string-properties)
                   (isearch-update-from-string-properties cand))
                 (isearch-update)))
             :narrow
