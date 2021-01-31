@@ -711,13 +711,13 @@ the box with the default completion, Icomplete and Selectrum.
   ;; for example add views to the list of virtual buffers
   ;; from a library like https://github.com/minad/bookmark-view/.
   ;; (add-to-list 'consult-buffer-sources
-  ;;               (list ?v
-  ;;                    :name     "View"
-  ;;                    :category 'bookmark
-  ;;                    :face     'font-lock-keyword-face
-  ;;                    :history  'bookmark-view-history
-  ;;                    :open     #'bookmark-jump
-  ;;                    :items    #'bookmark-view-names)
+  ;;               (list :name     "View"
+  ;;                     :narrow   ?v
+  ;;                     :category 'bookmark
+  ;;                     :face     'font-lock-keyword-face
+  ;;                     :history  'bookmark-view-history
+  ;;                     :open     #'bookmark-jump
+  ;;                     :items    #'bookmark-view-names)
   ;;              'append)
 
   ;; Optionally configure a function which returns the project root directory.

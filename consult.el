@@ -198,16 +198,16 @@ with a space character."
   :type '(repeat regexp))
 
 (defcustom consult-buffer-sources
-  '((32 . consult--source-hidden-buffer)
-    (?b . consult--source-buffer)
-    (?f . consult--source-file)
-    (?m . consult--source-bookmark)
-    (?p . consult--source-project-buffer)
-    (?q . consult--source-project-file))
+  '(consult--source-hidden-buffer
+    consult--source-buffer
+    consult--source-file
+    consult--source-bookmark
+    consult--source-project-buffer
+    consult--source-project-file)
   "Sources used by `consult-buffer'.
 
 See `consult--multi' for a description of the source values."
-  :type 'alist)
+  :type 'list)
 
 (defcustom consult-mode-command-filter
   '(;; Filter commands
@@ -1537,11 +1537,15 @@ KEYMAP is a command-specific keymap."
 
 ;;;; Internal API: consult--multi
 
+(defsubst consult--multi-source (sources cand)
+  "Lookup source for CAND from SOURCES list."
+  (nth (- (aref cand 0) consult--tofu-char) sources))
+
 (defun consult--multi-predicate (sources)
   "Return predicate function used by `consult--multi' with SOURCES."
   (lambda (cand)
-    (let ((type (- (aref cand 0) consult--tofu-char)))
-      (setq type (or (car (plist-get (cdr (assq type sources)) :narrow)) type))
+    (let* ((narrow (plist-get (consult--multi-source sources cand) :narrow))
+           (type (or (car-safe narrow) narrow -1)))
       (if (eq consult--narrow 32) ;; narrowed to hidden candidates
           (= type 32)
         (and
@@ -1550,14 +1554,12 @@ KEYMAP is a command-specific keymap."
 
 (defun consult--multi-narrow (sources)
   "Return narrow list used by `consult--multi' with SOURCES."
-  (mapcar (lambda (x)
-            (or (plist-get (cdr x) :narrow)
-                (cons (car x) (plist-get (cdr x) :name))))
-          sources))
-
-(defsubst consult--multi-source (sources cand)
-  "Lookup source for CAND from SOURCES list."
-  (cdr (assq (- (aref cand 0) consult--tofu-char) sources)))
+  (delq nil (mapcar (lambda (src)
+                      (let ((narrow (plist-get src :narrow)))
+                        (cond
+                         ((consp narrow) narrow)
+                         (narrow (cons narrow (plist-get src :name))))))
+                    sources)))
 
 (defun consult--multi-annotate (sources max-len)
   "Return annotation function used by `consult--multi' with SOURCES.
@@ -1584,47 +1586,42 @@ MAX-LEN is the maximum candidate length."
 
 (defun consult--multi-candidates (sources)
   "Return candidates from SOURCES for `consult--multi'."
-  (let ((max-len 0) (candidates))
+  (let ((idx 0) (max-len 0) (candidates))
     (dolist (src sources (cons (+ 3 max-len) (nreverse candidates)))
-      (let* ((type (car src))
-             (props (cdr src))
-             (face (plist-get props :face))
-             (cat (plist-get props :category))
-             (items (plist-get props :items))
+      (let* ((face (plist-get src :face))
+             (cat (plist-get src :category))
+             (items (plist-get src :items))
              (items (if (functionp items) (funcall items) items)))
         (dolist (item items)
-          (let* ((cand (concat (char-to-string (+ consult--tofu-char type)) item))
+          (let* ((cand (concat (char-to-string (+ consult--tofu-char idx)) item))
                  (len (length cand)))
             (add-text-properties 0 1 (list 'invisible t 'consult-multi (cons cat item))
                                  cand)
             (put-text-property 1 len 'face face cand)
-            (when (> len max-len)
-              (setq max-len len))
-            (push cand candidates)))))))
+            (when (> len max-len) (setq max-len len))
+            (push cand candidates))))
+      (setq idx (1+ idx)))))
 
 (defun consult--multi-preprocess (sources)
   "Preprocess SOURCES, filter by predicate."
   (seq-filter (lambda (src)
-                (if-let (pred (plist-get (cdr src) :predicate))
+                (if-let (pred (plist-get src :predicate))
                     (funcall pred)
                   t))
               (mapcar (lambda (src)
-                        (if (symbolp (cdr src))
-                            (cons (car src) (symbol-value (cdr src)))
-                          src))
+                        (if (symbolp src) (symbol-value src) src))
                       sources)))
 
 (defun consult--multi (prompt sources &rest options)
-  "Select from candidates taken from an alist of SOURCES.
+  "Select from candidates taken from a list of SOURCES.
 
 PROMPT is the minibuffer prompt.
 OPTIONS is the plist of options passed to `consult--read'.
 
 The function returns the selected candidate in the form (cons candidate
-source-value). The source alist contains (character . source) pairs, where the
-character is used for narrowing and disambiguation of candidates. The source can
-either be the symbol of a source variable or a source value. Source values must
-be plists with the following fields:
+source-value). The sources of the source list can either be symbols of source
+variables or source values. Source values must be plists with the following
+fields:
 
 Required source fields:
 * :name - Name of the source, used for narrowing and annotation
@@ -1632,6 +1629,7 @@ Required source fields:
 * :items - List of candidate strings or function returning list of strings
 
 Optional source fields:
+* :narrow - Narrowing character or (character . string) pair
 * :predicate - Function which must return t if the source is enabled.
 * :face - Face used for highlighting the candidates
 * :narrow - Pair (character . string) to use for narrowing instead of the key
@@ -2987,6 +2985,7 @@ The command supports previewing the currently selected theme."
 
 (defvar consult--source-bookmark
   `(:name     "Bookmark"
+    :narrow   ?m
     :category bookmark
     :face     consult-bookmark
     :history  bookmark-history
@@ -2996,10 +2995,10 @@ The command supports previewing the currently selected theme."
 
 (defvar consult--source-project-buffer
   `(:name      "Project Buffer"
+    :narrow    (?p . "Project")
     :category  buffer
     :face      consult-buffer
     :history   buffer-name-history
-    :narrow    (?p . "Project")
     :open      ,#'consult--open-buffer
     :predicate ,(lambda () consult-project-root-function)
     :items
@@ -3014,10 +3013,10 @@ The command supports previewing the currently selected theme."
 
 (defvar consult--source-project-file
   `(:name      "Project File"
+    :narrow    (?p . "Project")
     :category  file
     :face      consult-file
     :history   file-name-history
-    :narrow    (?p . "Project")
     :open      ,#'consult--open-file
     :predicate ,(lambda () consult-project-root-function)
     :items
@@ -3036,6 +3035,7 @@ The command supports previewing the currently selected theme."
 
 (defvar consult--source-hidden-buffer
   `(:name     "Hidden Buffer"
+    :narrow   32
     :category buffer
     :face     consult-buffer
     :history  buffer-name-history
@@ -3049,6 +3049,7 @@ The command supports previewing the currently selected theme."
 
 (defvar consult--source-buffer
   `(:name     "Buffer"
+    :narrow   ?b
     :category buffer
     :face     consult-buffer
     :history  buffer-name-history
@@ -3062,6 +3063,7 @@ The command supports previewing the currently selected theme."
 
 (defvar consult--source-file
   `(:name     "File"
+    :narrow   ?f
     :category file
     :face     consult-file
     :history  file-name-history
