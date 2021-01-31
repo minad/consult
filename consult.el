@@ -1566,10 +1566,9 @@ MAX-LEN is the maximum candidate length."
   (lambda (cand)
     (let ((src (consult--multi-source sources cand)))
       (concat
-       (make-string
-        (- (+ max-len (next-single-char-property-change 0 'invisible cand))
-           (length cand))
-        32)
+       (propertize " "
+                   'display
+                   `(space :align-to (+ left ,max-len)))
        (if-let (annotate (plist-get src :annotate))
            (funcall annotate (substring cand 1))
          (plist-get src :name))))))
