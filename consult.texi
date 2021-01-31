@@ -569,12 +569,12 @@ and then selecting the buffer.
 
 @cindex multiple sources
 
-Consult allows combining multiple candidate sources. This feature is used by
-the @samp{consult-buffer} command to present buffer-like candidates in a single
-menu for quick access. By default @samp{consult-buffer} includes buffers,
+Consult allows combining multiple synchronous candidate sources. This feature
+is used by the @samp{consult-buffer} command to present buffer-like candidates in a
+single menu for quick access. By default @samp{consult-buffer} includes buffers,
 bookmarks, recent files and project-specific buffers and files. It is possible
 to configure the list of sources via the @samp{consult-buffer-sources} variable.
-Furthermore arbitrary custom sources can be defined.
+Arbitrary custom sources can be defined.
 
 As an example, the bookmark source is defined as follows:
 
@@ -588,6 +588,34 @@ As an example, the bookmark source is defined as follows:
     :items    ,#'bookmark-all-names
     :open     ,#'bookmark-jump))
 @end lisp
+
+Required source fields:
+@itemize
+@item
+@samp{:name} Name of the source, used for narrowing and annotation.
+@item
+@samp{:category} Completion category.
+@item
+@samp{:items} List of candidate strings or function returning list of strings.
+@end itemize
+
+Optional source fields:
+@itemize
+@item
+@samp{:narrow} Narrowing character or @samp{(character . string)} pair.
+@item
+@samp{:predicate} Function which must return t if the source is enabled.
+@item
+@samp{:face} Face used for highlighting the candidates.
+@item
+@samp{:narrow} Pair @samp{(character . string)} to use for narrowing instead of the key.
+@item
+@samp{:annotate} Annotation function for the source candidates.
+@item
+@samp{:history} Name of history variable to add selected candidate.
+@item
+Arbitrary other fields specific to your use case.
+@end itemize
 
 Sources can be added directly to the @samp{consult-buffer-source} list for
 convenience. For example views can be added to the list of virtual buffers
@@ -734,6 +762,7 @@ the box with the default completion, Icomplete and Selectrum.
   ;; `consult-register-store' and the Emacs built-ins.
   (setq register-preview-delay 0
         register-preview-function #'consult-register-format)
+
   ;; Optionally tweak the register preview window.
   ;; This adds zebra stripes, sorting and hides the mode line of the window.
   (advice-add #'register-preview :override #'consult-register-window)
@@ -752,6 +781,7 @@ the box with the default completion, Icomplete and Selectrum.
   ;; Optionally configure the narrowing key.
   ;; Both < and C-+ work reasonably well.
   (setq consult-narrow-key "<") ;; (kbd "C-+")
+
   ;; Optionally make narrowing help available in the minibuffer.
   ;; Probably not needed if you are using which-key.
   ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)

@@ -450,12 +450,12 @@ variables and functions with their descriptions.
    :end:
   #+cindex: multiple sources
 
-  Consult allows combining multiple candidate sources. This feature is used by
-  the =consult-buffer= command to present buffer-like candidates in a single
-  menu for quick access. By default =consult-buffer= includes buffers,
+  Consult allows combining multiple synchronous candidate sources. This feature
+  is used by the =consult-buffer= command to present buffer-like candidates in a
+  single menu for quick access. By default =consult-buffer= includes buffers,
   bookmarks, recent files and project-specific buffers and files. It is possible
   to configure the list of sources via the =consult-buffer-sources= variable.
-  Furthermore arbitrary custom sources can be defined.
+  Arbitrary custom sources can be defined.
 
   As an example, the bookmark source is defined as follows:
 
@@ -469,6 +469,20 @@ variables and functions with their descriptions.
       :items    ,#'bookmark-all-names
       :open     ,#'bookmark-jump))
   #+end_src
+
+  Required source fields:
+  - =:name= Name of the source, used for narrowing and annotation.
+  - =:category= Completion category.
+  - =:items= List of candidate strings or function returning list of strings.
+
+  Optional source fields:
+  - =:narrow= Narrowing character or =(character . string)= pair.
+  - =:predicate= Function which must return t if the source is enabled.
+  - =:face= Face used for highlighting the candidates.
+  - =:narrow= Pair =(character . string)= to use for narrowing instead of the key.
+  - =:annotate= Annotation function for the source candidates.
+  - =:history= Name of history variable to add selected candidate.
+  - Arbitrary other fields specific to your use case.
 
   Sources can be added directly to the =consult-buffer-source= list for
   convenience. For example views can be added to the list of virtual buffers
@@ -615,6 +629,7 @@ the box with the default completion, Icomplete and Selectrum.
    ;; `consult-register-store' and the Emacs built-ins.
    (setq register-preview-delay 0
          register-preview-function #'consult-register-format)
+
    ;; Optionally tweak the register preview window.
    ;; This adds zebra stripes, sorting and hides the mode line of the window.
    (advice-add #'register-preview :override #'consult-register-window)
@@ -633,6 +648,7 @@ the box with the default completion, Icomplete and Selectrum.
    ;; Optionally configure the narrowing key.
    ;; Both < and C-+ work reasonably well.
    (setq consult-narrow-key "<") ;; (kbd "C-+")
+
    ;; Optionally make narrowing help available in the minibuffer.
    ;; Probably not needed if you are using which-key.
    ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)

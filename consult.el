@@ -1624,15 +1624,15 @@ variables or source values. Source values must be plists with the following
 fields:
 
 Required source fields:
-* :name - Name of the source, used for narrowing and annotation
-* :category - Completion category
-* :items - List of candidate strings or function returning list of strings
+* :name - Name of the source, used for narrowing and annotation.
+* :category - Completion category.
+* :items - List of candidate strings or function returning list of strings.
 
 Optional source fields:
-* :narrow - Narrowing character or (character . string) pair
+* :narrow - Narrowing character or (character . string) pair.
 * :predicate - Function which must return t if the source is enabled.
-* :face - Face used for highlighting the candidates
-* :narrow - Pair (character . string) to use for narrowing instead of the key
+* :face - Face used for highlighting the candidates.
+* :narrow - Pair (character . string) to use for narrowing instead of the key.
 * :annotate - Annotation function for the source candidates.
 * :history - Name of history variable to add selected candidate.
 * Arbitrary other fields specific to your use case."
