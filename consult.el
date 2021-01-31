@@ -1571,7 +1571,7 @@ MAX-LEN is the maximum candidate length."
            (length cand))
         32)
        (if-let (annotate (plist-get src :annotate))
-           (funcall annotate cand)
+           (funcall annotate (substring cand 1))
          (plist-get src :name))))))
 
 (defun consult--multi-lookup (sources)
@@ -1585,7 +1585,7 @@ MAX-LEN is the maximum candidate length."
 (defun consult--multi-candidates (sources)
   "Return candidates from SOURCES for `consult--multi'."
   (let ((max-len 0) (candidates))
-    (dolist (src sources (cons (+ 4 max-len) (nreverse candidates)))
+    (dolist (src sources (cons (+ 3 max-len) (nreverse candidates)))
       (let* ((type (car src))
              (props (cdr src))
              (face (plist-get props :face))
