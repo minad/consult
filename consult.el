@@ -1570,16 +1570,17 @@ MAX-LEN is the maximum candidate length."
                    'display
                    `(space :align-to (+ left ,max-len)))
        (if-let (annotate (plist-get src :annotate))
-           (funcall annotate (substring cand 1))
+           (funcall annotate (cdr (get-text-property 0 'consult-multi cand)))
          (plist-get src :name))))))
 
 (defun consult--multi-lookup (sources)
   "Lookup function used by `consult--multi' with SOURCES."
   (lambda (_ candidates cand)
-    (cond
-     ((member cand candidates) (cons (substring cand 1)
-                                     (consult--multi-source sources cand)))
-     ((not (string-blank-p cand)) (list cand)))))
+    (if-let (found (member cand candidates))
+        (cons (cdr (get-text-property 0 'consult-multi (car found)))
+              (consult--multi-source sources cand))
+      (unless (string-blank-p cand)
+        (list cand)))))
 
 (defun consult--multi-candidates (sources)
   "Return candidates from SOURCES for `consult--multi'."
@@ -1591,14 +1592,15 @@ MAX-LEN is the maximum candidate length."
              (cat (plist-get props :category))
              (items (plist-get props :items))
              (items (if (functionp items) (funcall items) items)))
-        (dolist (cand items)
-          (let* ((str (concat (char-to-string (+ consult--tofu-char type)) cand))
-                 (len (length str)))
-            (add-text-properties 0 1 (list 'invisible t 'consult-multi cat) str)
-            (put-text-property 1 len 'face face str)
+        (dolist (item items)
+          (let* ((cand (concat (char-to-string (+ consult--tofu-char type)) item))
+                 (len (length cand)))
+            (add-text-properties 0 1 (list 'invisible t 'consult-multi (cons cat item))
+                                 cand)
+            (put-text-property 1 len 'face face cand)
             (when (> len max-len)
               (setq max-len len))
-            (push str candidates)))))))
+            (push cand candidates)))))))
 
 (defun consult--multi-preprocess (sources)
   "Preprocess SOURCES, filter by predicate."
