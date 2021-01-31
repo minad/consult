@@ -449,9 +449,10 @@ Consult enhances @samp{completing-read} with live previews of candidates, additi
 narrowing capabilities to candidate subsets and asynchronously generated
 candidate lists. This functionality is provided by the internal @samp{consult--read}
 function, which is used by most Consult commands. The @samp{consult--read} function
-is a thin wrapper around @samp{completing-read}. This allows Consult to work with
-different completion systems in the backend, while still offering more advanced
-features.
+is a thin wrapper around @samp{completing-read}. In order to support multiple
+candidate sources there exists the high-level function @samp{consult--multi}. The
+architecture of Consult allows it to work with different completion systems in
+the backend, while still offering advanced features.
 
 @menu
 * Live previews::                Preview the currently selected candidate
@@ -614,7 +615,7 @@ since some details may still change.
 
 @cindex embark
 
-@strong{NOTE}: Please install the @samp{embark-consult} package from MELPA, which provides
+@strong{NOTE}: Install the @samp{embark-consult} package from MELPA, which provides
 Consult-specific Embark actions and the Occur buffer export.
 
 Embark is a versatile package which offers context dependent actions,
@@ -995,7 +996,7 @@ Consult and add more components later to the mix.
 @chapter Contributions
 
 Consult is intended to be a community effort, please participate in the
-discussions. Contributions are welcome. If you have a proposal, please take a
+discussions. Contributions are welcome. If you have a proposal, take a
 look first at the @uref{https://github.com/consult/issues, Consult issue tracker} and the @uref{https://github.com/minad/consult/issues/6, Consult wishlist}.
 
 If you find a bug or suspect that there is a problem with Consult, please check
@@ -1005,9 +1006,9 @@ those packages.
 
 Please provide the necessary important information with your bug report, e.g.,
 the Emacs version, your operating system and the package manager you are using.
-Please try to reproduce the issue by starting a barebone Emacs instance with
-@samp{emacs -Q} on the command line. Then execute the following code in the scratch
-buffer. This way we can exclude side effects due to configuration settings.
+Try to reproduce the issue by starting a barebone Emacs instance with @samp{emacs -Q}
+on the command line. Then execute the following code in the scratch buffer. This
+way we can exclude side effects due to configuration settings.
 
 @lisp
 ;; Minimal setup using Selectrum
