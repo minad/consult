@@ -479,8 +479,7 @@ variables and functions with their descriptions.
   - =:narrow= Narrowing character or =(character . string)= pair.
   - =:predicate= Function which must return t if the source is enabled.
   - =:face= Face used for highlighting the candidates.
-  - =:narrow= Pair =(character . string)= to use for narrowing instead of the key.
-  - =:annotate= Annotation function for the source candidates.
+  - =:annotate= Annotation function called for each candidate, returns string.
   - =:history= Name of history variable to add selected candidate.
   - Arbitrary other fields specific to your use case.
 

@@ -608,9 +608,7 @@ Optional source fields:
 @item
 @samp{:face} Face used for highlighting the candidates.
 @item
-@samp{:narrow} Pair @samp{(character . string)} to use for narrowing instead of the key.
-@item
-@samp{:annotate} Annotation function for the source candidates.
+@samp{:annotate} Annotation function called for each candidate, returns string.
 @item
 @samp{:history} Name of history variable to add selected candidate.
 @item
