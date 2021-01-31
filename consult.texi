@@ -592,8 +592,6 @@ As an example, the bookmark source is defined as follows:
 Required source fields:
 @itemize
 @item
-@samp{:name} Name of the source, used for narrowing and annotation.
-@item
 @samp{:category} Completion category.
 @item
 @samp{:items} List of candidate strings or function returning list of strings.
@@ -601,6 +599,8 @@ Required source fields:
 
 Optional source fields:
 @itemize
+@item
+@samp{:name} Name of the source, used for narrowing and annotation.
 @item
 @samp{:narrow} Narrowing character or @samp{(character . string)} pair.
 @item

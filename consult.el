@@ -1555,10 +1555,11 @@ KEYMAP is a command-specific keymap."
 (defun consult--multi-narrow (sources)
   "Return narrow list used by `consult--multi' with SOURCES."
   (delq nil (mapcar (lambda (src)
-                      (let ((narrow (plist-get src :narrow)))
+                      (let ((narrow (plist-get src :narrow))
+                            (name (plist-get src :name)))
                         (cond
                          ((consp narrow) narrow)
-                         (narrow (cons narrow (plist-get src :name))))))
+                         ((and narrow name) (cons narrow name)))))
                     sources)))
 
 (defun consult--multi-annotate (sources max-len)
@@ -1566,14 +1567,13 @@ KEYMAP is a command-specific keymap."
 
 MAX-LEN is the maximum candidate length."
   (lambda (cand)
-    (let ((src (consult--multi-source sources cand)))
-      (concat
-       (propertize " "
-                   'display
-                   `(space :align-to (+ left ,max-len)))
-       (if-let (annotate (plist-get src :annotate))
-           (funcall annotate (cdr (get-text-property 0 'consult-multi cand)))
-         (plist-get src :name))))))
+    (let* ((src (consult--multi-source sources cand))
+           (annotate (plist-get src :annotate))
+           (ann (if annotate
+                    (funcall annotate (cdr (get-text-property 0 'consult-multi cand)))
+                  (plist-get src :name))))
+      (when ann
+        (concat (propertize " " 'display `(space :align-to (+ left ,max-len))) ann)))))
 
 (defun consult--multi-lookup (sources)
   "Lookup function used by `consult--multi' with SOURCES."
@@ -1624,11 +1624,11 @@ variables or source values. Source values must be plists with the following
 fields:
 
 Required source fields:
-* :name - Name of the source, used for narrowing and annotation.
 * :category - Completion category.
 * :items - List of candidate strings or function returning list of strings.
 
 Optional source fields:
+* :name - Name of the source, used for narrowing and annotation.
 * :narrow - Narrowing character or (character . string) pair.
 * :predicate - Function which must return t if the source is enabled.
 * :face - Face used for highlighting the candidates.

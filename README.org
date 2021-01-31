@@ -471,11 +471,11 @@ variables and functions with their descriptions.
   #+end_src
 
   Required source fields:
-  - =:name= Name of the source, used for narrowing and annotation.
   - =:category= Completion category.
   - =:items= List of candidate strings or function returning list of strings.
 
   Optional source fields:
+  - =:name= Name of the source, used for narrowing and annotation.
   - =:narrow= Narrowing character or =(character . string)= pair.
   - =:predicate= Function which must return t if the source is enabled.
   - =:face= Face used for highlighting the candidates.
