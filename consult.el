@@ -1639,8 +1639,10 @@ Optional source fields:
 * :history - Name of history variable to add selected candidate.
 * Arbitrary other fields specific to your use case."
   (let* ((sources (consult--multi-preprocess sources))
-         (candidates (let ((consult--cache))
-                       (consult--multi-candidates sources)))
+         (candidates
+          (consult--with-increased-gc
+           (let ((consult--cache))
+             (consult--multi-candidates sources))))
          (selected (apply #'consult--read prompt
                           (cdr candidates)
                           :category  'consult-multi
