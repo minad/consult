@@ -137,8 +137,6 @@ variables and functions with their descriptions.
 @findex consult-buffer-other-window
 @findex consult-buffer-other-frame
 @findex consult-recent-file
-@findex consult-recent-file-other-window
-@findex consult-recent-file-other-frame
 @findex consult-bookmark
 @itemize
 @item
@@ -162,13 +160,14 @@ configured as shown in the @ref{Use-package example, , example configuration})
 Arbitrary @ref{Multiple sources, , other sources} can be configured via @samp{consult-buffer-sources}
 @end itemize
 @item
-@samp{consult-bookmark}: Select or create bookmark. You might consider the
-powerful @samp{consult-buffer} instead as an alternative, which includes bookmarks.
-However @samp{consult-bookmark} supports preview of bookmarks and narrowing.
+@samp{consult-bookmark}: Select or create bookmark. You might use the
+powerful @samp{consult-buffer} as an alternative, which can include a bookmark
+virtual buffer source. But note that @samp{consult-bookmark} supports preview of
+bookmarks and narrowing.
 @item
-@samp{consult-recent-file} (@samp{-other-window}, @samp{-other-frame}): Select a
-recent files. You might prefer the more powerful @samp{consult-buffer}
-instead, which includes recent files.
+@samp{consult-recent-file}: Select from recent files. You might prefer the more
+powerful @samp{consult-buffer} instead, which can include recent files as a
+virtual buffer source.
 @end itemize
 
 @node Editing

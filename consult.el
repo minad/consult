@@ -2193,34 +2193,19 @@ The command respects narrowing and the settings
 
 ;;;;; Command: consult-recent-file
 
-(defun consult--recent-file-read ()
-  "Read recent file via `completing-read'."
-  (consult--read
-   "Find recent file: "
-   (or (mapcar #'abbreviate-file-name recentf-list)
-       (user-error "No recent files"))
-   :sort nil
-   :require-match t
-   :category 'file
-   :history 'file-name-history))
-
 ;;;###autoload
 (defun consult-recent-file ()
   "Find recent using `completing-read'."
   (interactive)
-  (find-file (consult--recent-file-read)))
-
-;;;###autoload
-(defun consult-recent-file-other-frame ()
-  "Find recent using `completing-read'."
-  (interactive)
-  (find-file-other-frame (consult--recent-file-read)))
-
-;;;###autoload
-(defun consult-recent-file-other-window ()
-  "Find recent using `completing-read'."
-  (interactive)
-  (find-file-other-window (consult--recent-file-read)))
+  (find-file
+   (consult--read
+    "Find recent file: "
+    (or (mapcar #'abbreviate-file-name recentf-list)
+        (user-error "No recent files"))
+    :sort nil
+    :require-match t
+    :category 'file
+    :history 'file-name-history)))
 
 ;;;;; Command: consult-file-externally
 
