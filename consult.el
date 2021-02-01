@@ -130,7 +130,7 @@ applies to asynchronous commands, e.g., `consult-grep'."
     (term-mode   . term-input-ring))
   "Alist of (mode . history) pairs of mode histories.
 The histories can be rings or lists."
-  :type '(list (cons symbol symbol)))
+  :type '(alist :key-type symbol :value-type symbol))
 
 (defcustom consult-themes nil
   "List of themes to be presented for selection.
@@ -178,7 +178,9 @@ for navigation commands like `consult-line'."
                         (?t . "Types")
                         (?v . "Variables"))))
   "Narrowing keys used by `consult-imenu'."
-  :type 'alist)
+  :type '(alist :key-type symbol
+                :value-type (alist :key-type character
+                                   :value-type string)))
 
 (defcustom consult-imenu-toplevel
   '((emacs-lisp-mode . "Functions"))
@@ -187,7 +189,7 @@ for navigation commands like `consult-line'."
 The imenu representation provided by the backend usually puts
 functions directly at the toplevel. `consult-imenu' moves them instead
 under the category specified by this variable."
-  :type 'alist)
+  :type '(alist :key-type symbol :value-type string))
 
 (defcustom consult-buffer-filter
   '("^ ")
@@ -207,7 +209,7 @@ with a space character."
   "Sources used by `consult-buffer'.
 
 See `consult--multi' for a description of the source values."
-  :type 'list)
+  :type '(repeat symbol))
 
 (defcustom consult-mode-command-filter
   '(;; Filter commands
@@ -274,7 +276,7 @@ See `consult--multi' for a description of the source values."
   "Register narrowing configuration.
 
 Each element of the list must have the form '(char name predicate)."
-  :type 'list)
+  :type '(repeat (list character string function)))
 
 (defcustom consult-bookmark-narrow
   `((?f "File" #'bookmark-default-handler)
@@ -288,7 +290,7 @@ Each element of the list must have the form '(char name predicate)."
   "Bookmark narrowing configuration.
 
 Each element of the list must have the form '(char name handler)."
-  :type 'list)
+  :type '(repeat (list character string function)))
 
 (defcustom consult-config nil
   "Command configuration alists, which allows fine-grained configuration.
@@ -297,7 +299,7 @@ The options set here will be passed to `consult--read', when called
 from the corresponding command. Note that the options depend on the
 private `consult--read' API and should not be considered as stable as
 the public API."
-  :type '(list (cons symbol plist)))
+  :type '(alist :key-type symbol :value-type plist))
 
 ;;;; Faces
 
