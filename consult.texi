@@ -763,7 +763,8 @@ the box with the default completion, Icomplete and Selectrum.
          ("M-g o" . consult-outline)
          ("M-g m" . consult-mark)
          ("M-g k" . consult-global-mark)
-         ("M-g i" . consult-project-imenu) ;; Alternative: consult-imenu
+         ("M-g i" . consult-imenu)
+         ("M-g I" . consult-project-imenu)
          ("M-g e" . consult-error)
          ;; M-s bindings (search-map)
          ("M-s f" . consult-find)                  ;; alt. consult-locate, find-fd
