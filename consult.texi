@@ -594,7 +594,7 @@ Required source fields:
 @item
 @samp{:category} Completion category.
 @item
-@samp{:items} List of candidate strings or function returning list of strings.
+@samp{:items} List of strings to select from or function returning list of strings.
 @end itemize
 
 Optional source fields:
@@ -612,7 +612,8 @@ Optional source fields:
 @item
 @samp{:history} Name of history variable to add selected candidate.
 @item
-Arbitrary other fields specific to your use case.
+Other source fields can be added specifically to the use case. The @samp{consult-buffer}
+command uses the @samp{:open} function to open an item from the source.
 @end itemize
 
 Sources can be added directly to the @samp{consult-buffer-source} list for

@@ -1649,7 +1649,7 @@ fields:
 
 Required source fields:
 * :category - Completion category.
-* :items - List of candidate strings or function returning list of strings.
+* :items - List of strings to select from or function returning list of strings.
 
 Optional source fields:
 * :name - Name of the source, used for narrowing and annotation.
@@ -1658,7 +1658,8 @@ Optional source fields:
 * :face - Face used for highlighting the candidates.
 * :annotate - Annotation function called for each candidate, returns string.
 * :history - Name of history variable to add selected candidate.
-* Arbitrary other fields specific to your use case."
+* Other source fields can be added specifically to the use case. The `consult-buffer'
+  command uses the :open function to open an item from the source."
   (let* ((sources (consult--multi-preprocess sources))
          (candidates
           (consult--with-increased-gc
