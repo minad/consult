@@ -232,21 +232,19 @@ variables and functions with their descriptions.
  #+findex: consult-find
  #+findex: consult-locate
  - =consult-grep=, =consult-ripgrep=, =consult-git-grep=: Search for
-   regular expression in current directory. Grep is invoked
-   asynchronously, while you enter the search term. You are required to
-   enter at least =consult-async-min-input= characters in order for the
-   search to get started. The input string is split into two parts, if
-   the first character is a punctuation character, like =#=. For example
-   =#grep-regexp#filter-string=, is split at the second =#=. The string
-   "grep-regexp" is passed to Grep, the "filter-string" is passed to
-   the /fast/ Emacs filtering to further narrow down the list of matches.
-   This is particularily useful if you are using an advanced completion
-   style like orderless. =consult-grep= supports preview. If
-   =consult-project-root-function= is [[#use-package-example][configured]] and the function returns
-   non-nil, =consult-grep= searches the current project directory.
-   Otherwise the =default-directory= is searched. If =consult-grep= is
-   invoked with prefix argument, you can specify the directory manually,
-   i.e., =C-u M-s g=.
+   regular expression in files. Grep is invoked asynchronously, while you enter
+   the search term. You are required to enter at least =consult-async-min-input=
+   characters in order for the search to get started. The input string is split
+   into two parts, if the first character is a punctuation character, like =#=.
+   For example =#grep-regexp#filter-string=, is split at the second =#=. The
+   string "grep-regexp" is passed to Grep, the "filter-string" is passed to the
+   /fast/ Emacs filtering to further narrow down the list of matches. This is
+   particularily useful if you are using an advanced completion style like
+   orderless. =consult-grep= supports preview. If the
+   =consult-project-root-function= is [[#use-package-example][configured]] and returns non-nil,
+   =consult-grep= searches the current project directory. Otherwise the
+   =default-directory= is searched. If =consult-grep= is invoked with prefix
+   argument =C-u M-s g=, you can specify the directory manually.
  - =consult-find=, =consult-locate=: Find file by
    matching the path against a regexp. Like =consult-grep= either the project
    root or the current directory is used as root directory for the search. The

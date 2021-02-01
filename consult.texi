@@ -321,21 +321,19 @@ the buffer.
 @itemize
 @item
 @samp{consult-grep}, @samp{consult-ripgrep}, @samp{consult-git-grep}: Search for
-regular expression in current directory. Grep is invoked
-asynchronously, while you enter the search term. You are required to
-enter at least @samp{consult-async-min-input} characters in order for the
-search to get started. The input string is split into two parts, if
-the first character is a punctuation character, like @samp{#}. For example
-@samp{#grep-regexp#filter-string}, is split at the second @samp{#}. The string
-"grep-regexp" is passed to Grep, the "filter-string" is passed to
-the @emph{fast} Emacs filtering to further narrow down the list of matches.
-This is particularily useful if you are using an advanced completion
-style like orderless. @samp{consult-grep} supports preview. If
-@samp{consult-project-root-function} is @ref{Use-package example, , configured} and the function returns
-non-nil, @samp{consult-grep} searches the current project directory.
-Otherwise the @samp{default-directory} is searched. If @samp{consult-grep} is
-invoked with prefix argument, you can specify the directory manually,
-i.e., @samp{C-u M-s g}.
+regular expression in files. Grep is invoked asynchronously, while you enter
+the search term. You are required to enter at least @samp{consult-async-min-input}
+characters in order for the search to get started. The input string is split
+into two parts, if the first character is a punctuation character, like @samp{#}.
+For example @samp{#grep-regexp#filter-string}, is split at the second @samp{#}. The
+string "grep-regexp" is passed to Grep, the "filter-string" is passed to the
+@emph{fast} Emacs filtering to further narrow down the list of matches. This is
+particularily useful if you are using an advanced completion style like
+orderless. @samp{consult-grep} supports preview. If the
+@samp{consult-project-root-function} is @ref{Use-package example, , configured} and returns non-nil,
+@samp{consult-grep} searches the current project directory. Otherwise the
+@samp{default-directory} is searched. If @samp{consult-grep} is invoked with prefix
+argument @samp{C-u M-s g}, you can specify the directory manually.
 @item
 @samp{consult-find}, @samp{consult-locate}: Find file by
 matching the path against a regexp. Like @samp{consult-grep} either the project
