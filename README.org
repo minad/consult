@@ -704,7 +704,11 @@ the box with the default completion, Icomplete and Selectrum.
    ;;              'append)
 
    ;; Optionally configure a function which returns the project root directory.
-   ;; You can either use `projectile-project-root', `project-roots' or `vc-root-dir'.
+   ;; There are multiple reasonable alternatives to chose from:
+   ;; * projectile-project-root
+   ;; * vc-root-dir
+   ;; * project-roots
+   ;; * locate-dominating-file
    (autoload 'projectile-project-root "projectile")
    (setq consult-project-root-function #'projectile-project-root)
    ;; (setq consult-project-root-function
@@ -712,6 +716,8 @@ the box with the default completion, Icomplete and Selectrum.
    ;;         (when-let (project (project-current))
    ;;           (car (project-roots project)))))
    ;; (setq consult-project-root-function #'vc-root-dir)
+   ;; (setq consult-project-root-function
+   ;;       (lambda () (locate-dominating-file "." ".git")))
  )
 
  ;; Optionally add the `consult-flycheck' command.
