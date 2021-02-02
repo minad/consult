@@ -176,7 +176,7 @@ for navigation commands like `consult-line'."
                      :types ((?f "Functions" font-lock-function-name-face)
                              (?m "Macros"    font-lock-function-name-face)
                              (?p "Packages"  font-lock-constant-face)
-                             (?t "Types"     font-lock-constant-face)
+                             (?t "Types"     font-lock-type-face)
                              (?v "Variables" font-lock-variable-name-face))))
   "Imenu configuration, faces and narrowing keys used by `consult-imenu'.
 
