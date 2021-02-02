@@ -2144,8 +2144,8 @@ INITIAL is the initial input."
 (defun consult-focus-lines (&optional show filter initial)
   "Hide or show lines according to FILTER function.
 
-Optionally INITIAL input can be provided.
-SHOW must be t in order to show the hidden lines."
+With optional prefix argument SHOW reveal the hidden lines.
+Optional INITIAL input can be provided when called from Lisp."
   (interactive
    ;; Use consult-location completion category when filtering lines
    (list current-prefix-arg (consult--completion-filter 'consult-location nil)))
@@ -2516,7 +2516,7 @@ registers it is still recommended to use the register functions
 `consult-register-load' and `consult-register-store' or the built-in built-in
 register access functions. The command supports narrowing, see
 `consult-register-narrow'. Marker positions are previewed. See
-`jump-to-register' and `insert-register' for the meaning of ARG."
+`jump-to-register' and `insert-register' for the meaning of prefix ARG."
   (interactive "P")
   (consult-register-load
    (consult--read
@@ -2555,7 +2555,7 @@ register access functions. The command supports narrowing, see
 
 For a window configuration, restore it. For a number or text, insert it. For a
 location, jump to it. See `jump-to-register' and `insert-register' for the
-meaning of ARG."
+meaning of prefix ARG."
   (interactive
    (list
     (and (consult--register-alist)
