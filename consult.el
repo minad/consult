@@ -1121,20 +1121,20 @@ Depending on the argument, the caller context differ.
 'destroy Destroy the internal state.
 'flush   Flush the list of candidates.
 'refresh Request UI refresh.
-'get     Get the list of candidates.
+nil      Get the list of candidates.
 List     Append the list to the list of candidates.
 String   The input string, called when the user enters something."
   (let ((candidates))
     (lambda (action)
       (pcase-exhaustive action
+        ('nil candidates)
         ((or (pred stringp) 'setup 'destroy) nil)
         ('flush (setq candidates nil))
-        ('get candidates)
         ('refresh
          (when-let (win (active-minibuffer-window))
            (with-selected-window win
              (run-hooks 'consult--completion-refresh-hook))))
-        ((pred listp) (setq candidates (nconc candidates action)))))))
+        ((pred consp) (setq candidates (nconc candidates action)))))))
 
 (defun consult--async-split-string (str)
   "Split STR in async input and filtering part.
@@ -1311,7 +1311,7 @@ The DEBOUNCE delay defaults to `consult-async-input-debounce'."
 The refresh happens immediately when candidates are pushed."
   (lambda (action)
     (pcase action
-      ((or (pred listp) (pred stringp) 'flush)
+      ((or (pred consp) (pred stringp) 'flush)
        (prog1 (funcall async action)
          (funcall async 'refresh)))
       (_ (funcall async action)))))
@@ -1323,7 +1323,7 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
   (let ((timer) (refresh t) (delay (or delay consult-async-refresh-delay)))
     (lambda (action)
       (pcase action
-        ((or (pred listp) (pred stringp) 'refresh 'flush)
+        ((or (pred consp) (pred stringp) 'refresh 'flush)
          (setq refresh t))
         ('destroy (cancel-timer timer))
         ('setup
@@ -1341,7 +1341,7 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
         (action-var (make-symbol "action")))
     `(let ((,async-var ,async))
        (lambda (,action-var)
-         (funcall ,async-var (if (listp ,action-var) (,@transform ,action-var) ,action-var))))))
+         (funcall ,async-var (if (consp ,action-var) (,@transform ,action-var) ,action-var))))))
 
 (defun consult--async-map (async fun)
   "Map candidates of ASYNC by FUN."
@@ -1537,7 +1537,7 @@ KEYMAP is a command-specific keymap."
       (let ((result
              (consult--with-preview preview-key preview
                                     (lambda (input cand)
-                                      (funcall lookup input (funcall async 'get) cand))
+                                      (funcall lookup input (funcall async nil) cand))
                                     (apply-partially #'run-hook-with-args-until-success
                                                      'consult--completion-candidate-hook)
                (completing-read prompt
@@ -1548,7 +1548,7 @@ KEYMAP is a command-specific keymap."
                                         ,@(when category `((category . ,category)))
                                         ,@(unless sort '((cycle-sort-function . identity)
                                                          (display-sort-function . identity))))
-                                    (complete-with-action action (funcall async 'get) str pred)))
+                                    (complete-with-action action (funcall async nil) str pred)))
                                 predicate require-match initial
                                 (if (symbolp history) history (cadr history))
                                 default))))
