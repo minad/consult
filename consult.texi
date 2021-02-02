@@ -915,12 +915,9 @@ an overview of all Consult variables and functions with their descriptions.
 @item consult-grep-command
 @tab "grep @dots{}"
 @tab Command line arguments for grep
-@item consult-imenu-narrow
+@item consult-imenu-config
 @tab @dots{}
-@tab Mode-specific narrowing keys for @samp{consult-imenu}
-@item consult-imenu-toplevel
-@tab @dots{}
-@tab Mode-specific toplevel names used by @samp{consult-imenu}
+@tab Mode-specific configuration for @samp{consult-imenu}
 @item consult-line-numbers-widen
 @tab t
 @tab Show absolute line numbers when narrowing is active.

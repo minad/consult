@@ -752,8 +752,7 @@ the box with the default completion, Icomplete and Selectrum.
  | consult-git-grep-command        | '(...)             | Command line arguments for git-grep                      |
  | consult-goto-line-numbers       | t                  | Show line numbers for =consult-goto-line=                |
  | consult-grep-command            | "grep ..."         | Command line arguments for grep                          |
- | consult-imenu-narrow            | ...                | Mode-specific narrowing keys for =consult-imenu=         |
- | consult-imenu-toplevel          | ...                | Mode-specific toplevel names used by =consult-imenu=     |
+ | consult-imenu-config            | ...                | Mode-specific configuration for =consult-imenu=          |
  | consult-line-numbers-widen      | t                  | Show absolute line numbers when narrowing is active.     |
  | consult-line-point-placement    | 'match-beginning   | Placement of the point used by =consult-line=            |
  | consult-locate-command          | "locate ..."       | Command line arguments for locate                        |

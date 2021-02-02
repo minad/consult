@@ -171,25 +171,20 @@ This is necessary in order to prevent a large startup time
 for navigation commands like `consult-line'."
   :type 'integer)
 
-(defcustom consult-imenu-narrow
-  '((emacs-lisp-mode . ((?f . "Functions")
-                        (?m . "Macros")
-                        (?p . "Packages")
-                        (?t . "Types")
-                        (?v . "Variables"))))
-  "Narrowing keys used by `consult-imenu'."
-  :type '(alist :key-type symbol
-                :value-type (alist :key-type character
-                                   :value-type string)))
+(defcustom consult-imenu-config
+  '((emacs-lisp-mode :toplevel "Functions"
+                     :types ((?f "Functions" font-lock-function-name-face)
+                             (?m "Macros"    font-lock-function-name-face)
+                             (?p "Packages"  font-lock-constant-face)
+                             (?t "Types"     font-lock-constant-face)
+                             (?v "Variables" font-lock-variable-name-face))))
+  "Imenu configuration, faces and narrowing keys used by `consult-imenu'.
 
-(defcustom consult-imenu-toplevel
-  '((emacs-lisp-mode . "Functions"))
-  "Category of toplevel items, used by `consult-imenu'.
-
-The imenu representation provided by the backend usually puts
-functions directly at the toplevel. `consult-imenu' moves them instead
-under the category specified by this variable."
-  :type '(alist :key-type symbol :value-type string))
+For each type a narrowing key and a name must be specified. The face is
+optional. The imenu representation provided by the backend usually puts
+functions directly at the toplevel. `consult-imenu' moves them instead under the
+type specified by :toplevel."
+  :type '(repeat (cons symbol plist)))
 
 (defcustom consult-buffer-filter
   '("^ ")
@@ -3227,18 +3222,30 @@ ARGS are the arguments to the special item function."
   (switch-to-buffer buf)
   (apply fn name pos args))
 
-(defun consult--imenu-flatten (prefix list)
+(defun consult--imenu-flatten (prefix list types)
   "Flatten imenu LIST.
-Prepend PREFIX in front of all items."
+
+Prepend PREFIX in front of all items.
+TYPES is the mode-specific types configuration."
   (mapcan
    (lambda (item)
      (if (imenu--subalist-p item)
          (consult--imenu-flatten
           (concat prefix (and prefix "/") (car item))
-          (cdr item))
-       (let ((key (concat
-                   (and prefix (concat (propertize prefix 'face 'consult-imenu-prefix) " "))
-                   (car item)))
+          (cdr item) types)
+       (let ((key
+              (if prefix
+                  (if-let (type (cdr (assoc prefix types)))
+                      (concat
+                       (propertize prefix
+                                   'face 'consult-imenu-prefix
+                                   'consult--imenu-type (car type))
+                       " "
+                       (propertize (car item) 'face (cadr type)))
+                    (concat
+                     (propertize prefix 'face 'consult-imenu-prefix) " "
+                     (car item)))
+                (car item)))
              (payload (cdr item)))
          (list (cons key
                      (pcase payload
@@ -3261,16 +3268,18 @@ Prepend PREFIX in front of all items."
   (consult--forbid-minibuffer)
   (let* ((imenu-auto-rescan t)
          (imenu-use-markers t)
-         (items (imenu--make-index-alist t)))
+         (items (imenu--make-index-alist t))
+         (config (cdr (seq-find (lambda (x) (derived-mode-p (car x))) consult-imenu-config))))
     (setq items (remove imenu--rescan-item items))
     ;; Fix toplevel items, e.g., emacs-lisp-mode toplevel items are functions
-    (when-let (toplevel (cdr (seq-find (lambda (x)
-                                         (derived-mode-p (car x)))
-                                       consult-imenu-toplevel)))
+    (when-let (toplevel (plist-get config :toplevel))
       (let ((tops (seq-remove (lambda (x) (listp (cdr x))) items))
             (rest (seq-filter (lambda (x) (listp (cdr x))) items)))
         (setq items (append rest (and tops (list (cons toplevel tops)))))))
-    (consult--imenu-flatten nil items)))
+    (consult--imenu-flatten
+     nil items
+     (mapcar (pcase-lambda (`(,x ,y ,z)) (list y x z))
+             (plist-get config :types)))))
 
 (defun consult--imenu-items ()
   "Return cached imenu candidates."
@@ -3318,15 +3327,12 @@ The symbol at point is added to the future history."
         (funcall preview (and (markerp (cdr cand)) (cdr cand)) restore)))
     :require-match t
     :narrow
-    (let ((narrow (cdr (seq-find (lambda (x) (derived-mode-p (car x))) consult-imenu-narrow))))
+    (when-let (types (plist-get (cdr (seq-find (lambda (x) (derived-mode-p (car x)))
+                                               consult-imenu-config))
+                                :types))
       (cons (lambda (cand)
-              (when-let (n (cdr (assoc consult--narrow narrow)))
-                (let* ((c (car cand))
-                       (l (length n)))
-                  (and (> (length c) l)
-                       (eq t (compare-strings n 0 l c 0 l))
-                       (= (aref c l) 32)))))
-            narrow))
+              (eq (get-text-property 0 'consult--imenu-type (car cand)) consult--narrow))
+            (mapcar (lambda (x) (cons (car x) (cadr x))) types)))
     :category 'imenu
     :lookup #'consult--lookup-elem
     :history 'consult--imenu-history
@@ -3338,7 +3344,7 @@ The symbol at point is added to the future history."
   "Choose item from flattened `imenu' using `completing-read' with preview.
 
 The command supports preview and narrowing. See the variable
-`consult-imenu-narrow', which configures the narrowing.
+`consult-imenu-config', which configures the narrowing.
 
 See also `consult-project-imenu'."
   (interactive)
