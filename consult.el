@@ -70,7 +70,7 @@ Good choices for this key are (kbd \"<\") or (kbd \"C-+\") for example.
 
 The key must be either a string or a vector.
 This is the key representation accepted by `define-key'."
-  :type '(choice vector string (const nil)))
+  :type '(choice key-sequence (const nil)))
 
 (defcustom consult-widen-key nil
   "Key used for widening during completion.
@@ -79,7 +79,7 @@ If this key is unset, defaults to 'consult-narrow-key SPC'.
 
 The key must be either a string or a vector.
 This is the key representation accepted by `define-key'."
-  :type '(choice vector string (const nil)))
+  :type '(choice key-sequence (const nil)))
 
 (defcustom consult-project-root-function nil
   "Function which returns project root directory.
@@ -254,7 +254,7 @@ See `consult--multi' for a description of the source values."
 
 (defcustom consult-preview-key 'any
   "Preview trigger keys, can be nil, 'any, a single key or a list of keys."
-  :type '(choice (const any) (const nil) vector string (repeat (choice vector string))))
+  :type '(choice (const any) (const nil) key-sequence (repeat key-sequence)))
 
 (defcustom consult-preview-max-size 10485760
   "Files larger than this byte limit are not previewed."
