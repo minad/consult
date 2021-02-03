@@ -812,7 +812,7 @@ MARKER is the cursor position."
   (unless (or (eq buf (current-buffer)) (buffer-modified-p buf))
     (kill-buffer buf)))
 
-(defun consult--file-preview-setup ()
+(defun consult--temporary-files ()
   "Return a function to open files temporarily."
   (let* ((new-buffers)
          (recentf-should-restore recentf-mode)
@@ -834,17 +834,6 @@ MARKER is the cursor position."
                     (consult--kill-clean-buffer (car (last new-buffers)))
                     (setq new-buffers (nbutlast new-buffers)))
                   buf))))))))
-
-(defmacro consult--with-file-preview (args &rest body)
-  "Provide a function to open files temporarily.
-The files are closed automatically in the end.
-
-ARGS is the open function argument for BODY."
-  (declare (indent 1))
-  `(let ((,@args (consult--file-preview-setup)))
-     (unwind-protect
-         ,(macroexp-progn body)
-       (funcall ,@args))))
 
 ;; Derived from ctrlf, originally isearch
 (defun consult--invisible-show (&optional permanently)
@@ -2216,6 +2205,15 @@ The command respects narrowing and the settings
 
 ;;;;; Command: consult-recent-file
 
+(defun consult--file-preview ()
+  "Create preview function for files."
+  (let ((open (consult--temporary-files)))
+    (lambda (cand restore)
+      (if restore
+          (funcall open)
+        (if-let (buf (funcall open cand))
+            (switch-to-buffer buf))))))
+
 ;;;###autoload
 (defun consult-recent-file ()
   "Find recent using `completing-read'."
@@ -2228,6 +2226,7 @@ The command respects narrowing and the settings
     :sort nil
     :require-match t
     :category 'file
+    :state (consult--file-preview)
     :history 'file-name-history)))
 
 ;;;;; Command: consult-file-externally
@@ -2672,6 +2671,31 @@ number. Otherwise store point, frameset, window or kmacro."
 
 ;;;;; Command: consult-bookmark
 
+(defun consult--bookmark-preview ()
+  "Create preview function for bookmarks."
+  (let ((preview (consult--jump-preview))
+        (open (consult--temporary-files)))
+    (lambda (cand restore)
+      (if restore
+          (progn
+            (funcall open)
+            (funcall preview nil t))
+        (funcall
+         preview
+         (when-let (bm (bookmark-get-bookmark-record
+                        (assoc cand bookmark-alist)))
+           (if-let* ((file
+                      ;; Only preview bookmarks with the default handler.
+                      (and (eq (alist-get 'handler bm #'bookmark-default-handler)
+                               #'bookmark-default-handler)
+                           (alist-get 'filename bm)))
+                     (pos (alist-get 'position bm))
+                     (buf (funcall open file)))
+               (set-marker (make-marker) pos buf)
+             (minibuffer-message "No preview for special bookmark")
+             nil))
+         nil)))))
+
 ;;;###autoload
 (defun consult-bookmark (name)
   "If bookmark NAME exists, open it, otherwise create a new bookmark with NAME.
@@ -2680,45 +2704,28 @@ The command supports preview of file bookmarks and narrowing. See the
 variable `consult-bookmark-narrow' for the narrowing configuration."
   (interactive
    (list
-    (consult--with-file-preview (open)
-      (consult--read
-       (bookmark-all-names)
-       :prompt "Bookmark: "
-       ;; Add default names to future history.
-       ;; Ignore errors such that `consult-bookmark' can be used in
-       ;; buffers which are not backed by a file.
-       :add-history (ignore-errors (bookmark-prop-get (bookmark-make-record) 'defaults))
-       :narrow
-       (cons
-        (lambda (cand)
-          (if-let ((n consult--narrow)
-                   (bm (bookmark-get-bookmark-record
-                        (assoc cand bookmark-alist))))
-              (eq n (caddr (alist-get
-                            (or (alist-get 'handler bm) #'bookmark-default-handler)
-                            consult-bookmark-narrow)))
-            t))
-        (mapcar (pcase-lambda (`(,x ,y ,_)) (cons x y))
-                consult-bookmark-narrow))
-       :state
-       (let ((preview (consult--jump-preview)))
-         (lambda (cand restore)
-           (funcall
-            preview
-            (when-let (bm (bookmark-get-bookmark-record
-                           (assoc cand bookmark-alist)))
-              (if-let* ((file (alist-get 'filename bm))
-                        (pos (alist-get 'position bm))
-                        ;; Only preview bookmarks without a handler
-                        ;; aka `bookmark-default-handler'!
-                        (buf (and (not (alist-get 'handler bm))
-                                  (funcall open file))))
-                  (set-marker (make-marker) pos buf)
-                (unless restore (minibuffer-message "No preview for special bookmark"))
-                nil))
-            restore)))
-       :history 'bookmark-history
-       :category 'bookmark))))
+    (consult--read
+     (bookmark-all-names)
+     :prompt "Bookmark: "
+     :state (consult--bookmark-preview)
+     :category 'bookmark
+     :history 'bookmark-history
+     ;; Add default names to future history.
+     ;; Ignore errors such that `consult-bookmark' can be used in
+     ;; buffers which are not backed by a file.
+     :add-history (ignore-errors (bookmark-prop-get (bookmark-make-record) 'defaults))
+     :narrow
+     (cons
+      (lambda (cand)
+        (if-let ((n consult--narrow)
+                 (bm (bookmark-get-bookmark-record
+                      (assoc cand bookmark-alist))))
+            (eq n (caddr (alist-get
+                          (alist-get 'handler bm #'bookmark-default-handler)
+                          consult-bookmark-narrow)))
+          t))
+      (mapcar (pcase-lambda (`(,x ,y ,_)) (cons x y))
+              consult-bookmark-narrow)))))
   (bookmark-maybe-load-default-file)
   (if (assoc name bookmark-alist)
       (bookmark-jump name)
@@ -3018,9 +3025,6 @@ The command supports previewing the currently selected theme."
 (consult--define-cache consult--cached-buffer-file-hash
   (consult--string-hash (delq nil (mapcar #'buffer-file-name (consult--cached-buffers)))))
 
-;; In order to avoid slowness and unnecessary complexity, we
-;; only preview buffers. Loading recent files, bookmarks or
-;; views can result in expensive operations.
 (defun consult--buffer-state ()
   "Buffer state function."
   (lambda (cand restore)
@@ -3409,23 +3413,28 @@ same major mode as the current buffer are used. See also
 
 ;;;;; Command: consult-grep
 
-(defun consult--grep-marker (open)
+(defun consult--grep-state ()
   "Grep candidate to marker.
 
 OPEN is the function to open new files."
-  (lambda (_input candidates cand)
-    (when-let* ((loc (cdr (assoc cand candidates)))
-                (buf (funcall open (car loc))))
-      (with-current-buffer buf
-        (save-restriction
-          (save-excursion
-            (widen)
-            (goto-char (point-min))
-            ;; Location data might be invalid by now!
-            (ignore-errors
-              (forward-line (- (cadr loc) 1))
-              (forward-char (caddr loc)))
-            (point-marker)))))))
+  (let ((open (consult--temporary-files))
+        (jump (consult--jump-state)))
+    (lambda (cand restore)
+      (funcall jump
+               (when-let (buf (and cand (funcall open (car cand))))
+                 (with-current-buffer buf
+                   (save-restriction
+                     (save-excursion
+                       (widen)
+                       (goto-char (point-min))
+                       ;; Location data might be invalid by now!
+                       (ignore-errors
+                         (forward-line (- (cadr cand) 1))
+                         (forward-char (caddr cand)))
+                       (point-marker)))))
+               restore)
+      (when restore
+        (funcall open)))))
 
 (defun consult--grep (prompt cmd dir initial)
   "Run grep CMD in DIR with INITIAL input.
@@ -3434,19 +3443,18 @@ PROMPT is the prompt string.
 The symbol at point is added to the future history."
   (let* ((prompt-dir (consult--directory-prompt prompt dir))
          (default-directory (cdr prompt-dir)))
-    (consult--with-file-preview (open)
-      (consult--read
-       (consult--async-command cmd
-         (consult--async-transform consult--grep-matches))
-       :prompt (car prompt-dir)
-       :lookup (consult--grep-marker open)
-       :state (consult--jump-state)
-       :initial (concat consult-async-default-split initial)
-       :add-history (concat consult-async-default-split (thing-at-point 'symbol))
-       :require-match t
-       :category 'xref-location
-       :history '(:input consult--grep-history)
-       :sort nil))))
+    (consult--read
+     (consult--async-command cmd
+       (consult--async-transform consult--grep-matches))
+     :prompt (car prompt-dir)
+     :lookup #'consult--lookup-cdr
+     :state (consult--grep-state)
+     :initial (concat consult-async-default-split initial)
+     :add-history (concat consult-async-default-split (thing-at-point 'symbol))
+     :require-match t
+     :category 'xref-location
+     :history '(:input consult--grep-history)
+     :sort nil)))
 
 ;;;###autoload
 (defun consult-grep (&optional dir initial)

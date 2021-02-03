@@ -141,11 +141,10 @@ variables and functions with their descriptions.
 @itemize
 @item
 @samp{consult-buffer} (@samp{-other-window}, @samp{-other-frame}): Enhanced version
-of @samp{switch-to-buffer} with support for virtual buffers. Supports live
-preview and recursive editing while previewing. The command supports
-narrowing. You can type @samp{f SPC} in order to narrow to recent files.
-Ephemeral buffers can be shown by pressing @samp{SPC} - it works the same
-way as @samp{switch-buffer}. Supported narrowing keys:
+of @samp{switch-to-buffer} with support for virtual buffers. Supports live preview
+of buffers and narrowing to the virtual buffer types. You can type @samp{f SPC} in
+order to narrow to recent files. Ephemeral buffers can be shown by pressing
+@samp{SPC} - it works the same way as @samp{switch-buffer}. Supported narrowing keys:
 @itemize
 @item
 b Buffers
@@ -155,19 +154,21 @@ f Files
 m Bookmarks
 @item
 p Project (only available if @samp{consult-project-root-function} is
-configured as shown in the @ref{Use-package example, , example configuration})
+configured as shown in the @ref{Use-package example, , example configuration}).
 @item
-Arbitrary @ref{Multiple sources, , other sources} can be configured via @samp{consult-buffer-sources}
+Arbitrary @ref{Multiple sources, , other sources} can be configured via @samp{consult-buffer-sources}.
 @end itemize
+By default only buffers are preview in order to ensure that @samp{consult-buffer}
+is fast, but it is possible to @ref{Multiple sources, , configure} file and bookmark preview.
 @item
 @samp{consult-bookmark}: Select or create bookmark. You might use the
 powerful @samp{consult-buffer} as an alternative, which can include a bookmark
 virtual buffer source. But note that @samp{consult-bookmark} supports preview of
 bookmarks and narrowing.
 @item
-@samp{consult-recent-file}: Select from recent files. You might prefer the more
-powerful @samp{consult-buffer} instead, which can include recent files as a
-virtual buffer source.
+@samp{consult-recent-file}: Select from recent files with preview.
+You might prefer the powerful @samp{consult-buffer} instead, which can include
+recent files as a virtual buffer source.
 @end itemize
 
 @node Editing
@@ -615,6 +616,17 @@ Optional source fields:
 @item
 Other source fields can be added specifically to the use case.
 @end itemize
+
+In order to avoid slowness and unnecessary complexity, @samp{consult-buffer}
+only preview buffers by default. Loading recent files, bookmarks or
+views can result in expensive operations. However it is possible to configure
+the bookmark and file sources to also perform preview.
+
+@lisp
+(nconc consult--source-bookmark (list :state #'consult--bookmark-preview))
+(nconc consult--source-file (list :state #'consult--file-preview))
+(nconc consult--source-project-file (list :state #'consult--file-preview))
+@end lisp
 
 Sources can be added directly to the @samp{consult-buffer-source} list for
 convenience. For example views can be added to the list of virtual buffers
