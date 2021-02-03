@@ -880,7 +880,7 @@ the box with the default completion, Icomplete and Selectrum.
 values and abbreviated description. Alternatively, type @samp{C-h a ^consult} to get
 an overview of all Consult variables and functions with their descriptions.
 
-@multitable {aaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+@multitable {aaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
 @headitem Variable
 @tab Default
 @tab Description
@@ -958,7 +958,10 @@ an overview of all Consult variables and functions with their descriptions.
 @tab Maximum number of files to keep open during preview
 @item consult-preview-max-size
 @tab 10485760
-@tab Size limit for previewed files
+@tab Files larger than this size are not previewed
+@item consult-preview-raw-size
+@tab 102400
+@tab Files larger than this size are previewed in raw form
 @item consult-project-root-function
 @tab nil
 @tab Function which returns current project root

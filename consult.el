@@ -255,6 +255,10 @@ See `consult--multi' for a description of the source values."
   "Files larger than this byte limit are not previewed."
   :type 'integer)
 
+(defcustom consult-preview-raw-size 102400
+  "Files larger than this byte limit are previewed in raw form."
+  :type 'integer)
+
 (defcustom consult-preview-max-count 10
   "Number of files to keep open at once during preview."
   :type 'integer)
@@ -828,7 +832,11 @@ MARKER is the cursor position."
                     (prog1 nil
                       (minibuffer-message "File `%s' (%s) is too large for preview"
                                           name (file-size-human-readable size)))
-                  (let ((buf (find-file-noselect name 'nowarn)))
+                  (let* ((enable-dir-local-variables nil)
+                         (inhibit-message t)
+                         (buf (find-file-noselect
+                               name 'nowarn
+                               (> size consult-preview-raw-size))))
                     (push buf new-buffers)
                     ;; Only keep a few buffers alive
                     (while (> (length new-buffers) consult-preview-max-count)
