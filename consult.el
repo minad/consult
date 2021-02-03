@@ -817,13 +817,16 @@ MARKER is the cursor position."
   "Return a function to open files temporarily."
   (let* ((new-buffers)
          (recentf-should-restore recentf-mode)
-         (recentf-saved-list (when recentf-should-restore (copy-sequence recentf-list))))
+         (recentf-saved-list (when recentf-should-restore
+                               (copy-sequence recentf-list))))
     (lambda (&optional name)
       (if (not name)
-          (when recentf-should-restore
-            (setq recentf-list recentf-saved-list)
-            (when (member (current-buffer) new-buffers)
-              (recentf-add-file (buffer-file-name (current-buffer)))))
+          (progn
+            (mapc #'consult--kill-clean-buffer new-buffers)
+            (when recentf-should-restore
+              (setq recentf-list recentf-saved-list)
+              (when (member (current-buffer) new-buffers)
+                (recentf-add-file (buffer-file-name (current-buffer))))))
         (or (get-file-buffer name)
             (when-let (attrs (file-attributes name))
               (if (> (file-attribute-size attrs) consult-preview-max-size)
