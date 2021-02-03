@@ -801,8 +801,9 @@ MARKER is the cursor position."
 (defun consult--merge-config (args)
   "Merge `consult-config' plists into the keyword arguments of ARGS."
   (if-let (config (alist-get this-command consult-config))
-      (append (seq-take-while (lambda (x) (not (keywordp x))) args) config
-              (seq-copy (seq-drop-while (lambda (x) (not (keywordp x))) args)))
+      (append (seq-take-while (lambda (x) (not (keywordp x))) args)
+              config
+              (seq-drop-while (lambda (x) (not (keywordp x))) args))
     args))
 
 ;;;; Preview support
@@ -2948,7 +2949,7 @@ starts a new Isearch session otherwise."
            (concat
             (if (local-variable-if-set-p sym) "l" "g")
             (if (and (boundp sym) (symbol-value sym)) "i" "o"))))
-   (append
+   (nconc
     ;; according to describe-minor-mode-completion-table-for-symbol
     ;; the minor-mode-list contains *all* minor modes
     (mapcar (lambda (sym) (cons (symbol-name sym) sym)) minor-mode-list)
@@ -3017,7 +3018,7 @@ The command supports previewing the currently selected theme."
 ;;;;; Command: consult-buffer
 
 (consult--define-cache consult--cached-buffers
-  (append (delq (current-buffer) (buffer-list)) (list (current-buffer))))
+  (nconc (delq (current-buffer) (buffer-list)) (list (current-buffer))))
 
 (consult--define-cache consult--cached-buffer-names
   (mapcar #'buffer-name (consult--cached-buffers)))
@@ -3286,7 +3287,7 @@ TYPES is the mode-specific types configuration."
                        ((pred overlayp) (copy-marker (overlay-start payload)))
                        ;; Wrap special item
                        (`(,pos ,fn . ,args)
-                        (append
+                        (nconc
                          (list pos #'consult--imenu-special (current-buffer) (car item) fn)
                          args))
                        (_ (error "Unknown imenu item: %S" item))))))))
@@ -3304,7 +3305,7 @@ TYPES is the mode-specific types configuration."
     (when-let (toplevel (plist-get config :toplevel))
       (let ((tops (seq-remove (lambda (x) (listp (cdr x))) items))
             (rest (seq-filter (lambda (x) (listp (cdr x))) items)))
-        (setq items (append rest (and tops (list (cons toplevel tops)))))))
+        (setq items (nconc rest (and tops (list (cons toplevel tops)))))))
     (consult--imenu-flatten
      nil items
      (mapcar (pcase-lambda (`(,x ,y ,z)) (list y x z))
