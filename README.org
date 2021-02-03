@@ -785,6 +785,7 @@ the box with the default completion, Icomplete and Selectrum.
  API, options could be removed, replaced or renamed at any time.
 
  Useful options are:
+ - =:prompt= set the prompt string
  - =:preview-key= set the preview key, default is =consult-preview-key=
  - =:initial= set the initial input
  - =:default= set the default value

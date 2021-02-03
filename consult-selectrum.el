@@ -57,7 +57,7 @@
   "Refresh selectrum view."
   (and selectrum-active-p (selectrum-exhibit 'keep-selected)))
 
-(cl-defun consult-selectrum--read-setup-adv (_prompt candidates &key default-top &allow-other-keys)
+(cl-defun consult-selectrum--read-setup-adv (candidates &key default-top &allow-other-keys)
   "Advice for `consult--read-setup' for Selectrum specific setup.
 
 See `consult--read' for the CANDIDATES and DEFAULT-TOP arguments."

@@ -73,18 +73,19 @@
   "Jump to Flymake diagnostic."
   (interactive)
   (consult--jump
-   (consult--read "Flymake diagnostic: "
-                  (consult--with-increased-gc (consult-flymake--candidates))
-                  :category 'consult-flymake-error
-                  :history t ;; disable history
-                  :require-match t
-                  :sort nil
-                  :narrow `(,(lambda (cand) (= (caddr cand) consult--narrow))
-                            (?e . "Error")
-                            (?w . "Warning")
-                            (?n . "Note"))
-                  :lookup #'consult--lookup-cadr
-                  :preview (consult--preview-position 'consult-preview-error))))
+   (consult--read
+    (consult--with-increased-gc (consult-flymake--candidates))
+    :prompt "Flymake diagnostic: "
+    :category 'consult-flymake-error
+    :history t ;; disable history
+    :require-match t
+    :sort nil
+    :narrow `(,(lambda (cand) (= (caddr cand) consult--narrow))
+              (?e . "Error")
+              (?w . "Warning")
+              (?n . "Note"))
+    :lookup #'consult--lookup-cadr
+    :preview (consult--preview-position 'consult-preview-error))))
 
 (provide 'consult-flymake)
 ;;; consult-flymake.el ends here

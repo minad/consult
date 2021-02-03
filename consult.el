@@ -1462,8 +1462,7 @@ PREVIEW-KEY is the preview key."
       (remove-list-of-text-properties min pos '(display))
       (put-text-property min pos 'invisible t))))
 
-(cl-defun consult--read-setup (_prompt candidates
-                                       &key keymap add-history narrow preview-key &allow-other-keys)
+(cl-defun consult--read-setup (candidates &key keymap add-history narrow preview-key &allow-other-keys)
   "Minibuffer setup for `consult--read'.
 
 See `consult--read' for the CANDIDATES, KEYMAP, ADD-HISTORY, NARROW and PREVIEW-KEY arguments."
@@ -1480,19 +1479,15 @@ See `consult--read' for the CANDIDATES, KEYMAP, ADD-HISTORY, NARROW and PREVIEW-
          (setq options (plist-put options ,(intern (format ":%s" key)) (setq ,key ,val)))))
     default)))
 
-(cl-defun consult--read (prompt candidates &rest options &key
-                                predicate require-match history default keymap
-                                category initial narrow add-history annotate
-                                preview preview-key sort default-top lookup)
-  "Enhanced completing read function.
-
-Arguments:
-
-PROMPT is the string to prompt with.
-CANDIDATES is the candidate list or alist.
+(cl-defun consult--read (candidates &rest options &key
+                                    prompt predicate require-match history default
+                                    keymap category initial narrow add-history annotate
+                                    preview preview-key sort default-top lookup)
+  "Enhanced completing read function selecting from CANDIDATES.
 
 Keyword OPTIONS:
 
+PROMPT is the string to prompt with.
 PREDICATE is a filter function for the candidates.
 REQUIRE-MATCH equals t means that an exact match is required.
 HISTORY is the symbol of the history variable.
@@ -1517,12 +1512,13 @@ KEYMAP is a command-specific keymap."
                  (consp (car candidates)))) ;; alist
   (ignore default-top narrow add-history keymap)
   (consult--read-defaults
+   (prompt "Select: ")
    (preview-key consult-preview-key)
    (sort t)
    (default-top t)
    (lookup (lambda (_input _cands x) x)))
   (consult--minibuffer-with-setup-hook
-      (:append (lambda () (apply #'consult--read-setup prompt candidates options)))
+      (:append (lambda () (apply #'consult--read-setup candidates options)))
     (consult--with-async (async candidates)
       ;; NOTE: Do not unnecessarily let-bind the lambdas to avoid
       ;; overcapturing in the interpreter. This will make closures and the
@@ -1633,10 +1629,9 @@ MAX-LEN is the maximum candidate length."
                         (if (symbolp src) (symbol-value src) src))
                       sources)))
 
-(defun consult--multi (prompt sources &rest options)
+(defun consult--multi (sources &rest options)
   "Select from candidates taken from a list of SOURCES.
 
-PROMPT is the minibuffer prompt.
 OPTIONS is the plist of options passed to `consult--read'.
 
 The function returns the selected candidate in the form (cons candidate
@@ -1662,7 +1657,7 @@ Optional source fields:
           (consult--with-increased-gc
            (let ((consult--cache))
              (consult--multi-candidates sources))))
-         (selected (apply #'consult--read prompt
+         (selected (apply #'consult--read
                           (cdr candidates)
                           :category  'consult-multi
                           :predicate (consult--multi-predicate sources)
@@ -1676,9 +1671,9 @@ Optional source fields:
 
 ;;;; Internal API: consult--prompt
 
-(cl-defun consult--prompt (prompt &key history add-history initial default
-                                  keymap preview (preview-key consult-preview-key)
-                                  (transform (lambda (_ x) x)))
+(cl-defun consult--prompt (&key (prompt "Input: ") history add-history initial default
+                                keymap preview (preview-key consult-preview-key)
+                                (transform (lambda (_ x) x)))
   "Read from minibuffer.
 
 PROMPT is the string to prompt with.
@@ -1746,8 +1741,8 @@ The symbol at point is added to the future history."
   (interactive)
   (consult--jump
    (consult--read
-    "Go to heading: "
     (consult--with-increased-gc (consult--outline-candidates))
+    :prompt "Go to heading: "
     :category 'consult-location
     :sort nil
     :require-match t
@@ -1801,8 +1796,8 @@ The command supports preview of the currently selected error."
     (user-error "Not a compilation buffer"))
   (consult--jump
    (consult--read
-    "Go to error: "
     (consult--with-increased-gc (consult--error-candidates))
+    :prompt "Go to error: "
     :category 'consult-error
     :sort nil
     :require-match t
@@ -1849,8 +1844,8 @@ The symbol at point is added to the future history."
   (interactive)
   (consult--jump
    (consult--read
-    "Go to mark: "
     (consult--with-increased-gc (consult--mark-candidates))
+    :prompt "Go to mark: "
     :category 'consult-location
     :sort nil
     :require-match t
@@ -1900,8 +1895,8 @@ The symbol at point is added to the future history."
   (interactive)
   (consult--jump
    (consult--read
-    "Go to global mark: "
     (consult--with-increased-gc (consult--global-mark-candidates))
+    :prompt "Go to global mark: "
     ;; While `consult-global-mark' formats the candidates in grep-like
     ;; style, we are still not using the 'xref-location category,
     ;; since the locations are formatted using abbreviated buffer
@@ -2003,7 +1998,8 @@ The symbol at point and the last `isearch-string' is added to the future history
   (let ((candidates (consult--with-increased-gc (consult--line-candidates))))
     (consult--jump
      (consult--read
-      "Go to line: " (cdr candidates)
+      (cdr candidates)
+      :prompt "Go to line: "
       :category 'consult-location
       :sort nil
       :default-top nil
@@ -2090,7 +2086,7 @@ INITIAL is the initial input."
   (consult--with-increased-gc
    (consult--fontify-all)
    (consult--prompt
-    "Keep lines: "
+    :prompt "Keep lines: "
     :initial initial
     :history 'consult--keep-lines-history
     :preview (consult--keep-lines-state filter))))
@@ -2152,7 +2148,7 @@ Optional INITIAL input can be provided when called from Lisp."
     (consult--with-increased-gc
      (consult--fontify-all)
      (consult--prompt
-      "Focus on lines: "
+      :prompt "Focus on lines: "
       :initial initial
       :history 'consult--keep-lines-history
       :preview (consult--focus-lines-state filter)))))
@@ -2170,7 +2166,7 @@ The command respects narrowing and the settings
   (consult--local-let ((display-line-numbers consult-goto-line-numbers)
                        (display-line-numbers-widen consult-line-numbers-widen))
     (while (let ((ret (consult--prompt
-                       "Go to line: "
+                       :prompt "Go to line: "
                        :preview (consult--preview-position)
                        :transform
                        (lambda (_ str)
@@ -2194,9 +2190,9 @@ The command respects narrowing and the settings
   (interactive)
   (find-file
    (consult--read
-    "Find recent file: "
     (or (mapcar #'abbreviate-file-name recentf-list)
         (user-error "No recent files"))
+    :prompt "Find recent file: "
     :sort nil
     :require-match t
     :category 'file
@@ -2339,8 +2335,8 @@ If no MODES are specified, use currently active major and minor modes."
   (command-execute
    (intern
     (consult--read
-     "Mode command: "
      (consult--mode-command-candidates modes)
+     :prompt "Mode command: "
      :predicate
      (lambda (cand)
        (if consult--narrow
@@ -2358,8 +2354,8 @@ If no MODES are specified, use currently active major and minor modes."
 (defun consult--yank-read ()
   "Open kill ring menu and return selected text."
   (consult--read
-   "Yank text: "
    (consult--remove-dups kill-ring)
+   :prompt "Yank text: "
    :history t ;; disable history
    :sort nil
    :category 'consult-yank
@@ -2515,9 +2511,9 @@ register access functions. The command supports narrowing, see
   (interactive "P")
   (consult-register-load
    (consult--read
-    "Register: "
     (mapcar (lambda (reg) (cons (consult--register-format reg) (car reg)))
             (sort (consult--register-alist) #'car-less-than-car))
+    :prompt "Register: "
     :category 'consult-register
     :preview
     (let ((preview (consult--preview-position)))
@@ -2654,8 +2650,8 @@ variable `consult-bookmark-narrow' for the narrowing configuration."
    (list
     (consult--with-file-preview (open)
       (consult--read
-       "Bookmark: "
        (bookmark-all-names)
+       :prompt "Bookmark: "
        ;; Add default names to future history.
        ;; Ignore errors such that `consult-bookmark' can be used in
        ;; buffers which are not backed by a file.
@@ -2706,8 +2702,8 @@ The default value of the completion is the symbol at point."
   (interactive)
   (let ((pattern
          (consult--read
-          "Apropos: "
           obarray
+          :prompt "Apropos: "
           :predicate (lambda (x) (or (fboundp x) (boundp x) (facep x) (symbol-plist x)))
           :history 'consult--apropos-history
           :category 'symbol
@@ -2727,7 +2723,8 @@ This command can act as a drop-in replacement for `repeat-complex-command'."
   (let* ((history (or (consult--remove-dups (mapcar #'prin1-to-string command-history))
                       (user-error "There are no previous complex commands")))
          (cmd (read (consult--read
-                     "Command: " history
+                     history
+                     :prompt "Command: "
                      :default (car history)
                      :sort nil
                      :history t ;; disable history
@@ -2780,12 +2777,12 @@ In order to select from a specific HISTORY, pass the history variable as argumen
   (interactive)
   (let ((str (consult--local-let ((enable-recursive-minibuffers t))
                (consult--read
-                "History: "
                 (let ((history (or history (consult--current-history))))
                   (or (consult--remove-dups (if (ring-p history)
                                                 (ring-elements history)
                                               history))
                       (user-error "History is empty")))
+                :prompt "History: "
                 :history t ;; disable history
                 :category ;; Report command category for M-x history
                 (and (minibufferp)
@@ -2872,8 +2869,8 @@ starts a new Isearch session otherwise."
     (with-isearch-suspended
      (setq isearch-new-string
            (consult--read
-            "I-search: "
             (consult--isearch-candidates narrow)
+            :prompt "I-search: "
             :category 'consult-isearch
             :history t ;; disable history
             :sort nil
@@ -2933,8 +2930,8 @@ This is an alternative to `minor-mode-menu-from-indicator'."
   (interactive)
   (call-interactively
    (consult--read
-    "Minor mode: "
     (consult--minor-mode-candidates)
+    :prompt "Minor mode: "
     :require-match t
     :category 'minor-mode
     :narrow `(,(lambda (cand) (seq-position (caddr cand) consult--narrow))
@@ -2959,8 +2956,8 @@ The command supports previewing the currently selected theme."
                                     (cons nil (custom-available-themes))))
           (saved-theme (car custom-enabled-themes)))
       (consult--read
-       "Theme: "
        (mapcar (lambda (x) (or x 'default)) avail-themes)
+       :prompt "Theme: "
        :require-match t
        :category 'theme
        :history 'consult--theme-history
@@ -3094,8 +3091,8 @@ The command supports previewing the currently selected theme."
 (defun consult--buffer (display)
   "Backend implementation of `consult-buffer' with DISPLAY function."
   (consult--multi
-   "Switch to: "
    consult-buffer-sources
+   :prompt "Switch to: "
    :history 'consult--buffer-history
    :sort nil
    :preview
@@ -3178,9 +3175,9 @@ With prefix ARG, run the macro that many times.
 Macros containing mouse clicks are omitted."
   (interactive "p")
   (let ((selected (consult--read
-                   "Keyboard macro: "
                    (or (consult--kmacro-candidates)
                        (user-error "No keyboard macros defined"))
+                   :prompt "Keyboard macro: "
                    :category 'consult-kmacro
                    :require-match t
                    :sort nil
@@ -3317,8 +3314,8 @@ this function can jump across buffers."
 The symbol at point is added to the future history."
   (consult--imenu-jump
    (consult--read
-    "Go to item: "
     (or items (user-error "Imenu is empty"))
+    :prompt "Go to item: "
     :preview
     (let ((preview (consult--preview-position)))
       (lambda (cand restore)
@@ -3412,9 +3409,9 @@ The symbol at point is added to the future history."
     (consult--with-file-preview (open)
       (consult--jump
        (consult--read
-        (car prompt-dir)
         (consult--async-command cmd
           (consult--async-transform consult--grep-matches))
+        :prompt (car prompt-dir)
         :lookup (consult--grep-marker open)
         :preview (consult--preview-position)
         :initial (concat consult-async-default-split initial)
@@ -3472,9 +3469,9 @@ CMD is the find argument string.
 The filename at point is added to the future history."
   (find-file
    (consult--read
-    prompt
     (consult--async-command cmd
       (consult--async-map (lambda (x) (string-remove-prefix "./" x))))
+    :prompt prompt
     :sort nil
     :require-match t
     :initial (concat consult-async-default-split initial)
@@ -3528,9 +3525,9 @@ The man process is started asynchronously, similar to `consult-grep'.
 See `consult-grep' for more details regarding the asynchronous search."
   (interactive)
   (man (consult--read
-        "Manual entry: "
         (consult--async-command consult-man-command
           (consult--async-transform consult--man-format))
+        :prompt "Manual entry: "
         :require-match t
         :lookup #'consult--lookup-cdr
         :initial (concat consult-async-default-split initial)

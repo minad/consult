@@ -979,6 +979,8 @@ API, options could be removed, replaced or renamed at any time.
 Useful options are:
 @itemize
 @item
+@samp{:prompt} set the prompt string
+@item
 @samp{:preview-key} set the preview key, default is @samp{consult-preview-key}
 @item
 @samp{:initial} set the initial input
