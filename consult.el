@@ -820,9 +820,8 @@ MARKER is the cursor position."
 (defun consult--temporary-files ()
   "Return a function to open files temporarily."
   (let* ((new-buffers)
-         (recentf-should-restore recentf-mode)
-         (recentf-saved-list (when recentf-should-restore
-                               (copy-sequence recentf-list))))
+         (restore-recentf recentf-mode)
+         (saved-recentf (when restore-recentf (copy-sequence recentf-list))))
     (lambda (&optional name)
       (if name
         (or (get-file-buffer name)
@@ -844,10 +843,8 @@ MARKER is the cursor position."
                       (setq new-buffers (nbutlast new-buffers)))
                     buf)))))
         (mapc #'consult--kill-clean-buffer new-buffers)
-        (when recentf-should-restore
-          (setq recentf-list recentf-saved-list)
-          (when (member (current-buffer) new-buffers)
-            (recentf-add-file (buffer-file-name (current-buffer)))))))))
+        (when restore-recentf
+          (setq recentf-list saved-recentf))))))
 
 ;; Derived from ctrlf, originally isearch
 (defun consult--invisible-show (&optional permanently)
@@ -3428,27 +3425,27 @@ same major mode as the current buffer are used. See also
 ;;;;; Command: consult-grep
 
 (defun consult--grep-state ()
-  "Grep candidate to marker.
-
-OPEN is the function to open new files."
+  "Grep preview state function."
   (let ((open (consult--temporary-files))
         (jump (consult--jump-state)))
     (lambda (cand restore)
-      (funcall jump
-               (when-let (buf (and cand (funcall open (car cand))))
-                 (with-current-buffer buf
-                   (save-restriction
-                     (save-excursion
-                       (widen)
-                       (goto-char (point-min))
-                       ;; Location data might be invalid by now!
-                       (ignore-errors
-                         (forward-line (- (cadr cand) 1))
-                         (forward-char (caddr cand)))
-                       (point-marker)))))
-               restore)
       (when restore
-        (funcall open)))))
+        (funcall open))
+      (funcall
+       jump
+       (when-let (buf (and cand (funcall (if restore #'find-file open)
+                                         (car cand))))
+         (with-current-buffer buf
+           (save-restriction
+             (save-excursion
+               (widen)
+               (goto-char (point-min))
+               ;; Location data might be invalid by now!
+               (ignore-errors
+                 (forward-line (- (cadr cand) 1))
+                 (forward-char (caddr cand)))
+               (point-marker)))))
+       nil))))
 
 (defun consult--grep (prompt cmd dir initial)
   "Run grep CMD in DIR with INITIAL input.
