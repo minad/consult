@@ -958,12 +958,12 @@ See consult--with-preview for the arguments PREVIEW-KEY, ACTION, TRANSFORM and C
             (lambda ()
               (setq consult--preview-function
                     (let ((last-preview))
-                      (lambda (inp cand)
+                      (lambda (&rest args)
                         (cl-assert (window-minibuffer-p))
-                        (unless (equal last-preview cand)
+                        (unless (equal last-preview args)
                           (with-selected-window (or (minibuffer-selected-window) (next-window))
-                            (funcall action (funcall transform inp cand) nil))
-                          (setq last-preview cand)))))
+                            (funcall action (apply transform args) nil))
+                          (setq last-preview args)))))
               (let ((post-command-sym (make-symbol "consult--preview-post-command")))
                 (fset post-command-sym
                       (lambda ()
