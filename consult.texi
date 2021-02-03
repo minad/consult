@@ -601,7 +601,7 @@ Optional source fields:
 @item
 @samp{:narrow} Narrowing character or @samp{(character . string)} pair.
 @item
-@samp{:predicate} Function which must return t if the source is enabled.
+@samp{:enabled} Function which must return t if the source is enabled.
 @item
 @samp{:face} Face used for highlighting the candidates.
 @item

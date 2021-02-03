@@ -1630,9 +1630,9 @@ MAX-LEN is the maximum candidate length."
       (setq idx (1+ idx)))))
 
 (defun consult--multi-preprocess (sources)
-  "Preprocess SOURCES, filter by predicate."
+  "Preprocess SOURCES, remove disabled sources."
   (seq-filter (lambda (src)
-                (if-let (pred (plist-get src :predicate))
+                (if-let (pred (plist-get src :enabled))
                     (funcall pred)
                   t))
               (mapcar (lambda (src)
@@ -1656,7 +1656,7 @@ Required source fields:
 Optional source fields:
 * :name - Name of the source, used for narrowing and annotation.
 * :narrow - Narrowing character or (character . string) pair.
-* :predicate - Function which must return t if the source is enabled.
+* :enabled - Function which must return t if the source is enabled.
 * :face - Face used for highlighting the candidates.
 * :annotate - Annotation function called for each candidate, returns string.
 * :history - Name of history variable to add selected candidate.
@@ -3018,7 +3018,7 @@ The command supports previewing the currently selected theme."
     :face      consult-buffer
     :history   buffer-name-history
     :open      ,#'consult--open-buffer
-    :predicate ,(lambda () consult-project-root-function)
+    :enabled   ,(lambda () consult-project-root-function)
     :items
     ,(lambda ()
        (when-let (root (funcall consult-project-root-function))
@@ -3036,7 +3036,7 @@ The command supports previewing the currently selected theme."
     :face      consult-file
     :history   file-name-history
     :open      ,#'consult--open-file
-    :predicate ,(lambda () consult-project-root-function)
+    :enabled   ,(lambda () consult-project-root-function)
     :items
     ,(lambda ()
       (when-let (root (funcall consult-project-root-function))

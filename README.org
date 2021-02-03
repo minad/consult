@@ -474,7 +474,7 @@ variables and functions with their descriptions.
   Optional source fields:
   - =:name= Name of the source, used for narrowing and annotation.
   - =:narrow= Narrowing character or =(character . string)= pair.
-  - =:predicate= Function which must return t if the source is enabled.
+  - =:enabled= Function which must return t if the source is enabled.
   - =:face= Face used for highlighting the candidates.
   - =:annotate= Annotation function called for each candidate, returns string.
   - =:history= Name of history variable to add selected candidate.
