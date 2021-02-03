@@ -896,9 +896,9 @@ PERMANENTLY non-nil means the overlays will not be restored later."
 
 ;; Matched strings are not highlighted as of now.
 ;; see https://github.com/minad/consult/issues/7
-(defun consult--preview-jump (&optional face)
+(defun consult--jump-preview (&optional face)
   "The preview function used if selecting from a list of candidate positions.
-The function can be used as the `:action' argument of `consult--read'.
+The function can be used as the `:state' argument of `consult--read'.
 FACE is the cursor face."
   (let ((overlays)
         (invisible)
@@ -928,23 +928,23 @@ FACE is the cursor face."
        ;; If position cannot be previewed, return to saved position
        (t (consult--jump-nomark saved-pos))))))
 
-(defun consult--action-jump (&optional face)
-  "The action function used if selecting from a list of candidate positions.
-The function can be used as the `:action' argument of `consult--read'.
+(defun consult--jump-state (&optional face)
+  "The state function used if selecting from a list of candidate positions.
+The function can be used as the `:state' argument of `consult--read'.
 FACE is the cursor face."
-  (let ((preview (consult--preview-jump face)))
+  (let ((preview (consult--jump-preview face)))
     (lambda (cand restore)
       (funcall preview cand restore)
       (when (and cand restore)
         (consult--jump cand)))))
 
-(defun consult--with-preview-1 (preview-key action transform candidate fun)
+(defun consult--with-preview-1 (preview-key state transform candidate fun)
   "Add preview support for FUN.
 
-See consult--with-preview for the arguments PREVIEW-KEY, ACTION, TRANSFORM and CANDIDATE."
+See consult--with-preview for the arguments PREVIEW-KEY, STATE, TRANSFORM and CANDIDATE."
   (let ((input "") (selected))
     (consult--minibuffer-with-setup-hook
-        (if (and action preview-key)
+        (if (and state preview-key)
             (lambda ()
               (setq consult--preview-function
                     (let ((last-preview))
@@ -952,7 +952,7 @@ See consult--with-preview for the arguments PREVIEW-KEY, ACTION, TRANSFORM and C
                         (cl-assert (window-minibuffer-p))
                         (unless (equal last-preview args)
                           (with-selected-window (or (minibuffer-selected-window) (next-window))
-                            (funcall action (apply transform args) nil))
+                            (funcall state (apply transform args) nil))
                           (setq last-preview args)))))
               (let ((post-command-sym (make-symbol "consult--preview-post-command")))
                 (fset post-command-sym
@@ -975,16 +975,16 @@ See consult--with-preview for the arguments PREVIEW-KEY, ACTION, TRANSFORM and C
           (cons (setq selected (when-let (result (funcall fun))
                                  (funcall transform input result)))
                 input)
-        ;; If there is a action function, always call restore!
+        ;; If there is a state function, always call restore!
         ;; The preview function should be seen as a stateful object,
         ;; and we call the destructor here.
-        (when action
-          (funcall action selected t))))))
+        (when state
+          (funcall state selected t))))))
 
-(defmacro consult--with-preview (preview-key action transform candidate &rest body)
+(defmacro consult--with-preview (preview-key state transform candidate &rest body)
   "Add preview support to BODY.
 
-ACTION is the action/preview function.
+STATE is the state function.
 TRANSFORM is the transformation function.
 CANDIDATE is the function returning the current candidate.
 PREVIEW-KEY are the keys which triggers the preview.
@@ -995,7 +995,7 @@ long as a new candidate is selected. Finally the preview function is called in
 any case with restore=t even if no preview has actually taken place. The
 candidate argument can be nil if the selection has been aborted."
   (declare (indent 4))
-  `(consult--with-preview-1 ,preview-key ,action ,transform ,candidate (lambda () ,@body)))
+  `(consult--with-preview-1 ,preview-key ,state ,transform ,candidate (lambda () ,@body)))
 
 ;;;; Narrowing support
 
@@ -1482,7 +1482,7 @@ See `consult--read' for the CANDIDATES, KEYMAP, ADD-HISTORY, NARROW and PREVIEW-
 (cl-defun consult--read (candidates &rest options &key
                                     prompt predicate require-match history default
                                     keymap category initial narrow add-history annotate
-                                    action preview-key sort default-top lookup)
+                                    state preview-key sort default-top lookup)
   "Enhanced completing read function selecting from CANDIDATES.
 
 Keyword OPTIONS:
@@ -1499,7 +1499,7 @@ LOOKUP is a function which is applied to the result.
 ANNOTATE is the annotation function.
 INITIAL is initial input.
 DEFAULT-TOP must be nil if the default candidate should not be moved to the top.
-ACTION is the action and preview function, see `consult--with-preview'.
+STATE is the state function, see `consult--with-preview'.
 PREVIEW-KEY are the preview keys (nil, 'any, a single key or a list of keys).
 NARROW is an alist of narrowing prefix strings and description.
 KEYMAP is a command-specific keymap."
@@ -1526,7 +1526,7 @@ KEYMAP is a command-specific keymap."
       ;; Fortunately the overcapturing problem does not affect the bytecode
       ;; interpreter which does a proper scope analyis.
       (let ((result
-             (consult--with-preview preview-key action
+             (consult--with-preview preview-key state
                                     (lambda (input cand)
                                       (funcall lookup input (funcall async nil) cand))
                                     (apply-partially #'run-hook-with-args-until-success
@@ -1672,7 +1672,7 @@ Optional source fields:
 ;;;; Internal API: consult--prompt
 
 (cl-defun consult--prompt (&key (prompt "Input: ") history add-history initial default
-                                keymap action (preview-key consult-preview-key)
+                                keymap state (preview-key consult-preview-key)
                                 (transform #'identity))
   "Read from minibuffer.
 
@@ -1682,14 +1682,14 @@ HISTORY is the symbol of the history variable.
 INITIAL is initial input.
 DEFAULT is the default selected value.
 ADD-HISTORY is a list of items to add to the history.
-ACTION is the action/preview function, see `consult--with-preview'.
+STATE is the state function, see `consult--with-preview'.
 PREVIEW-KEY are the preview keys (nil, 'any, a single key or a list of keys).
 KEYMAP is a command-specific keymap."
   (consult--minibuffer-with-setup-hook
       (:append (lambda ()
                  (consult--setup-keymap keymap nil nil preview-key)
                  (consult--add-history add-history)))
-    (car (consult--with-preview preview-key action
+    (car (consult--with-preview preview-key state
                                 (lambda (inp _) (funcall transform inp)) (lambda () t)
            (read-from-minibuffer prompt initial nil nil history default)))))
 
@@ -1749,7 +1749,7 @@ The symbol at point is added to the future history."
    :lookup #'consult--line-match
    :history '(:input consult--line-history)
    :add-history (thing-at-point 'symbol)
-   :action (consult--action-jump)))
+   :state (consult--jump-state)))
 
 ;;;;; Command: consult-error
 
@@ -1806,7 +1806,7 @@ The command supports preview of the currently selected error."
              (?w . "Warning")
              (?i . "Info"))
    :history '(:input consult--error-history)
-   :action (consult--action-jump 'consult-preview-error)))
+   :state (consult--jump-state 'consult-preview-error)))
 
 ;;;;; Command: consult-mark
 
@@ -1849,7 +1849,7 @@ The symbol at point is added to the future history."
    :lookup #'consult--lookup-location
    :history '(:input consult--line-history)
    :add-history (thing-at-point 'symbol)
-   :action (consult--action-jump)))
+   :state (consult--jump-state)))
 
 ;;;;; Command: consult-global-mark
 
@@ -1907,7 +1907,7 @@ The symbol at point is added to the future history."
    :lookup #'consult--lookup-location
    :history '(:input consult--line-history)
    :add-history (thing-at-point 'symbol)
-   :action (consult--action-jump)))
+   :state (consult--jump-state)))
 
 ;;;;; Command: consult-line
 
@@ -2006,7 +2006,7 @@ The symbol at point and the last `isearch-string' is added to the future history
      :default (car candidates)
      ;; Add isearch-string as initial input if starting from isearch
      :initial (or initial (and isearch-mode isearch-string))
-     :action (consult--action-jump))))
+     :state (consult--jump-state))))
 
 ;;;;; Command: consult-keep-lines
 
@@ -2084,7 +2084,7 @@ INITIAL is the initial input."
     :prompt "Keep lines: "
     :initial initial
     :history 'consult--keep-lines-history
-    :action (consult--keep-lines-state filter))))
+    :state (consult--keep-lines-state filter))))
 
 ;;;;; Command: consult-focus-lines
 
@@ -2146,7 +2146,7 @@ Optional INITIAL input can be provided when called from Lisp."
       :prompt "Focus on lines: "
       :initial initial
       :history 'consult--keep-lines-history
-      :action (consult--focus-lines-state filter)))))
+      :state (consult--focus-lines-state filter)))))
 
 ;;;;; Command: consult-goto-line
 
@@ -2185,7 +2185,7 @@ The command respects narrowing and the settings
     (while (if-let (pos (consult--goto-line-position
                          (consult--prompt
                           :prompt "Go to line: "
-                          :action (let ((preview (consult--preview-jump)))
+                          :state (let ((preview (consult--jump-preview)))
                                     (lambda (str restore)
                                       (funcall preview
                                                (consult--goto-line-position str)
@@ -2372,7 +2372,7 @@ If no MODES are specified, use currently active major and minor modes."
    :sort nil
    :category 'consult-yank
    :require-match t
-   :action
+   :state
    ;; If previous command is yank, hide previously yanked text
    (let* ((ov) (pt (point)) (mk (or (and (eq last-command 'yank) (mark t)) pt)))
      (lambda (cand restore)
@@ -2527,8 +2527,8 @@ register access functions. The command supports narrowing, see
             (sort (consult--register-alist) #'car-less-than-car))
     :prompt "Register: "
     :category 'consult-register
-    :action
-    (let ((preview (consult--preview-jump)))
+    :state
+    (let ((preview (consult--jump-preview)))
       (lambda (cand restore)
         (funcall preview
                  ;; Preview markers
@@ -2680,8 +2680,8 @@ variable `consult-bookmark-narrow' for the narrowing configuration."
             t))
         (mapcar (pcase-lambda (`(,x ,y ,_)) (cons x y))
                 consult-bookmark-narrow))
-       :action
-       (let ((preview (consult--preview-jump)))
+       :state
+       (let ((preview (consult--jump-preview)))
          (lambda (cand restore)
            (funcall
             preview
@@ -2892,7 +2892,7 @@ starts a new Isearch session otherwise."
             :lookup
             (lambda (_ candidates str)
               (if-let (cand (car (member str candidates))) (substring cand 1) str))
-            :action
+            :state
             (lambda (cand restore)
               (unless restore
                 (setq isearch-string cand)
@@ -2975,7 +2975,7 @@ The command supports previewing the currently selected theme."
        :history 'consult--theme-history
        :lookup (lambda (_input _cands x)
                  (and x (not (string= x "default")) (intern-soft x)))
-       :action (lambda (cand restore)
+       :state (lambda (cand restore)
                   (cond
                    ((and restore (not cand)) (consult-theme saved-theme))
                    ((memq cand avail-themes) (consult-theme cand))))
@@ -3107,7 +3107,7 @@ The command supports previewing the currently selected theme."
    :prompt "Switch to: "
    :history 'consult--buffer-history
    :sort nil
-   :action
+   :state
    (lambda (cand restore)
      (when cand
        (let ((name (car cand))
@@ -3328,8 +3328,8 @@ The symbol at point is added to the future history."
    (consult--read
     (or items (user-error "Imenu is empty"))
     :prompt "Go to item: "
-    :action
-    (let ((preview (consult--preview-jump)))
+    :state
+    (let ((preview (consult--jump-preview)))
       (lambda (cand restore)
         ;; Only preview simple menu items which are markers,
         ;; in order to avoid any bad side effects.
@@ -3424,7 +3424,7 @@ The symbol at point is added to the future history."
          (consult--async-transform consult--grep-matches))
        :prompt (car prompt-dir)
        :lookup (consult--grep-marker open)
-       :action (consult--action-jump)
+       :state (consult--jump-state)
        :initial (concat consult-async-default-split initial)
        :add-history (concat consult-async-default-split (thing-at-point 'symbol))
        :require-match t

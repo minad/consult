@@ -85,7 +85,7 @@
              (?w . "Warning")
              (?i . "Info"))
    :lookup #'consult--lookup-cadr
-   :action (consult--action-jump 'consult-preview-error)))
+   :state (consult--jump-state 'consult-preview-error)))
 
 (provide 'consult-flycheck)
 ;;; consult-flycheck.el ends here
