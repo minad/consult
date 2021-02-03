@@ -73,20 +73,19 @@
 (defun consult-flycheck ()
   "Jump to flycheck error."
   (interactive)
-  (consult--jump
-   (consult--read
-    (consult--with-increased-gc (consult-flycheck--candidates))
-    :prompt "Flycheck error: "
-    :category 'consult-flycheck-error
-    :history t ;; disable history
-    :require-match t
-    :sort nil
-    :narrow `(,(lambda (cand) (= (caddr cand) consult--narrow))
-              (?e . "Error")
-              (?w . "Warning")
-              (?i . "Info"))
-    :lookup #'consult--lookup-cadr
-    :action (consult--preview-position 'consult-preview-error))))
+  (consult--read
+   (consult--with-increased-gc (consult-flycheck--candidates))
+   :prompt "Flycheck error: "
+   :category 'consult-flycheck-error
+   :history t ;; disable history
+   :require-match t
+   :sort nil
+   :narrow `(,(lambda (cand) (= (caddr cand) consult--narrow))
+             (?e . "Error")
+             (?w . "Warning")
+             (?i . "Info"))
+   :lookup #'consult--lookup-cadr
+   :action (consult--action-jump 'consult-preview-error)))
 
 (provide 'consult-flycheck)
 ;;; consult-flycheck.el ends here

@@ -906,7 +906,7 @@ PERMANENTLY non-nil means the overlays will not be restored later."
 
 ;; Matched strings are not highlighted as of now.
 ;; see https://github.com/minad/consult/issues/7
-(defun consult--preview-position (&optional face)
+(defun consult--preview-jump (&optional face)
   "The preview function used if selecting from a list of candidate positions.
 The function can be used as the `:action' argument of `consult--read'.
 FACE is the cursor face."
@@ -937,6 +937,16 @@ FACE is the cursor face."
                       (consult--overlay pos (1+ pos) 'face face)))))
        ;; If position cannot be previewed, return to saved position
        (t (consult--jump-1 saved-pos))))))
+
+(defun consult--action-jump (&optional face)
+  "The action function used if selecting from a list of candidate positions.
+The function can be used as the `:action' argument of `consult--read'.
+FACE is the cursor face."
+  (let ((preview (consult--preview-jump face)))
+    (lambda (cand restore)
+      (funcall preview cand restore)
+      (when (and cand restore)
+        (consult--jump cand)))))
 
 (defun consult--with-preview-1 (preview-key action transform candidate fun)
   "Add preview support for FUN.
@@ -1739,17 +1749,16 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
 This command supports candidate preview.
 The symbol at point is added to the future history."
   (interactive)
-  (consult--jump
-   (consult--read
-    (consult--with-increased-gc (consult--outline-candidates))
-    :prompt "Go to heading: "
-    :category 'consult-location
-    :sort nil
-    :require-match t
-    :lookup #'consult--line-match
-    :history '(:input consult--line-history)
-    :add-history (thing-at-point 'symbol)
-    :action (consult--preview-position))))
+  (consult--read
+   (consult--with-increased-gc (consult--outline-candidates))
+   :prompt "Go to heading: "
+   :category 'consult-location
+   :sort nil
+   :require-match t
+   :lookup #'consult--line-match
+   :history '(:input consult--line-history)
+   :add-history (thing-at-point 'symbol)
+   :action (consult--action-jump)))
 
 ;;;;; Command: consult-error
 
@@ -1794,21 +1803,19 @@ The command supports preview of the currently selected error."
   (interactive)
   (unless (compilation-buffer-p (current-buffer))
     (user-error "Not a compilation buffer"))
-  (consult--jump
-   (consult--read
-    (consult--with-increased-gc (consult--error-candidates))
-    :prompt "Go to error: "
-    :category 'consult-error
-    :sort nil
-    :require-match t
-    :lookup #'consult--lookup-cadr
-    :narrow `(,(lambda (cand) (= (caddr cand) consult--narrow))
-              (?e . "Error")
-              (?w . "Warning")
-              (?i . "Info"))
-    :history '(:input consult--error-history)
-    :action
-    (consult--preview-position 'consult-preview-error))))
+  (consult--read
+   (consult--with-increased-gc (consult--error-candidates))
+   :prompt "Go to error: "
+   :category 'consult-error
+   :sort nil
+   :require-match t
+   :lookup #'consult--lookup-cadr
+   :narrow `(,(lambda (cand) (= (caddr cand) consult--narrow))
+             (?e . "Error")
+             (?w . "Warning")
+             (?i . "Info"))
+   :history '(:input consult--error-history)
+   :action (consult--action-jump 'consult-preview-error)))
 
 ;;;;; Command: consult-mark
 
@@ -1842,17 +1849,16 @@ The alist contains (string . position) pairs."
 The command supports preview of the currently selected marker position.
 The symbol at point is added to the future history."
   (interactive)
-  (consult--jump
-   (consult--read
-    (consult--with-increased-gc (consult--mark-candidates))
-    :prompt "Go to mark: "
-    :category 'consult-location
-    :sort nil
-    :require-match t
-    :lookup #'consult--lookup-location
-    :history '(:input consult--line-history)
-    :add-history (thing-at-point 'symbol)
-    :action (consult--preview-position))))
+  (consult--read
+   (consult--with-increased-gc (consult--mark-candidates))
+   :prompt "Go to mark: "
+   :category 'consult-location
+   :sort nil
+   :require-match t
+   :lookup #'consult--lookup-location
+   :history '(:input consult--line-history)
+   :add-history (thing-at-point 'symbol)
+   :action (consult--action-jump)))
 
 ;;;;; Command: consult-global-mark
 
@@ -1893,25 +1899,24 @@ The alist contains (string . position) pairs."
 The command supports preview of the currently selected marker position.
 The symbol at point is added to the future history."
   (interactive)
-  (consult--jump
-   (consult--read
-    (consult--with-increased-gc (consult--global-mark-candidates))
-    :prompt "Go to global mark: "
-    ;; While `consult-global-mark' formats the candidates in grep-like
-    ;; style, we are still not using the 'xref-location category,
-    ;; since the locations are formatted using abbreviated buffer
-    ;; names instead of file paths. If the 'xref-location category
-    ;; would be used, Embark would embark-export to a broken grep-mode
-    ;; buffer. By using the 'consult-location category, Embark will
-    ;; export to an occur buffer instead! See also
-    ;; https://github.com/minad/consult/issues/107.
-    :category 'consult-location
-    :sort nil
-    :require-match t
-    :lookup #'consult--lookup-location
-    :history '(:input consult--line-history)
-    :add-history (thing-at-point 'symbol)
-    :action (consult--preview-position))))
+  (consult--read
+   (consult--with-increased-gc (consult--global-mark-candidates))
+   :prompt "Go to global mark: "
+   ;; While `consult-global-mark' formats the candidates in grep-like
+   ;; style, we are still not using the 'xref-location category,
+   ;; since the locations are formatted using abbreviated buffer
+   ;; names instead of file paths. If the 'xref-location category
+   ;; would be used, Embark would embark-export to a broken grep-mode
+   ;; buffer. By using the 'consult-location category, Embark will
+   ;; export to an occur buffer instead! See also
+   ;; https://github.com/minad/consult/issues/107.
+   :category 'consult-location
+   :sort nil
+   :require-match t
+   :lookup #'consult--lookup-location
+   :history '(:input consult--line-history)
+   :add-history (thing-at-point 'symbol)
+   :action (consult--action-jump)))
 
 ;;;;; Command: consult-line
 
@@ -1996,22 +2001,21 @@ This command obeys narrowing. Optionally INITIAL input can be provided.
 The symbol at point and the last `isearch-string' is added to the future history."
   (interactive)
   (let ((candidates (consult--with-increased-gc (consult--line-candidates))))
-    (consult--jump
-     (consult--read
-      (cdr candidates)
-      :prompt "Go to line: "
-      :category 'consult-location
-      :sort nil
-      :default-top nil
-      :require-match t
-      ;; Always add last isearch string to future history
-      :add-history (list (thing-at-point 'symbol) isearch-string)
-      :history '(:input consult--line-history)
-      :lookup #'consult--line-match
-      :default (car candidates)
-      ;; Add isearch-string as initial input if starting from isearch
-      :initial (or initial (and isearch-mode isearch-string))
-      :action (consult--preview-position)))))
+    (consult--read
+     (cdr candidates)
+     :prompt "Go to line: "
+     :category 'consult-location
+     :sort nil
+     :default-top nil
+     :require-match t
+     ;; Always add last isearch string to future history
+     :add-history (list (thing-at-point 'symbol) isearch-string)
+     :history '(:input consult--line-history)
+     :lookup #'consult--line-match
+     :default (car candidates)
+     ;; Add isearch-string as initial input if starting from isearch
+     :initial (or initial (and isearch-mode isearch-string))
+     :action (consult--action-jump))))
 
 ;;;;; Command: consult-keep-lines
 
@@ -2167,7 +2171,7 @@ The command respects narrowing and the settings
                        (display-line-numbers-widen consult-line-numbers-widen))
     (while (let ((ret (consult--prompt
                        :prompt "Go to line: "
-                       :action (consult--preview-position)
+                       :action (consult--preview-jump)
                        :transform
                        (lambda (_ str)
                          (when-let ((line (and str
@@ -2516,7 +2520,7 @@ register access functions. The command supports narrowing, see
     :prompt "Register: "
     :category 'consult-register
     :action
-    (let ((preview (consult--preview-position)))
+    (let ((preview (consult--preview-jump)))
       (lambda (cand restore)
         (funcall preview
                  ;; Preview markers
@@ -2669,7 +2673,7 @@ variable `consult-bookmark-narrow' for the narrowing configuration."
         (mapcar (pcase-lambda (`(,x ,y ,_)) (cons x y))
                 consult-bookmark-narrow))
        :action
-       (let ((preview (consult--preview-position)))
+       (let ((preview (consult--preview-jump)))
          (lambda (cand restore)
            (funcall
             preview
@@ -3317,7 +3321,7 @@ The symbol at point is added to the future history."
     (or items (user-error "Imenu is empty"))
     :prompt "Go to item: "
     :action
-    (let ((preview (consult--preview-position)))
+    (let ((preview (consult--preview-jump)))
       (lambda (cand restore)
         ;; Only preview simple menu items which are markers,
         ;; in order to avoid any bad side effects.
@@ -3407,19 +3411,18 @@ The symbol at point is added to the future history."
   (let* ((prompt-dir (consult--directory-prompt prompt dir))
          (default-directory (cdr prompt-dir)))
     (consult--with-file-preview (open)
-      (consult--jump
-       (consult--read
-        (consult--async-command cmd
-          (consult--async-transform consult--grep-matches))
-        :prompt (car prompt-dir)
-        :lookup (consult--grep-marker open)
-        :action (consult--preview-position)
-        :initial (concat consult-async-default-split initial)
-        :add-history (concat consult-async-default-split (thing-at-point 'symbol))
-        :require-match t
-        :category 'xref-location
-        :history '(:input consult--grep-history)
-        :sort nil)))))
+      (consult--read
+       (consult--async-command cmd
+         (consult--async-transform consult--grep-matches))
+       :prompt (car prompt-dir)
+       :lookup (consult--grep-marker open)
+       :action (consult--action-jump)
+       :initial (concat consult-async-default-split initial)
+       :add-history (concat consult-async-default-split (thing-at-point 'symbol))
+       :require-match t
+       :category 'xref-location
+       :history '(:input consult--grep-history)
+       :sort nil))))
 
 ;;;###autoload
 (defun consult-grep (&optional dir initial)
