@@ -876,7 +876,7 @@ PERMANENTLY non-nil means the overlays will not be restored later."
         (funcall func t)
       (overlay-put (car ov) 'invisible (cdr ov)))))
 
-(defun consult--jump-1 (pos)
+(defun consult--jump-nomark (pos)
   "Go to POS and recenter."
   (cond
    ((and (markerp pos) (not (buffer-live-p (marker-buffer pos))))
@@ -900,7 +900,7 @@ PERMANENTLY non-nil means the overlays will not be restored later."
     ;; record previous location such that the user can jump back quickly.
     (unless (and (markerp pos) (not (eq (current-buffer) (marker-buffer pos))))
       (push-mark (point) t))
-    (consult--jump-1 pos)
+    (consult--jump-nomark pos)
     (consult--invisible-show t))
   nil)
 
@@ -927,7 +927,7 @@ FACE is the cursor face."
           (goto-char saved-pos)))
        ;; Jump to position
        (cand
-        (consult--jump-1 cand)
+        (consult--jump-nomark cand)
         (setq invisible (consult--invisible-show))
         (let ((pos (point)))
           (setq overlays
@@ -936,7 +936,7 @@ FACE is the cursor face."
                                         'face 'consult-preview-line)
                       (consult--overlay pos (1+ pos) 'face face)))))
        ;; If position cannot be previewed, return to saved position
-       (t (consult--jump-1 saved-pos))))))
+       (t (consult--jump-nomark saved-pos))))))
 
 (defun consult--action-jump (&optional face)
   "The action function used if selecting from a list of candidate positions.
