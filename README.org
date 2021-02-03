@@ -545,6 +545,17 @@ variables and functions with their descriptions.
   (add-to-list 'consult-buffer-sources 'term-source 'append)
   #+end_src
 
+  If you use org, you can simulate =org-switchb= defining a source
+  containing only your org buffers:
+  #+begin_src elisp
+  (add-to-list 'consult-buffer-sources
+               (list :name     "Org"
+                     :narrow   ?o
+                     :category 'consult-new
+                     :items    (lambda () (mapcar #'buffer-name (org-buffer-list))))
+               'append)
+  #+end_src
+
   For more details, see the documentation of =consult-buffer= and of the
   internal =consult--multi= API. The =consult--multi= function can be used to
   create new multi-source commands, but is part of the internal API as of now,
