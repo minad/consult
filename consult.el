@@ -820,24 +820,26 @@ MARKER is the cursor position."
          (recentf-saved-list (when recentf-should-restore
                                (copy-sequence recentf-list))))
     (lambda (&optional name)
-      (if (not name)
-          (progn
-            (mapc #'consult--kill-clean-buffer new-buffers)
-            (when recentf-should-restore
-              (setq recentf-list recentf-saved-list)
-              (when (member (current-buffer) new-buffers)
-                (recentf-add-file (buffer-file-name (current-buffer))))))
+      (if name
         (or (get-file-buffer name)
             (when-let (attrs (file-attributes name))
-              (if (> (file-attribute-size attrs) consult-preview-max-size)
-                  (and (minibuffer-message "File `%s' too large for preview" name) nil)
-                (let ((buf (find-file-noselect name 'nowarn)))
-                  (push buf new-buffers)
-                  ;; Only keep a few buffers alive
-                  (while (> (length new-buffers) consult-preview-max-count)
-                    (consult--kill-clean-buffer (car (last new-buffers)))
-                    (setq new-buffers (nbutlast new-buffers)))
-                  buf))))))))
+              (let ((size (file-attribute-size attrs)))
+                (if (> size consult-preview-max-size)
+                    (prog1 nil
+                      (minibuffer-message "File `%s' (%s) is too large for preview"
+                                          name (file-size-human-readable size)))
+                  (let ((buf (find-file-noselect name 'nowarn)))
+                    (push buf new-buffers)
+                    ;; Only keep a few buffers alive
+                    (while (> (length new-buffers) consult-preview-max-count)
+                      (consult--kill-clean-buffer (car (last new-buffers)))
+                      (setq new-buffers (nbutlast new-buffers)))
+                    buf)))))
+        (mapc #'consult--kill-clean-buffer new-buffers)
+        (when recentf-should-restore
+          (setq recentf-list recentf-saved-list)
+          (when (member (current-buffer) new-buffers)
+            (recentf-add-file (buffer-file-name (current-buffer)))))))))
 
 ;; Derived from ctrlf, originally isearch
 (defun consult--invisible-show (&optional permanently)
