@@ -628,16 +628,6 @@ Otherwise the `default-directory' is returned."
    (propertize file 'face 'consult-file) ":"
    (propertize (number-to-string line) 'face 'consult-line-number) ":"))
 
-(defun consult--line-position (line)
-  "Compute character position from LINE number."
-  (save-excursion
-    (save-restriction
-      (when consult-line-numbers-widen
-        (widen))
-      (goto-char (point-min))
-      (forward-line (- line 1))
-      (point))))
-
 (defmacro consult--overlay (beg end &rest props)
   "Make consult overlay between BEG and END with PROPS."
   (let ((ov (make-symbol "ov"))
@@ -1683,7 +1673,7 @@ Optional source fields:
 
 (cl-defun consult--prompt (&key (prompt "Input: ") history add-history initial default
                                 keymap action (preview-key consult-preview-key)
-                                (transform (lambda (_ x) x)))
+                                (transform #'identity))
   "Read from minibuffer.
 
 PROMPT is the string to prompt with.
@@ -1699,8 +1689,9 @@ KEYMAP is a command-specific keymap."
       (:append (lambda ()
                  (consult--setup-keymap keymap nil nil preview-key)
                  (consult--add-history add-history)))
-    (consult--with-preview preview-key action transform #'minibuffer-contents-no-properties
-      (read-from-minibuffer prompt initial nil nil history default))))
+    (car (consult--with-preview preview-key action
+                                (lambda (inp _) (funcall transform inp)) (lambda () t)
+           (read-from-minibuffer prompt initial nil nil history default)))))
 
 (advice-add #'consult--prompt :filter-args #'consult--merge-config)
 
@@ -2159,6 +2150,28 @@ Optional INITIAL input can be provided when called from Lisp."
 
 ;;;;; Command: consult-goto-line
 
+(defun consult--goto-line-position (str &optional msg)
+  "Transform input STR to line number.
+Optionally print an error message if MSG is t."
+  (if-let (line (and str
+                     (string-match-p "^[[:digit:]]+$" str)
+                     (string-to-number str)))
+      (let ((pos (save-excursion
+                   (save-restriction
+                     (when consult-line-numbers-widen
+                       (widen))
+                     (goto-char (point-min))
+                     (forward-line (- line 1))
+                     (point)))))
+        (if (consult--in-range-p pos)
+            pos
+          (when msg
+            (minibuffer-message "Line number out of range."))
+          nil))
+    (when (and msg str (not (string= str "")))
+      (minibuffer-message "Please enter a number."))
+    nil))
+
 ;;;###autoload
 (defun consult-goto-line ()
   "Read line number and jump to the line with preview.
@@ -2169,22 +2182,17 @@ The command respects narrowing and the settings
   (consult--forbid-minibuffer)
   (consult--local-let ((display-line-numbers consult-goto-line-numbers)
                        (display-line-numbers-widen consult-line-numbers-widen))
-    (while (let ((ret (consult--prompt
-                       :prompt "Go to line: "
-                       :action (consult--preview-jump)
-                       :transform
-                       (lambda (_ str)
-                         (when-let ((line (and str
-                                               (string-match-p "^[[:digit:]]+$" str)
-                                               (string-to-number str)))
-                                    (pos (and line (consult--line-position line))))
-                           (and (consult--in-range-p pos) pos))))))
-             (if-let (pos (car ret))
-                 (consult--jump pos)
-               (minibuffer-message (if (string-match-p "^[[:digit:]]+$" (cdr ret))
-                                       "Line number out of range."
-                                     "Please enter a number."))
-               t)))))
+    (while (if-let (pos (consult--goto-line-position
+                         (consult--prompt
+                          :prompt "Go to line: "
+                          :action (let ((preview (consult--preview-jump)))
+                                    (lambda (str restore)
+                                      (funcall preview
+                                               (consult--goto-line-position str)
+                                               restore))))
+                         t))
+               (consult--jump pos)
+             t))))
 
 ;;;;; Command: consult-recent-file
 
