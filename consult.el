@@ -402,6 +402,9 @@ the public API."
 
 ;;;; Internal variables
 
+(defvar consult--buffer-display #'switch-to-buffer
+  "Buffer display function.")
+
 (defvar consult--cache nil
   "Cached data populated by `consult--define-cache'.")
 
@@ -1629,6 +1632,19 @@ MAX-LEN is the maximum candidate length."
                         (if (symbolp src) (symbol-value src) src))
                       sources)))
 
+(defun consult--multi-state (sources)
+  "State function for SOURCES."
+  (when-let (states (delq nil (mapcar (lambda (src)
+                                       (when-let (fun (plist-get src :state))
+                                         (cons src (funcall fun))))
+                                     sources)))
+    (lambda (cand restore)
+      (if restore
+          (dolist (state states)
+            (funcall (cdr state) (and (eq (car state) (cdr cand)) (car cand)) t))
+        (when-let (fun (cdr (assq (cdr cand) states)))
+          (funcall fun (car cand) nil))))))
+
 (defun consult--multi (sources &rest options)
   "Select from candidates taken from a list of SOURCES.
 
@@ -1650,8 +1666,9 @@ Optional source fields:
 * :face - Face used for highlighting the candidates.
 * :annotate - Annotation function called for each candidate, returns string.
 * :history - Name of history variable to add selected candidate.
-* Other source fields can be added specifically to the use case. The `consult-buffer'
-  command uses the :open function to open an item from the source."
+* :action - Action function called with the selected candidate.
+* :state - State constructor for the source, must return the state function.
+* Other source fields can be added specifically to the use case."
   (let* ((sources (consult--multi-preprocess sources))
          (candidates
           (consult--with-increased-gc
@@ -1664,9 +1681,12 @@ Optional source fields:
                           :narrow    (consult--multi-narrow sources)
                           :annotate  (consult--multi-annotate sources (car candidates))
                           :lookup    (consult--multi-lookup sources)
+                          :state     (consult--multi-state sources)
                           options)))
     (when-let (history (plist-get (cdr selected) :history))
       (add-to-history history (car selected)))
+    (when-let (action (plist-get (cdr selected) :action))
+      (funcall action (car selected)))
     selected))
 
 ;;;; Internal API: consult--prompt
@@ -2998,16 +3018,30 @@ The command supports previewing the currently selected theme."
 (consult--define-cache consult--cached-buffer-file-hash
   (consult--string-hash (delq nil (mapcar #'buffer-file-name (consult--cached-buffers)))))
 
-(defun consult--open-file (file display)
-  "Open FILE via DISPLAY function."
-  (pcase-exhaustive display
+;; In order to avoid slowness and unnecessary complexity, we
+;; only preview buffers. Loading recent files, bookmarks or
+;; views can result in expensive operations.
+(defun consult--buffer-state ()
+  "Buffer state function."
+  (lambda (cand restore)
+    (when cand
+      (cond
+       (restore (funcall consult--buffer-display cand))
+       ((and (or (eq consult--buffer-display #'switch-to-buffer)
+                 (eq consult--buffer-display #'switch-to-buffer-other-window))
+             (get-buffer cand))
+          (funcall consult--buffer-display cand 'norecord))))))
+
+(defun consult--file-action (file)
+  "Open FILE via `consult--buffer-display' function."
+  (pcase-exhaustive consult--buffer-display
     ('switch-to-buffer (find-file file))
     ('switch-to-buffer-other-window (find-file-other-window file))
     ('switch-to-buffer-other-frame (find-file-other-frame file))))
 
-(defun consult--open-buffer (buffer display)
-  "Open BUFFER via DISPLAY function."
-  (funcall display buffer))
+(defun consult--bookmark-action (bm)
+  "Open BM via `consult--buffer-display' function."
+  (bookmark-jump bm consult--buffer-display))
 
 (defvar consult--source-bookmark
   `(:name     "Bookmark"
@@ -3016,7 +3050,7 @@ The command supports previewing the currently selected theme."
     :face     consult-bookmark
     :history  bookmark-history
     :items    ,#'bookmark-all-names
-    :open     ,#'bookmark-jump)
+    :action   ,#'consult--bookmark-action)
   "Bookmark candidate source for `consult-buffer'.")
 
 (defvar consult--source-project-buffer
@@ -3025,7 +3059,7 @@ The command supports previewing the currently selected theme."
     :category  buffer
     :face      consult-buffer
     :history   buffer-name-history
-    :open      ,#'consult--open-buffer
+    :state     ,#'consult--buffer-state
     :enabled   ,(lambda () consult-project-root-function)
     :items
     ,(lambda ()
@@ -3043,7 +3077,7 @@ The command supports previewing the currently selected theme."
     :category  file
     :face      consult-file
     :history   file-name-history
-    :open      ,#'consult--open-file
+    :action    ,#'consult--file-action
     :enabled   ,(lambda () consult-project-root-function)
     :items
     ,(lambda ()
@@ -3065,7 +3099,7 @@ The command supports previewing the currently selected theme."
     :category buffer
     :face     consult-buffer
     :history  buffer-name-history
-    :open     ,#'consult--open-buffer
+    :state    ,#'consult--buffer-state
     :items
     ,(lambda ()
        (let ((filter (consult--regexp-filter consult-buffer-filter)))
@@ -3079,7 +3113,7 @@ The command supports previewing the currently selected theme."
     :category buffer
     :face     consult-buffer
     :history  buffer-name-history
-    :open     ,#'consult--open-buffer
+    :state    ,#'consult--buffer-state
     :items
     ,(lambda ()
        (let ((filter (consult--regexp-filter consult-buffer-filter)))
@@ -3093,35 +3127,12 @@ The command supports previewing the currently selected theme."
     :category file
     :face     consult-file
     :history  file-name-history
-    :open     ,#'consult--open-file
+    :action   ,#'consult--file-action
     :items
     ,(lambda ()
        (let ((ht (consult--cached-buffer-file-hash)))
          (seq-remove (lambda (x) (gethash x ht)) recentf-list))))
   "Recent file candidate source for `consult-buffer'.")
-
-(defun consult--buffer (display)
-  "Backend implementation of `consult-buffer' with DISPLAY function."
-  (consult--multi
-   consult-buffer-sources
-   :prompt "Switch to: "
-   :history 'consult--buffer-history
-   :sort nil
-   :state
-   (lambda (cand restore)
-     (when cand
-       (let ((name (car cand))
-             (action (or (plist-get (cdr cand) :open) #'consult--open-buffer)))
-         (cond
-          (restore (funcall action name display))
-          ;; In order to avoid slowness and unnecessary complexity, we
-          ;; only preview buffers. Loading recent files, bookmarks or
-          ;; views can result in expensive operations.
-          ((and (eq action #'consult--open-buffer)
-                (or (eq display #'switch-to-buffer)
-                    (eq display #'switch-to-buffer-other-window))
-                (get-buffer name))
-           (funcall display name 'norecord))))))))
 
 ;;;###autoload
 (defun consult-buffer ()
@@ -3134,19 +3145,24 @@ order to determine the project-specific files and buffers, the
 `consult-project-root-function' is used. See `consult-buffer-sources' and
 `consult--multi' for the configuration of the virtual buffer sources."
   (interactive)
-  (consult--buffer #'switch-to-buffer))
+  (consult--multi consult-buffer-sources
+                  :prompt "Switch to: "
+                  :history 'consult--buffer-history
+                  :sort nil))
 
 ;;;###autoload
 (defun consult-buffer-other-window ()
   "Variant of `consult-buffer' which opens in other window."
   (interactive)
-  (consult--buffer #'switch-to-buffer-other-window))
+  (let ((consult--buffer-display #'switch-to-buffer-other-window))
+    (consult-buffer)))
 
 ;;;###autoload
 (defun consult-buffer-other-frame ()
   "Variant of `consult-buffer' which opens in other frame."
   (interactive)
-  (consult--buffer #'switch-to-buffer-other-frame))
+  (let ((consult--buffer-display #'switch-to-buffer-other-frame))
+    (consult-buffer)))
 
 ;;;;; Command: consult-kmacro
 

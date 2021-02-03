@@ -464,7 +464,7 @@ variables and functions with their descriptions.
       :face     consult-bookmark
       :history  bookmark-history
       :items    ,#'bookmark-all-names
-      :open     ,#'bookmark-jump))
+      :action   ,#'consult--bookmark-action))
   #+end_src
 
   Required source fields:
@@ -478,8 +478,9 @@ variables and functions with their descriptions.
   - =:face= Face used for highlighting the candidates.
   - =:annotate= Annotation function called for each candidate, returns string.
   - =:history= Name of history variable to add selected candidate.
-  - Other source fields can be added specifically to the use case. The =consult-buffer=
-    command uses the =:open= function to open an item from the source.
+  - =:action= Action function called with the selected candidate.
+  - =:state= State constructor for the source, must return the state function.
+  - Other source fields can be added specifically to the use case.
 
   Sources can be added directly to the =consult-buffer-source= list for
   convenience. For example views can be added to the list of virtual buffers
@@ -492,7 +493,7 @@ variables and functions with their descriptions.
                       :category 'bookmark
                       :face     'font-lock-keyword-face
                       :history  'bookmark-view-history
-                      :open     #'bookmark-jump
+                      :action   #'consult--bookmark-jump
                       :items    #'bookmark-view-names)
                 'append)
   #+end_src
@@ -511,8 +512,7 @@ variables and functions with their descriptions.
   (defvar eshell-source
     `(:category 'consult-new
       :face     'font-lock-constant-face
-      :open
-      ,(lambda (&rest _) (eshell))
+      :action   ,(lambda (_) (eshell))
       :items
       ,(lambda ()
          (unless (mode-buffer-exists-p 'eshell-mode)
@@ -521,8 +521,8 @@ variables and functions with their descriptions.
   (defvar term-source
     `(:category 'consult-new
       :face     'font-lock-constant-face
-      :open
-      ,(lambda (&rest _)
+      :action
+      ,(lambda (_)
          (ansi-term (or (getenv "SHELL") "/bin/sh")))
       :items
       ,(lambda ()
@@ -696,7 +696,7 @@ the box with the default completion, Icomplete and Selectrum.
    ;;                     :category 'bookmark
    ;;                     :face     'font-lock-keyword-face
    ;;                     :history  'bookmark-view-history
-   ;;                     :open     #'bookmark-jump
+   ;;                     :action   #'consult--bookmark-action
    ;;                     :items    #'bookmark-view-names)
    ;;              'append)
 

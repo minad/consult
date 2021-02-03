@@ -583,7 +583,7 @@ As an example, the bookmark source is defined as follows:
     :face     consult-bookmark
     :history  bookmark-history
     :items    ,#'bookmark-all-names
-    :open     ,#'bookmark-jump))
+    :action   ,#'consult--bookmark-action))
 @end lisp
 
 Required source fields:
@@ -609,8 +609,11 @@ Optional source fields:
 @item
 @samp{:history} Name of history variable to add selected candidate.
 @item
-Other source fields can be added specifically to the use case. The @samp{consult-buffer}
-command uses the @samp{:open} function to open an item from the source.
+@samp{:action} Action function called with the selected candidate.
+@item
+@samp{:state} State constructor for the source, must return the state function.
+@item
+Other source fields can be added specifically to the use case.
 @end itemize
 
 Sources can be added directly to the @samp{consult-buffer-source} list for
@@ -624,7 +627,7 @@ from a library like @uref{https://github.com/minad/bookmark-view/}.
                     :category 'bookmark
                     :face     'font-lock-keyword-face
                     :history  'bookmark-view-history
-                    :open     #'bookmark-jump
+                    :action   #'consult--bookmark-jump
                     :items    #'bookmark-view-names)
               'append)
 @end lisp
@@ -643,8 +646,7 @@ buffers if they do not exist yet.
 (defvar eshell-source
   `(:category 'consult-new
     :face     'font-lock-constant-face
-    :open
-    ,(lambda (&rest _) (eshell))
+    :action   ,(lambda (_) (eshell))
     :items
     ,(lambda ()
        (unless (mode-buffer-exists-p 'eshell-mode)
@@ -653,8 +655,8 @@ buffers if they do not exist yet.
 (defvar term-source
   `(:category 'consult-new
     :face     'font-lock-constant-face
-    :open
-    ,(lambda (&rest _)
+    :action
+    ,(lambda (_)
        (ansi-term (or (getenv "SHELL") "/bin/sh")))
     :items
     ,(lambda ()
@@ -828,7 +830,7 @@ the box with the default completion, Icomplete and Selectrum.
   ;;                     :category 'bookmark
   ;;                     :face     'font-lock-keyword-face
   ;;                     :history  'bookmark-view-history
-  ;;                     :open     #'bookmark-jump
+  ;;                     :action   #'consult--bookmark-action
   ;;                     :items    #'bookmark-view-names)
   ;;              'append)
 
