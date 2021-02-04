@@ -30,7 +30,8 @@
 * Special features::             Enhancements over built-in `completing-read'
 * Configuration::                Example configuration and customization variables
 * Recommended packages::         Related packages recommended for installation
-* Contributions::                Reproducible bug reports and pull requests
+* Bugs reports::                 Reproducible bug reports
+* Contributions::                Feature requests and pull requests
 * Acknowledgements::             Contributors and Sources of Inspiration
 
 @detailmenu
@@ -1080,19 +1081,13 @@ with alternative components, since there exist no hard dependencies.
 Furthermore it is possible to get started with only Selectrum and
 Consult and add more components later to the mix.
 
-@node Contributions
-@chapter Contributions
-
-Consult is intended to be a community effort, please participate in the
-discussions. Contributions are welcome. If you have a proposal, take a look
-first at the @uref{https://github.com/consult/issues, Consult issue tracker} and the @uref{https://github.com/minad/consult/issues/6, Consult wishlist}. For small
-configuration or command snippets you may want to share, there is the @uref{https://github.com/minad/consult/wiki, Consult
-wiki}.
+@node Bugs reports
+@chapter Bugs reports
 
 If you find a bug or suspect that there is a problem with Consult, please check
-first that you have updated all the relevant packages. This includes Selectrum,
-Icomplete-vertical, Embark, Orderless and Prescient in case you are using any of
-those packages.
+first that you have @strong{updated all the relevant packages} to the newest version.
+This includes Selectrum, Icomplete-vertical, Embark, Orderless and Prescient in
+case you are using any of those packages.
 
 Please provide the necessary important information with your bug report, e.g.,
 the Emacs version, your operating system and the package manager you are using.
@@ -1115,6 +1110,15 @@ way we can exclude side effects due to configuration settings.
 (require 'consult)
 (setq completion-styles '(substring))
 @end lisp
+
+@node Contributions
+@chapter Contributions
+
+Consult is intended to be a community effort, please participate in the
+discussions. Contributions are welcome. If you have a proposal, take a look
+first at the @uref{https://github.com/consult/issues, Consult issue tracker} and the @uref{https://github.com/minad/consult/issues/6, Consult wishlist}. For small
+configuration or command snippets you may want to share, there is the @uref{https://github.com/minad/consult/wiki, Consult
+wiki}.
 
 @node Acknowledgements
 @chapter Acknowledgements

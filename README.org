@@ -856,21 +856,15 @@ with alternative components, since there exist no hard dependencies.
 Furthermore it is possible to get started with only Selectrum and
 Consult and add more components later to the mix.
 
-* Contributions
+* Bugs reports
   :properties:
-  :description: Reproducible bug reports and pull requests
+  :description: Reproducible bug reports
   :end:
 
-Consult is intended to be a community effort, please participate in the
-discussions. Contributions are welcome. If you have a proposal, take a look
-first at the [[https://github.com/consult/issues][Consult issue tracker]] and the [[https://github.com/minad/consult/issues/6][Consult wishlist]]. For small
-configuration or command snippets you may want to share, there is the [[https://github.com/minad/consult/wiki][Consult
-wiki]].
-
 If you find a bug or suspect that there is a problem with Consult, please check
-first that you have updated all the relevant packages. This includes Selectrum,
-Icomplete-vertical, Embark, Orderless and Prescient in case you are using any of
-those packages.
+first that you have *updated all the relevant packages* to the newest version.
+This includes Selectrum, Icomplete-vertical, Embark, Orderless and Prescient in
+case you are using any of those packages.
 
 Please provide the necessary important information with your bug report, e.g.,
 the Emacs version, your operating system and the package manager you are using.
@@ -893,6 +887,17 @@ way we can exclude side effects due to configuration settings.
 (require 'consult)
 (setq completion-styles '(substring))
 #+end_src
+
+* Contributions
+  :properties:
+  :description: Feature requests and pull requests
+  :end:
+
+Consult is intended to be a community effort, please participate in the
+discussions. Contributions are welcome. If you have a proposal, take a look
+first at the [[https://github.com/consult/issues][Consult issue tracker]] and the [[https://github.com/minad/consult/issues/6][Consult wishlist]]. For small
+configuration or command snippets you may want to share, there is the [[https://github.com/minad/consult/wiki][Consult
+wiki]].
 
 * Acknowledgements
   :properties:
