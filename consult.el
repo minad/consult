@@ -3159,10 +3159,14 @@ order to determine the project-specific files and buffers, the
 `consult-project-root-function' is used. See `consult-buffer-sources' and
 `consult--multi' for the configuration of the virtual buffer sources."
   (interactive)
-  (consult--multi consult-buffer-sources
-                  :prompt "Switch to: "
-                  :history 'consult--buffer-history
-                  :sort nil))
+  (when-let (buffer (consult--multi consult-buffer-sources
+                                    :prompt "Switch to: "
+                                    :history 'consult--buffer-history
+                                    :sort nil))
+    ;; When the buffer does not belong to a source,
+    ;; create a new buffer with the name.
+    (unless (cdr buffer)
+      (funcall consult--buffer-display (car buffer)))))
 
 ;;;###autoload
 (defun consult-buffer-other-window ()
