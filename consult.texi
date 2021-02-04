@@ -723,13 +723,6 @@ Consult can be installed from @uref{https://melpa.org/, MELPA} via the Emacs bui
 Alternatively it can be directly installed from the development repository via
 other non-standard package managers.
 
-It is recommended to manage package configurations with the excellent
-@samp{use-package} macro. The Consult package only provides commands and does not add
-any keybindings or modes. In order to use the Consult commands, you must
-configure the keybindings yourself. As a result, the package is not intrusive
-but requires a little setup effort. Feel free to only bind the commands you
-consider useful to your workflow.
-
 Note that there are two packages as of now: @samp{consult} and @samp{consult-flycheck}.
 @samp{consult-flycheck} is a separate package such that the core @samp{consult} package
 only depends on Emacs core components. The @samp{consult} package will work out of
@@ -746,6 +739,16 @@ the box with the default completion, Icomplete and Selectrum.
 
 @cindex configuration
 @cindex use-package
+
+It is recommended to manage package configurations with the @samp{use-package} macro.
+The Consult package only provides commands and does not add any keybindings or
+modes. Therefore the package is non-intrusive but requires a little setup
+effort. In order to use the Consult commands, it is advised to add keybindings
+for commands which are accessed often. Rarely used commands can be invoked via
+@samp{M-x}. Feel free to only bind the commands you consider useful to your workflow.
+
+@strong{NOTE:} There is the @uref{https://github.com/minad/consult/wiki, Consult wiki}, where additional configuration examples can be
+contributed.
 
 @lisp
 ;; Example configuration for Consult
@@ -1081,8 +1084,10 @@ Consult and add more components later to the mix.
 @chapter Contributions
 
 Consult is intended to be a community effort, please participate in the
-discussions. Contributions are welcome. If you have a proposal, take a
-look first at the @uref{https://github.com/consult/issues, Consult issue tracker} and the @uref{https://github.com/minad/consult/issues/6, Consult wishlist}.
+discussions. Contributions are welcome. If you have a proposal, take a look
+first at the @uref{https://github.com/consult/issues, Consult issue tracker} and the @uref{https://github.com/minad/consult/issues/6, Consult wishlist}. For small
+configuration or command snippets you may want to share, there is the @uref{https://github.com/minad/consult/wiki, Consult
+wiki}.
 
 If you find a bug or suspect that there is a problem with Consult, please check
 first that you have updated all the relevant packages. This includes Selectrum,
