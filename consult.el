@@ -574,7 +574,7 @@ The line beginning/ending BEG/END is bound in BODY."
 
 (defun consult--regexp-filter (regexps)
   "Create filter regexp from REGEXPS."
-  (string-join (mapcar (lambda (x) (concat "\\(?:" x "\\)")) regexps) "\\|"))
+  (mapconcat (lambda (x) (concat "\\(?:" x "\\)")) regexps "\\|"))
 
 (defun consult--font-lock (str)
   "Apply `font-lock' faces in STR, copy them to `face'."
@@ -1058,13 +1058,12 @@ to make it available for commands with narrowing."
   (consult--require-minibuffer)
   (let ((minibuffer-message-timeout 1000000))
     (minibuffer-message
-     (string-join
-      (mapcar (lambda (x) (concat
-                           (propertize (char-to-string (car x)) 'face 'consult-key)
-                           " "
-                           (propertize (cdr x) 'face 'consult-help)))
-              (seq-filter (lambda (x) (/= (car x) 32))
-                          consult--narrow-prefixes))
+     (mapconcat
+      (lambda (x) (concat
+                   (propertize (char-to-string (car x)) 'face 'consult-key) " "
+                   (propertize (cdr x) 'face 'consult-help)))
+      (seq-filter (lambda (x) (/= (car x) 32))
+                  consult--narrow-prefixes)
       " "))))
 
 (defun consult--narrow-setup (settings map)
