@@ -562,19 +562,35 @@ HIGHLIGHT must be t if highlighting is needed."
        ((string-prefix-p "! " input) (funcall filter-not (substring input 2) cands))
        (t (funcall filter input cands))))))
 
+(defun consult--each-line-1 (beg end body)
+  "Helper function for `consult--each-line' macro.
+
+See `consult--each-line' for BEG, END and BODY arguments."
+  (let ((max (make-symbol "max")))
+    `(let ((,beg (point-min)) (,max (point-max)) end)
+       (while (< ,beg ,max)
+         (goto-char ,beg)
+         (setq ,end (line-end-position))
+         ,@body
+         (setq ,beg (1+ ,end))))))
+
 (defmacro consult--each-line (beg end &rest body)
   "Iterate over each line.
 
 The line beginning/ending BEG/END is bound in BODY."
   (declare (indent 2))
-  (let ((max (make-symbol "max")))
-    `(save-excursion
-       (let ((,beg (point-min)) (,max (point-max)) end)
-         (while (< ,beg ,max)
-           (goto-char ,beg)
-           (setq ,end (line-end-position))
-           ,@body
-           (setq ,beg (1+ ,end)))))))
+  `(save-excursion ,(consult--each-line-1 beg end body)))
+
+(defmacro consult--each-region-line (beg end &rest body)
+  "Iterate over each line of region.
+
+The line beginning/ending BEG/END is bound in BODY."
+  (declare (indent 2))
+  `(save-excursion
+     (save-restriction
+       (when (region-active-p)
+         (narrow-to-region (region-beginning) (region-end)))
+       ,(consult--each-line-1 beg end body))))
 
 (defun consult--string-hash (strings)
   "Create hashtable from STRINGS."
@@ -2074,21 +2090,32 @@ The symbol at point and the last `isearch-string' is added to the future history
 
 ;;;;; Command: consult-keep-lines
 
-(defun consult--keep-lines-replace (content &optional pos)
-  "Replace buffer content with CONTENT and move point to POS."
-  (delete-region (point-min) (point-max))
-  (insert content)
-  (goto-char (or pos (point-min))))
-
 (defun consult--keep-lines-state (filter)
   "State function for `consult-keep-lines' with FILTER function."
-  (let ((lines)
-        (buffer-orig (current-buffer))
-        (font-lock-orig font-lock-mode)
-        (point-orig (point))
-        (content-orig (buffer-string))
-        (last-input))
-    (consult--each-line beg end
+  (let* ((lines)
+         (buffer-orig (current-buffer))
+         (font-lock-orig font-lock-mode)
+         (point-orig (point))
+         (content-orig)
+         (replace)
+         (last-input))
+    (if (region-active-p)
+        (save-restriction
+          (narrow-to-region (region-beginning) (region-end))
+          (let ((beg (point-min))
+                (end (point-max)))
+            (setq content-orig (buffer-string)
+                  replace (lambda (content &optional pos)
+                            (delete-region beg end)
+                            (insert content)
+                            (goto-char (or pos beg))
+                            (setq end (+ beg (length content)))))))
+      (setq content-orig (buffer-string)
+            replace (lambda (content &optional pos)
+                      (delete-region (point-min) (point-max))
+                      (insert content)
+                      (goto-char (or pos (point-min))))))
+    (consult--each-region-line beg end
       (push (buffer-substring beg end) lines))
     (setq lines (nreverse lines))
     (lambda (input restore)
@@ -2096,7 +2123,7 @@ The symbol at point and the last `isearch-string' is added to the future history
         ;; Restoring content and point position
         (when (and restore last-input)
           ;; No undo recording, modification hooks, buffer modified-status
-          (with-silent-modifications (consult--keep-lines-replace content-orig point-orig)))
+          (with-silent-modifications (funcall replace content-orig point-orig)))
         ;; Committing or new input provided -> Update
         (when (and input ;; Input has been povided
                    (or
@@ -2122,10 +2149,10 @@ The symbol at point and the last `isearch-string' is added to the future history
                   (atomic-change-group
                     ;; Disable modification hooks for performance
                     (let ((inhibit-modification-hooks t))
-                      (consult--keep-lines-replace filtered-content)))
+                      (funcall replace filtered-content)))
                 ;; No undo recording, modification hooks, buffer modified-status
                 (with-silent-modifications
-                  (consult--keep-lines-replace filtered-content)
+                  (funcall replace filtered-content)
                   (setq last-input input))))))
         ;; Restore font-lock
         (when (and restore font-lock-orig (not font-lock-mode))
@@ -2156,7 +2183,7 @@ INITIAL is the initial input."
 (defun consult--focus-lines-state (filter)
   "State function for `consult-focus-lines' with FILTER function."
   (let ((lines) (overlays) (last-input))
-    (consult--each-line beg end
+    (consult--each-region-line beg end
       (push (buffer-substring beg end) lines)
       (push (make-overlay beg (1+ end)) overlays))
     (lambda (input restore)
