@@ -1563,13 +1563,11 @@ KEYMAP is a command-specific keymap."
 (defun consult--multi-predicate (sources)
   "Return predicate function used by `consult--multi' with SOURCES."
   (lambda (cand)
-    (let* ((narrow (plist-get (consult--multi-source sources cand) :narrow))
+    (let* ((src (consult--multi-source sources cand))
+           (narrow (plist-get src :narrow))
            (type (or (car-safe narrow) narrow -1)))
-      (if (eq consult--narrow 32) ;; narrowed to hidden candidates
-          (= type 32)
-        (and
-         (/= type 32) ;; non-hidden candidates
-         (or (not consult--narrow) (= type consult--narrow)))))))
+      (or (eq consult--narrow type)
+          (not (or consult--narrow (plist-get src :hidden)))))))
 
 (defun consult--multi-narrow (sources)
   "Return narrow list used by `consult--multi' with SOURCES."
@@ -1662,6 +1660,7 @@ Optional source fields:
 * :name - Name of the source, used for narrowing and annotation.
 * :narrow - Narrowing character or (character . string) pair.
 * :enabled - Function which must return t if the source is enabled.
+* :hidden - When t candidates of this source are hidden by default.
 * :face - Face used for highlighting the candidates.
 * :annotate - Annotation function called for each candidate, returns string.
 * :history - Name of history variable to add selected candidate.
@@ -3110,6 +3109,7 @@ The command supports previewing the currently selected theme."
 (defvar consult--source-hidden-buffer
   `(:name     "Hidden Buffer"
     :narrow   32
+    :hidden   t
     :category buffer
     :face     consult-buffer
     :history  buffer-name-history
