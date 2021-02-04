@@ -814,7 +814,7 @@ MARKER is the cursor position."
 
 (defun consult--kill-clean-buffer (buf)
   "Kill BUF if it has not been modified."
-  (unless (or (eq buf (current-buffer)) (buffer-modified-p buf))
+  (unless (buffer-modified-p buf)
     (kill-buffer buf)))
 
 (defun consult--temporary-files ()
