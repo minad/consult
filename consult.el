@@ -3612,13 +3612,17 @@ See `consult-grep' for more details regarding the asynchronous search."
 ;;;; Integration with the default completion system
 
 (defun consult--default-completion-candidate ()
-  "Return current candidate from default completion system."
-  (when (and (not icomplete-mode) (eq completing-read-function #'completing-read-default))
+  "Return current candidate from default completion system or icomplete."
+  (when (eq completing-read-function #'completing-read-default)
     (let ((cand (minibuffer-contents-no-properties)))
-      (when (test-completion cand
-                             minibuffer-completion-table
-                             minibuffer-completion-predicate)
-        cand))))
+      ;; When the current minibuffer content matches a candidate, return it!
+      (if (test-completion cand
+                           minibuffer-completion-table
+                           minibuffer-completion-predicate)
+          cand
+        ;; Otherwise return the first candidate of the sorted completion list.
+        (when completion-all-sorted-completions
+          (car completion-all-sorted-completions))))))
 
 (defun consult--default-completion-filter (category _highlight)
   "Return default filter function given the completion CATEGORY.
