@@ -73,14 +73,15 @@ Configuration
 @cindex introduction
 
 Consult provides various handy commands based on the Emacs completion function
-@samp{completing-read}, which allows to quickly select an item from a list of
-candidates. Consult offers in particular a more advanced buffer switching
-command @samp{consult-buffer} to switch to buffers and recently opened files. Various
-search commands are provided, like an asynchronous @samp{consult-grep}, and
-@samp{consult-line}, which resembles @uref{https://github.com/abo-abo/swiper#swiper, Swiper} or @uref{https://github.com/emacsorphanage/helm-swoop, Helm-Swoop}. Some of the offered
-commands are greatly enhanced versions of existing Emacs commands. For example
-the command @samp{consult-imenu} presents a flat list of the Imenu with @ref{Live previews, , live preview}
-and @ref{Narrowing to subsets, , narrowing support}. Please take a look at the @ref{Available commands, , full list of commands}.
+@uref{https://www.gnu.org/software/emacs/manual/html_node/elisp/Minibuffer-Completion.html, completing-read}, which allows to quickly select an item from a list of
+candidates with completion. Consult offers in particular a more advanced buffer
+switching command @samp{consult-buffer} to switch to buffers and recently opened
+files. Various search commands are provided, like an asynchronous
+@samp{consult-grep}, and @samp{consult-line}, which resembles @uref{https://github.com/abo-abo/swiper#swiper, Swiper} or @uref{https://github.com/emacsorphanage/helm-swoop, Helm-Swoop}. Some
+of the offered commands are greatly enhanced versions of existing Emacs
+commands. For example the command @samp{consult-imenu} presents a flat list of the
+Imenu with @ref{Live previews, , live preview} and @ref{Narrowing to subsets, , narrowing support}. Please take a look at the @ref{Available commands, , full
+list of commands}.
 
 All Consult commands are compatible with completion systems based on the
 standard Emacs @samp{completing-read} API, notably the default completion system,
