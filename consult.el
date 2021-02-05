@@ -524,8 +524,12 @@ FUN is the hook function and BODY opens the minibuffer."
   (declare (indent 1))
   `(defun ,name ()
      (or (alist-get ',name consult--cache)
-         (setf (alist-get ',name consult--cache)
-               ,(macroexp-progn body)))))
+         (progn
+           ;; XXX Emacs bug 35546, fixed in Emacs 27.1
+           ;; https://debbugs.gnu.org/cgi/bugreport.cgi?bug=35546
+           ;; (setf (alist-get key list) val) should return val
+           (setf (alist-get ',name consult--cache) ,(macroexp-progn body))
+           (alist-get ',name consult--cache)))))
 
 (defun consult--completion-filter (category highlight)
   "Return filter function used by completion system.
