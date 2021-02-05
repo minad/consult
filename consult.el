@@ -430,9 +430,6 @@ the public API."
 
 ;;;; Internal variables
 
-(defvar-local consult--tofu-overlay nil
-  "Overlay used by `consult--hide-tofus'.")
-
 (defvar consult--buffer-display #'switch-to-buffer
   "Buffer display function.")
 
@@ -1480,27 +1477,24 @@ PREVIEW-KEY is the preview key."
                       map))
       old-map))))
 
-(defun consult--hide-tofus (&rest _)
-  "Hide the tofus in the minibuffer."
+(defun consult--fry-the-tofus (&rest _)
+  "Fry the tofus in the minibuffer."
   (let* ((min (minibuffer-prompt-end))
          (max (point-max))
          (pos min)
          (cmin consult--tofu-char)
          (cmax (- (+ consult--tofu-char consult--tofu-range) 1)))
-    (when consult--tofu-overlay
-      (delete-overlay consult--tofu-overlay)
-      (setq consult--tofu-overlay nil))
     (while (and (< pos max) (<= cmin (char-after pos) cmax))
       (setq pos (1+ pos)))
     (when (> pos min)
       (remove-list-of-text-properties min pos '(display))
-      (setq consult--tofu-overlay (consult--overlay min pos 'invisible t 'evaporate t)))))
+      (put-text-property min pos 'invisible t))))
 
 (cl-defun consult--read-setup (candidates &key keymap add-history narrow preview-key &allow-other-keys)
   "Minibuffer setup for `consult--read'.
 
 See `consult--read' for the CANDIDATES, KEYMAP, ADD-HISTORY, NARROW and PREVIEW-KEY arguments."
-  (add-hook 'after-change-functions #'consult--hide-tofus nil t)
+  (add-hook 'after-change-functions #'consult--fry-the-tofus nil t)
   (consult--setup-keymap keymap (functionp candidates) narrow preview-key)
   (consult--add-history add-history))
 
