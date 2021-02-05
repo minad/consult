@@ -30,7 +30,7 @@
 * Special features::             Enhancements over built-in `completing-read'
 * Configuration::                Example configuration and customization variables
 * Recommended packages::         Related packages recommended for installation
-* Bugs reports::                 Reproducible bug reports
+* Bug reports::                  Reproducible bug reports
 * Contributions::                Feature requests and pull requests
 * Acknowledgements::             Contributors and Sources of Inspiration
 
@@ -1083,8 +1083,8 @@ with alternative components, since there exist no hard dependencies.
 Furthermore it is possible to get started with only Selectrum and
 Consult and add more components later to the mix.
 
-@node Bugs reports
-@chapter Bugs reports
+@node Bug reports
+@chapter Bug reports
 
 If you find a bug or suspect that there is a problem with Consult, please check
 first that you have @strong{updated all the relevant packages} to the newest version.

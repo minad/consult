@@ -857,9 +857,9 @@ with alternative components, since there exist no hard dependencies.
 Furthermore it is possible to get started with only Selectrum and
 Consult and add more components later to the mix.
 
-* Bugs reports
+* Bug reports
   :properties:
-  :description: Reproducible bug reports
+  :description: How to create reproducible bug reports
   :end:
 
 If you find a bug or suspect that there is a problem with Consult, please check
