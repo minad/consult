@@ -496,6 +496,8 @@ Size of private unicode plane b.")
 
 ;;;; Helper functions and macros
 
+;; Upstream issue: https://debbugs.gnu.org/cgi/bugreport.cgi?bug=46326
+;; Consult issue: https://github.com/minad/consult/issues/193
 (defmacro consult--minibuffer-with-setup-hook (fun &rest body)
   "Variant of `minibuffer-with-setup-hook' using a symbol and `fset'.
 
