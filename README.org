@@ -254,7 +254,7 @@ variables and functions with their descriptions.
    the standard =find= command uses wildcards in contrast to the popular =fd=,
    which uses regular expressions. In case you want to use =fd=, you can either
    change the =consult-find-command= configuration variable or define a small
-   wrapper command =find-fd= as shown in the [[#use-package-example][example configuration]].
+   command as described in the [[https://github.com/minad/consult/wiki][Consult wiki]].
 
 ** Compilation errors
    :properties:
@@ -648,7 +648,7 @@ contributed.
           ("M-g I" . consult-project-imenu)
           ("M-g e" . consult-error)
           ;; M-s bindings (search-map)
-          ("M-s f" . consult-find)                  ;; alt. consult-locate, find-fd
+          ("M-s f" . consult-find)                  ;; alt. consult-locate
           ("M-s g" . consult-git-grep)              ;; alt. consult-grep
           ("M-s r" . consult-ripgrep)
           ("M-s l" . consult-line)
@@ -664,15 +664,6 @@ contributed.
 
    ;; The :init configuration is always executed (Not lazy)
    :init
-
-   ;; Custom command wrappers. It is generally encouraged to write your own
-   ;; commands based on the Consult commands. Some commands have arguments which
-   ;; allow tweaking. Furthermore global configuration variables can be set
-   ;; locally in a let-binding.
-   (defun find-fd (&optional dir initial)
-     (interactive "P")
-     (let ((consult-find-command "fd --color=never --full-path ARG OPTS"))
-       (consult-find dir initial)))
 
    ;; Optionally configure the register formatting. This improves the register
    ;; preview for `consult-register', `consult-register-load',
@@ -702,19 +693,6 @@ contributed.
    ;; Optionally make narrowing help available in the minibuffer.
    ;; Probably not needed if you are using which-key.
    ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
-
-   ;; Optionally configure additional sources for `consult-buffer',
-   ;; for example add views to the list of virtual buffers
-   ;; from a library like https://github.com/minad/bookmark-view/.
-   ;; (add-to-list 'consult-buffer-sources
-   ;;               (list :name     "View"
-   ;;                     :narrow   ?v
-   ;;                     :category 'bookmark
-   ;;                     :face     'font-lock-keyword-face
-   ;;                     :history  'bookmark-view-history
-   ;;                     :action   #'consult--bookmark-action
-   ;;                     :items    #'bookmark-view-names)
-   ;;              'append)
 
    ;; Optionally configure a function which returns the project root directory.
    ;; There are multiple reasonable alternatives to chose from:

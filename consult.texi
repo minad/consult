@@ -30,7 +30,7 @@
 * Special features::             Enhancements over built-in `completing-read'
 * Configuration::                Example configuration and customization variables
 * Recommended packages::         Related packages recommended for installation
-* Bug reports::                  Reproducible bug reports
+* Bug reports::                  How to create reproducible bug reports
 * Contributions::                Feature requests and pull requests
 * Acknowledgements::             Contributors and Sources of Inspiration
 
@@ -345,7 +345,7 @@ passed to find, and the second part is used for Emacs filtering. Note that
 the standard @samp{find} command uses wildcards in contrast to the popular @samp{fd},
 which uses regular expressions. In case you want to use @samp{fd}, you can either
 change the @samp{consult-find-command} configuration variable or define a small
-wrapper command @samp{find-fd} as shown in the @ref{Use-package example, , example configuration}.
+command as described in the @uref{https://github.com/minad/consult/wiki, Consult wiki}.
 @end itemize
 
 @node Compilation errors
@@ -784,7 +784,7 @@ contributed.
          ("M-g I" . consult-project-imenu)
          ("M-g e" . consult-error)
          ;; M-s bindings (search-map)
-         ("M-s f" . consult-find)                  ;; alt. consult-locate, find-fd
+         ("M-s f" . consult-find)                  ;; alt. consult-locate
          ("M-s g" . consult-git-grep)              ;; alt. consult-grep
          ("M-s r" . consult-ripgrep)
          ("M-s l" . consult-line)
@@ -800,15 +800,6 @@ contributed.
 
   ;; The :init configuration is always executed (Not lazy)
   :init
-
-  ;; Custom command wrappers. It is generally encouraged to write your own
-  ;; commands based on the Consult commands. Some commands have arguments which
-  ;; allow tweaking. Furthermore global configuration variables can be set
-  ;; locally in a let-binding.
-  (defun find-fd (&optional dir initial)
-    (interactive "P")
-    (let ((consult-find-command "fd --color=never --full-path ARG OPTS"))
-      (consult-find dir initial)))
 
   ;; Optionally configure the register formatting. This improves the register
   ;; preview for `consult-register', `consult-register-load',
@@ -838,19 +829,6 @@ contributed.
   ;; Optionally make narrowing help available in the minibuffer.
   ;; Probably not needed if you are using which-key.
   ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
-
-  ;; Optionally configure additional sources for `consult-buffer',
-  ;; for example add views to the list of virtual buffers
-  ;; from a library like https://github.com/minad/bookmark-view/.
-  ;; (add-to-list 'consult-buffer-sources
-  ;;               (list :name     "View"
-  ;;                     :narrow   ?v
-  ;;                     :category 'bookmark
-  ;;                     :face     'font-lock-keyword-face
-  ;;                     :history  'bookmark-view-history
-  ;;                     :action   #'consult--bookmark-action
-  ;;                     :items    #'bookmark-view-names)
-  ;;              'append)
 
   ;; Optionally configure a function which returns the project root directory.
   ;; There are multiple reasonable alternatives to chose from:
