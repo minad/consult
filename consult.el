@@ -1488,7 +1488,7 @@ PREVIEW-KEY is the preview key."
       (setq pos (1+ pos)))
     (when (> pos min)
       (remove-list-of-text-properties min pos '(display))
-      (put-text-property min pos 'invisible t))))
+      (add-text-properties min pos (list 'invisible t 'rear-nonsticky t)))))
 
 (cl-defun consult--read-setup (candidates &key keymap add-history narrow preview-key &allow-other-keys)
   "Minibuffer setup for `consult--read'.
