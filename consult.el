@@ -217,34 +217,58 @@ See `consult--multi' for a description of the source values."
 (defcustom consult-git-grep-command
   "git --no-pager grep --null --color=always --extended-regexp\
    --line-number -I -e ARG OPTS"
-  "Command line arguments for git-grep, see `consult-git-grep'."
+  "Command line string for git-grep, see `consult-git-grep'.
+
+The command string must have a specific format, including ARG and OPTS
+substrings. ARG is replaced by the filter string and OPTS by the auxillary
+command options."
   :type 'string)
 
 (defcustom consult-grep-command
   "grep --null --line-buffered --color=always --extended-regexp\
    --exclude-dir=.git --line-number -I -r . -e ARG OPTS"
-  "Command line arguments for grep, see `consult-grep'."
+  "Command line string for grep, see `consult-grep'.
+
+The command string must have a specific format, including ARG and OPTS
+substrings. ARG is replaced by the filter string and OPTS by the auxillary
+command options."
   :type 'string)
 
 (defcustom consult-ripgrep-command
   "rg --null --line-buffered --color=always --max-columns=500\
    --no-heading --line-number . -e ARG OPTS"
-  "Command line arguments for ripgrep, see `consult-ripgrep'."
+  "Command line string for ripgrep, see `consult-ripgrep'.
+
+The command string must have a specific format, including ARG and OPTS
+substrings. ARG is replaced by the filter string and OPTS by the auxillary
+command options."
   :type 'string)
 
 (defcustom consult-find-command
   "find . -not ( -wholename */.* -prune ) -ipath *ARG* OPTS"
-  "Command line arguments for find, see `consult-find'."
+  "Command line string for find, see `consult-find'.
+
+The command string must have a specific format, including ARG and OPTS
+substrings. ARG is replaced by the filter string and OPTS by the auxillary
+command options. By default the ARG is wrapped in wildcards."
   :type 'string)
 
 (defcustom consult-locate-command
   "locate --ignore-case --existing --regexp ARG OPTS"
-  "Command line arguments for locate, see `consult-locate'."
+  "Command line string for locate, see `consult-locate'.
+
+The command string must have a specific format, including ARG and OPTS
+substrings. ARG is replaced by the filter string and OPTS by the auxillary
+command options."
   :type 'string)
 
 (defcustom consult-man-command
   "man -k ARG OPTS"
-  "Command line arguments for man apropos, see `consult-man'."
+  "Command line string for man, see `consult-man'.
+
+The command string must have a specific format, including ARG and OPTS
+substrings. ARG is replaced by the filter string and OPTS by the auxillary
+command options."
   :type 'string)
 
 (defcustom consult-preview-key 'any
