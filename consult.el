@@ -3484,7 +3484,7 @@ same major mode as the current buffer are used. See also
                  (forward-line (- (cadr cand) 1))
                  (forward-char (caddr cand)))
                (point-marker)))))
-       nil))))
+       restore))))
 
 (defun consult--grep (prompt cmd dir initial)
   "Run grep CMD in DIR with INITIAL input.
