@@ -208,7 +208,7 @@ See `consult--multi' for a description of the source values."
 
 (defcustom consult-mode-command-filter
   '(;; Filter commands
-    "-mode$" "--"
+    "-mode\\'" "--"
     ;; Filter whole features
     simple mwheel time so-long recentf)
   "Filter commands for `consult-mode-command'."
@@ -558,7 +558,7 @@ HIGHLIGHT must be t if highlighting is needed."
         (filter-not (consult--completion-filter-complement category)))
     (lambda (input cands)
       (cond
-       ((string-match-p "^!? ?$" input) cands) ;; empty input
+       ((string-match-p "\\`!? ?\\'" input) cands) ;; empty input
        ((string-prefix-p "! " input) (funcall filter-not (substring input 2) cands))
        (t (funcall filter input cands))))))
 
@@ -625,7 +625,7 @@ The line beginning/ending BEG/END is bound in BODY."
        (if (string= ddir edir)
            (concat prompt ": ")
          (let ((adir (abbreviate-file-name edir)))
-           (if (string-match "/\\([^/]+\\)/\\([^/]+\\)/$" adir)
+           (if (string-match "/\\([^/]+\\)/\\([^/]+\\)/\\'" adir)
                (format "%s in …/%s/%s/: " prompt
                        (match-string 1 adir) (match-string 2 adir))
              (format "%s in %s: " prompt adir))))
@@ -650,7 +650,7 @@ Otherwise the `default-directory' is returned."
    ((when-let (root (and consult-project-root-function
                          (funcall consult-project-root-function)))
       (save-match-data
-        (if (string-match "/\\([^/]+\\)/$" root)
+        (if (string-match "/\\([^/]+\\)/\\'" root)
             (cons (format "%s in project %s: " prompt (match-string 1 root)) root)
           (consult--format-directory-prompt prompt root)))))
    (t (consult--format-directory-prompt prompt default-directory))))
@@ -1384,7 +1384,7 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
   (lambda (input)
     (save-match-data
       (let ((opts))
-        (when (string-match " +--\\( +\\|$\\)" input)
+        (when (string-match " +--\\( +\\|\\'\\)" input)
           ;; split-string-and-unquote modifies the match data
           ;; and fails if the quotes are invalid. Ignore it.
           (setq opts (substring input (match-end 0))
@@ -2085,11 +2085,11 @@ The symbol at point and the last `isearch-string' is added to the future history
         (when (and input ;; Input has been povided
                    (or
                     ;; Committing, but not with empty input
-                    (and restore (not (string-match-p "^!? ?$" input)))
+                    (and restore (not (string-match-p "\\`!? ?\\'" input)))
                     ;; Input has changed
                     (not (equal input last-input))))
           (let ((filtered-content
-                 (if (string-match-p "^!? ?$" input)
+                 (if (string-match-p "\\`!? ?\\'" input)
                      ;; Special case the empty input for performance.
                      ;; Otherwise it could happen that the minibuffer is empty,
                      ;; but the buffer has not been updated.
@@ -2145,7 +2145,7 @@ INITIAL is the initial input."
     (lambda (input restore)
       ;; New input provided -> Update
       (when (and input (not (equal input last-input)))
-        (if (string-match-p "^!? ?$" input)
+        (if (string-match-p "\\`!? ?\\'" input)
             ;; Special case the empty input for performance.
             (progn
               (dolist (ov overlays)
@@ -2202,7 +2202,7 @@ Optional INITIAL input can be provided when called from Lisp."
   "Transform input STR to line number.
 Optionally print an error message if MSG is t."
   (if-let (line (and str
-                     (string-match-p "^[[:digit:]]+$" str)
+                     (string-match-p "\\`[[:digit:]]+\\'" str)
                      (string-to-number str)))
       (let ((pos (save-excursion
                    (save-restriction
@@ -2334,7 +2334,7 @@ The arguments and expected return value are as specified for
   (replace-regexp-in-string
    "global-\\(.*\\)-mode" "\\1"
    (replace-regexp-in-string
-    "\\(-global\\)?-mode$" ""
+    "\\(-global\\)?-mode\\'" ""
     (if (eq mode 'c-mode)
         "cc"
       (symbol-name mode))
@@ -3585,7 +3585,7 @@ See `consult-grep' for more details regarding the asynchronous search."
   (let ((candidates))
     (save-match-data
       (dolist (str lines)
-        (when (string-match "^\\(.*?\\) +- +\\(.*\\)$" str)
+        (when (string-match "\\`\\(.*?\\) +- +\\(.*\\)\\'" str)
           (let ((name (match-string 1 str))
                 (desc (match-string 2 str)))
             (push (cons
