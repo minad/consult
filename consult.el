@@ -1588,7 +1588,7 @@ KEYMAP is a command-specific keymap."
 
 (defsubst consult--multi-source (sources cand)
   "Lookup source for CAND from SOURCES list."
-  (nth (- (aref cand 0) consult--tofu-char) sources))
+  (aref sources (- (aref cand 0) consult--tofu-char)))
 
 (defun consult--multi-predicate (sources)
   "Return predicate function used by `consult--multi' with SOURCES."
@@ -1634,7 +1634,7 @@ MAX-LEN is the maximum candidate length."
 (defun consult--multi-candidates (sources)
   "Return candidates from SOURCES for `consult--multi'."
   (let ((idx 0) (max-len 0) (candidates))
-    (dolist (src sources (cons (+ 3 max-len) (nreverse candidates)))
+    (seq-doseq (src sources)
       (let* ((face (plist-get src :face))
              (cat (plist-get src :category))
              (items (plist-get src :items))
@@ -1647,17 +1647,19 @@ MAX-LEN is the maximum candidate length."
             (put-text-property 1 len 'face face cand)
             (when (> len max-len) (setq max-len len))
             (push cand candidates))))
-      (setq idx (1+ idx)))))
+      (setq idx (1+ idx)))
+    (cons (+ 3 max-len) (nreverse candidates))))
 
 (defun consult--multi-preprocess (sources)
   "Preprocess SOURCES, remove disabled sources."
-  (seq-filter (lambda (src)
-                (if-let (pred (plist-get src :enabled))
-                    (funcall pred)
-                  t))
-              (mapcar (lambda (src)
-                        (if (symbolp src) (symbol-value src) src))
-                      sources)))
+  (vconcat
+   (seq-filter (lambda (src)
+                 (if-let (pred (plist-get src :enabled))
+                     (funcall pred)
+                   t))
+               (mapcar (lambda (src)
+                         (if (symbolp src) (symbol-value src) src))
+                       sources))))
 
 (defun consult--multi-state (sources)
   "State function for SOURCES."
