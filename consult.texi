@@ -621,6 +621,20 @@ Optional source fields:
 Other source fields can be added specifically to the use case.
 @end itemize
 
+There @samp{:state} and @samp{:action} fields of the sources deserves a longer
+explanation. The @samp{:action} function takes a single argument and is only called
+in the end with the selected candidate. This functionality is provided for
+convenience, @samp{:state} is more complicated and general. The @samp{:state} function
+is a "constructor" function without arguments, which can perform preview
+setup. It must return a closure with two arguments, first argument the
+candidate, second argument the restore flag. This state function is called
+during preview, if a preview key has been pressed, with the selected candidate
+and the restore argument being nil. Furthermore the state function is always
+called in end with the selected candidate or nil and the restore flag being t.
+The final call to the state function happens even if preview is disabled. For
+this reason you can also use the final call to the state function similar to
+@samp{:action}.
+
 In order to avoid slowness, @samp{consult-buffer} only preview buffers by default.
 Loading recent files, bookmarks or views can result in expensive operations.
 However it is possible to configure the bookmark and file sources to also

@@ -485,6 +485,20 @@ variables and functions with their descriptions.
   - =:state= State constructor for the source, must return the state function.
   - Other source fields can be added specifically to the use case.
 
+  There =:state= and =:action= fields of the sources deserves a longer
+  explanation. The =:action= function takes a single argument and is only called
+  in the end with the selected candidate. This functionality is provided for
+  convenience, =:state= is more complicated and general. The =:state= function
+  is a "constructor" function without arguments, which can perform preview
+  setup. It must return a closure with two arguments, first argument the
+  candidate, second argument the restore flag. This state function is called
+  during preview, if a preview key has been pressed, with the selected candidate
+  and the restore argument being nil. Furthermore the state function is always
+  called in end with the selected candidate or nil and the restore flag being t.
+  The final call to the state function happens even if preview is disabled. For
+  this reason you can also use the final call to the state function similar to
+  =:action=.
+
   In order to avoid slowness, =consult-buffer= only preview buffers by default.
   Loading recent files, bookmarks or views can result in expensive operations.
   However it is possible to configure the bookmark and file sources to also
