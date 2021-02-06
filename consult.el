@@ -3341,16 +3341,20 @@ TYPES is the mode-specific types configuration."
 (defun consult--imenu-compute ()
   "Compute imenu candidates."
   (consult--forbid-minibuffer)
-  (let* ((imenu-auto-rescan t)
-         (imenu-use-markers t)
-         (items (imenu--make-index-alist t))
+  (let* ((imenu-use-markers t)
+         ;; Generate imenu, see `imenu--make-index-alist'.
+         (items (imenu--truncate-items
+	         (save-excursion
+		   (save-restriction
+		     (widen)
+		     (funcall imenu-create-index-function)))))
          (config (cdr (seq-find (lambda (x) (derived-mode-p (car x))) consult-imenu-config))))
-    (setq items (remove imenu--rescan-item items))
     ;; Fix toplevel items, e.g., emacs-lisp-mode toplevel items are functions
     (when-let (toplevel (plist-get config :toplevel))
       (let ((tops (seq-remove (lambda (x) (listp (cdr x))) items))
             (rest (seq-filter (lambda (x) (listp (cdr x))) items)))
         (setq items (nconc rest (and tops (list (cons toplevel tops)))))))
+    ;; Apply our flattening in order to ease searching the imenu.
     (consult--imenu-flatten
      nil items
      (mapcar (pcase-lambda (`(,x ,y ,z)) (list y x z))
