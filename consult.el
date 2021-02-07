@@ -944,10 +944,12 @@ FACE is the cursor face."
       (mapc #'delete-overlay overlays)
       (cond
        (restore
-        (if (not (buffer-live-p (marker-buffer saved-pos)))
-            (message "Buffer is dead")
-          (narrow-to-region saved-min saved-max)
-          (goto-char saved-pos)))
+        (let ((saved-buffer (marker-buffer saved-pos)))
+          (if (not (buffer-live-p saved-buffer))
+              (message "Buffer is dead")
+            (set-buffer saved-buffer)
+            (narrow-to-region saved-min saved-max)
+            (goto-char saved-pos))))
        ;; Jump to position
        (cand
         (consult--jump-nomark cand)
