@@ -33,6 +33,7 @@
 * Bug reports::                  How to create reproducible bug reports
 * Contributions::                Feature requests and pull requests
 * Acknowledgements::             Contributors and Sources of Inspiration
+* Indices::                      Indices of concepts and functions
 
 @detailmenu
 --- The Detailed Node Listing ---
@@ -63,6 +64,11 @@ Configuration
 * Use-package example::          Configuration example based on use-package
 * Custom variables::             Short description of all customization settings
 * Fine-tuning::                  Fine-grained configuration for special requirements
+
+Indices
+
+* Function index::               List of all Consult commands
+* Concept index::                List of all Consult-specific concepts
 
 @end detailmenu
 @end menu
@@ -1172,5 +1178,23 @@ Advice and useful discussions:
 @item
 @uref{https://github.com/hmelman/, Howard Melman}
 @end itemize
+
+@node Indices
+@chapter Indices
+
+@menu
+* Function index::               List of all Consult commands
+* Concept index::                List of all Consult-specific concepts
+@end menu
+
+@node Function index
+@section Function index
+
+@printindex fn
+
+@node Concept index
+@section Concept index
+
+@printindex cp
 
 @bye

@@ -930,3 +930,24 @@ Advice and useful discussions:
 - [[https://github.com/manuel-uberti/][Manuel Uberti]]
 - [[https://github.com/tomfitzhenry/][Tom Fitzhenry]]
 - [[https://github.com/hmelman/][Howard Melman]]
+
+#+html: <!--
+
+* Indices
+  :properties:
+  :description: Indices of concepts and functions
+  :end:
+
+** Function index
+   :properties:
+   :description: List of all Consult commands
+   :index:    fn
+   :end:
+
+** Concept index
+   :properties:
+   :description: List of all Consult-specific concepts
+   :index:    cp
+   :end:
+
+#+html: -->
