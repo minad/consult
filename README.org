@@ -624,7 +624,6 @@ the box with the default completion, Icomplete and Selectrum.
  :description: Configuration example based on use-package
  :custom_id: use-package-example
  :end:
- #+cindex: configuration
  #+cindex: use-package
 
 It is recommended to manage package configurations with the =use-package= macro.
@@ -742,7 +741,6 @@ contributed.
  :description: Short description of all customization settings
  :end:
  #+cindex: customization
- #+cindex: configuration
 
  *TIP:* If you have [[https://github.com/minad/marginalia][Marginalia]] installed, type =M-x customize-variable RET
  ^consult= to see all Consult-specific customizable variables with their current
@@ -788,7 +786,6 @@ contributed.
  :alt_title: Fine-tuning
  :description: Fine-grained configuration for special requirements
  :end:
- #+cindex: configuration
 
  *NOTE:* Consult allows fine-grained customization of individual commands. This
  configuration feature is made available for experienced users with special
