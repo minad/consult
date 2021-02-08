@@ -1708,13 +1708,15 @@ Optional source fields:
              (consult--multi-candidates sources))))
          (selected (apply #'consult--read
                           (cdr candidates)
-                          :category  'consult-multi
-                          :predicate (consult--multi-predicate sources)
-                          :narrow    (consult--multi-narrow sources)
-                          :annotate  (consult--multi-annotate sources (car candidates))
-                          :lookup    (consult--multi-lookup sources)
-                          :state     (consult--multi-state sources)
-                          options)))
+                          (append
+                           options
+                           (list
+                            :category  'consult-multi
+                            :predicate (consult--multi-predicate sources)
+                            :narrow    (consult--multi-narrow sources)
+                            :annotate  (consult--multi-annotate sources (car candidates))
+                            :lookup    (consult--multi-lookup sources)
+                            :state     (consult--multi-state sources))))))
     (when-let (history (plist-get (cdr selected) :history))
       (add-to-history history (car selected)))
     (when-let (action (plist-get (cdr selected) :action))
