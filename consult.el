@@ -2119,6 +2119,7 @@ The symbol at point and the last `isearch-string' is added to the future history
         (when (and restore font-lock-orig (not font-lock-mode))
           (font-lock-mode))))))
 
+;;;###autoload
 (defun consult-keep-lines (&optional filter initial)
   "Select a subset of the lines in the current buffer with live preview.
 
@@ -2179,6 +2180,7 @@ INITIAL is the initial input."
       (when restore
         (mapc #'delete-overlay overlays)))))
 
+;;;###autoload
 (defun consult-focus-lines (&optional show filter initial)
   "Hide or show lines according to FILTER function.
 
