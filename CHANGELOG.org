@@ -1,0 +1,24 @@
+* Main
+
+- Add consult-preview-raw-size
+- Expose preview functionality for multi-source bookmarks/files
+- Multi sources: Add :enabled, :state and :action fields
+- consult-imenu: Add faces depending on item types
+
+* Version 0.4
+
+- Bugfixes
+- Introduce multi sources, reimplement consult-buffer with multi sources
+- consult-isearch: Add preview highlighting
+- consult-line: Use isearch-string when invoked from running isearch
+
+* Version 0.3
+
+- Bugfixes
+- New command consult-isearch
+- New functions consult-register-format, consult-register-window,
+  removed consult-register-preview
+
+* Version 0.2
+
+- Initial stable release
