@@ -859,8 +859,8 @@ MARKER is the cursor position."
               (let ((size (file-attribute-size attrs)))
                 (if (> size consult-preview-max-size)
                     (prog1 nil
-                      (minibuffer-message "File `%s' (%s) is too large for preview"
-                                          name (file-size-human-readable size)))
+                      (message "File `%s' (%s) is too large for preview"
+                               name (file-size-human-readable size)))
                   (let* ((enable-dir-local-variables nil)
                          (inhibit-message t)
                          (buf (find-file-noselect
@@ -2752,7 +2752,7 @@ number. Otherwise store point, frameset, window or kmacro."
                      (pos (alist-get 'position bm))
                      (buf (funcall open file)))
                (set-marker (make-marker) pos buf)
-             (minibuffer-message "No preview for special bookmark")
+             (message "No preview for special bookmark")
              nil))
          nil)))))
 
