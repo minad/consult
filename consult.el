@@ -2216,9 +2216,9 @@ Optional INITIAL input can be provided when called from Lisp."
 
 ;;;;; Command: consult-goto-line
 
-(defun consult--goto-line-position (str &optional msg)
+(defun consult--goto-line-position (str msg)
   "Transform input STR to line number.
-Optionally print an error message if MSG is t."
+Print an error message with MSG function."
   (if-let (line (and str
                      (string-match-p "\\`[[:digit:]]+\\'" str)
                      (string-to-number str)))
@@ -2231,11 +2231,10 @@ Optionally print an error message if MSG is t."
                      (point)))))
         (if (consult--in-range-p pos)
             pos
-          (when msg
-            (minibuffer-message "Line number out of range."))
+          (funcall msg "Line number out of range.")
           nil))
-    (when (and msg str (not (string= str "")))
-      (minibuffer-message "Please enter a number."))
+    (when (and str (not (string= str "")))
+      (funcall msg "Please enter a number."))
     nil))
 
 ;;;###autoload
@@ -2254,9 +2253,9 @@ The command respects narrowing and the settings
                           :state (let ((preview (consult--jump-preview)))
                                     (lambda (str restore)
                                       (funcall preview
-                                               (consult--goto-line-position str)
+                                               (consult--goto-line-position str #'ignore)
                                                restore))))
-                         t))
+                         #'minibuffer-message))
                (consult--jump pos)
              t))))
 
