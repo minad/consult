@@ -2264,12 +2264,14 @@ The command respects narrowing and the settings
 
 (defun consult--file-preview ()
   "Create preview function for files."
-  (let ((open (consult--temporary-files)))
+  (let ((open (consult--temporary-files))
+        (preview (consult--buffer-preview)))
     (lambda (cand restore)
       (if restore
-          (funcall open)
-        (if-let (buf (funcall open cand))
-            (switch-to-buffer buf))))))
+          (progn
+            (funcall preview nil t)
+            (funcall open))
+        (funcall preview (and cand (funcall open cand)) nil)))))
 
 ;;;###autoload
 (defun consult-recent-file ()
@@ -3083,16 +3085,24 @@ The command supports previewing the currently selected theme."
 (consult--define-cache consult--cached-buffer-file-hash
   (consult--string-hash (delq nil (mapcar #'buffer-file-name (consult--cached-buffers)))))
 
+(defun consult--buffer-preview ()
+  "Buffer preview function."
+  (let ((orig-buf (current-buffer)))
+    (lambda (cand restore)
+      (when (and (not restore)
+                 (or (eq consult--buffer-display #'switch-to-buffer)
+                     (eq consult--buffer-display #'switch-to-buffer-other-window)))
+        (cond
+         ((and cand (get-buffer cand)) (funcall consult--buffer-display cand 'norecord))
+         ((buffer-live-p orig-buf) (funcall consult--buffer-display orig-buf 'norecord)))))))
+
 (defun consult--buffer-state ()
   "Buffer state function."
-  (lambda (cand restore)
-    (when cand
-      (cond
-       (restore (funcall consult--buffer-display cand))
-       ((and (or (eq consult--buffer-display #'switch-to-buffer)
-                 (eq consult--buffer-display #'switch-to-buffer-other-window))
-             (get-buffer cand))
-          (funcall consult--buffer-display cand 'norecord))))))
+  (let ((preview (consult--buffer-preview)))
+    (lambda (cand restore)
+      (funcall preview cand restore)
+      (when (and cand restore)
+        (funcall consult--buffer-display cand)))))
 
 (defun consult--file-action (file)
   "Open FILE via `consult--buffer-display' function."
