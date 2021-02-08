@@ -3322,25 +3322,30 @@ ARGS are the arguments to the special item function."
   (switch-to-buffer buf)
   (apply fn name pos args))
 
-(defun consult--imenu-flatten (prefix list types)
+(defun consult--imenu-flatten (prefix face list types)
   "Flatten imenu LIST.
 
-Prepend PREFIX in front of all items.
+PREFIX is prepended in front of all items.
+FACE is the item face.
 TYPES is the mode-specific types configuration."
   (mapcan
    (lambda (item)
      (if (imenu--subalist-p item)
-         (consult--imenu-flatten
-          (if prefix
-              (concat prefix "/" (propertize (car item) 'face 'consult-imenu-prefix))
-            (if-let (type (cdr (assoc (car item) types)))
-                (propertize (car item)
-                            'face 'consult-imenu-prefix
-                            'consult--imenu-type (car type))
-              (propertize (car item) 'face 'consult-imenu-prefix)))
-          (cdr item) types)
-       (let ((key (if prefix (concat prefix " " (car item)) (car item)))
-             (payload (cdr item)))
+         (let ((name (car item))
+               (next-prefix prefix)
+               (next-face face))
+           (if prefix
+               (setq next-prefix (concat prefix "/" (propertize name 'face 'consult-imenu-prefix)))
+             (if-let (type (cdr (assoc (car item) types)))
+                  (setq next-prefix (propertize name
+                                                'face 'consult-imenu-prefix
+                                                'consult--imenu-type (car type))
+                        next-face (cadr type))
+                (setq next-prefix (propertize name 'face 'consult-imenu-prefix))))
+           (consult--imenu-flatten next-prefix next-face (cdr item) types))
+       (let* ((name (car item))
+              (key (if prefix (concat prefix " " (propertize name 'face face)) name))
+              (payload (cdr item)))
          (list (cons key
                      (pcase payload
                        ;; Simple marker item
@@ -3352,7 +3357,7 @@ TYPES is the mode-specific types configuration."
                        ;; Wrap special item
                        (`(,pos ,fn . ,args)
                         (nconc
-                         (list pos #'consult--imenu-special (current-buffer) (car item) fn)
+                         (list pos #'consult--imenu-special (current-buffer) name fn)
                          args))
                        (_ (error "Unknown imenu item: %S" item))))))))
    list))
@@ -3375,7 +3380,7 @@ TYPES is the mode-specific types configuration."
         (setq items (nconc rest (and tops (list (cons toplevel tops)))))))
     ;; Apply our flattening in order to ease searching the imenu.
     (consult--imenu-flatten
-     nil items
+     nil nil items
      (mapcar (pcase-lambda (`(,x ,y ,z)) (list y x z))
              (plist-get config :types)))))
 
