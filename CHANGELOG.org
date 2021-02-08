@@ -1,5 +1,6 @@
 * Main
 
+- consult-register-format: Do not truncate register strings.
 - Multi sources/consult-buffer: Ensure that original buffer is
   shown, when the currently selected source does not perform preview.
 - Add consult-preview-raw-size

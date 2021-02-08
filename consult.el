@@ -2530,6 +2530,7 @@ SHOW-EMPTY must be t if the window should be shown for an empty register list."
         (setq-local cursor-in-non-selected-windows nil)
         (setq-local mode-line-format nil)
         (setq-local window-min-height 1)
+        (setq-local truncate-lines t)
         (seq-do-indexed
          (lambda (reg idx)
            (let ((beg (point)))
@@ -2543,9 +2544,7 @@ SHOW-EMPTY must be t if the window should be shown for an empty register list."
   "Enhanced preview of register REG.
 
 This function can be used as `register-preview-function'."
-  (apply #'concat
-         (mapcar (lambda (s) (concat (truncate-string-to-width s 100 0 nil "…") "\n"))
-                 (split-string (consult--register-format reg) "\n"))))
+  (concat (consult--register-format reg) "\n"))
 
 (defun consult--register-format (reg)
   "Format register REG for preview."
