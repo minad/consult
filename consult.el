@@ -3332,21 +3332,15 @@ TYPES is the mode-specific types configuration."
    (lambda (item)
      (if (imenu--subalist-p item)
          (consult--imenu-flatten
-          (concat prefix (and prefix "/") (car item))
+          (if prefix
+              (concat prefix "/" (propertize (car item) 'face 'consult-imenu-prefix))
+            (if-let (type (cdr (assoc (car item) types)))
+                (propertize (car item)
+                            'face 'consult-imenu-prefix
+                            'consult--imenu-type (car type))
+              (propertize (car item) 'face 'consult-imenu-prefix)))
           (cdr item) types)
-       (let ((key
-              (if prefix
-                  (if-let (type (cdr (assoc prefix types)))
-                      (concat
-                       (propertize prefix
-                                   'face 'consult-imenu-prefix
-                                   'consult--imenu-type (car type))
-                       " "
-                       (propertize (car item) 'face (cadr type)))
-                    (concat
-                     (propertize prefix 'face 'consult-imenu-prefix) " "
-                     (car item)))
-                (car item)))
+       (let ((key (if prefix (concat prefix " " (car item)) (car item)))
              (payload (cdr item)))
          (list (cons key
                      (pcase payload
