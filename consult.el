@@ -2739,8 +2739,9 @@ number. Otherwise store point, frameset, window or kmacro."
             (funcall preview nil t))
         (funcall
          preview
-         (when-let (bm (bookmark-get-bookmark-record
-                        (assoc cand bookmark-alist)))
+         (when-let (bm (and cand
+                            (bookmark-get-bookmark-record
+                             (assoc cand bookmark-alist))))
            (if-let* ((file
                       ;; Only preview bookmarks with the default handler.
                       (and (eq (alist-get 'handler bm #'bookmark-default-handler)
