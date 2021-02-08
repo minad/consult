@@ -1668,13 +1668,23 @@ MAX-LEN is the maximum candidate length."
   (when-let (states (delq nil (mapcar (lambda (src)
                                        (when-let (fun (plist-get src :state))
                                          (cons src (funcall fun))))
-                                     sources)))
-    (lambda (cand restore)
-      (if restore
-          (dolist (state states)
-            (funcall (cdr state) (and (eq (car state) (cdr cand)) (car cand)) t))
-        (when-let (fun (cdr (assq (cdr cand) states)))
-          (funcall fun (car cand) nil))))))
+                                      sources)))
+    (let ((last-fun))
+      (pcase-lambda (`(,cand . ,src) restore)
+        (if restore
+            ;; Restore all state functions
+            (dolist (state states)
+              (funcall (cdr state) (and (eq (car state) src) cand) t))
+          ;; Get state function to call for preview
+          (let ((fun (cdr (assq src states))))
+            ;; If the candidate source changed during preview communicate to
+            ;; the last source, that none of its candidates is previewed anymore.
+            (when (and last-fun (not (eq last-fun fun)))
+              (funcall last-fun nil nil))
+            (setq last-fun fun)
+            ;; Call the state function.
+            (when fun
+              (funcall fun cand nil))))))))
 
 (defun consult--multi (sources &rest options)
   "Select from candidates taken from a list of SOURCES.

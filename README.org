@@ -494,15 +494,16 @@ variables and functions with their descriptions.
   necessary for the preview. It must return a closure with two arguments: The
   first argument is the candidate string, the second argument is the restore
   flag. The state function is called during preview, if a preview key has been
-  pressed, with the selected candidate and the restore argument being nil.
-  Furthermore the state function is always called after selection with the
-  selected candidate or nil if no candidate has been selected, for example if
-  the selection has been aborted. The restore flag is t for the final call. The
-  final call happens even if preview is disabled. For this reason you can also
-  use the final call to the state function in a similar way as =:action=. You
-  probably only want to specify both =:state= and =:action= if =:state= is
-  purely responsible for preview and =:action= is then responsible for the real
-  action after selection.
+  pressed, with the selected candidate or nil and the restore argument being
+  nil. Furthermore the state function is always called after selection with the
+  selected candidate or nil. The state function is called with nil for the
+  candidate if for example the selection process has been aborted or if the
+  original preview state should be restored during preview. The restore flag is
+  t for the final call. The final call happens even if preview is disabled. For
+  this reason you can also use the final call to the state function in a similar
+  way as =:action=. You probably only want to specify both =:state= and
+  =:action= if =:state= is purely responsible for preview and =:action= is then
+  responsible for the real action after selection.
 
   In order to avoid slowness, =consult-buffer= only preview buffers by default.
   Loading recent files, bookmarks or views can result in expensive operations.
