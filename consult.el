@@ -2079,6 +2079,7 @@ The symbol at point and the last `isearch-string' is added to the future history
   (let* ((lines)
          (buffer-orig (current-buffer))
          (font-lock-orig font-lock-mode)
+         (hl-line-orig (bound-and-true-p hl-line-mode))
          (point-orig (point))
          (content-orig)
          (replace)
@@ -2139,6 +2140,7 @@ The symbol at point and the last `isearch-string' is added to the future history
                                                (funcall filter input (mapcar #'copy-sequence lines)))))))))
             (when (stringp filtered-content)
               (when font-lock-mode (font-lock-mode -1))
+              (when (bound-and-true-p hl-line-mode) (hl-line-mode -1))
               (if restore
                   (atomic-change-group
                     ;; Disable modification hooks for performance
@@ -2148,9 +2150,10 @@ The symbol at point and the last `isearch-string' is added to the future history
                 (with-silent-modifications
                   (funcall replace filtered-content)
                   (setq last-input input))))))
-        ;; Restore font-lock
-        (when (and restore font-lock-orig (not font-lock-mode))
-          (font-lock-mode))))))
+        ;; Restore modes
+        (when restore
+          (when hl-line-orig (hl-line-mode 1))
+          (when font-lock-orig (font-lock-mode 1)))))))
 
 ;;;###autoload
 (defun consult-keep-lines (&optional filter initial)
