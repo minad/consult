@@ -1,4 +1,10 @@
-* Main
+#+title: consult.el - Changelog
+#+author: Daniel Mendler
+#+language: en
+
+* Development (main branch)
+
+* Version 0.5 (2021-02-09)
 
 - consult-register-format: Do not truncate register strings.
 - Multi sources/consult-buffer: Ensure that original buffer is
@@ -8,20 +14,20 @@
 - Multi sources: Add :enabled, :state and :action fields
 - consult-imenu: Add faces depending on item types
 
-* Version 0.4
+* Version 0.4 (2021-02-01)
 
 - Bugfixes
 - Introduce multi sources, reimplement consult-buffer with multi sources
 - consult-isearch: Add preview highlighting
 - consult-line: Use isearch-string when invoked from running isearch
 
-* Version 0.3
+* Version 0.3 (2021-01-28)
 
 - Bugfixes
 - New command consult-isearch
 - New functions consult-register-format, consult-register-window,
   removed consult-register-preview
 
-* Version 0.2
+* Version 0.2 (2021-01-16)
 
 - Initial stable release

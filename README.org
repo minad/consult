@@ -5,12 +5,9 @@
 #+texinfo_dir_category: Emacs
 #+texinfo_dir_title: Consult: (consult).
 #+texinfo_dir_desc: Useful commands built on completing-read.
-#+options: d:nil
 
-:badge:
-[[https://melpa.org/#/consult][file:https://melpa.org/packages/consult-badge.svg]]
-[[https://stable.melpa.org/#/consult][file:https://stable.melpa.org/packages/consult-badge.svg]]
-:end:
+#+html: <a href="https://melpa.org/#/consult"><img alt="MELPA" src="https://melpa.org/packages/consult-badge.svg"/></a>
+#+html: <a href="https://stable.melpa.org/#/consult"><img alt="MELPA Stable" src="https://stable.melpa.org/packages/consult-badge.svg"/></a>
 
 * Introduction
   :properties:
