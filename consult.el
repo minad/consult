@@ -2101,6 +2101,7 @@ The symbol at point and the last `isearch-string' is added to the future history
          (last-input))
     (if (region-active-p)
         (save-restriction
+          (setq font-lock-orig nil)
           (narrow-to-region (region-beginning) (region-end))
           (let ((beg (point-min))
                 (end (point-max)))
@@ -2109,7 +2110,8 @@ The symbol at point and the last `isearch-string' is added to the future history
                             (delete-region beg end)
                             (insert content)
                             (goto-char (or pos beg))
-                            (setq end (+ beg (length content)))))))
+                            (setq end (+ beg (length content)))
+                            (set-mark end)))))
       (setq content-orig (buffer-string)
             replace (lambda (content &optional pos)
                       (delete-region (point-min) (point-max))
@@ -2144,7 +2146,7 @@ The symbol at point and the last `isearch-string' is added to the future history
                        ;; Allocate new string candidates since the matching function mutates!
                        (string-join (funcall filter input (mapcar #'copy-sequence lines)) "\n"))))))
             (when (stringp filtered-content)
-              (when font-lock-mode (font-lock-mode -1))
+              (when font-lock-orig (font-lock-mode -1))
               (if restore
                   (atomic-change-group
                     ;; Disable modification hooks for performance
