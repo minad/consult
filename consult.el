@@ -1448,7 +1448,7 @@ Note that `consult-narrow-key' and `consult-widen-key' are bound dynamically.")
 (defun consult--setup-keymap (keymap async narrow preview-key)
   "Setup minibuffer keymap.
 
-KEYMAP is a command-specific KEYMAP.
+KEYMAP is a command-specific keymap, can also be a symbol.
 ASYNC must be t for async.
 NARROW are the narrow settings.
 PREVIEW-KEY is the preview key."
@@ -1537,7 +1537,7 @@ DEFAULT-TOP must be nil if the default candidate should not be moved to the top.
 STATE is the state function, see `consult--with-preview'.
 PREVIEW-KEY are the preview keys (nil, 'any, a single key or a list of keys).
 NARROW is an alist of narrowing prefix strings and description.
-KEYMAP is a command-specific keymap."
+KEYMAP is a command-specific keymap, can also be a symbol."
   ;; supported types
   (cl-assert (or (functionp candidates)     ;; async table
                  (not candidates)           ;; nil, empty list
@@ -1749,7 +1749,7 @@ DEFAULT is the default selected value.
 ADD-HISTORY is a list of items to add to the history.
 STATE is the state function, see `consult--with-preview'.
 PREVIEW-KEY are the preview keys (nil, 'any, a single key or a list of keys).
-KEYMAP is a command-specific keymap."
+KEYMAP is a command-specific keymap, can also be a symbol."
   (consult--minibuffer-with-setup-hook
       (:append (lambda ()
                  (consult--setup-keymap keymap nil nil preview-key)
