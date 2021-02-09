@@ -562,35 +562,19 @@ HIGHLIGHT must be t if highlighting is needed."
        ((string-prefix-p "! " input) (funcall filter-not (substring input 2) cands))
        (t (funcall filter input cands))))))
 
-(defun consult--each-line-1 (beg end body)
-  "Helper function for `consult--each-line' macro.
-
-See `consult--each-line' for BEG, END and BODY arguments."
-  (let ((max (make-symbol "max")))
-    `(let ((,beg (point-min)) (,max (point-max)) end)
-       (while (< ,beg ,max)
-         (goto-char ,beg)
-         (setq ,end (line-end-position))
-         ,@body
-         (setq ,beg (1+ ,end))))))
-
 (defmacro consult--each-line (beg end &rest body)
   "Iterate over each line.
 
 The line beginning/ending BEG/END is bound in BODY."
   (declare (indent 2))
-  `(save-excursion ,(consult--each-line-1 beg end body)))
-
-(defmacro consult--each-region-line (beg end &rest body)
-  "Iterate over each line of region.
-
-The line beginning/ending BEG/END is bound in BODY."
-  (declare (indent 2))
-  `(save-excursion
-     (save-restriction
-       (when (region-active-p)
-         (narrow-to-region (region-beginning) (region-end)))
-       ,(consult--each-line-1 beg end body))))
+  (let ((max (make-symbol "max")))
+    `(save-excursion
+       (let ((,beg (point-min)) (,max (point-max)) end)
+         (while (< ,beg ,max)
+           (goto-char ,beg)
+           (setq ,end (line-end-position))
+           ,@body
+           (setq ,beg (1+ ,end)))))))
 
 (defun consult--string-hash (strings)
   "Create hashtable from STRINGS."
@@ -2095,30 +2079,40 @@ The symbol at point and the last `isearch-string' is added to the future history
   (let* ((lines)
          (buffer-orig (current-buffer))
          (font-lock-orig font-lock-mode)
+         (roverlay)
          (point-orig (point))
          (content-orig)
          (replace)
          (last-input))
-    (if (region-active-p)
+    (if (use-region-p)
         (save-restriction
-          (setq font-lock-orig nil)
-          (narrow-to-region (region-beginning) (region-end))
-          (let ((beg (point-min))
-                (end (point-max)))
-            (setq content-orig (buffer-string)
+          ;; Use the same behavior as `keep-lines'.
+          (let ((rbeg (region-beginning))
+                (rend (save-excursion
+		        (goto-char (region-end))
+		        (unless (or (bolp) (eobp))
+		          (forward-line 0))
+		        (point))))
+            (narrow-to-region rbeg rend)
+            (consult--each-line beg end
+              (push (buffer-substring beg end) lines))
+            (setq font-lock-orig nil
+                  content-orig (buffer-string)
                   replace (lambda (content &optional pos)
-                            (delete-region beg end)
+                            (delete-region rbeg rend)
                             (insert content)
-                            (goto-char (or pos beg))
-                            (setq end (+ beg (length content)))
-                            (set-mark end)))))
+                            (goto-char (or pos rbeg))
+                            (setq rend (+ rbeg (length content)))
+                            (when roverlay
+                              (delete-overlay roverlay))
+                            (setq roverlay (consult--overlay rbeg rend 'face 'region))))))
       (setq content-orig (buffer-string)
             replace (lambda (content &optional pos)
                       (delete-region (point-min) (point-max))
                       (insert content)
-                      (goto-char (or pos (point-min))))))
-    (consult--each-region-line beg end
-      (push (buffer-substring beg end) lines))
+                      (goto-char (or pos (point-min)))))
+      (consult--each-line beg end
+        (push (buffer-substring beg end) lines)))
     (setq lines (nreverse lines))
     (lambda (input restore)
       (with-current-buffer buffer-orig
@@ -2140,11 +2134,12 @@ The symbol at point and the last `isearch-string' is added to the future history
                      ;; but the buffer has not been updated.
                      content-orig
                    (if restore
-                       (string-join (funcall filter input lines) "\n")
+                       (apply #'concat (mapcan (lambda (x) (list x "\n")) (funcall filter input lines)))
                      (while-no-input
                        ;; Heavy computation is interruptible if *not* committing!
                        ;; Allocate new string candidates since the matching function mutates!
-                       (string-join (funcall filter input (mapcar #'copy-sequence lines)) "\n"))))))
+                       (apply #'concat (mapcan (lambda (x) (list x "\n"))
+                                               (funcall filter input (mapcar #'copy-sequence lines)))))))))
             (when (stringp filtered-content)
               (when font-lock-orig (font-lock-mode -1))
               (if restore
@@ -2156,6 +2151,9 @@ The symbol at point and the last `isearch-string' is added to the future history
                 (with-silent-modifications
                   (funcall replace filtered-content)
                   (setq last-input input))))))
+        ;; Remove region overlay
+        (when (and restore roverlay)
+          (delete-overlay roverlay))
         ;; Restore font-lock
         (when (and restore font-lock-orig (not font-lock-mode))
           (font-lock-mode))))))
@@ -2185,9 +2183,21 @@ INITIAL is the initial input."
 (defun consult--focus-lines-state (filter)
   "State function for `consult-focus-lines' with FILTER function."
   (let ((lines) (overlays) (last-input))
-    (consult--each-region-line beg end
-      (push (buffer-substring beg end) lines)
-      (push (make-overlay beg (1+ end)) overlays))
+    (save-excursion
+      (save-restriction
+        (when (use-region-p)
+          (narrow-to-region
+           (region-beginning)
+           ;; Behave the same as `keep-lines'.
+           ;; Move to the next line.
+           (save-excursion
+	     (goto-char (region-end))
+	     (unless (or (bolp) (eobp))
+	       (forward-line 0))
+	     (point))))
+        (consult--each-line beg end
+          (push (buffer-substring beg end) lines)
+          (push (make-overlay beg (1+ end)) overlays))))
     (lambda (input restore)
       ;; New input provided -> Update
       (when (and input (not (equal input last-input)))
