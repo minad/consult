@@ -1476,7 +1476,8 @@ PREVIEW-KEY is the preview key."
     ;; Put the keymap together
     (use-local-map
      (make-composed-keymap
-      (delq nil (list keymap
+      (delq nil (list (if (and keymap (symbolp keymap))
+                          (symbol-value keymap) keymap)
                       (and async consult-async-map)
                       (and narrow consult-narrow-map)
                       (and preview-key consult-preview-map)
