@@ -2079,7 +2079,6 @@ The symbol at point and the last `isearch-string' is added to the future history
   (let* ((lines)
          (buffer-orig (current-buffer))
          (font-lock-orig font-lock-mode)
-         (roverlay)
          (point-orig (point))
          (content-orig)
          (replace)
@@ -2096,16 +2095,13 @@ The symbol at point and the last `isearch-string' is added to the future history
             (narrow-to-region rbeg rend)
             (consult--each-line beg end
               (push (buffer-substring beg end) lines))
-            (setq font-lock-orig nil
-                  content-orig (buffer-string)
+            (setq content-orig (buffer-string)
                   replace (lambda (content &optional pos)
                             (delete-region rbeg rend)
                             (insert content)
                             (goto-char (or pos rbeg))
                             (setq rend (+ rbeg (length content)))
-                            (when roverlay
-                              (delete-overlay roverlay))
-                            (setq roverlay (consult--overlay rbeg rend 'face 'region))))))
+                            (add-face-text-property rbeg rend 'region t)))))
       (setq content-orig (buffer-string)
             replace (lambda (content &optional pos)
                       (delete-region (point-min) (point-max))
@@ -2134,14 +2130,15 @@ The symbol at point and the last `isearch-string' is added to the future history
                      ;; but the buffer has not been updated.
                      content-orig
                    (if restore
-                       (apply #'concat (mapcan (lambda (x) (list x "\n")) (funcall filter input lines)))
+                       (apply #'concat (mapcan (lambda (x) (list x "\n"))
+                                               (funcall filter input lines)))
                      (while-no-input
                        ;; Heavy computation is interruptible if *not* committing!
                        ;; Allocate new string candidates since the matching function mutates!
                        (apply #'concat (mapcan (lambda (x) (list x "\n"))
                                                (funcall filter input (mapcar #'copy-sequence lines)))))))))
             (when (stringp filtered-content)
-              (when font-lock-orig (font-lock-mode -1))
+              (when font-lock-mode (font-lock-mode -1))
               (if restore
                   (atomic-change-group
                     ;; Disable modification hooks for performance
@@ -2151,9 +2148,6 @@ The symbol at point and the last `isearch-string' is added to the future history
                 (with-silent-modifications
                   (funcall replace filtered-content)
                   (setq last-input input))))))
-        ;; Remove region overlay
-        (when (and restore roverlay)
-          (delete-overlay roverlay))
         ;; Restore font-lock
         (when (and restore font-lock-orig (not font-lock-mode))
           (font-lock-mode))))))
