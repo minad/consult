@@ -4,8 +4,11 @@
 
 * Development (main branch)
 
+- consult-keep/focus-lines: Align behavior on regions with built-in keep-lines.
+
 * Version 0.5 (2021-02-09)
 
+- consult-keep/focus-lines: If region is active, operate only on the region.
 - consult-register-format: Do not truncate register strings.
 - Multi sources/consult-buffer: Ensure that original buffer is
   shown, when the currently selected source does not perform preview.
