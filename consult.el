@@ -1538,11 +1538,13 @@ NARROW is an alist of narrowing prefix strings and description.
 KEYMAP is a command-specific keymap."
   ;; supported types
   (cl-assert (or (functionp candidates)     ;; async table
-                 (not candidates)           ;; nil, empty list
                  (obarrayp candidates)      ;; obarray
+                 (hash-table-p candidates)  ;; hash table
+                 (not candidates)           ;; empty list
                  (stringp (car candidates)) ;; string list
                  (symbolp (car candidates)) ;; symbol list
-                 (consp (car candidates)))) ;; alist
+                 (and (consp (car candidates)) (stringp (caar candidates)))   ;; string alist
+                 (and (consp (car candidates)) (symbolp (caar candidates))))) ;; symbol alist
   (ignore default-top narrow add-history keymap)
   (consult--read-defaults
    (prompt "Select: ")
