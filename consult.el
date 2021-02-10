@@ -1208,10 +1208,9 @@ the comma is passed to ASYNC, the second part is used for filtering."
        (consult--async-split-setup)
        (funcall async 'setup))
       ((pred stringp)
-       (let* ((pair (consult--async-split-string action))
-              (input-len (length action))
-              (async-str (car pair))
+       (let* ((async-str (car (consult--async-split-string action)))
               (async-len (length async-str))
+              (input-len (length action))
               (end (minibuffer-prompt-end)))
          ;; Highlight punctuation characters
          (remove-list-of-text-properties end (+ end input-len) '(face))
