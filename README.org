@@ -209,14 +209,15 @@ variables and functions with their descriptions.
    which uses the current completion style for filtering the buffer. The
    function updates the buffer while typing. In particular, this function can be
    used to further narrow an exported Embark collect buffer with the same
-   completion filtering as during =completing-read=. If the input begins with "!
-   SPC", the filter matches the complement. If a region is active, the filtering
-   is restricted to that region.
+   completion filtering as during =completing-read=. If the input begins with
+   the negation operator, i.e., ~! SPC~, the filter matches the complement. If a
+   region is active, the filtering is restricted to that region.
  - =consult-focus-lines=: Temporarily hide lines by filtering them using the current
    completion style. Call with =C-u= prefix argument in order to show the hidden
-   lines again. If the input begins with "! SPC", the filter matches the
-   complement. In contrast to =consult-keep-lines= this function does not edit
-   the buffer. If a region is active, the focusing is restricted to that region.
+   lines again. If the input begins with the negation operator, i.e., ~! SPC~,
+   the filter matches the complement. In contrast to =consult-keep-lines= this
+   function does not edit the buffer. If a region is active, the focusing is
+   restricted to that region.
 
 ** Grep and Find
    :properties:
@@ -237,7 +238,7 @@ variables and functions with their descriptions.
    characters in order for the search to get started. The input string is split
    into two parts, if the first character is a punctuation character, like =#=.
    For example =#grep-regexp#filter-string=, is split at the second =#=. The
-   string "grep-regexp" is passed to Grep, the "filter-string" is passed to the
+   string =grep-regexp= is passed to Grep, the =filter-string= is passed to the
    /fast/ Emacs filtering to further narrow down the list of matches. This is
    particularily useful if you are using an advanced completion style like
    orderless. =consult-grep= supports preview. If the
@@ -488,7 +489,7 @@ variables and functions with their descriptions.
   selection with the selected candidate, if the selection has not been aborted.
   This functionality is provided for convenience and easy definition of sources.
   The =:state= field is more complicated and general. The =:state= function is a
-  "constructor" function without arguments, which can perform some setup
+  constructor function without arguments, which can perform some setup
   necessary for the preview. It must return a closure with two arguments: The
   first argument is the candidate string, the second argument is the restore
   flag. The state function is called during preview, if a preview key has been
@@ -822,9 +823,10 @@ contributed.
  following techniques:
 
  1. Create your own wrapper function which passes modified arguments to the Consult functions.
- 2. Modify =consult-config= in order to change the =consult--read= settings.
- 3. Create advices to modify some internal behavior.
- 4. Write or propose a patch.
+ 2. Create your own buffer [[#multiple-sources][multi sources]] for =consult-buffer=.
+ 3. Modify =consult-config= in order to change the =consult--read= settings.
+ 4. Create advices to modify some internal behavior.
+ 5. Write or propose a patch.
 
 * Recommended packages
   :properties:
