@@ -456,7 +456,7 @@ variables and functions with their descriptions.
 
   As an example, the bookmark source is defined as follows:
 
-  #+begin_src elisp
+  #+begin_src emacs-lisp
   (defvar consult--source-bookmark
     `(:name     "Bookmark"
       :narrow   ?m
@@ -508,7 +508,7 @@ variables and functions with their descriptions.
   However it is possible to configure the bookmark and file sources to also
   perform preview.
 
-  #+begin_src elisp
+  #+begin_src emacs-lisp
   (nconc consult--source-bookmark (list :state #'consult--bookmark-preview))
   (nconc consult--source-file (list :state #'consult--file-preview))
   (nconc consult--source-project-file (list :state #'consult--file-preview))
@@ -518,7 +518,7 @@ variables and functions with their descriptions.
   convenience. For example views can be added to the list of virtual buffers
   from a library like https://github.com/minad/bookmark-view/.
 
-  #+begin_src elisp
+  #+begin_src emacs-lisp
   (add-to-list 'consult-buffer-sources
                 (list :name     "View"
                       :narrow   ?v
@@ -533,7 +533,7 @@ variables and functions with their descriptions.
   Other useful sources allow the creation of terminal and eshell
   buffers if they do not exist yet.
 
-  #+begin_src elisp
+  #+begin_src emacs-lisp
   (defun mode-buffer-exists-p (mode)
     (seq-some (lambda (buf)
                 (provided-mode-derived-p
