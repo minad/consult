@@ -40,9 +40,12 @@
     (user-error "No flycheck errors (Status: %s)" flycheck-last-status-change))
   (let* ((errors (mapcar
                   (lambda (err)
-                    (list (file-name-nondirectory (flycheck-error-filename err))
-                          (number-to-string (flycheck-error-line err))
-                          err))
+                    (list
+                     (if-let (file (flycheck-error-filename err))
+                         (file-name-nondirectory file)
+                       (buffer-name (flycheck-error-buffer err)))
+                     (number-to-string (flycheck-error-line err))
+                     err))
                   (seq-sort #'flycheck-error-level-< flycheck-current-errors)))
          (file-width (apply #'max (mapcar (lambda (x) (length (car x))) errors)))
          (line-width (apply #'max (mapcar (lambda (x) (length (cadr x))) errors)))
