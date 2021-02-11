@@ -3185,7 +3185,8 @@ The command supports previewing the currently selected theme."
     :face      consult-file
     :history   file-name-history
     :action    ,#'consult--file-action
-    :enabled   ,(lambda () consult-project-root-function)
+    :enabled   ,(lambda () (and consult-project-root-function
+                                recentf-mode))
     :items
     ,(lambda ()
       (when-let (root (funcall consult-project-root-function))
@@ -3236,6 +3237,7 @@ The command supports previewing the currently selected theme."
     :face     consult-file
     :history  file-name-history
     :action   ,#'consult--file-action
+    :enabled   ,(lambda () recentf-mode)
     :items
     ,(lambda ()
        (let ((ht (consult--cached-buffer-file-hash)))
