@@ -778,8 +778,9 @@ KEY is the key function."
 DISPLAY is the string to display instead of the unique string."
   (let ((str "") (n marker))
     (while (progn
-             (setq str (concat str (char-to-string (+ consult--tofu-char
-                                                      (% n consult--tofu-range)))))
+             (setq str (concat (char-to-string (+ consult--tofu-char
+                                                  (% n consult--tofu-range)))
+                               str))
              (and (>= n consult--tofu-range) (setq n (/ n consult--tofu-range)))))
     str))
 
@@ -1486,9 +1487,8 @@ PREVIEW-KEY is the preview key."
   (let* ((min (minibuffer-prompt-end))
          (max (point-max))
          (pos min)
-         (cmin consult--tofu-char)
-         (cmax (- (+ consult--tofu-char consult--tofu-range) 1)))
-    (while (and (< pos max) (<= cmin (char-after pos) cmax))
+         (high (+ consult--tofu-char consult--tofu-range -1)))
+    (while (and (< pos max) (<= consult--tofu-char (char-after pos) high))
       (setq pos (1+ pos)))
     (when (> pos min)
       (remove-list-of-text-properties min pos '(display))
@@ -2020,9 +2020,8 @@ CAND is the currently selected candidate."
       ;; Strip unique line number prefix
       (let ((i 0)
             (n (length cand))
-            (cmin consult--tofu-char)
-            (cmax (- (+ consult--tofu-char consult--tofu-range) 1)))
-        (while (and (< i n) (<= cmin (aref cand i) cmax))
+            (high (+ consult--tofu-char consult--tofu-range -1)))
+        (while (and (< i n) (<= consult--tofu-char (aref cand i) high))
           (setq i (1+ i)))
         (when (> i 0)
           (setq cand (substring cand i))))
