@@ -4,10 +4,13 @@
 
 * Development (main branch)
 
+- Bugfixes
 - consult-keep/focus-lines: Align behavior on regions with built-in keep-lines.
+- consult-buffer: Enable file sources only when recentf-mode is enabled
 
 * Version 0.5 (2021-02-09)
 
+- Bugfixes
 - consult-keep/focus-lines: If region is active, operate only on the region.
 - consult-register-format: Do not truncate register strings.
 - Multi sources/consult-buffer: Ensure that original buffer is
