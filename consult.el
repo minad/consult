@@ -51,7 +51,6 @@
 (require 'compile)
 (require 'imenu)
 (require 'kmacro)
-(require 'outline)
 (require 'recentf)
 (require 'ring)
 (require 'seq)
@@ -1784,7 +1783,11 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
   (consult--forbid-minibuffer)
   (consult--fontify-all)
   (let* ((line (line-number-at-pos (point-min) consult-line-numbers-widen))
-         (heading-regexp (concat "^\\(?:" outline-regexp "\\)"))
+         (heading-regexp (concat "^\\(?:"
+                                 (if (boundp 'outline-regexp)
+                                     outline-regexp
+                                   "[*\^L]+") ;; default definition from outline.el
+                                 "\\)"))
          (candidates))
     (save-excursion
       (goto-char (point-min))
