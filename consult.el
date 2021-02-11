@@ -3501,6 +3501,8 @@ same major mode as the current buffer are used. See also
   (interactive)
   (consult--imenu (consult--imenu-all-items (consult--imenu-project-buffers))))
 
+;;;;; Command: consult-grep
+
 (defun consult--grep-matches (lines)
   "Find grep match for REGEXP in LINES."
   (let ((candidates))
@@ -3521,8 +3523,6 @@ same major mode as the current buffer are used. See also
             (setq str (consult--strip-ansi-escape str))
             (push (list (concat loc str) file line (or pos 0)) candidates)))))
     (nreverse candidates)))
-
-;;;;; Command: consult-grep
 
 (defun consult--grep-state ()
   "Grep preview state function."
