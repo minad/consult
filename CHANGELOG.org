@@ -7,6 +7,7 @@
 - Bugfixes
 - consult-keep/focus-lines: Align behavior on regions with built-in keep-lines.
 - consult-buffer: Enable file sources only when recentf-mode is enabled
+- consult--multi: Add :default flag, use flag for consult--source-buffer
 
 * Version 0.5 (2021-02-09)
 
