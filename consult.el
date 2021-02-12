@@ -315,12 +315,12 @@ Each element of the list must have the form '(char name handler)."
   :type '(repeat (list character string function)))
 
 (defcustom consult-config nil
-  "Command configuration alists, which allows fine-grained configuration.
+  "Command configuration alist, which allows fine-grained configuration.
 
-The options set here will be passed to `consult--read', when called
-from the corresponding command. Note that the options depend on the
-private `consult--read' API and should not be considered as stable as
-the public API."
+Each element of the list must have the form (command-name plist...). The options
+set here will be passed to `consult--read', when called from the corresponding
+command. Note that the options depend on the private `consult--read' API and
+should not be considered as stable as the public API."
   :type '(alist :key-type symbol :value-type plist))
 
 ;;;; Faces
