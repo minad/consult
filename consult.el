@@ -1635,12 +1635,16 @@ MAX-LEN is the maximum candidate length."
 
 (defun consult--multi-candidates (sources)
   "Return candidates from SOURCES for `consult--multi'."
-  (let ((idx 0) (max-len 0) (candidates))
+  (let ((def) (idx 0) (max-len 0) (candidates))
     (seq-doseq (src sources)
       (let* ((face (plist-get src :face))
              (cat (plist-get src :category))
              (items (plist-get src :items))
              (items (if (functionp items) (funcall items) items)))
+        (when (and (not def) (plist-get src :default) items)
+          (setq def (concat (propertize (char-to-string (+ consult--tofu-char idx))
+                                        'invisible t)
+                            (car items))))
         (dolist (item items)
           (let* ((cand (concat (char-to-string (+ consult--tofu-char idx)) item))
                  (len (length cand)))
@@ -1650,7 +1654,7 @@ MAX-LEN is the maximum candidate length."
             (when (> len max-len) (setq max-len len))
             (push cand candidates))))
       (setq idx (1+ idx)))
-    (cons (+ 3 max-len) (nreverse candidates))))
+    (list def (+ 3 max-len) (nreverse candidates))))
 
 (defun consult--multi-preprocess (sources)
   "Preprocess SOURCES, remove disabled sources."
@@ -1708,23 +1712,26 @@ Optional source fields:
 * :face - Face used for highlighting the candidates.
 * :annotate - Annotation function called for each candidate, returns string.
 * :history - Name of history variable to add selected candidate.
+* :default - Must be t if the first item of the source is the default value.
 * :action - Action function called with the selected candidate.
 * :state - State constructor for the source, must return the state function.
 * Other source fields can be added specifically to the use case."
-  (let* ((sources (consult--multi-preprocess sources))
-         (candidates
-          (consult--with-increased-gc
-           (let ((consult--cache))
-             (consult--multi-candidates sources))))
-         (selected (apply #'consult--read
-                          (cdr candidates)
+  (pcase-let*
+      ((sources (consult--multi-preprocess sources))
+       (`(,def ,max-len ,candidates)
+        (consult--with-increased-gc
+         (let ((consult--cache))
+           (consult--multi-candidates sources))))
+       (selected (apply #'consult--read
+                          candidates
                           (append
                            options
                            (list
+                            :default   def
                             :category  'consult-multi
                             :predicate (consult--multi-predicate sources)
                             :narrow    (consult--multi-narrow sources)
-                            :annotate  (consult--multi-annotate sources (car candidates))
+                            :annotate  (consult--multi-annotate sources max-len)
                             :lookup    (consult--multi-lookup sources)
                             :state     (consult--multi-state sources))))))
     (when-let (history (plist-get (cdr selected) :history))
@@ -3225,6 +3232,7 @@ The command supports previewing the currently selected theme."
     :face     consult-buffer
     :history  buffer-name-history
     :state    ,#'consult--buffer-state
+    :default  t
     :items
     ,(lambda ()
        (let ((filter (consult--regexp-filter consult-buffer-filter)))

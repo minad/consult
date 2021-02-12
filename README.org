@@ -480,6 +480,7 @@ variables and functions with their descriptions.
   - =:face= Face used for highlighting the candidates.
   - =:annotate= Annotation function called for each candidate, returns string.
   - =:history= Name of history variable to add selected candidate.
+  - =:default= Must be t if the first item of the source is the default value.
   - =:action= Action function called with the selected candidate.
   - =:state= State constructor for the source, must return the state function.
   - Other source fields can be added specifically to the use case.
