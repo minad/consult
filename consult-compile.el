@@ -70,7 +70,7 @@ The command supports preview of the currently selected error."
   (consult--read
    (consult--with-increased-gc (consult-compile--error-candidates))
    :prompt "Go to error: "
-   :category 'consult-error
+   :category 'consult-compile-error
    :sort nil
    :require-match t
    :lookup #'consult--lookup-cadr
