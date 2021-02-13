@@ -20,6 +20,7 @@
 - Expose preview functionality for multi-source bookmarks/files
 - Multi sources: Add :enabled, :state and :action fields
 - consult-imenu: Add faces depending on item types
+- Rename consult-error to consult-compile-error
 
 * Version 0.4 (2021-02-01)
 
