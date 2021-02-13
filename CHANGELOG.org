@@ -8,6 +8,7 @@
 - consult-keep/focus-lines: Align behavior on regions with built-in keep-lines.
 - consult-buffer: Enable file sources only when recentf-mode is enabled
 - consult--multi: Add :default flag, use flag for consult--source-buffer
+- Rename consult-error to consult-compile-error
 
 * Version 0.5 (2021-02-09)
 
@@ -20,7 +21,6 @@
 - Expose preview functionality for multi-source bookmarks/files
 - Multi sources: Add :enabled, :state and :action fields
 - consult-imenu: Add faces depending on item types
-- Rename consult-error to consult-compile-error
 
 * Version 0.4 (2021-02-01)
 
