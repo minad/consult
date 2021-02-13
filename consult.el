@@ -48,7 +48,6 @@
   (require 'cl-lib)
   (require 'subr-x))
 (require 'bookmark)
-(require 'compile)
 (require 'imenu)
 (require 'kmacro)
 (require 'recentf)
@@ -344,7 +343,7 @@ should not be considered as stable as the public API."
 
 (defface consult-preview-error
   '((t :inherit isearch-fail))
-  "Face used to for cursor previews and marks in `consult-error'.")
+  "Face used to for cursor previews and marks in `consult-compile-error'.")
 
 (defface consult-preview-yank
   '((t :inherit consult-preview-line))
@@ -1825,63 +1824,6 @@ The symbol at point is added to the future history."
    :history '(:input consult--line-history)
    :add-history (thing-at-point 'symbol)
    :state (consult--jump-state)))
-
-;;;;; Command: consult-error
-
-(defun consult--error-candidates ()
-  "Return alist of errors and positions."
-  (let ((candidates)
-        (pos (point-min)))
-    (save-excursion
-      (while (setq pos (compilation-next-single-property-change pos 'compilation-message))
-        (when-let* ((msg (get-text-property pos 'compilation-message))
-                    (loc (compilation--message->loc msg)))
-          (goto-char pos)
-          (push (list
-                 (consult--font-lock (buffer-substring pos (line-end-position)))
-                 (with-current-buffer
-                     ;; taken from compile.el
-                     (apply #'compilation-find-file
-                            (point-marker)
-                            (caar (compilation--loc->file-struct loc))
-                            (cadar (compilation--loc->file-struct loc))
-                            (compilation--file-struct->formats
-                             (compilation--loc->file-struct loc)))
-                   (goto-char (point-min))
-                   ;; location might be invalid by now
-                   (ignore-errors
-                     (forward-line (- (compilation--loc->line loc) 1))
-                     (forward-char (compilation--loc->col loc)))
-                   (point-marker))
-                 (pcase (compilation--message->type msg)
-                   (0 ?i)
-                   (1 ?w)
-                   (_ ?e)))
-                candidates))))
-    (nreverse candidates)))
-
-;;;###autoload
-(defun consult-error ()
-  "Jump to a compilation error in the current buffer.
-
-This command works in compilation buffers and grep buffers.
-The command supports preview of the currently selected error."
-  (interactive)
-  (unless (compilation-buffer-p (current-buffer))
-    (user-error "Not a compilation buffer"))
-  (consult--read
-   (consult--with-increased-gc (consult--error-candidates))
-   :prompt "Go to error: "
-   :category 'consult-error
-   :sort nil
-   :require-match t
-   :lookup #'consult--lookup-cadr
-   :narrow `(,(lambda (cand) (= (caddr cand) consult--narrow))
-             (?e . "Error")
-             (?w . "Warning")
-             (?i . "Info"))
-   :history '(:input consult--error-history)
-   :state (consult--jump-state 'consult-preview-error)))
 
 ;;;;; Command: consult-mark
 

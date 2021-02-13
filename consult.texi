@@ -362,14 +362,13 @@ command as described in the @uref{https://github.com/minad/consult/wiki, Consult
 
 @cindex compilation errors
 
-@findex consult-error
+@findex consult-compile-error
 @findex consult-flycheck
 @findex consult-flymake
 @itemize
 @item
-@samp{consult-error}: Jump to an error. Supports live preview and recursive
-editing. In contrast to @samp{consult-flycheck} it shows the line and is
-more general since it is not tied to a specific backend.
+@samp{consult-compile-error}: Jump to a compilation error. Supports live preview
+narrowing and and recursive editing.
 @item
 @samp{consult-flycheck}: Jump to flycheck error. Supports live preview and
 recursive editing. The command supports narrowing. Press @samp{e SPC},
@@ -378,8 +377,7 @@ This command requires to install the additional @samp{consult-flycheck.el}
 package since the main @samp{consult.el} package only depends on Emacs core
 components.
 @item
-@samp{consult-flymake}: Jump to Flymake diagnostic, like
-@samp{consult-flycheck}.
+@samp{consult-flymake}: Jump to Flymake diagnostic, like @samp{consult-flycheck}.
 @end itemize
 
 @node Histories
@@ -825,7 +823,6 @@ contributed.
          ("M-g k" . consult-global-mark)
          ("M-g i" . consult-imenu)
          ("M-g I" . consult-project-imenu)
-         ("M-g e" . consult-error)
          ;; M-s bindings (search-map)
          ("M-s f" . consult-find)
          ("M-s L" . consult-locate)
@@ -841,7 +838,12 @@ contributed.
          :map isearch-mode-map
          ("M-e" . consult-isearch)                 ;; orig. isearch-edit-string
          ("M-s e" . consult-isearch)               ;; orig. isearch-edit-string
-         ("M-s l" . consult-line))                 ;; required by consult-line to detect isearch
+         ("M-s l" . consult-line)                  ;; required by consult-line to detect isearch
+         ;; Compilation mode integration
+         :map compilation-minor-mode-map
+         ("e" . consult-compile-error)
+         :map compilation-mode-map
+         ("e" . consult-compile-error))
 
   ;; The :init configuration is always executed (Not lazy)
   :init
