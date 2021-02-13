@@ -667,6 +667,7 @@ convenience. For example views can be added to the list of virtual buffers
 from a library like @uref{https://github.com/minad/bookmark-view/}.
 
 @lisp
+;; Configure new bookmark-view source
 (add-to-list 'consult-buffer-sources
               (list :name     "View"
                     :narrow   ?v
@@ -676,6 +677,18 @@ from a library like @uref{https://github.com/minad/bookmark-view/}.
                     :action   #'consult--bookmark-jump
                     :items    #'bookmark-view-names)
               'append)
+
+;; Modify bookmark source, such that views are hidden
+(setq consult--source-bookmark
+      (plist-put
+       consult--source-bookmark :items
+       (lambda ()
+         (bookmark-maybe-load-default-file)
+         (mapcar #'car
+                 (seq-remove (lambda (x)
+                               (eq #'bookmark-view-handler
+                                   (alist-get 'handler (cdr x))))
+                             bookmark-alist)))))
 @end lisp
 
 Other useful sources allow the creation of terminal and eshell

@@ -521,6 +521,7 @@ variables and functions with their descriptions.
   from a library like https://github.com/minad/bookmark-view/.
 
   #+begin_src emacs-lisp
+  ;; Configure new bookmark-view source
   (add-to-list 'consult-buffer-sources
                 (list :name     "View"
                       :narrow   ?v
@@ -530,6 +531,18 @@ variables and functions with their descriptions.
                       :action   #'consult--bookmark-jump
                       :items    #'bookmark-view-names)
                 'append)
+
+  ;; Modify bookmark source, such that views are hidden
+  (setq consult--source-bookmark
+        (plist-put
+         consult--source-bookmark :items
+         (lambda ()
+           (bookmark-maybe-load-default-file)
+           (mapcar #'car
+                   (seq-remove (lambda (x)
+                                 (eq #'bookmark-view-handler
+                                     (alist-get 'handler (cdr x))))
+                               bookmark-alist)))))
   #+end_src
 
   Other useful sources allow the creation of terminal and eshell
