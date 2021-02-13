@@ -1,4 +1,4 @@
-;;; consult-compile.el --- Provides the command `consult-compile-error' -*- lexical-binding: t; -*-
+;;; consult-compile.el --- Provides the command `consult-compile-error' -*- lexical-binding: t -*-
 
 ;; This file is not part of GNU Emacs.
 
@@ -17,8 +17,9 @@
 
 ;;; Commentary:
 
-;; Provides the command `consult-compile-error'. This is an extra package,
-;; to avoid loading compile.el.
+;; Provides the command `consult-compile-error'. This is an extra
+;; package, to avoid loading compile.el. The `consult-compile-error'
+;; command is autoloaded.
 
 ;;; Code:
 

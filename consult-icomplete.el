@@ -1,4 +1,4 @@
-;;; consult-icomplete.el --- Icomplete integration for Consult -*- lexical-binding: t; -*-
+;;; consult-icomplete.el --- Icomplete integration for Consult -*- lexical-binding: t -*-
 
 ;; This file is not part of GNU Emacs.
 
@@ -17,7 +17,8 @@
 
 ;;; Commentary:
 
-;; Integration code for Icomplete.
+;; Integration code for the Icomplete completion system. This package
+;; is automatically loaded by Consult.
 
 ;;; Code:
 

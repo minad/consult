@@ -1,4 +1,4 @@
-;;; consult-selectrum.el --- Selectrum integration for Consult -*- lexical-binding: t; -*-
+;;; consult-selectrum.el --- Selectrum integration for Consult -*- lexical-binding: t -*-
 
 ;; This file is not part of GNU Emacs.
 
@@ -17,7 +17,8 @@
 
 ;;; Commentary:
 
-;; Integration code for Selectrum.
+;; Integration code for the Selectrum completion system. This package
+;; is automatically loaded by Consult.
 
 ;;; Code:
 

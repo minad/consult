@@ -1,4 +1,4 @@
-;;; consult-flycheck.el --- Provides the command `consult-flycheck' -*- lexical-binding: t; -*-
+;;; consult-flycheck.el --- Provides the command `consult-flycheck' -*- lexical-binding: t -*-
 
 ;; Author: Daniel Mendler, Consult and Selectrum contributors
 ;; Maintainer: Daniel Mendler
@@ -25,8 +25,8 @@
 
 ;;; Commentary:
 
-;; Provides the command `consult-flycheck'. This is an extra package, since the
-;; consult.el package only depends on Emacs core components.
+;; Provides the command `consult-flycheck'. This is an extra package,
+;; since the consult.el package only depends on Emacs core components.
 
 ;;; Code:
 
