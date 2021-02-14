@@ -865,6 +865,7 @@ MARKER is the cursor position."
                       (message "File `%s' (%s) is too large for preview"
                                name (file-size-human-readable size)))
                   (let* ((enable-dir-local-variables nil)
+                         (enable-local-variables (and enable-local-variables :safe))
                          (inhibit-message t)
                          (buf (find-file-noselect
                                name 'nowarn
