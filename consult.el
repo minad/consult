@@ -2322,54 +2322,62 @@ functions and in `consult-completion-in-region'."
 The function is called with 4 arguments: START END COLLECTION PREDICATE.
 The arguments and expected return value are as specified for
 `completion-in-region'. Use as a value for `completion-in-region-function'."
-  (let* ((initial (buffer-substring-no-properties start end))
-         (limit (car (completion-boundaries initial collection predicate "")))
-         (metadata (completion-metadata initial collection predicate))
-         (category (completion-metadata-get metadata 'category))
-         (all (completion-all-completions initial collection predicate
-                                          (length initial)))
-         (exit-status 'finished)
-         (completion
-          (cond
-           ((atom all) nil)
-           ((and (consp all) (atom (cdr all)))
-            (setq exit-status 'sole)
-            (concat (substring initial 0 limit) (car all)))
-           (t (let ((enable-recursive-minibuffers t)
-                    (absolute (file-name-absolute-p initial)))
-                (car
-                 (consult--with-preview
-                     (or (alist-get :preview-key
-                                    (alist-get 'consult-completion-in-region
-                                               consult-config))
-                         consult-preview-key)
-                     (consult--region-state
-                      start end 'consult-preview-completion-in-region)
-                     (lambda (_input cand)
-                       (if (eq category 'file)
-                           (let ((file (substitute-in-file-name cand)))
-                             (if absolute file (file-relative-name file)))
-                         cand))
-                     (apply-partially #'run-hook-with-args-until-success
-                                      'consult--completion-candidate-hook)
-                   (if (eq category 'file)
-                       ;; When completing files with consult-completion-in-region, the point in the
-                       ;; minibuffer gets placed initially at the beginning of the last path component.
-                       ;; By using the filename as DIR argument (second argument of read-file-name), it
-                       ;; starts at the end of minibuffer contents, as for other types of completion.
-                       ;; However this is undefined behavior since initial does not only contain the
-                       ;; directory, but also the filename.
-                       (read-file-name
-                        "Completion: " initial initial t nil predicate)
-                     (completing-read
-                      "Completion: " collection predicate t initial)))))))))
-    (if (null completion)
-        (progn (message "No completion") nil)
-      (delete-region start end)
-      (insert (substring-no-properties completion))
-      (when-let (exit (plist-get completion-extra-properties :exit-function))
-        (funcall exit completion exit-status))
-      t)))
+  (catch 'instead
+    (let* ((initial (buffer-substring-no-properties start end))
+           (limit (car (completion-boundaries initial collection predicate "")))
+           (metadata (completion-metadata initial collection predicate))
+           (category (completion-metadata-get metadata 'category))
+           (all (completion-all-completions initial collection predicate
+                                            (length initial)))
+           (exit-status 'finished)
+           (completion
+            (cond
+             ((and completion-cycle-threshold
+                   (not (ignore-errors
+                          ;; error if completion-cycle-threshold is t
+                          ;; or the improper list all is too short
+                          (consp (nthcdr completion-cycle-threshold all)))))
+              (throw 'instead
+                     (completion--in-region start end collection predicate)))
+             ((atom all) nil)
+             ((and (consp all) (atom (cdr all)))
+              (setq exit-status 'sole)
+              (concat (substring initial 0 limit) (car all)))
+             (t (let ((enable-recursive-minibuffers t)
+                      (absolute (file-name-absolute-p initial)))
+                  (car
+                   (consult--with-preview
+                       (or (alist-get :preview-key
+                                      (alist-get 'consult-completion-in-region
+                                                 consult-config))
+                           consult-preview-key)
+                       (consult--region-state
+                        start end 'consult-preview-completion-in-region)
+                       (lambda (_input cand)
+                         (if (eq category 'file)
+                             (let ((file (substitute-in-file-name cand)))
+                               (if absolute file (file-relative-name file)))
+                           cand))
+                       (apply-partially #'run-hook-with-args-until-success
+                                        'consult--completion-candidate-hook)
+                     (if (eq category 'file)
+                         ;; When completing files with consult-completion-in-region, the point in the
+                         ;; minibuffer gets placed initially at the beginning of the last path component.
+                         ;; By using the filename as DIR argument (second argument of read-file-name), it
+                         ;; starts at the end of minibuffer contents, as for other types of completion.
+                         ;; However this is undefined behavior since initial does not only contain the
+                         ;; directory, but also the filename.
+                         (read-file-name
+                          "Completion: " initial initial t nil predicate)
+                       (completing-read
+                        "Completion: " collection predicate t initial)))))))))
+      (if (null completion)
+          (progn (message "No completion") nil)
+        (delete-region start end)
+        (insert (substring-no-properties completion))
+        (when-let (exit (plist-get completion-extra-properties :exit-function))
+          (funcall exit completion exit-status))
+        t))))
 
 ;;;;; Command: consult-mode-command
 
