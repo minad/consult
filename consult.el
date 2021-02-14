@@ -237,7 +237,7 @@ command options."
   :type 'integer)
 
 (defcustom consult-ripgrep-command
-  "rg --null --line-buffered --color=always --max-columns=200\
+  "rg --null --line-buffered --color=always --max-columns=250\
    --no-heading --line-number . -e ARG OPTS"
   "Command line string for ripgrep, see `consult-ripgrep'.
 
@@ -3469,22 +3469,23 @@ same major mode as the current buffer are used. See also
         (when (string-match consult--grep-regexp str)
           (let* ((file (expand-file-name (consult--strip-ansi-escape (match-string 1 str))))
                  (line (string-to-number (consult--strip-ansi-escape (match-string 2 str))))
-                 (str (substring str
-                                 (match-end 0)
-                                 (min (+ (match-end 0) consult-grep-max-columns)
+                 (end (match-end 0))
+                 (str (substring str end
+                                 (min (+ end (* 2 consult-grep-max-columns))
                                       (length str))))
                  (loc (consult--format-location (string-remove-prefix default-directory file) line))
                  (matches)
                  (col)
                  (start 0))
             (while (string-match consult--grep-match-regexp str start)
-              (unless col
-                (setq col (match-beginning 0)))
+              (unless col (setq col (match-beginning 0)))
               (push (substring str 0 (match-beginning 0)) matches)
               (push (propertize (match-string 1 str) 'face 'consult-preview-match) matches)
               (setq start (match-end 0)))
             (push (substring str start) matches)
             (setq str (consult--strip-ansi-escape (apply #'concat (nreverse matches))))
+            (when (> (length str) consult-grep-max-columns)
+              (setq str (substring str 0 consult-grep-max-columns)))
             (push (list (concat loc str) file line (or col 0)) candidates)))))
     (nreverse candidates)))
 
