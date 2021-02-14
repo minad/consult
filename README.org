@@ -861,7 +861,9 @@ It is recommended to install the following package combination:
 - [[https://github.com/oantolin/orderless][orderless]]: Completion style, Flexible candidate filtering
 - [[https://github.com/raxod502/prescient.el][prescient]]: Frecency-based candidate sorting, also offers filtering
 
-Additional recommended packages for wider integration:
+There exist more packages related to Consult which provide wider integration
+with the Emacs ecosystem. You may want to install some of these packages too
+depending on your personal preferences.
 
 - [[https://github.com/justbur/emacs-which-key][which-key]]: Helpful mode showing keybindings, also shows the Consult narrowing keys
 - [[https://github.com/mhayashi1120/Emacs-wgrep][wgrep]]: Editing of grep buffers, can be used together with =consult-grep= via Embark
@@ -870,10 +872,11 @@ Additional recommended packages for wider integration:
 - [[https://codeberg.org/jao/consult-notmuch][consult-notmuch]]: Access the [[https://notmuchmail.org/][Notmuch]] email system using Consult
 - [[https://codeberg.org/jao/espotify][consult-spotify]]: Access the Spotify API and control your local music player.
 
-Note that all packages are independent and can potentially be exchanged
-with alternative components, since there exist no hard dependencies.
-Furthermore it is possible to get started with only Selectrum and
-Consult and add more components later to the mix.
+Note that all packages are independent and can potentially be exchanged with
+alternative components, since there exist no hard dependencies. Furthermore it
+is possible to get started with only default completion and Consult and add more
+components later to the mix, e.g., using Selectrum for enhanced minibuffer
+completion or Embark for actions.
 
 * Bug reports
   :properties:

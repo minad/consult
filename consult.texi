@@ -1091,7 +1091,9 @@ consult-flycheck: Provides the consult-flycheck command
 @uref{https://github.com/raxod502/prescient.el, prescient}: Frecency-based candidate sorting, also offers filtering
 @end itemize
 
-Additional recommended packages for wider integration:
+There exist more packages related to Consult which provide wider integration
+with the Emacs ecosystem. You may want to install some of these packages too
+depending on your personal preferences.
 
 @itemize
 @item
@@ -1108,10 +1110,11 @@ Additional recommended packages for wider integration:
 @uref{https://codeberg.org/jao/espotify, consult-spotify}: Access the Spotify API and control your local music player.
 @end itemize
 
-Note that all packages are independent and can potentially be exchanged
-with alternative components, since there exist no hard dependencies.
-Furthermore it is possible to get started with only Selectrum and
-Consult and add more components later to the mix.
+Note that all packages are independent and can potentially be exchanged with
+alternative components, since there exist no hard dependencies. Furthermore it
+is possible to get started with only default completion and Consult and add more
+components later to the mix, e.g., using Selectrum for enhanced minibuffer
+completion or Embark for actions.
 
 @node Bug reports
 @chapter Bug reports
