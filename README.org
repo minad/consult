@@ -868,6 +868,7 @@ Additional recommended packages for wider integration:
 - [[https://github.com/minad/bookmark-view][bookmark-view]]: Store window configuration as bookmarks, integrates with =consult-buffer=
 - [[https://github.com/d12frosted/flyspell-correct][flyspell-correct]]: Apply spelling corrections by selecting via =completing-read=
 - [[https://codeberg.org/jao/consult-notmuch][consult-notmuch]]: Access the [[https://notmuchmail.org/][Notmuch]] email system using Consult
+- [[https://codeberg.org/jao/espotify][consult-spotify]]: Access the Spotify API and control your local music player.
 
 Note that all packages are independent and can potentially be exchanged
 with alternative components, since there exist no hard dependencies.
