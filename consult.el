@@ -349,6 +349,10 @@ should not be considered as stable as the public API."
   '((t :inherit consult-preview-line))
   "Face used to for yank previews in `consult-yank'.")
 
+(defface consult-preview-completion-in-region
+  '((t :inherit consult-preview-yank))
+  "Face used to for completion previews in `consult-completion-in-region'.")
+
 (defface consult-narrow-indicator
   '((t :inherit warning))
   "Face used for the narrowing indicator.")
@@ -2293,6 +2297,23 @@ The command respects narrowing and the settings
 
 ;;;;; Command: consult-completion-in-region
 
+(defun consult--region-state (start end face)
+  "State function for previewing a candidate in a specific region.
+The candidates are previewed in the region from START to END
+using the given FACE. This function is used as the `:state'
+argument for `consult--read' in the `consult-yank' family of
+functions and in `consult-completion-in-region'."
+  (let (ov)
+    (lambda (cand restore)
+      (if restore
+          (when ov (delete-overlay ov))
+        (unless ov (setq ov (consult--overlay start end 'invisible t)))
+        ;; Use `add-face-text-property' on a copy of "cand in order to merge face properties
+        (setq cand (copy-sequence cand))
+        (add-face-text-property 0 (length cand) face t cand)
+        ;; Use the `before-string' property since the overlay might be empty.
+        (overlay-put ov 'before-string cand)))))
+
 ;; Use minibuffer completion as the UI for completion-at-point
 ;;;###autoload
 (defun consult-completion-in-region (start end collection &optional predicate)
@@ -2322,10 +2343,26 @@ The arguments and expected return value are as specified for
                     ;; starts at the end of minibuffer contents, as for other types of completion.
                     ;; However this is undefined behavior since initial does not only contain the
                     ;; directory, but also the filename.
-                    (read-file-name
-                     "Completion: " initial initial t nil predicate)
-                  (completing-read
-                   "Completion: " collection predicate t initial)))))))
+                    (when-let ((file (read-file-name
+                                      "Completion: " initial initial t nil predicate)))
+                      (if (file-name-absolute-p initial) file (file-relative-name file)))
+                  (consult--read
+                   ;; `consult--read' interprets functions as async
+                   ;; sources so if `collection' is a function we use
+                   ;; the list of strings `all' instead; however if it
+                   ;; is not a function we pass `collection' directly
+                   ;; since it might be an obarray, a list of symbols or
+                   ;; an alist containing symbols
+                   (if (functionp collection) (nconc all nil) collection)
+                   :prompt "Completion: "
+                   :predicate predicate
+                   :initial initial
+                   :history t ;; disable history
+                   :sort nil
+                   :category category
+                   :require-match t
+                   :state
+                   (consult--region-state start end 'consult-preview-completion-in-region))))))))
     (if (null completion)
         (progn (message "No completion") nil)
       (delete-region start end)
@@ -2438,17 +2475,10 @@ If no MODES are specified, use currently active major and minor modes."
    :category 'consult-yank
    :require-match t
    :state
-   ;; If previous command is yank, hide previously yanked text
-   (let* ((ov) (pt (point)) (mk (or (and (eq last-command 'yank) (mark t)) pt)))
-     (lambda (cand restore)
-       (if restore
-           (when ov (delete-overlay ov))
-         (unless ov (setq ov (consult--overlay (min pt mk) (max pt mk) 'invisible t)))
-         ;; Use `add-face-text-property' on a copy of "cand in order to merge face properties
-         (setq cand (copy-sequence cand))
-         (add-face-text-property 0 (length cand) 'consult-preview-yank t cand)
-         ;; Use the `before-string' property since the overlay might be empty.
-         (overlay-put ov 'before-string cand))))))
+   (consult--region-state (point)
+                          ;; If previous command is yank, hide previously yanked text
+                          (or (and (eq last-command 'yank) (mark t)) (point))
+                          'consult-preview-yank)))
 
 ;; Insert selected text.
 ;; Adapted from the Emacs yank function.
