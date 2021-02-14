@@ -2339,7 +2339,10 @@ The arguments and expected return value are as specified for
                     (absolute (file-name-absolute-p initial)))
                 (car
                  (consult--with-preview
-                     consult-preview-key
+                     (or (alist-get :preview-key
+                                    (alist-get 'consult-completion-in-region
+                                               consult-config))
+                         consult-preview-key)
                      (consult--region-state
                       start end 'consult-preview-completion-in-region)
                      (lambda (_input cand)
