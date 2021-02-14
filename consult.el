@@ -233,7 +233,7 @@ command options."
   :type 'string)
 
 (defcustom consult-ripgrep-command
-  "rg --null --line-buffered --color=always --max-columns=500\
+  "rg --null --line-buffered --color=always --max-columns=200\
    --no-heading --line-number . -e ARG OPTS"
   "Command line string for ripgrep, see `consult-ripgrep'.
 
@@ -3466,7 +3466,7 @@ same major mode as the current buffer are used. See also
           (let* ((file (expand-file-name (consult--strip-ansi-escape (match-string 1 str))))
                  (line (string-to-number (consult--strip-ansi-escape (match-string 2 str))))
                  ;; Limit line length
-                 (str (substring str (match-end 0) (min (+ (match-end 0) 1000) (length str))))
+                 (str (substring str (match-end 0) (min (+ (match-end 0) 250) (length str))))
                  (loc (consult--format-location (string-remove-prefix default-directory file) line))
                  (matches)
                  (col)
