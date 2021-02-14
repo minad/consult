@@ -3675,8 +3675,11 @@ See `consult-grep' for more details regarding the asynchronous search."
                            minibuffer-completion-table
                            minibuffer-completion-predicate)
           content
-        ;; Return the first candidate of the sorted completion list.
-        (car (completion-all-sorted-completions))))))
+        ;; Return the full first candidate of the sorted completion list.
+        (when-let ((completions (completion-all-sorted-completions)))
+          (concat
+           (substring content 0 (or (cdr (last completions)) 0))
+           (car completions)))))))
 
 (defun consult--default-completion-filter (category _highlight)
   "Return default filter function given the completion CATEGORY.
