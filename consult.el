@@ -232,6 +232,10 @@ substrings. ARG is replaced by the filter string and OPTS by the auxillary
 command options."
   :type 'string)
 
+(defcustom consult-grep-max-columns 250
+  "Maximal number of columns of grep output."
+  :type 'integer)
+
 (defcustom consult-ripgrep-command
   "rg --null --line-buffered --color=always --max-columns=200\
    --no-heading --line-number . -e ARG OPTS"
@@ -488,9 +492,6 @@ Size of private unicode plane b.")
 
 (defconst consult--grep-match-regexp "\e\\[[0-9;]+m\\(.*?\\)\e\\[[0-9;]*m"
   "Regexp used to find matches in grep output.")
-
-(defconst consult--grep-max-columns 250
-  "Maximal number of columns of grep output.")
 
 (defvar-local consult--focus-lines-overlays nil
   "Overlays used by `consult-focus-lines'.")
@@ -3470,7 +3471,7 @@ same major mode as the current buffer are used. See also
                  (line (string-to-number (consult--strip-ansi-escape (match-string 2 str))))
                  (str (substring str
                                  (match-end 0)
-                                 (min (+ (match-end 0) consult--grep-max-columns)
+                                 (min (+ (match-end 0) consult-grep-max-columns)
                                       (length str))))
                  (loc (consult--format-location (string-remove-prefix default-directory file) line))
                  (matches)

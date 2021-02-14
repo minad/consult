@@ -783,6 +783,7 @@ contributed.
  | consult-fontify-max-size        | 1048576            | Buffers larger than this limit are not fontified         |
  | consult-git-grep-command        | '(...)             | Command line arguments for git-grep                      |
  | consult-goto-line-numbers       | t                  | Show line numbers for =consult-goto-line=                |
+ | consult-grep-max-colums         | 250                | Maximal number of columns of the matching lines          |
  | consult-grep-command            | "grep ..."         | Command line arguments for grep                          |
  | consult-imenu-config            | ...                | Mode-specific configuration for =consult-imenu=          |
  | consult-line-numbers-widen      | t                  | Show absolute line numbers when narrowing is active.     |

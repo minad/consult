@@ -958,6 +958,9 @@ an overview of all Consult variables and functions with their descriptions.
 @item consult-goto-line-numbers
 @tab t
 @tab Show line numbers for @samp{consult-goto-line}
+@item consult-grep-max-colums
+@tab 250
+@tab Maximal number of columns of the matching lines
 @item consult-grep-command
 @tab "grep @dots{}"
 @tab Command line arguments for grep
