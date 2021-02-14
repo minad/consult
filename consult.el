@@ -489,6 +489,9 @@ Size of private unicode plane b.")
 (defconst consult--grep-match-regexp "\e\\[[0-9;]+m\\(.*?\\)\e\\[[0-9;]*m"
   "Regexp used to find matches in grep output.")
 
+(defconst consult--grep-max-columns 250
+  "Maximal number of columns of grep output.")
+
 (defvar-local consult--focus-lines-overlays nil
   "Overlays used by `consult-focus-lines'.")
 
@@ -3465,8 +3468,10 @@ same major mode as the current buffer are used. See also
         (when (string-match consult--grep-regexp str)
           (let* ((file (expand-file-name (consult--strip-ansi-escape (match-string 1 str))))
                  (line (string-to-number (consult--strip-ansi-escape (match-string 2 str))))
-                 ;; Limit line length
-                 (str (substring str (match-end 0) (min (+ (match-end 0) 250) (length str))))
+                 (str (substring str
+                                 (match-end 0)
+                                 (min (+ (match-end 0) consult--grep-max-columns)
+                                      (length str))))
                  (loc (consult--format-location (string-remove-prefix default-directory file) line))
                  (matches)
                  (col)
