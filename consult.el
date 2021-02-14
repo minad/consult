@@ -357,7 +357,7 @@ should not be considered as stable as the public API."
   '((t :inherit consult-preview-line))
   "Face used to for yank previews in `consult-yank'.")
 
-(defface consult-preview-completion-in-region
+(defface consult-preview-region
   '((t :inherit consult-preview-yank))
   "Face used to for completion previews in `consult-completion-in-region'.")
 
@@ -2351,7 +2351,7 @@ The command respects narrowing and the settings
 
 ;;;;; Command: consult-completion-in-region
 
-(defun consult--region-state (start end face)
+(defun consult--region-preview (start end face)
   "State function for previewing a candidate in a specific region.
 The candidates are previewed in the region from START to END
 using the given FACE. This function is used as the `:state'
@@ -2405,8 +2405,8 @@ The arguments and expected return value are as specified for
                                       (alist-get 'consult-completion-in-region
                                                  consult-config))
                            consult-preview-key)
-                       (consult--region-state
-                        start end 'consult-preview-completion-in-region)
+                       (consult--region-preview
+                        start end 'consult-preview-region)
                        (lambda (_input cand)
                          (if (eq category 'file)
                              (let ((file (substitute-in-file-name cand)))
@@ -2537,7 +2537,7 @@ If no MODES are specified, use currently active major and minor modes."
    :category 'consult-yank
    :require-match t
    :state
-   (consult--region-state (point)
+   (consult--region-preview (point)
                           ;; If previous command is yank, hide previously yanked text
                           (or (and (eq last-command 'yank) (mark t)) (point))
                           'consult-preview-yank)))
