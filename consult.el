@@ -3480,7 +3480,7 @@ same major mode as the current buffer are used. See also
                  (start 0))
             (while (string-match consult--grep-match-regexp str start)
               (unless col (setq col (match-beginning 0)))
-              (push (substring str 0 (match-beginning 0)) matches)
+              (push (substring str start (match-beginning 0)) matches)
               (push (propertize (match-string 1 str) 'face 'consult-preview-match) matches)
               (setq start (match-end 0)))
             (push (substring str start) matches)
