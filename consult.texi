@@ -1102,6 +1102,8 @@ Additional recommended packages for wider integration:
 @uref{https://github.com/minad/bookmark-view, bookmark-view}: Store window configuration as bookmarks, integrates with @samp{consult-buffer}
 @item
 @uref{https://github.com/d12frosted/flyspell-correct, flyspell-correct}: Apply spelling corrections by selecting via @samp{completing-read}
+@item
+@uref{https://codeberg.org/jao/consult-notmuch, consult-notmuch}: Access the @uref{https://notmuchmail.org/, Notmuch} email system using Consult
 @end itemize
 
 Note that all packages are independent and can potentially be exchanged
@@ -1179,6 +1181,8 @@ Code contributions:
 @uref{https://github.com/omar-polo, Omar Polo}
 @item
 @uref{https://github.com/astoff, Augusto Stoffel}
+@item
+@uref{https://codeberg.org/jao/, Jose A Ortega Ruiz}
 @end itemize
 
 Advice and useful discussions:
