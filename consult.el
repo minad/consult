@@ -2335,34 +2335,31 @@ The arguments and expected return value are as specified for
            ((and (consp all) (atom (cdr all)))
             (setq exit-status 'sole)
             (concat (substring initial 0 limit) (car all)))
-           (t (let ((enable-recursive-minibuffers t))
-                (if (eq category 'file)
-                    ;; When completing files with consult-completion-in-region, the point in the
-                    ;; minibuffer gets placed initially at the beginning of the last path component.
-                    ;; By using the filename as DIR argument (second argument of read-file-name), it
-                    ;; starts at the end of minibuffer contents, as for other types of completion.
-                    ;; However this is undefined behavior since initial does not only contain the
-                    ;; directory, but also the filename.
-                    (when-let ((file (read-file-name
-                                      "Completion: " initial initial t nil predicate)))
-                      (if (file-name-absolute-p initial) file (file-relative-name file)))
-                  (consult--read
-                   ;; `consult--read' interprets functions as async
-                   ;; sources so if `collection' is a function we use
-                   ;; the list of strings `all' instead; however if it
-                   ;; is not a function we pass `collection' directly
-                   ;; since it might be an obarray, a list of symbols or
-                   ;; an alist containing symbols
-                   (if (functionp collection) (nconc all nil) collection)
-                   :prompt "Completion: "
-                   :predicate predicate
-                   :initial initial
-                   :history t ;; disable history
-                   :sort nil
-                   :category category
-                   :require-match t
-                   :state
-                   (consult--region-state start end 'consult-preview-completion-in-region))))))))
+           (t (let ((enable-recursive-minibuffers t)
+                    (absolute (file-name-absolute-p initial)))
+                (car
+                 (consult--with-preview
+                     consult-preview-key
+                     (consult--region-state
+                      start end 'consult-preview-completion-in-region)
+                     (lambda (_input cand)
+                       (if (eq category 'file)
+                           (let ((file (substitute-in-file-name cand)))
+                             (if absolute file (file-relative-name file)))
+                         cand))
+                     (apply-partially #'run-hook-with-args-until-success
+                                      'consult--completion-candidate-hook)
+                   (if (eq category 'file)
+                       ;; When completing files with consult-completion-in-region, the point in the
+                       ;; minibuffer gets placed initially at the beginning of the last path component.
+                       ;; By using the filename as DIR argument (second argument of read-file-name), it
+                       ;; starts at the end of minibuffer contents, as for other types of completion.
+                       ;; However this is undefined behavior since initial does not only contain the
+                       ;; directory, but also the filename.
+                       (read-file-name
+                        "Completion: " initial initial t nil predicate)
+                     (completing-read
+                      "Completion: " collection predicate t initial)))))))))
     (if (null completion)
         (progn (message "No completion") nil)
       (delete-region start end)
