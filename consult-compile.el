@@ -32,29 +32,12 @@
         (pos (point-min)))
     (save-excursion
       (while (setq pos (compilation-next-single-property-change pos 'compilation-message))
-        (when-let* ((msg (get-text-property pos 'compilation-message))
-                    (loc (compilation--message->loc msg)))
+        (when-let (msg (get-text-property pos 'compilation-message))
           (goto-char pos)
           (push (list
                  (consult--font-lock (consult--buffer-substring pos (line-end-position)))
-                 (with-current-buffer
-                     ;; taken from compile.el
-                     (apply #'compilation-find-file
-                            (point-marker)
-                            (caar (compilation--loc->file-struct loc))
-                            (cadar (compilation--loc->file-struct loc))
-                            (compilation--file-struct->formats
-                             (compilation--loc->file-struct loc)))
-                   (goto-char (point-min))
-                   ;; location might be invalid by now
-                   (ignore-errors
-                     (forward-line (- (compilation--loc->line loc) 1))
-                     (forward-char (compilation--loc->col loc)))
-                   (point-marker))
-                 (pcase (compilation--message->type msg)
-                   (0 ?i)
-                   (1 ?w)
-                   (_ ?e)))
+                 (point-marker)
+                 msg)
                 candidates))))
     (nreverse candidates)))
 
@@ -73,8 +56,31 @@ The command supports preview of the currently selected error."
    :category 'consult-compile-error
    :sort nil
    :require-match t
-   :lookup #'consult--lookup-cadr
-   :narrow `(,(lambda (cand) (= (caddr cand) consult--narrow))
+   :lookup (lambda (_ candidates cand)
+             (when-let (cand (assoc cand candidates))
+               (let ((marker (cadr cand))
+                     (loc (compilation--message->loc (caddr cand))))
+                 (when (buffer-live-p (marker-buffer marker))
+                   (with-current-buffer
+                       ;; taken from compile.el
+                       (apply #'compilation-find-file
+                              marker
+                              (caar (compilation--loc->file-struct loc))
+                              (cadar (compilation--loc->file-struct loc))
+                              (compilation--file-struct->formats
+                               (compilation--loc->file-struct loc)))
+                     (goto-char (point-min))
+                     ;; location might be invalid by now
+                     (ignore-errors
+                       (forward-line (- (compilation--loc->line loc) 1))
+                       (forward-char (compilation--loc->col loc)))
+                     (point-marker))))))
+   :narrow `(,(lambda (cand)
+                (= (pcase (compilation--message->type (caddr cand))
+                     (0 ?i)
+                     (1 ?w)
+                     (_ ?e))
+                   consult--narrow))
              (?e . "Error")
              (?w . "Warning")
              (?i . "Info"))
