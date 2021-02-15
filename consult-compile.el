@@ -36,7 +36,7 @@
                     (loc (compilation--message->loc msg)))
           (goto-char pos)
           (push (list
-                 (consult--font-lock (buffer-substring pos (line-end-position)))
+                 (consult--font-lock (consult--buffer-substring pos (line-end-position)))
                  (with-current-buffer
                      ;; taken from compile.el
                      (apply #'compilation-find-file
