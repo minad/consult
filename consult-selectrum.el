@@ -25,8 +25,8 @@
 (require 'consult)
 
 ;; NOTE: It is not guaranteed that Selectrum is available during compilation!
-(defvar selectrum--move-default-candidate-p)
-(defvar selectrum-active-p)
+(defvar selectrum-move-default-candidate)
+(defvar selectrum-is-active)
 (defvar selectrum-fix-vertical-window-height)
 (defvar selectrum-highlight-candidates-function)
 (defvar selectrum-refine-candidates-function)
@@ -35,7 +35,7 @@
 
 (defun consult-selectrum--filter (_category highlight)
   "Return selectrum filter function with HIGHLIGHT."
-  ;; Do not use selectrum-active-p here, since we want to always use
+  ;; Do not use selectrum-is-active here, since we want to always use
   ;; the Selectrum filtering when Selectrum is installed, even when
   ;; Selectrum is currently not active.
   ;; However if `selectrum-refine-candidates-function' is the default
@@ -52,17 +52,17 @@
 
 (defun consult-selectrum--candidate ()
   "Return current selectrum candidate."
-  (and selectrum-active-p (selectrum-get-current-candidate)))
+  (and selectrum-is-active (selectrum-get-current-candidate)))
 
 (defun consult-selectrum--refresh ()
   "Refresh selectrum view."
-  (and selectrum-active-p (selectrum-exhibit 'keep-selected)))
+  (and selectrum-is-active (selectrum-exhibit 'keep-selected)))
 
 (cl-defun consult-selectrum--read-setup-adv (candidates &key default-top &allow-other-keys)
   "Advice for `consult--read-setup' for Selectrum specific setup.
 
 See `consult--read' for the CANDIDATES and DEFAULT-TOP arguments."
-  (setq-local selectrum--move-default-candidate-p default-top)
+  (setq-local selectrum-move-default-candidate default-top)
   ;; Fix selectrum height for async completion table
   (when (functionp candidates) (setq-local selectrum-fix-vertical-window-height t)))
 
@@ -75,7 +75,7 @@ See `consult--read' for the CANDIDATES and DEFAULT-TOP arguments."
   "Advice for `consult--async-split-setup' to be used by Selectrum.
 
 FUN is the original function."
-  (if (not selectrum-active-p)
+  (if (not selectrum-is-active)
       (funcall fun)
     (setq-local selectrum-refine-candidates-function
 		(consult-selectrum--async-split-wrap selectrum-refine-candidates-function))
