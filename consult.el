@@ -2050,6 +2050,7 @@ The symbol at point and the last `isearch-string' is added to the future history
 		        (unless (or (bolp) (eobp))
 		          (forward-line 0))
 		        (point))))
+            (consult--fontify-region rbeg rend)
             (narrow-to-region rbeg rend)
             (consult--each-line beg end
               (push (buffer-substring beg end) lines))
@@ -2060,6 +2061,7 @@ The symbol at point and the last `isearch-string' is added to the future history
                             (goto-char (or pos rbeg))
                             (setq rend (+ rbeg (length content)))
                             (add-face-text-property rbeg rend 'region t)))))
+      (consult--fontify-all)
       (setq content-orig (buffer-string)
             replace (lambda (content &optional pos)
                       (delete-region (point-min) (point-max))
@@ -2125,7 +2127,6 @@ INITIAL is the initial input."
   (consult--forbid-minibuffer)
   (barf-if-buffer-read-only)
   (consult--with-increased-gc
-   (consult--fontify-all)
    (consult--prompt
     :prompt "Keep lines: "
     :initial initial
@@ -2139,7 +2140,9 @@ INITIAL is the initial input."
   (let ((lines) (overlays) (last-input))
     (save-excursion
       (save-restriction
-        (when (use-region-p)
+        (if (not (use-region-p))
+            (consult--fontify-all)
+          (consult--fontify-region (region-beginning) (region-end))
           (narrow-to-region
            (region-beginning)
            ;; Behave the same as `keep-lines'.
@@ -2200,7 +2203,6 @@ Optional INITIAL input can be provided when called from Lisp."
         (mapc #'delete-overlay consult--focus-lines-overlays)
         (setq consult--focus-lines-overlays nil))
     (consult--with-increased-gc
-     (consult--fontify-all)
      (consult--prompt
       :prompt "Focus on lines: "
       :initial initial
