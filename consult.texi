@@ -952,6 +952,9 @@ an overview of all Consult variables and functions with their descriptions.
 @item consult-fontify-max-size
 @tab 1048576
 @tab Buffers larger than this limit are not fontified
+@item consult-fontify-preserve
+@tab t
+@tab Preserve fontification for line-based commands.
 @item consult-git-grep-command
 @tab '(@dots{})
 @tab Command line arguments for git-grep

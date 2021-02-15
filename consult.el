@@ -162,6 +162,10 @@ See also `display-line-numbers-widen'."
   "Show line numbers for `consult-goto-line'."
   :type 'boolean)
 
+(defcustom consult-fontify-preserve t
+  "Preserve fontification for line-based commands."
+  :type 'boolean)
+
 (defcustom consult-fontify-max-size 1048576
   "Buffers larger than this byte limit are not fontified.
 
@@ -733,12 +737,13 @@ KEY is the key function."
   ;; line. Therefore we have to enforce font-locking now, which is slow. In
   ;; order to prevent is hang-up we check the buffer size against
   ;; `consult-fontify-max-size'.
-  (when (and jit-lock-mode (< (buffer-size) consult-fontify-max-size))
+  (when (and consult-fontify-preserve jit-lock-mode
+             (< (buffer-size) consult-fontify-max-size))
     (jit-lock-fontify-now)))
 
 (defun consult--fontify-region (start end)
   "Ensure that region between START and END is fontified."
-  (when jit-lock-mode
+  (when (and consult-fontify-preserve jit-lock-mode)
     (jit-lock-fontify-now start end)))
 
 (defun consult--define-key (map key cmd desc)
@@ -815,13 +820,19 @@ Since the line number is part of the candidate it will be matched-on during comp
                str))
             candidates)))
 
+(defsubst consult--buffer-substring (beg end)
+  "Return buffer substring between BEG and END."
+  (if consult-fontify-preserve
+      (buffer-substring beg end)
+    (buffer-substring-no-properties beg end)))
+
 (defun consult--region-with-cursor (begin end marker)
   "Return region string with a marking at the cursor position.
 
 BEGIN is the begin position.
 END is the end position.
 MARKER is the cursor position."
-  (let ((str (buffer-substring begin end)))
+  (let ((str (consult--buffer-substring begin end)))
     (if (>= marker end)
         (concat str (propertize " " 'face 'consult-preview-cursor))
       (put-text-property (- marker begin) (- (1+ marker) begin)
@@ -1805,7 +1816,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
       (while (save-excursion (re-search-forward heading-regexp nil t))
         (setq line (+ line (consult--count-lines (match-beginning 0))))
         (push (list (point-marker) line
-                    (buffer-substring (line-beginning-position) (line-end-position)))
+                    (consult--buffer-substring (line-beginning-position) (line-end-position)))
               candidates)
         (unless (eobp) (forward-char 1))))
     (unless candidates
@@ -1942,7 +1953,7 @@ The symbol at point is added to the future history."
                                                 consult-line-numbers-widen))))
          (default-cand-dist most-positive-fixnum))
     (consult--each-line beg end
-      (let ((str (buffer-substring beg end)))
+      (let ((str (consult--buffer-substring beg end)))
         (unless (string-blank-p str)
           (let ((cand (concat
                        (consult--line-number-prefix (point-marker) line line-width)
@@ -2049,7 +2060,7 @@ The symbol at point and the last `isearch-string' is added to the future history
             (consult--fontify-region rbeg rend)
             (narrow-to-region rbeg rend)
             (consult--each-line beg end
-              (push (buffer-substring beg end) lines))
+              (push (consult--buffer-substring beg end) lines))
             (setq content-orig (buffer-string)
                   replace (lambda (content &optional pos)
                             (delete-region rbeg rend)
@@ -2064,7 +2075,7 @@ The symbol at point and the last `isearch-string' is added to the future history
                       (insert content)
                       (goto-char (or pos (point-min)))))
       (consult--each-line beg end
-        (push (buffer-substring beg end) lines)))
+        (push (consult--buffer-substring beg end) lines)))
     (setq lines (nreverse lines))
     (lambda (input restore)
       (with-current-buffer buffer-orig
@@ -2149,7 +2160,7 @@ INITIAL is the initial input."
 	       (forward-line 0))
 	     (point))))
         (consult--each-line beg end
-          (push (buffer-substring beg end) lines)
+          (push (buffer-substring-no-properties beg end) lines)
           (push (make-overlay beg (1+ end)) overlays))))
     (lambda (input restore)
       ;; New input provided -> Update

@@ -781,6 +781,7 @@ contributed.
  | consult-config                  | nil                | Invididual command option configuration                  |
  | consult-find-command            | "find ..."         | Command line arguments for find                          |
  | consult-fontify-max-size        | 1048576            | Buffers larger than this limit are not fontified         |
+ | consult-fontify-preserve        | t                  | Preserve fontification for line-based commands.          |
  | consult-git-grep-command        | '(...)             | Command line arguments for git-grep                      |
  | consult-goto-line-numbers       | t                  | Show line numbers for =consult-goto-line=                |
  | consult-grep-max-colums         | 250                | Maximal number of columns of the matching lines          |
