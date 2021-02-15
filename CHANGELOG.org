@@ -10,6 +10,7 @@
 - consult--multi: Add :default flag, use flag for consult--source-buffer
 - Rename consult-error to consult-compile-error
 - Add consult-grep-max-columns to prevent performance issues for long lines
+- Add consult-fontify-preserve customization variable
 
 * Version 0.5 (2021-02-09)
 
