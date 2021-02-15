@@ -830,10 +830,10 @@ MARKER is the cursor position."
 
 (defun consult--line-with-cursor (marker)
   "Return current line where the cursor MARKER is highlighted."
-  (consult--region-with-cursor
-   (line-beginning-position)
-   (line-end-position)
-   marker))
+  (let ((beg (line-beginning-position))
+        (end (line-end-position)))
+    (consult--fontify-region beg end)
+    (consult--region-with-cursor beg end marker)))
 
 (defun consult--merge-config (args)
   "Merge `consult-config' plists into the keyword arguments of ARGS."
@@ -1838,7 +1838,6 @@ The alist contains (string . position) pairs."
   (consult--forbid-minibuffer)
   (unless (marker-position (mark-marker))
     (user-error "No marks"))
-  (consult--fontify-all)
   (let* ((max-line 0)
          (candidates))
     (save-excursion
@@ -1891,15 +1890,12 @@ The alist contains (string . position) pairs."
                 (goto-char pos)
                 ;; `line-number-at-pos' is slow, see comment in `consult--mark-candidates'.
                 (let* ((line (line-number-at-pos pos consult-line-numbers-widen))
-                       (begin (line-beginning-position))
-                       (end (line-end-position))
                        (loc (consult--format-location (buffer-name buf) line)))
-                  (consult--fontify-region begin end)
                   (push (concat
                          (propertize
                           (concat (propertize (consult--encode-location marker) 'invisible t) loc)
                           'consult-location (cons marker line))
-                         (consult--region-with-cursor begin end marker))
+                         (consult--line-with-cursor marker))
                         candidates))))))))
     (unless candidates
       (user-error "No global marks"))
