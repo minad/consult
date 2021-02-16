@@ -1222,21 +1222,18 @@ String   The input string, called when the user enters something."
                (run-hooks 'consult--completion-refresh-hook)))))
         ((pred consp) (setq candidates (nconc candidates action)))))))
 
-(defun consult--async-split (async &optional split)
+(defun consult--async-split (async)
   "Create async function, which splits the input string.
 
 The input string is split at the first comma. The part before
-the comma is passed to ASYNC, the second part is used for filtering.
-SPLIT is the splitter function."
-  (unless split
-    (setq split #'consult--split-punctuation))
+the comma is passed to ASYNC, the second part is used for filtering."
   (lambda (action)
     (pcase action
       ('setup
-       (consult--split-setup split)
+       (consult--split-setup #'consult--split-punctuation)
        (funcall async 'setup))
       ((pred stringp)
-       (let* ((async-str (car (funcall split action 0)))
+       (let* ((async-str (car (consult--split-punctuation action 0)))
               (async-len (length async-str))
               (input-len (length action))
               (end (minibuffer-prompt-end)))
