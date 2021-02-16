@@ -1180,16 +1180,21 @@ String   The input string, called when the user enters something."
              (run-hooks 'consult--completion-refresh-hook))))
         ((pred consp) (setq candidates (nconc candidates action)))))))
 
-(defun consult--async-split-string (str)
-  "Split STR in async input and filtering part.
-If the first character is a punctuation character it determines
-the separator. Examples: \"/async/filter\", \"#async#filter\"."
+(defun consult--async-split-string (str point)
+  "Split input STR in async input and filtering part.
+
+The function returns a list with three elements: The async string, the
+completion filter string and the new point position computed from POINT.
+If the first character is a punctuation character it determines the separator.
+Examples: \"/async/filter\", \"#async#filter\"."
   (if (string-match-p "^[[:punct:]]" str)
       (save-match-data
         (let ((q (regexp-quote (substring str 0 1))))
           (string-match (concat "^" q "\\([^" q "]*\\)" q "?") str)
-          (cons (match-string 1 str) (match-end 0))))
-    (cons str (length str))))
+          (list (match-string 1 str)
+                (substring str (match-end 0))
+                (- point (match-end 0)))))
+    (list str "" 0)))
 
 (defmacro consult--async-split-wrap (suffix)
   "Create completion style function with name SUFFIX."
@@ -1197,9 +1202,9 @@ the separator. Examples: \"/async/filter\", \"#async#filter\"."
     `(progn
        (defun ,name (str table pred point &optional metadata)
          (let ((completion-styles (cdr completion-styles))
-               (pos (cdr (consult--async-split-string str))))
+               (split (consult--async-split-string str point)))
            (,(intern (format "completion-%s" suffix))
-            (substring str pos) table pred (- point pos) metadata)))
+            (cadr split) table pred (caddr split) metadata)))
        ',name)))
 
 (defun consult--async-split-setup ()
@@ -1223,7 +1228,7 @@ the comma is passed to ASYNC, the second part is used for filtering."
        (consult--async-split-setup)
        (funcall async 'setup))
       ((pred stringp)
-       (let* ((async-str (car (consult--async-split-string action)))
+       (let* ((async-str (car (consult--async-split-string action 0)))
               (async-len (length async-str))
               (input-len (length action))
               (end (minibuffer-prompt-end)))
