@@ -25,10 +25,11 @@
 (require 'consult)
 
 ;; NOTE: It is not guaranteed that Selectrum is available during compilation!
-(defvar selectrum-move-default-candidate)
-(defvar selectrum-is-active)
+(defvar selectrum-default-value-format)
 (defvar selectrum-fix-vertical-window-height)
 (defvar selectrum-highlight-candidates-function)
+(defvar selectrum-is-active)
+(defvar selectrum-move-default-candidate)
 (defvar selectrum-refine-candidates-function)
 (declare-function selectrum-exhibit "selectrum")
 (declare-function selectrum-get-current-candidate "selectrum")
@@ -56,7 +57,11 @@
 
 (defun consult-selectrum--refresh ()
   "Refresh selectrum view."
-  (and selectrum-is-active (selectrum-exhibit 'keep-selected)))
+  (when selectrum-is-active
+    (if consult--narrow
+        (setq-local selectrum-default-value-format nil)
+      (kill-local-variable 'selectrum-default-value-format))
+    (selectrum-exhibit 'keep-selected)))
 
 (cl-defun consult-selectrum--read-setup-adv (candidates &key default-top &allow-other-keys)
   "Advice for `consult--read-setup' for Selectrum specific setup.
