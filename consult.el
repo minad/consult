@@ -1203,16 +1203,23 @@ Depending on the argument, the caller context differ.
 nil      Get the list of candidates.
 List     Append the list to the list of candidates.
 String   The input string, called when the user enters something."
-  (let ((candidates))
+  (let ((candidates)
+        (buffer))
     (lambda (action)
       (pcase-exhaustive action
         ('nil candidates)
-        ((or (pred stringp) 'setup 'destroy) nil)
+        ('setup
+         (setq buffer (current-buffer))
+         nil)
+        ((or (pred stringp) 'destroy) nil)
         ('flush (setq candidates nil))
         ('refresh
+         ;; Refresh the UI when the current minibuffer window belongs
+         ;; to the current asynchronous completion session.
          (when-let (win (active-minibuffer-window))
-           (with-selected-window win
-             (run-hooks 'consult--completion-refresh-hook))))
+           (when (eq (window-buffer win) buffer)
+             (with-selected-window win
+               (run-hooks 'consult--completion-refresh-hook)))))
         ((pred consp) (setq candidates (nconc candidates action)))))))
 
 (defun consult--async-split (async &optional split)
