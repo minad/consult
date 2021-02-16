@@ -1129,6 +1129,41 @@ to make it available for commands with narrowing."
   (when-let (widen (consult--widen-key))
     (consult--define-key map widen #'consult-narrow "All")))
 
+;;;; Splitting completion style
+
+(defun consult--split-punctuation (str point)
+  "Split input STR in async input and filtering part.
+
+The function returns a list with three elements: The async string, the
+completion filter string and the new point position computed from POINT.
+If the first character is a punctuation character it determines the separator.
+Examples: \"/async/filter\", \"#async#filter\"."
+  (if (string-match-p "^[[:punct:]]" str)
+      (save-match-data
+        (let ((q (regexp-quote (substring str 0 1))))
+          (string-match (concat "^" q "\\([^" q "]*\\)" q "?") str)
+          (list (match-string 1 str)
+                (substring str (match-end 0))
+                (- point (match-end 0)))))
+    (list str "" 0)))
+
+(defun consult--split-wrap (fun split)
+  "Create splitting completion style function from FUN and SPLIT."
+  (lambda (str table pred point &optional metadata)
+    (let ((completion-styles (cdr completion-styles))
+          (parts (funcall split str point)))
+      (funcall fun (cadr parts) table pred (caddr parts) metadata))))
+
+(defun consult--split-setup (split)
+  "Setup splitting completion style with splitter function SPLIT."
+  (setq-local completion-styles-alist
+              (cons (list 'consult--split
+                          (consult--split-wrap #'completion-try-completion split)
+                          (consult--split-wrap #'completion-all-completions split) "")
+                    completion-styles-alist))
+  (setq-local completion-styles
+              (cons 'consult--split completion-styles)))
+
 ;;;; Async support
 
 (defun consult--with-async-1 (async fun)
@@ -1180,55 +1215,21 @@ String   The input string, called when the user enters something."
              (run-hooks 'consult--completion-refresh-hook))))
         ((pred consp) (setq candidates (nconc candidates action)))))))
 
-(defun consult--async-split-string (str point)
-  "Split input STR in async input and filtering part.
-
-The function returns a list with three elements: The async string, the
-completion filter string and the new point position computed from POINT.
-If the first character is a punctuation character it determines the separator.
-Examples: \"/async/filter\", \"#async#filter\"."
-  (if (string-match-p "^[[:punct:]]" str)
-      (save-match-data
-        (let ((q (regexp-quote (substring str 0 1))))
-          (string-match (concat "^" q "\\([^" q "]*\\)" q "?") str)
-          (list (match-string 1 str)
-                (substring str (match-end 0))
-                (- point (match-end 0)))))
-    (list str "" 0)))
-
-(defmacro consult--async-split-wrap (suffix)
-  "Create completion style function with name SUFFIX."
-  (let ((name (intern (format "consult--async-split-%s" suffix))))
-    `(progn
-       (defun ,name (str table pred point &optional metadata)
-         (let ((completion-styles (cdr completion-styles))
-               (split (consult--async-split-string str point)))
-           (,(intern (format "completion-%s" suffix))
-            (cadr split) table pred (caddr split) metadata)))
-       ',name)))
-
-(defun consult--async-split-setup ()
-  "Setup `consult--async-split' completion styles."
-  (setq-local completion-styles-alist
-              (cons (list 'consult--async-split
-                          (consult--async-split-wrap try-completion)
-                          (consult--async-split-wrap all-completions) "")
-                    completion-styles-alist))
-  (setq-local completion-styles
-              (cons 'consult--async-split completion-styles)))
-
-(defun consult--async-split (async)
+(defun consult--async-split (async &optional split)
   "Create async function, which splits the input string.
 
 The input string is split at the first comma. The part before
-the comma is passed to ASYNC, the second part is used for filtering."
+the comma is passed to ASYNC, the second part is used for filtering.
+SPLIT is the splitter function."
+  (unless split
+    (setq split #'consult--split-punctuation))
   (lambda (action)
     (pcase action
       ('setup
-       (consult--async-split-setup)
+       (consult--split-setup split)
        (funcall async 'setup))
       ((pred stringp)
-       (let* ((async-str (car (consult--async-split-string action 0)))
+       (let* ((async-str (car (funcall split action 0)))
               (async-len (length async-str))
               (input-len (length action))
               (end (minibuffer-prompt-end)))

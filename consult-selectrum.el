@@ -71,27 +71,28 @@ See `consult--read' for the CANDIDATES and DEFAULT-TOP arguments."
   ;; Fix selectrum height for async completion table
   (when (functionp candidates) (setq-local selectrum-fix-vertical-window-height t)))
 
-(defun consult-selectrum--async-split-wrap (orig)
-  "Wrap selectrum candidates highlight/refinement ORIG function for `consult--async-split'."
+(defun consult-selectrum--split-wrap (orig split)
+  "Wrap candidates highlight/refinement ORIG function, splitting the input using SPLIT."
   (lambda (str cands)
-    (funcall orig (cadr (consult--async-split-string str)) cands)))
+    (funcall orig (cadr (funcall split str 0)) cands)))
 
-(defun consult-selectrum--async-split-setup-adv (fun)
-  "Advice for `consult--async-split-setup' to be used by Selectrum.
+(defun consult-selectrum--split-setup-adv (orig split)
+  "Advice for `consult--split-setup' to be used by Selectrum.
 
-FUN is the original function."
+ORIG is the original function.
+SPLIT is the splitter function."
   (if (not selectrum-is-active)
-      (funcall fun)
+      (funcall orig split)
     (setq-local selectrum-refine-candidates-function
-		(consult-selectrum--async-split-wrap selectrum-refine-candidates-function))
+		(consult-selectrum--split-wrap selectrum-refine-candidates-function split))
     (setq-local selectrum-highlight-candidates-function
-		(consult-selectrum--async-split-wrap selectrum-highlight-candidates-function))))
+		(consult-selectrum--split-wrap selectrum-highlight-candidates-function split))))
 
 (add-hook 'consult--completion-filter-hook #'consult-selectrum--filter)
 (add-hook 'consult--completion-candidate-hook #'consult-selectrum--candidate)
 (add-hook 'consult--completion-refresh-hook #'consult-selectrum--refresh)
 (advice-add #'consult--read-setup :before #'consult-selectrum--read-setup-adv)
-(advice-add #'consult--async-split-setup :around #'consult-selectrum--async-split-setup-adv)
+(advice-add #'consult--split-setup :around #'consult-selectrum--split-setup-adv)
 
 (provide 'consult-selectrum)
 ;;; consult-selectrum.el ends here
