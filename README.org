@@ -670,6 +670,7 @@ contributed.
           ("M-y" . consult-yank-pop)                ;; orig. yank-pop
           ("<help> a" . consult-apropos)            ;; orig. apropos-command
           ;; M-g bindings (goto-map)
+          ("M-g e" . consult-compile-error)
           ("M-g g" . consult-goto-line)             ;; orig. goto-line
           ("M-g M-g" . consult-goto-line)           ;; orig. goto-line
           ("M-g o" . consult-outline)
@@ -742,13 +743,6 @@ contributed.
    ;; (setq consult-project-root-function
    ;;       (lambda () (locate-dominating-file "." ".git")))
  )
-
- ;; Compilation mode integration
- (use-package compile
-   :bind (:map compilation-minor-mode-map
-          ("e" . consult-compile-error)
-          :map compilation-mode-map
-          ("e" . consult-compile-error)))
 
  ;; Optionally add the `consult-flycheck' command.
  (use-package consult-flycheck
