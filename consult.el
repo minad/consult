@@ -3640,14 +3640,16 @@ See `consult-grep' for more details regarding the asynchronous search."
   (let ((candidates))
     (save-match-data
       (dolist (str lines)
-        (when (string-match "\\`\\(.*?\\) +- +\\(.*\\)\\'" str)
-          (let ((name (match-string 1 str))
-                (desc (match-string 2 str)))
+        (when (string-match "\\`\\(.*?\\([^ ]+\\)(\\([^,)]+\\)[^)]*).*?\\) +- +\\(.*\\)\\'" str)
+          (let ((names (match-string 1 str))
+                (name (match-string 2 str))
+                (section (match-string 3 str))
+                (desc (match-string 4 str)))
             (push (cons
-                   (format "%-30s %s"
-                           (propertize name 'face 'consult-key)
+                   (format "%s - %s"
+                           (propertize names 'face 'consult-key)
                            desc)
-                   name)
+                   (concat section " " name))
                   candidates)))))
     (nreverse candidates)))
 
