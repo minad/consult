@@ -25,33 +25,46 @@
 
 (require 'consult)
 (require 'compile)
+(require 'seq)
 
-(defun consult-compile--error-candidates ()
-  "Return alist of errors and positions."
-  (let ((candidates)
-        (pos (point-min)))
-    (save-excursion
-      (while (setq pos (compilation-next-single-property-change pos 'compilation-message))
-        (when-let (msg (get-text-property pos 'compilation-message))
-          (goto-char pos)
-          (push (list
-                 (consult--font-lock (consult--buffer-substring pos (line-end-position)))
-                 (point-marker)
-                 msg)
-                candidates))))
-    (nreverse candidates)))
+(defun consult-compile--error-candidates (buffer)
+  "Return alist of errors and positions in BUFFER, a compilation buffer."
+  (with-current-buffer buffer
+    (let ((candidates)
+          (pos (point-min)))
+      (save-excursion
+        (while (setq pos (compilation-next-single-property-change pos 'compilation-message))
+          (when-let (msg (get-text-property pos 'compilation-message))
+            (goto-char pos)
+            (push (list
+                   (consult--font-lock (consult--buffer-substring pos (line-end-position)))
+                   (point-marker)
+                   msg)
+                  candidates))))
+      (nreverse candidates))))
+
+(defun consult-compile--compilation-buffers (file)
+  "Return a list of compilation buffers relevant to FILE."
+  (seq-filter (lambda (buffer)
+                (with-current-buffer buffer
+                  (and (compilation-buffer-p buffer) ;; could also use `compilation-buffer-internal-p'
+                       (file-in-directory-p file default-directory))))
+              (buffer-list)))
 
 ;;;###autoload
 (defun consult-compile-error ()
   "Jump to a compilation error in the current buffer.
 
-This command works in compilation buffers and grep buffers.
-The command supports preview of the currently selected error."
+This command collects entries from compilation buffers and grep
+buffers related to the current buffer.  The command supports
+preview of the currently selected error."
   (interactive)
-  (unless (compilation-buffer-p (current-buffer))
-    (user-error "Not a compilation buffer"))
   (consult--read
-   (consult--with-increased-gc (consult-compile--error-candidates))
+   (if-let* ((buffers (consult-compile--compilation-buffers
+                       default-directory)))
+       (consult--with-increased-gc
+        (mapcan 'consult-compile--error-candidates buffers))
+     (user-error "No compilation buffers found for the current buffer"))
    :prompt "Go to error: "
    :category 'consult-compile-error
    :sort nil
