@@ -25,7 +25,6 @@
 
 (require 'consult)
 (require 'compile)
-(require 'seq)
 
 (defun consult-compile--error-candidates (buffer)
   "Return alist of errors and positions in BUFFER, a compilation buffer."
@@ -47,7 +46,7 @@
   "Return a list of compilation buffers relevant to FILE."
   (seq-filter (lambda (buffer)
                 (with-current-buffer buffer
-                  (and (compilation-buffer-p buffer) ;; could also use `compilation-buffer-internal-p'
+                  (and (compilation-buffer-internal-p)
                        (file-in-directory-p file default-directory))))
               (buffer-list)))
 
@@ -60,11 +59,12 @@ buffers related to the current buffer.  The command supports
 preview of the currently selected error."
   (interactive)
   (consult--read
-   (if-let* ((buffers (consult-compile--compilation-buffers
-                       default-directory)))
-       (consult--with-increased-gc
-        (mapcan 'consult-compile--error-candidates buffers))
-     (user-error "No compilation buffers found for the current buffer"))
+   (consult--with-increased-gc
+    (or (mapcan #'consult-compile--error-candidates
+                (or (consult-compile--compilation-buffers
+                     default-directory)
+                    (user-error "No compilation buffers found for the current buffer")))
+        (user-error "No compilation errors found")))
    :prompt "Go to error: "
    :category 'consult-compile-error
    :sort nil
