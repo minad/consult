@@ -1147,10 +1147,10 @@ Examples: \"/async/filter\", \"#async#filter\"."
                 (- point (match-end 0)))))
     (list str "" 0)))
 
-(defun consult--split-wrap (fun split)
+(defun consult--split-wrap (fun split styles)
   "Create splitting completion style function from FUN and SPLIT."
   (lambda (str table pred point &optional metadata)
-    (let ((completion-styles (cdr completion-styles))
+    (let ((completion-styles styles)
           (parts (funcall split str point)))
       (funcall fun (cadr parts) table pred (caddr parts) metadata))))
 
@@ -1158,11 +1158,14 @@ Examples: \"/async/filter\", \"#async#filter\"."
   "Setup splitting completion style with splitter function SPLIT."
   (setq-local completion-styles-alist
               (cons (list 'consult--split
-                          (consult--split-wrap #'completion-try-completion split)
-                          (consult--split-wrap #'completion-all-completions split) "")
+                          (consult--split-wrap #'completion-try-completion
+                                               split completion-styles)
+                          (consult--split-wrap #'completion-all-completions
+                                               split completion-styles) "")
                     completion-styles-alist))
-  (setq-local completion-styles
-              (cons 'consult--split completion-styles)))
+  (setq-local completion-styles '(consult--split))
+  (setq-local completion-category-defaults nil)
+  (setq-local completion-category-overrides nil))
 
 ;;;; Async support
 
