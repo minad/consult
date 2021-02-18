@@ -8,9 +8,14 @@
 - consult-keep/focus-lines: Align behavior on regions with built-in keep-lines.
 - consult-buffer: Enable file sources only when recentf-mode is enabled
 - consult--multi: Add :default flag, use flag for consult--source-buffer
-- Rename consult-error to consult-compile-error
 - Add consult-grep-max-columns to prevent performance issues for long lines
 - Add consult-fontify-preserve customization variable
+- consult-line: Quits Isearch, when started from an Isearch session
+- consult-register-load: Align prefix argument handling with insert-register
+- Rename consult-error to consult-compile-error
+- consult-compile-error: Allow calling the command from any buffer,
+  use the errors from all compilation buffers related to the current buffer.
+- consult-man: Handle aggreated entries returned by mandoc
 
 * Version 0.5 (2021-02-09)
 
