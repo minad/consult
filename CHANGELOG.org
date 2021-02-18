@@ -16,6 +16,8 @@
 - consult-compile-error: Allow calling the command from any buffer,
   use the errors from all compilation buffers related to the current buffer.
 - consult-man: Handle aggreated entries returned by mandoc
+- consult-completion-in-region: Added preview and consult-preview-region face
+- Added consult-completion-in-region-styles customization variable
 
 * Version 0.5 (2021-02-09)
 
