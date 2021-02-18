@@ -357,6 +357,10 @@ should not be considered as stable as the public API."
   '((t :inherit consult-preview-line))
   "Face used to for yank previews in `consult-yank'.")
 
+(defface consult-preview-completion-in-region
+  '((t :inherit consult-preview-yank))
+  "Face used to for completion previews in `consult-completion-in-region'.")
+
 (defface consult-narrow-indicator
   '((t :inherit warning))
   "Face used for the narrowing indicator.")
@@ -2347,6 +2351,23 @@ The command respects narrowing and the settings
 
 ;;;;; Command: consult-completion-in-region
 
+(defun consult--region-state (start end face)
+  "State function for previewing a candidate in a specific region.
+The candidates are previewed in the region from START to END
+using the given FACE. This function is used as the `:state'
+argument for `consult--read' in the `consult-yank' family of
+functions and in `consult-completion-in-region'."
+  (let (ov)
+    (lambda (cand restore)
+      (if restore
+          (when ov (delete-overlay ov))
+        (unless ov (setq ov (consult--overlay start end 'invisible t)))
+        ;; Use `add-face-text-property' on a copy of "cand in order to merge face properties
+        (setq cand (copy-sequence cand))
+        (add-face-text-property 0 (length cand) face t cand)
+        ;; Use the `before-string' property since the overlay might be empty.
+        (overlay-put ov 'before-string cand)))))
+
 ;; Use minibuffer completion as the UI for completion-at-point
 ;;;###autoload
 (defun consult-completion-in-region (start end collection &optional predicate)
@@ -2355,38 +2376,62 @@ The command respects narrowing and the settings
 The function is called with 4 arguments: START END COLLECTION PREDICATE.
 The arguments and expected return value are as specified for
 `completion-in-region'. Use as a value for `completion-in-region-function'."
-  (let* ((initial (buffer-substring-no-properties start end))
-         (limit (car (completion-boundaries initial collection predicate "")))
-         (metadata (completion-metadata initial collection predicate))
-         (category (completion-metadata-get metadata 'category))
-         (all (completion-all-completions initial collection predicate
-                                          (length initial)))
-         (exit-status 'finished)
-         (completion
-          (cond
-           ((atom all) nil)
-           ((and (consp all) (atom (cdr all)))
-            (setq exit-status 'sole)
-            (concat (substring initial 0 limit) (car all)))
-           (t (let ((enable-recursive-minibuffers t))
-                (if (eq category 'file)
-                    ;; When completing files with consult-completion-in-region, the point in the
-                    ;; minibuffer gets placed initially at the beginning of the last path component.
-                    ;; By using the filename as DIR argument (second argument of read-file-name), it
-                    ;; starts at the end of minibuffer contents, as for other types of completion.
-                    ;; However this is undefined behavior since initial does not only contain the
-                    ;; directory, but also the filename.
-                    (read-file-name
-                     "Completion: " initial initial t nil predicate)
-                  (completing-read
-                   "Completion: " collection predicate t initial)))))))
-    (if (null completion)
-        (progn (message "No completion") nil)
-      (delete-region start end)
-      (insert (substring-no-properties completion))
-      (when-let (exit (plist-get completion-extra-properties :exit-function))
-        (funcall exit completion exit-status))
-      t)))
+  (catch 'instead
+    (let* ((initial (buffer-substring-no-properties start end))
+           (limit (car (completion-boundaries initial collection predicate "")))
+           (metadata (completion-metadata initial collection predicate))
+           (category (completion-metadata-get metadata 'category))
+           (all (completion-all-completions initial collection predicate
+                                            (length initial)))
+           (exit-status 'finished)
+           (completion
+            (cond
+             ((and completion-cycle-threshold
+                   (not (ignore-errors
+                          ;; error if completion-cycle-threshold is t
+                          ;; or the improper list all is too short
+                          (consp (nthcdr completion-cycle-threshold all)))))
+              (throw 'instead
+                     (completion--in-region start end collection predicate)))
+             ((atom all) nil)
+             ((and (consp all) (atom (cdr all)))
+              (setq exit-status 'sole)
+              (concat (substring initial 0 limit) (car all)))
+             (t (let ((enable-recursive-minibuffers t)
+                      (absolute (file-name-absolute-p initial)))
+                  (car
+                   (consult--with-preview
+                       (or (alist-get :preview-key
+                                      (alist-get 'consult-completion-in-region
+                                                 consult-config))
+                           consult-preview-key)
+                       (consult--region-state
+                        start end 'consult-preview-completion-in-region)
+                       (lambda (_input cand)
+                         (if (eq category 'file)
+                             (let ((file (substitute-in-file-name cand)))
+                               (if absolute file (file-relative-name file)))
+                           cand))
+                       (apply-partially #'run-hook-with-args-until-success
+                                        'consult--completion-candidate-hook)
+                     (if (eq category 'file)
+                         ;; When completing files with consult-completion-in-region, the point in the
+                         ;; minibuffer gets placed initially at the beginning of the last path component.
+                         ;; By using the filename as DIR argument (second argument of read-file-name), it
+                         ;; starts at the end of minibuffer contents, as for other types of completion.
+                         ;; However this is undefined behavior since initial does not only contain the
+                         ;; directory, but also the filename.
+                         (read-file-name
+                          "Completion: " initial initial t nil predicate)
+                       (completing-read
+                        "Completion: " collection predicate t initial)))))))))
+      (if (null completion)
+          (progn (message "No completion") nil)
+        (delete-region start end)
+        (insert (substring-no-properties completion))
+        (when-let (exit (plist-get completion-extra-properties :exit-function))
+          (funcall exit completion exit-status))
+        t))))
 
 ;;;;; Command: consult-mode-command
 
@@ -2492,17 +2537,10 @@ If no MODES are specified, use currently active major and minor modes."
    :category 'consult-yank
    :require-match t
    :state
-   ;; If previous command is yank, hide previously yanked text
-   (let* ((ov) (pt (point)) (mk (or (and (eq last-command 'yank) (mark t)) pt)))
-     (lambda (cand restore)
-       (if restore
-           (when ov (delete-overlay ov))
-         (unless ov (setq ov (consult--overlay (min pt mk) (max pt mk) 'invisible t)))
-         ;; Use `add-face-text-property' on a copy of "cand in order to merge face properties
-         (setq cand (copy-sequence cand))
-         (add-face-text-property 0 (length cand) 'consult-preview-yank t cand)
-         ;; Use the `before-string' property since the overlay might be empty.
-         (overlay-put ov 'before-string cand))))))
+   (consult--region-state (point)
+                          ;; If previous command is yank, hide previously yanked text
+                          (or (and (eq last-command 'yank) (mark t)) (point))
+                          'consult-preview-yank)))
 
 ;; Insert selected text.
 ;; Adapted from the Emacs yank function.
@@ -3708,8 +3746,11 @@ See `consult-grep' for more details regarding the asynchronous search."
                            minibuffer-completion-table
                            minibuffer-completion-predicate)
           content
-        ;; Return the first candidate of the sorted completion list.
-        (car (completion-all-sorted-completions))))))
+        ;; Return the full first candidate of the sorted completion list.
+        (when-let ((completions (completion-all-sorted-completions)))
+          (concat
+           (substring content 0 (or (cdr (last completions)) 0))
+           (car completions)))))))
 
 (defun consult--default-completion-filter (category _highlight)
   "Return default filter function given the completion CATEGORY.
