@@ -1600,13 +1600,34 @@ KEYMAP is a command-specific keymap."
                                                      'consult--completion-candidate-hook)
                (completing-read prompt
                                 (lambda (str pred action)
-                                  (if (eq action 'metadata)
-                                      `(metadata
-                                        ,@(when annotate `((annotation-function . ,annotate)))
-                                        ,@(when category `((category . ,category)))
-                                        ,@(unless sort '((cycle-sort-function . identity)
-                                                         (display-sort-function . identity))))
-                                    (complete-with-action action (funcall async nil) str pred)))
+                                  (pcase action
+                                    ('metadata
+                                     ;; Return completion metadata
+                                     `(metadata
+                                       ,@(when annotate `((annotation-function . ,annotate)))
+                                       ,@(when category `((category . ,category)))
+                                       ,@(unless sort '((cycle-sort-function . identity)
+                                                        (display-sort-function . identity)))))
+                                    (`(boundaries . ,_)
+                                     ;; Return completion boundaries; Currently unused by Consult.
+                                     ;; The boundaries specify the part of the input string which is
+                                     ;; supposed to be used for filtering. In the future we may want
+                                     ;; to use boundaries in order to implement async filtering.
+                                     nil)
+                                    ('nil
+                                     ;; Try to complete `str' prefix and return completed string.
+                                     ;; This is feature is only used by prefix completion styles
+                                     ;; like `basic'.
+                                     (try-completion str (funcall async nil) pred))
+                                    ('t
+                                     ;; Return all candidates matching the prefix `str'.
+                                     ;; Usually this called with the empty string, except
+                                     ;; when using `basic' completion. For other completion
+                                     ;; styles the actual filtering takes place later.
+                                     (all-completions str (funcall async nil) pred))
+                                    (_
+                                     ;; Return t if the input `str' matches one of the candidates.
+                                     (test-completion str (funcall async nil) pred))))
                                 predicate require-match initial
                                 (if (symbolp history) history (cadr history))
                                 default))))
