@@ -1148,7 +1148,11 @@ Examples: \"/async/filter\", \"#async#filter\"."
     (list str "" 0)))
 
 (defun consult--split-wrap (fun split styles)
-  "Create splitting completion style function from FUN and SPLIT."
+  "Create splitting completion style function.
+
+FUN is the original completion style function.
+SPLIT is the splitter function.
+STYLES are the original completion styles."
   (lambda (str table pred point &optional metadata)
     (let ((completion-styles styles)
           (parts (funcall split str point)))
@@ -1169,26 +1173,27 @@ Examples: \"/async/filter\", \"#async#filter\"."
 
 ;;;; Async support
 
-(defun consult--with-async-1 (async fun)
-  "Setup ASYNC for FUN."
-  (if (not (functionp async)) (funcall fun (lambda (_) async))
-    (consult--minibuffer-with-setup-hook
-        (lambda ()
-          (funcall async 'setup)
-          ;; Push input string to request refresh.
-          ;; We use a symbol in order to avoid adding lambdas to the hook variable.
-          (let ((sym (make-symbol "consult--async-after-change")))
-            (fset sym (lambda (&rest _) (funcall async (minibuffer-contents-no-properties))))
-            (run-at-time 0 nil sym)
-            (add-hook 'after-change-functions sym nil t)))
-      (unwind-protect
-          (funcall fun async)
-        (funcall async 'destroy)))))
+(defmacro consult--with-async (bind &rest body)
+  "Setup asynchronous completion in BODY.
 
-(defmacro consult--with-async (async &rest body)
-  "Setup ASYNC for BODY."
+BIND is the asynchronous function binding."
   (declare (indent 1))
-  `(consult--with-async-1 ,@(cdr async) (lambda (,(car async)) ,@body)))
+  (let ((async (car bind)))
+    `(let ((,async ,@(cdr bind)))
+       (consult--minibuffer-with-setup-hook
+           (lambda ()
+             (when (functionp ,async)
+               (funcall ,async 'setup)
+               ;; Push input string to request refresh.
+               ;; We use a symbol in order to avoid adding lambdas to the hook variable.
+               (let ((sym (make-symbol "consult--async-after-change")))
+                 (fset sym (lambda (&rest _) (funcall ,async (minibuffer-contents-no-properties))))
+                 (run-at-time 0 nil sym)
+                 (add-hook 'after-change-functions sym nil t))))
+         (let ((,async (if (functionp ,async) ,async (lambda (_) ,async))))
+           (unwind-protect
+               ,(macroexp-progn body)
+             (funcall ,async 'destroy)))))))
 
 (defun consult--async-sink ()
   "Create ASYNC sink function.
