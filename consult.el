@@ -2662,7 +2662,7 @@ meaning of prefix ARG."
     current-prefix-arg))
   (condition-case nil
       (jump-to-register reg arg)
-    (user-error (insert-register reg arg))))
+    (user-error (insert-register reg (not arg)))))
 
 (defun consult--register-action (action-list)
   "Read register key and execute action from ACTION-LIST.
