@@ -61,6 +61,10 @@
 
 ;;;; Customization
 
+(defcustom consult-completion-in-region-styles nil
+  "The `completion-styles' used by `consult-completion-in-region'."
+  :type 'completion--styles-type)
+
 (defcustom consult-narrow-key nil
   "Prefix key for narrowing during completion.
 
@@ -2377,7 +2381,8 @@ The function is called with 4 arguments: START END COLLECTION PREDICATE.
 The arguments and expected return value are as specified for
 `completion-in-region'. Use as a value for `completion-in-region-function'."
   (catch 'instead
-    (let* ((initial (buffer-substring-no-properties start end))
+    (let* ((completion-styles (or consult-completion-in-region-styles completion-styles))
+           (initial (buffer-substring-no-properties start end))
            (limit (car (completion-boundaries initial collection predicate "")))
            (metadata (completion-metadata initial collection predicate))
            (category (completion-metadata-get metadata 'category))
