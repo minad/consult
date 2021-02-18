@@ -2051,7 +2051,8 @@ The symbol at point and the last `isearch-string' is added to the future history
      :lookup #'consult--line-match
      :default (car candidates)
      ;; Add isearch-string as initial input if starting from isearch
-     :initial (or initial (and isearch-mode isearch-string))
+     :initial (or initial
+                  (and isearch-mode (prog1 isearch-string (isearch-done))))
      :state (consult--jump-state))))
 
 ;;;;; Command: consult-keep-lines
