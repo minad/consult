@@ -3207,6 +3207,7 @@ The command supports previewing the currently selected theme."
 (defvar consult--source-project-buffer
   `(:name      "Project Buffer"
     :narrow    (?p . "Project")
+    :hidden    t
     :category  buffer
     :face      consult-buffer
     :history   buffer-name-history
@@ -3225,6 +3226,7 @@ The command supports previewing the currently selected theme."
 (defvar consult--source-project-file
   `(:name      "Project File"
     :narrow    (?p . "Project")
+    :hidden    t
     :category  file
     :face      consult-file
     :history   file-name-history
