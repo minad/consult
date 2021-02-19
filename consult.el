@@ -3286,7 +3286,8 @@ The command supports previewing the currently selected theme."
     :items
     ,(lambda ()
        (let ((ht (consult--cached-buffer-file-hash)))
-         (seq-remove (lambda (x) (gethash x ht)) recentf-list))))
+         (mapcar #'abbreviate-file-name
+                 (seq-remove (lambda (x) (gethash x ht)) recentf-list)))))
   "Recent file candidate source for `consult-buffer'.")
 
 ;;;###autoload
