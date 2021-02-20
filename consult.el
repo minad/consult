@@ -711,8 +711,12 @@ KEY is the key function."
   "Return 'consult--annotation property from CAND."
   (get-text-property 0 'consult--annotation cand))
 
-(defun consult--lookup-elem (_ candidates cand)
-  "Lookup CAND in CANDIDATES alist, return element."
+(defun consult--lookup-member (_ candidates cand)
+  "Lookup CAND in CANDIDATES list, return original element."
+  (car (member cand candidates)))
+
+(defun consult--lookup-cons (_ candidates cand)
+  "Lookup CAND in CANDIDATES alist, return cons."
   (assoc cand candidates))
 
 (defun consult--lookup-cdr (_ candidates cand)
@@ -2537,6 +2541,7 @@ If no MODES are specified, use currently active major and minor modes."
    :sort nil
    :category 'consult-yank
    :require-match t
+   :lookup #'consult--lookup-member
    :state
    (consult--region-preview (point)
                           ;; If previous command is yank, hide previously yanked text
@@ -3057,7 +3062,7 @@ starts a new Isearch session otherwise."
             :keymap consult-isearch-map
             :lookup
             (lambda (_ candidates str)
-              (if-let (cand (car (member str candidates))) (substring cand 1) str))
+              (if-let (found (member str candidates)) (substring (car found) 1) str))
             :state
             (lambda (cand restore)
               (unless restore
@@ -3524,7 +3529,7 @@ The symbol at point is added to the future history."
               (eq (get-text-property 0 'consult--imenu-type (car cand)) consult--narrow))
             (mapcar (lambda (x) (cons (car x) (cadr x))) types)))
     :category 'imenu
-    :lookup #'consult--lookup-elem
+    :lookup #'consult--lookup-cons
     :history 'consult--imenu-history
     :add-history (thing-at-point 'symbol)
     :sort nil)))
