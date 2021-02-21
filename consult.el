@@ -2401,14 +2401,14 @@ The arguments and expected return value are as specified for
                 (setq exit-status 'sole)
                 (concat (substring initial 0 limit) (car all)))
                (t (let ((enable-recursive-minibuffers t)
-                        (absolute (file-name-absolute-p initial)))
+                        (absolute (file-name-absolute-p initial))
+                        (config (alist-get #'consult-completion-in-region consult-config)))
                     (car
                      (consult--with-preview
                          (unless (minibufferp)
-                           (or (alist-get :preview-key
-                                          (alist-get 'consult-completion-in-region
-                                                     consult-config))
-                               consult-preview-key))
+                           (if (plist-member config :preview-key)
+                               (plist-get config :preview-key)
+                             consult-preview-key))
                          (consult--region-preview
                           start end 'consult-preview-region)
                          (lambda (_input cand)
