@@ -2400,24 +2400,27 @@ The arguments and expected return value are as specified for
                ((and (consp all) (atom (cdr all)))
                 (setq exit-status 'sole)
                 (concat (substring initial 0 limit) (car all)))
-               (t (let ((enable-recursive-minibuffers t)
-                        (absolute (file-name-absolute-p initial))
-                        (config (alist-get #'consult-completion-in-region consult-config)))
-                    (car
-                     (consult--with-preview
-                         (unless (minibufferp)
+               (t (car
+                   (consult--with-preview
+                       ;; preview key
+                       (unless (minibufferp)
+                         (let ((config (alist-get #'consult-completion-in-region consult-config)))
                            (if (plist-member config :preview-key)
                                (plist-get config :preview-key)
-                             consult-preview-key))
-                         (consult--region-preview
-                          start end 'consult-preview-region)
-                         (lambda (_input cand)
-                           (if (eq category 'file)
-                               (let ((file (substitute-in-file-name cand)))
-                                 (if absolute file (file-relative-name file)))
-                             cand))
-                         (apply-partially #'run-hook-with-args-until-success
-                                          'consult--completion-candidate-hook)
+                             consult-preview-key)))
+                       ;; preview state
+                       (consult--region-preview
+                        start end 'consult-preview-region)
+                       ;; transformation function
+                       (if (eq category 'file)
+                           (if (file-name-absolute-p initial)
+                               (lambda (_inp cand) (substitute-in-file-name cand))
+                             (lambda (_inp cand) (file-relative-name (substitute-in-file-name cand))))
+                         (lambda (_inp cand) cand))
+                       ;; candidate function
+                       (apply-partially #'run-hook-with-args-until-success
+                                        'consult--completion-candidate-hook)
+                     (let ((enable-recursive-minibuffers t))
                        (if (eq category 'file)
                            ;; When completing files with consult-completion-in-region, the point in the
                            ;; minibuffer gets placed initially at the beginning of the last path component.
