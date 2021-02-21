@@ -631,6 +631,14 @@ Note that there are two packages as of now: =consult= and =consult-flycheck=.
 only depends on Emacs core components. The =consult= package will work out of
 the box with the default completion, Icomplete and Selectrum.
 
+There is the [[https://github.com/minad/consult/wiki][Consult wiki]], where additional configuration examples can be
+contributed.
+
+*IMPORTANT:* It is strongly recommended that you enable [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Lexical-Binding.html][lexical binding]] in your
+configuration. Consult uses a functional programming style, relying on lambdas
+and lexical closures. For this reason many Consult-related snippets require
+lexical binding.
+
 ** Use-package example
  :properties:
  :description: Configuration example based on use-package
@@ -890,6 +898,10 @@ the Emacs version, your operating system and the package manager you are using.
 Try to reproduce the issue by starting a barebone Emacs instance with =emacs -Q=
 on the command line. Then execute the following code in the scratch buffer. This
 way we can exclude side effects due to configuration settings.
+
+When evaluating Consult-related code snippets it is required to enable [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Lexical-Binding.html][lexical
+binding]]. Consult uses a functional programming style, relying on lambdas and
+lexical closures.
 
 #+begin_src emacs-lisp
 ;; Minimal setup using Selectrum

@@ -773,6 +773,14 @@ Note that there are two packages as of now: @samp{consult} and @samp{consult-fly
 only depends on Emacs core components. The @samp{consult} package will work out of
 the box with the default completion, Icomplete and Selectrum.
 
+There is the @uref{https://github.com/minad/consult/wiki, Consult wiki}, where additional configuration examples can be
+contributed.
+
+@strong{IMPORTANT:} It is strongly recommended that you enable @uref{https://www.gnu.org/software/emacs/manual/html_node/elisp/Lexical-Binding.html, lexical binding} in your
+configuration. Consult uses a functional programming style, relying on lambdas
+and lexical closures. For this reason many Consult-related snippets require
+lexical binding.
+
 @menu
 * Use-package example::          Configuration example based on use-package
 * Custom variables::             Short description of all customization settings
@@ -1132,6 +1140,10 @@ the Emacs version, your operating system and the package manager you are using.
 Try to reproduce the issue by starting a barebone Emacs instance with @samp{emacs -Q}
 on the command line. Then execute the following code in the scratch buffer. This
 way we can exclude side effects due to configuration settings.
+
+When evaluating Consult-related code snippets it is required to enable @uref{https://www.gnu.org/software/emacs/manual/html_node/elisp/Lexical-Binding.html, lexical
+binding}. Consult uses a functional programming style, relying on lambdas and
+lexical closures.
 
 @lisp
 ;; Minimal setup using Selectrum
