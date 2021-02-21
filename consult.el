@@ -63,7 +63,7 @@
 
 (defcustom consult-completion-in-region-styles nil
   "The `completion-styles' used by `consult-completion-in-region'."
-  :type 'completion--styles-type)
+  :type completion--styles-type)
 
 (defcustom consult-narrow-key nil
   "Prefix key for narrowing during completion.
