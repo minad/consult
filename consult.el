@@ -2404,10 +2404,11 @@ The arguments and expected return value are as specified for
                         (absolute (file-name-absolute-p initial)))
                     (car
                      (consult--with-preview
-                         (or (alist-get :preview-key
-                                        (alist-get 'consult-completion-in-region
-                                                   consult-config))
-                             consult-preview-key)
+                         (unless (minibufferp)
+                           (or (alist-get :preview-key
+                                          (alist-get 'consult-completion-in-region
+                                                     consult-config))
+                               consult-preview-key))
                          (consult--region-preview
                           start end 'consult-preview-region)
                          (lambda (_input cand)
