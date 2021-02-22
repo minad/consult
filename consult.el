@@ -590,6 +590,23 @@ The line beginning/ending BEG/END is bound in BODY."
            ,@body
            (setq ,beg (1+ ,end)))))))
 
+(defun consult--display-width (string)
+  "Compute width of STRING taking display and invisible properties into account.
+
+It does not correctly handle wide characters since `string-width' is not used. See also the
+complicated `org-string-width' function, which handles more cases correctly."
+  (let ((pos 0) (width 0) (end (length string)))
+    (while (< pos end)
+      (let ((nexti (next-single-property-change pos 'invisible string end)))
+        (if (get-text-property pos 'invisible string)
+            (setq pos nexti)
+          (while (< pos nexti)
+            (let ((nextd (next-single-property-change pos 'display string nexti))
+                  (display (get-text-property pos 'display string)))
+              (setq width (+ width (if (stringp display) (length display) (- nextd pos)))
+                    pos nextd))))))
+    width))
+
 (defun consult--string-hash (strings)
   "Create hashtable from STRINGS."
   (let ((ht (make-hash-table :test #'equal :size (length strings))))
@@ -1677,10 +1694,10 @@ KEYMAP is a command-specific keymap."
                          ((and narrow name) (cons narrow name)))))
                     sources)))
 
-(defun consult--multi-annotate (sources max-len)
+(defun consult--multi-annotate (sources max-width)
   "Return annotation function used by `consult--multi' with SOURCES.
 
-MAX-LEN is the maximum candidate length."
+MAX-WIDTH is the maximum candidate display width."
   (lambda (cand)
     (let* ((src (consult--multi-source sources cand))
            (annotate (plist-get src :annotate))
@@ -1688,7 +1705,7 @@ MAX-LEN is the maximum candidate length."
                     (funcall annotate (cdr (get-text-property 0 'consult-multi cand)))
                   (plist-get src :name))))
       (when ann
-        (concat (propertize " " 'display `(space :align-to (+ left ,max-len))) ann)))))
+        (concat (propertize " " 'display `(space :align-to (+ left ,max-width))) ann)))))
 
 (defun consult--multi-lookup (sources)
   "Lookup function used by `consult--multi' with SOURCES."
@@ -1701,7 +1718,7 @@ MAX-LEN is the maximum candidate length."
 
 (defun consult--multi-candidates (sources)
   "Return candidates from SOURCES for `consult--multi'."
-  (let ((def) (idx 0) (max-len 0) (candidates))
+  (let ((def) (idx 0) (max-width 0) (candidates))
     (seq-doseq (src sources)
       (let* ((face (plist-get src :face))
              (cat (plist-get src :category))
@@ -1713,14 +1730,14 @@ MAX-LEN is the maximum candidate length."
                             (car items))))
         (dolist (item items)
           (let* ((cand (concat (char-to-string (+ consult--tofu-char idx)) item))
-                 (len (length cand)))
+                 (width (consult--display-width cand)))
             (add-text-properties 0 1 (list 'invisible t 'consult-multi (cons cat item))
                                  cand)
-            (put-text-property 1 len 'face face cand)
-            (when (> len max-len) (setq max-len len))
+            (put-text-property 1 (length cand) 'face face cand)
+            (when (> width max-width) (setq max-width width))
             (push cand candidates))))
       (setq idx (1+ idx)))
-    (list def (+ 3 max-len) (nreverse candidates))))
+    (list def (+ 3 max-width) (nreverse candidates))))
 
 (defun consult--multi-preprocess (sources)
   "Preprocess SOURCES, remove disabled sources."
@@ -1784,7 +1801,7 @@ Optional source fields:
 * Other source fields can be added specifically to the use case."
   (pcase-let*
       ((sources (consult--multi-preprocess sources))
-       (`(,def ,max-len ,candidates)
+       (`(,def ,max-width ,candidates)
         (consult--with-increased-gc
          (let ((consult--cache))
            (consult--multi-candidates sources))))
@@ -1797,7 +1814,7 @@ Optional source fields:
                             :category  'consult-multi
                             :predicate (consult--multi-predicate sources)
                             :narrow    (consult--multi-narrow sources)
-                            :annotate  (consult--multi-annotate sources max-len)
+                            :annotate  (consult--multi-annotate sources max-width)
                             :lookup    (consult--multi-lookup sources)
                             :state     (consult--multi-state sources))))))
     (when-let (history (plist-get (cdr selected) :history))
