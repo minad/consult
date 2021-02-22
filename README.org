@@ -893,8 +893,17 @@ first that you have *updated all the relevant packages* to the newest version.
 This includes Selectrum, Icomplete-vertical, Embark, Orderless and Prescient in
 case you are using any of those packages.
 
-Please provide the necessary important information with your bug report, e.g.,
-the Emacs version, your operating system and the package manager you are using.
+Please provide the necessary important information with your bug report:
+
+- Your Emacs version, since bugs are often dependant on the Emacs version.
+- Your operating system, since the Emacs builds vary between Linux, Mac and
+  Windows.
+- The package manager, e.g., straight.el or package.el, you are using to install
+  the Emacs packages. This information is helpful to exclude update issues.
+- If you are using Evil or other special packages which change Emacs on a
+  fundamental level. There have been Evil-related problems before, which are
+  fixed now.
+
 Try to reproduce the issue by starting a barebone Emacs instance with =emacs -Q=
 on the command line. Then execute the following code in the scratch buffer. This
 way we can exclude side effects due to configuration settings.
