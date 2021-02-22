@@ -2386,12 +2386,13 @@ The arguments and expected return value are as specified for
 `completion-in-region'. Use as a value for `completion-in-region-function'."
   (let* ((completion-styles (or consult-completion-in-region-styles completion-styles))
          (initial (buffer-substring-no-properties start end))
+         (metadata (completion-metadata initial collection predicate))
+         (threshold (completion--cycle-threshold metadata))
          (all (completion-all-completions initial collection predicate (length initial))))
-    ;; error if completion-cycle-threshold is t or the improper list all is too short
-    (if (not (ignore-errors (nthcdr completion-cycle-threshold all)))
+    ;; error if `threshold' is t or the improper list `all' is too short
+    (if (not (ignore-errors (nthcdr threshold all)))
         (completion--in-region start end collection predicate)
       (let* ((limit (car (completion-boundaries initial collection predicate "")))
-             (metadata (completion-metadata initial collection predicate))
              (category (completion-metadata-get metadata 'category))
              (exit-status 'finished)
              (completion
