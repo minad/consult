@@ -895,6 +895,7 @@ case you are using any of those packages.
 
 Please provide the necessary important information with your bug report:
 
+- The full stack trace in case the bug triggers an exception.
 - Your Emacs version, since bugs are often dependant on the Emacs version.
 - Your operating system, since the Emacs builds vary between Linux, Mac and
   Windows.
