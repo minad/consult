@@ -591,21 +591,26 @@ The line beginning/ending BEG/END is bound in BODY."
            (setq ,beg (1+ ,end)))))))
 
 (defun consult--display-width (string)
-  "Compute width of STRING taking display and invisible properties into account.
-
-It does not correctly handle wide characters since `string-width' is not used. See also the
-complicated `org-string-width' function, which handles more cases correctly."
+  "Compute width of STRING taking display and invisible properties into account."
   (let ((pos 0) (width 0) (end (length string)))
     (while (< pos end)
       (let ((nextd (next-single-property-change pos 'display string end))
             (display (get-text-property pos 'display string)))
         (if (stringp display)
-            (setq width (+ width (length display))
+            (setq width (+ width (string-width display))
                   pos nextd)
           (while (< pos nextd)
             (let ((nexti (next-single-property-change pos 'invisible string nextd)))
               (unless (get-text-property pos 'invisible string)
-                (setq width (+ width ( - nexti pos))))
+                (setq width (+ width
+                               (string-width
+                                ;; Avoid allocation for the full string.
+                                ;; There should be a `substring-width' provided by Emacs.
+                                ;; TODO: Propose upstream? Alternatively propose
+                                ;; this whole `display-width' function to upstream.
+                                (if (and (= pos 0) (= nexti end))
+                                    string
+                                  (substring-no-properties string pos nexti))))))
               (setq pos nexti))))))
     width))
 
@@ -1731,8 +1736,8 @@ MAX-WIDTH is the maximum candidate display width."
                                         'invisible t)
                             (car items))))
         (dolist (item items)
-          (let* ((cand (concat (char-to-string (+ consult--tofu-char idx)) item))
-                 (width (consult--display-width cand)))
+          (let ((cand (concat (char-to-string (+ consult--tofu-char idx)) item))
+                (width (consult--display-width item)))
             (add-text-properties 0 1 (list 'invisible t 'consult-multi (cons cat item))
                                  cand)
             (put-text-property 1 (length cand) 'face face cand)
