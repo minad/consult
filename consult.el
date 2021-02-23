@@ -418,13 +418,17 @@ should not be considered as stable as the public API."
   "Face used to highlight line numbers in selections.")
 
 ;; face definition taken from Embark
-(defface consult-zebra
+(defface consult-row-zebra
   '((default :extend t)
     (((class color) (min-colors 88) (background light))
      :background "#efefef")
     (((class color) (min-colors 88) (background dark))
      :background "#242424"))
   "Face to highlight alternating rows in `consult-register-window'.")
+
+(defface consult-row-line
+  '((t :inherit font-lock-comment-face))
+  "Face used for thin line separators in `consult-register-window'.")
 
 ;;;; History variables
 
@@ -2664,8 +2668,8 @@ SHOW-EMPTY must be t if the window should be shown for an empty register list."
          (lambda (reg idx)
            (let ((beg (point)))
              (insert (funcall register-preview-function reg))
-             (when (/= 0 (% idx 2))
-               (consult--overlay beg (point) 'face 'consult-zebra))))
+             (insert (propertize (concat (propertize " " 'display '(space :align-to right)) "\n")
+                                 'face '(:height 0.01 :underline t :inherit consult-row-line)))))
          (seq-sort #'car-less-than-car regs))))))
 
 ;;;###autoload
