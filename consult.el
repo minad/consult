@@ -417,14 +417,12 @@ should not be considered as stable as the public API."
   '((t :inherit line-number))
   "Face used to highlight line numbers in selections.")
 
-;; face definition taken from Embark
-(defface consult-zebra
-  '((default :extend t)
-    (((class color) (min-colors 88) (background light))
-     :background "#efefef")
+(defface consult-separator
+  '((((class color) (min-colors 88) (background light))
+     :foreground "#ccc")
     (((class color) (min-colors 88) (background dark))
-     :background "#242424"))
-  "Face to highlight alternating rows in `consult-register-window'.")
+     :foreground "#333"))
+  "Face used for thin line separators in `consult-register-window'.")
 
 ;;;; History variables
 
@@ -2649,7 +2647,11 @@ Otherwise replace the just-yanked text with the selected text."
 
 BUFFER is the window buffer.
 SHOW-EMPTY must be t if the window should be shown for an empty register list."
-  (let ((regs (seq-filter #'cdr register-alist)))
+  (let ((regs (seq-filter #'cdr register-alist))
+        (separator
+         (and (display-graphic-p)
+              (propertize (concat (propertize " " 'display '(space :align-to right)) "\n")
+                          'face '(:inherit consult-separator :height 1 :underline t)))))
     (when (or show-empty regs)
       (with-current-buffer-window buffer
           (cons 'display-buffer-below-selected
@@ -2658,15 +2660,13 @@ SHOW-EMPTY must be t if the window should be shown for an empty register list."
           nil
         (setq-local cursor-in-non-selected-windows nil)
         (setq-local mode-line-format nil)
-        (setq-local window-min-height 1)
         (setq-local truncate-lines t)
-        (seq-do-indexed
-         (lambda (reg idx)
-           (let ((beg (point)))
-             (insert (funcall register-preview-function reg))
-             (when (/= 0 (% idx 2))
-               (consult--overlay beg (point) 'face 'consult-zebra))))
-         (seq-sort #'car-less-than-car regs))))))
+        (setq-local window-min-height 1)
+        (setq-local window-resize-pixelwise t)
+        (insert (mapconcat
+                 (lambda (reg)
+                   (concat (funcall register-preview-function reg) separator))
+                 (seq-sort #'car-less-than-car regs) nil))))))
 
 ;;;###autoload
 (defun consult-register-format (reg)

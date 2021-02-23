@@ -716,7 +716,7 @@ contributed.
          register-preview-function #'consult-register-format)
 
    ;; Optionally tweak the register preview window.
-   ;; This adds zebra stripes, sorting and hides the mode line of the window.
+   ;; This adds thin lines, sorting and hides the mode line of the window.
    (advice-add #'register-preview :override #'consult-register-window)
 
    ;; Use Consult to select xref locations with preview
