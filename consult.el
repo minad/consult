@@ -245,7 +245,7 @@ command options."
   :type 'integer)
 
 (defcustom consult-ripgrep-command
-  "rg --null --line-buffered --color=always --max-columns=250\
+  "rg --null --line-buffered --color=ansi --max-columns=250\
    --no-heading --line-number . -e ARG OPTS"
   "Command line string for ripgrep, see `consult-ripgrep'.
 
@@ -499,10 +499,16 @@ Size of private unicode plane b.")
 (defvar-local consult--imenu-cache nil
   "Buffer local cached imenu.")
 
-(defconst consult--grep-regexp "\\([^\0\n]+\\)\0\\([^:\0]+\\)[:\0]"
+(defconst consult--grep-regexp
+  (let ((esc "\\(?:\e\\[[0-9;]*[mK]\\)*")
+        (name "\\([^\0\n\e]+\\)")
+        (line "\\([0-9]+\\)")
+        (reset "\\(?:\e\\[[mK]\\)*"))
+    (concat esc name esc "\0" esc line esc "[:\0]" reset))
   "Regexp used to match file and line of grep output.")
 
-(defconst consult--grep-match-regexp "\e\\[[0-9;]+m\\(.*?\\)\e\\[[0-9;]*m"
+(defconst consult--grep-match-regexp
+  "\e\\[[0-9;]+m\\(?:\e\\[K\\)?\\([^\e]*\\)\e\\[[0-9;]*m\\(?:\e\\[K\\)?"
   "Regexp used to find matches in grep output.")
 
 (defvar-local consult--focus-lines-overlays nil
@@ -692,10 +698,6 @@ Otherwise the `default-directory' is returned."
             (cons (format "%s in project %s: " prompt (match-string 1 root)) root)
           (consult--format-directory-prompt prompt root)))))
    (t (consult--format-directory-prompt prompt default-directory))))
-
-(defsubst consult--strip-ansi-escape (str)
-  "Strip ANSI escape sequences from STR."
-  (replace-regexp-in-string "\e\\[[0-9;]*[mK]" "" str))
 
 (defsubst consult--format-location (file line)
   "Format location string 'FILE:LINE:'."
@@ -3601,8 +3603,8 @@ same major mode as the current buffer are used. See also
     (save-match-data
       (dolist (str lines)
         (when (string-match consult--grep-regexp str)
-          (let* ((file (expand-file-name (consult--strip-ansi-escape (match-string 1 str))))
-                 (line (string-to-number (consult--strip-ansi-escape (match-string 2 str))))
+          (let* ((file (expand-file-name (match-string 1 str)))
+                 (line (string-to-number (match-string 2 str)))
                  (end (match-end 0))
                  (str (substring str end
                                  (min (+ end (* 2 consult-grep-max-columns))
@@ -3617,7 +3619,7 @@ same major mode as the current buffer are used. See also
               (push (propertize (match-string 1 str) 'face 'consult-preview-match) matches)
               (setq start (match-end 0)))
             (push (substring str start) matches)
-            (setq str (consult--strip-ansi-escape (apply #'concat (nreverse matches))))
+            (setq str (apply #'concat (nreverse matches)))
             (when (> (length str) consult-grep-max-columns)
               (setq str (substring str 0 consult-grep-max-columns)))
             (push (list (concat loc str) file line (or col 0)) candidates)))))
