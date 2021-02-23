@@ -34,10 +34,9 @@
             (let ((loc (xref-item-location xref))
                   (xref-file-name-display 'nondirectory))
               (cons
-               (concat
-                (consult--format-location (xref-location-group loc)
-                                          (or (xref-location-line loc) 0))
-                (xref-item-summary xref))
+               (consult--format-location (xref-location-group loc)
+                                         (or (xref-location-line loc) 0)
+                                         (xref-item-summary xref))
                xref)))
           xrefs))
 

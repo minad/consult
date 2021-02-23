@@ -699,13 +699,13 @@ Otherwise the `default-directory' is returned."
           (consult--format-directory-prompt prompt root)))))
    (t (consult--format-directory-prompt prompt default-directory))))
 
-(defun consult--format-location (file line)
-  "Format location string 'FILE:LINE:'."
+(defun consult--format-location (file line &optional str)
+  "Format location string 'FILE:LINE:STR'."
   (setq line (number-to-string line))
   (put-text-property 0 (length line) 'face 'consult-line-number line)
-  (setq line (concat file ":" line ":"))
-  (put-text-property 0 (length file) 'face 'consult-file line)
-  line)
+  (setq str (concat file ":" line ":" str))
+  (put-text-property 0 (length file) 'face 'consult-file str)
+  str)
 
 (defmacro consult--overlay (beg end &rest props)
   "Make consult overlay between BEG and END with PROPS."
@@ -1994,11 +1994,11 @@ The alist contains (string . position) pairs."
               (when (consult--in-range-p pos)
                 (goto-char pos)
                 ;; `line-number-at-pos' is slow, see comment in `consult--mark-candidates'.
-                (let* ((line (line-number-at-pos pos consult-line-numbers-widen))
-                       (loc (consult--format-location (buffer-name buf) line)))
+                (let ((line (line-number-at-pos pos consult-line-numbers-widen)))
                   (push (concat
                          (propertize
-                          (concat (propertize (consult--encode-location marker) 'invisible t) loc)
+                          (concat (propertize (consult--encode-location marker) 'invisible t)
+                                  (consult--format-location (buffer-name buf) line))
                           'consult-location (cons marker line))
                          (consult--line-with-cursor marker))
                         candidates))))))))
@@ -2703,9 +2703,8 @@ This function can be used as `register-preview-function'."
              (save-excursion
                (widen)
                (goto-char val)
-               (concat
-                (consult--format-location (buffer-name) (line-number-at-pos))
-                (consult--line-with-cursor val))))))
+               (consult--format-location (buffer-name) (line-number-at-pos)
+                                         (consult--line-with-cursor val))))))
         ;; Default printing for the other types
         (t (register-describe-oneline key)))))))
 
@@ -3609,7 +3608,6 @@ same major mode as the current buffer are used. See also
                  (line (string-to-number (match-string 2 str)))
                  (start (match-end 0))
                  (max-len (+ start (* 2 consult-grep-max-columns)))
-                 (loc (consult--format-location (string-remove-prefix default-directory file) line))
                  (matches)
                  (col) (pos))
             (when (> (length str) max-len)
@@ -3625,7 +3623,12 @@ same major mode as the current buffer are used. See also
             (setq str (apply #'concat (nreverse matches)))
             (when (> (length str) consult-grep-max-columns)
               (setq str (substring str 0 consult-grep-max-columns)))
-            (push (list (concat loc str) file line (or col 0)) candidates)))))
+            (push (list
+                   (consult--format-location
+                    (string-remove-prefix default-directory file)
+                    line str)
+                   file line (or col 0))
+                  candidates)))))
     (nreverse candidates)))
 
 (defun consult--grep-state ()
