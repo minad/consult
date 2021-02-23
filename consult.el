@@ -884,7 +884,7 @@ END is the end position.
 MARKER is the cursor position."
   (let ((str (consult--buffer-substring begin end)))
     (if (>= marker end)
-        (concat str (propertize " " 'face 'consult-preview-cursor))
+        (concat str #(" " 0 1 (face consult-preview-cursor)))
       (put-text-property (- marker begin) (- (1+ marker) begin)
                          'face 'consult-preview-cursor str)
       str)))
@@ -1338,7 +1338,7 @@ CMD is the command argument list."
              (setq last-args args)
              (ignore-errors (delete-process proc))
              (when args
-               (overlay-put indicator 'display (propertize "*" 'face 'consult-async-running))
+               (overlay-put indicator 'display #("*" 0 1 (face consult-async-running)))
                (consult--async-log "consult--async-process started %S\n" args)
                (setq
                 proc
@@ -1368,10 +1368,11 @@ CMD is the command argument list."
                    (overlay-put indicator 'display
                                 (cond
                                  ((string-prefix-p "killed" event)
-                                  (propertize ";" 'face 'consult-async-failed))
+                                  #(";" 0 1 (face consult-async-failed)))
                                  ((string-prefix-p "finished" event)
-                                  (propertize ":" 'face 'consult-async-finished))
-                                 (t (propertize "!" 'face 'consult-async-failed))))
+                                  #(":" 0 1 (face consult-async-finished)))
+                                 (t
+                                  #("!" 0 1 (face consult-async-failed)))))
                    (when (and (string-prefix-p "finished" event) (not (string= rest "")))
                      (funcall async (list rest))))))))))
         ('destroy
