@@ -2012,14 +2012,9 @@ The symbol at point is added to the future history."
   (consult--read
    (consult--with-increased-gc (consult--global-mark-candidates))
    :prompt "Go to global mark: "
-   ;; While `consult-global-mark' formats the candidates in grep-like
-   ;; style, we are still not using the 'xref-location category,
-   ;; since the locations are formatted using abbreviated buffer
-   ;; names instead of file paths. If the 'xref-location category
-   ;; would be used, Embark would embark-export to a broken grep-mode
-   ;; buffer. By using the 'consult-location category, Embark will
-   ;; export to an occur buffer instead! See also
-   ;; https://github.com/minad/consult/issues/107.
+   ;; Despite `consult-global-mark' formating the candidates in grep-like
+   ;; style, we are not using the 'consult-grep category, since the candidates
+   ;; have location markers attached.
    :category 'consult-location
    :sort nil
    :require-match t
@@ -3658,7 +3653,7 @@ The symbol at point is added to the future history."
      :initial (concat consult-async-default-split initial)
      :add-history (concat consult-async-default-split (thing-at-point 'symbol))
      :require-match t
-     :category 'xref-location
+     :category 'consult-grep
      :history '(:input consult--grep-history)
      :sort nil)))
 
