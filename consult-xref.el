@@ -58,7 +58,8 @@
                      (consult--position-marker
                       (funcall open (slot-value loc 'file))
                       (slot-value loc 'line)
-                      (slot-value loc 'column))))
+                      (slot-value loc 'column)))
+                    (t (message "No preview for %s" (type-of loc))))
                    nil)))))))
 
 ;;;###autoload
