@@ -974,7 +974,7 @@ PERMANENTLY non-nil means the overlays will not be restored later."
    (t
     ;; Switch to buffer if it is not visible
     (when (and (markerp pos) (not (eq (current-buffer) (marker-buffer pos))))
-      (switch-to-buffer (marker-buffer pos)))
+      (funcall consult--buffer-display (marker-buffer pos)))
     ;; Widen if we cannot jump to the position (idea from flycheck-jump-to-error)
     (unless (= (goto-char pos) (point))
       (widen)
@@ -3217,9 +3217,7 @@ The command supports previewing the currently selected theme."
   "Buffer preview function."
   (let ((orig-buf (current-buffer)))
     (lambda (cand restore)
-      (when (and (not restore)
-                 (or (eq consult--buffer-display #'switch-to-buffer)
-                     (eq consult--buffer-display #'switch-to-buffer-other-window)))
+      (unless (or restore (eq consult--buffer-display #'switch-to-buffer-other-frame))
         (cond
          ((and cand (get-buffer cand)) (funcall consult--buffer-display cand 'norecord))
          ((buffer-live-p orig-buf) (funcall consult--buffer-display orig-buf 'norecord)))))))
@@ -3455,7 +3453,7 @@ BUF is the buffer.
 NAME is the item name.
 FN is the original special item function.
 ARGS are the arguments to the special item function."
-  (switch-to-buffer buf)
+  (funcall consult--buffer-display buf)
   (apply fn name pos args))
 
 (defun consult--imenu-flatten (prefix face list types)
