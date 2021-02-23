@@ -56,9 +56,9 @@
                      (xref-location-marker loc))
                     ((xref-file-location-p loc)
                      (consult--position-marker
-                      (funcall open (slot-value loc 'file))
-                      (slot-value loc 'line)
-                      (slot-value loc 'column)))
+                      (funcall open (oref loc file))
+                      (oref loc line)
+                      (oref loc column)))
                     (t (message "No preview for %s" (type-of loc))))
                    nil)))))))
 
