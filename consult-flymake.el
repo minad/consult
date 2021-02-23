@@ -18,8 +18,8 @@
 ;;; Commentary:
 
 ;; Provides the command `consult-flymake'. This is an extra package,
-;; to avoid always loading Flymake. The `consult-flymake' command is
-;; autoloaded.
+;; to allow lazy loading of flymake.el. The `consult-flymake' command
+;; is autoloaded.
 
 ;;; Code:
 
