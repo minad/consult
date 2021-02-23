@@ -25,6 +25,8 @@
 (require 'consult)
 (require 'xref)
 
+(defvar consult-xref--history nil)
+
 (defun consult-xref--candidates (xrefs)
   "Return candidate list from XREFS."
   (mapcar (lambda (xref)
@@ -76,6 +78,7 @@ FETCHER and ALIST arguments."
          (consult--read
           candidates
           :prompt "Go to xref: "
+          :history 'consult-xref--history
           :require-match t
           :sort nil
           :category 'xref-location

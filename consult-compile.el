@@ -69,6 +69,7 @@ preview of the currently selected error."
    :category 'consult-compile-error
    :sort nil
    :require-match t
+   :history t ;; disable history
    :lookup (lambda (_ candidates cand)
              (when-let (cand (assoc cand candidates))
                (let ((marker (cadr cand))
