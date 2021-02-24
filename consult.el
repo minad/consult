@@ -3049,7 +3049,8 @@ In order to select from a specific HISTORY, pass the history variable as argumen
                     (append search-ring regexp-search-ring)))
          (max-len (if history
                       (+ 4 (apply #'max (mapcar #'length history)))
-                    0)))
+                    0))
+         (align (propertize " " 'display `(space :align-to (+ left ,max-len)))))
     (consult--remove-dups
      (mapcar
       (lambda (cand)
@@ -3069,8 +3070,7 @@ In order to select from a specific HISTORY, pass the history variable as argumen
                    (char-to-string (+ consult--tofu-char type))
                    'invisible t
                    'consult--annotation
-                   (concat (make-string (- max-len (length cand)) 32)
-                           (alist-get type narrow)))
+                   (concat align (alist-get type narrow)))
                   cand)))
       history))))
 
