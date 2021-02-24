@@ -1123,7 +1123,8 @@ This command is used internally by the narrowing system of `consult--read'."
           (consult--overlay
            (- (minibuffer-prompt-end) 1) (minibuffer-prompt-end)
            'before-string
-           (propertize (format " [%s]" (alist-get key consult--narrow-prefixes))
+           (propertize (format " [%s]" (alist-get consult--narrow
+                                                  consult--narrow-prefixes))
                        'face 'consult-narrow-indicator))))
   (run-hooks 'consult--completion-refresh-hook))
 
@@ -1703,9 +1704,8 @@ KEYMAP is a command-specific keymap."
   "Return predicate function used by `consult--multi' with SOURCES."
   (lambda (cand)
     (let* ((src (consult--multi-source sources cand))
-           (narrow (plist-get src :narrow))
-           (type (or (car-safe narrow) narrow -1)))
-      (or (eq consult--narrow type)
+           (narrow (plist-get src :narrow)))
+      (or (eq consult--narrow (or (car-safe narrow) narrow -1))
           (not (or consult--narrow (plist-get src :hidden)))))))
 
 (defun consult--multi-narrow (sources)
@@ -2743,11 +2743,9 @@ register access functions. The command supports narrowing, see
     (cons
      (lambda (cand)
        (let ((reg (get-register (cdr cand))))
-         (seq-find (lambda (x)
-                     (and
-                      (= (car x) consult--narrow)
-                      (funcall (caddr x) reg)))
-                   consult-register-narrow)))
+         (eq consult--narrow
+             (car (seq-find (lambda (x) (funcall (caddr x) reg))
+                            consult-register-narrow)))))
      (mapcar (pcase-lambda (`(,x ,y ,_)) (cons x y))
              consult-register-narrow))
     :sort nil
