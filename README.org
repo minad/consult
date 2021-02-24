@@ -825,8 +825,10 @@ contributed.
 
  Commands allow flexible, individual customization by setting the
  =consult-config= list. You can override any option passed to the internal
- =consult--read= API. Note that since =consult--read= is part of the internal
- API, options could be removed, replaced or renamed at any time.
+ =consult--read= API. The [[https://github.com/minad/consult/wiki][Consult wiki]] already contains a few useful
+ configuration examples. Note that since =consult--read= is part of the internal
+ API, options could be removed, replaced or renamed in future versions of the
+ package.
 
  Useful options are:
  - =:prompt= set the prompt string
@@ -841,7 +843,7 @@ contributed.
  ;; Set preview for `consult-buffer' to key `M-p'
  ;; and disable preview for `consult-theme' completely.
  ;; For `consult-line' specify multiple keybindings.
- ;; Note that you should bind the <S-up> and <S-down> in the
+ ;; Note that you should bind <S-up> and <S-down> in the
  ;; `minibuffer-local-completion-map' or `selectrum-minibuffer-map'
  ;; to the commands which select the previous or next candidate.
  (setq consult-config `((consult-theme :preview-key nil)
