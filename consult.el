@@ -312,14 +312,14 @@ Each element of the list must have the form '(char name predicate)."
   :type '(repeat (list character string function)))
 
 (defcustom consult-bookmark-narrow
-  `((?f "File" #'bookmark-default-handler)
-    (?h "Help" #'help-bookmark-jump)
-    (?i "Info" #'Info-bookmark-jump)
-    (?p "Picture" #'image-bookmark-jump)
-    (?d "Docview" #'doc-view-bookmark-jump)
-    (?m "Man" #'Man-bookmark-jump)
-    (?w "Woman" #'woman-bookmark-jump)
-    (?g "Gnus" #'gnus-summary-bookmark-jump))
+  `((?f "File" ,#'bookmark-default-handler)
+    (?h "Help" ,#'help-bookmark-jump)
+    (?i "Info" ,#'Info-bookmark-jump)
+    (?p "Picture" ,#'image-bookmark-jump)
+    (?d "Docview" ,#'doc-view-bookmark-jump)
+    (?m "Man" ,#'Man-bookmark-jump)
+    (?w "Woman" ,#'woman-bookmark-jump)
+    (?g "Gnus" ,#'gnus-summary-bookmark-jump))
   "Bookmark narrowing configuration.
 
 Each element of the list must have the form '(char name handler)."
@@ -2902,14 +2902,15 @@ variable `consult-bookmark-narrow' for the narrowing configuration."
      :add-history (ignore-errors (bookmark-prop-get (bookmark-make-record) 'defaults))
      :narrow
      (cons
-      (lambda (cand)
-        (if-let ((n consult--narrow)
-                 (bm (bookmark-get-bookmark-record
-                      (assoc cand bookmark-alist))))
-            (eq n (caddr (alist-get
-                          (alist-get 'handler bm #'bookmark-default-handler)
-                          consult-bookmark-narrow)))
-          t))
+      (let ((narrow (mapcar (pcase-lambda (`(,y ,_ ,x)) (cons x y))
+                            consult-bookmark-narrow)))
+        (lambda (cand)
+          (when-let (bm (bookmark-get-bookmark-record
+                         (assoc cand bookmark-alist)))
+            (eq consult--narrow
+                (alist-get
+                 (alist-get 'handler bm #'bookmark-default-handler)
+                 narrow)))))
       (mapcar (pcase-lambda (`(,x ,y ,_)) (cons x y))
               consult-bookmark-narrow)))))
   (bookmark-maybe-load-default-file)
