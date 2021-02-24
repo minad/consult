@@ -33,6 +33,11 @@
 (require 'consult)
 (require 'flycheck)
 
+(defconst consult-flycheck--narrow
+  '((?e . "Error")
+    (?w . "Warning")
+    (?i . "Info")))
+
 (defun consult-flycheck--candidates ()
   "Return flycheck errors as alist."
   (consult--forbid-minibuffer)
@@ -53,23 +58,25 @@
     (mapcar
      (pcase-lambda (`(,file ,line ,err))
        (let ((level (flycheck-error-level err)))
-         (list
-          (format fmt
-                  (propertize file 'face 'flycheck-error-list-filename)
-                  (propertize line 'face 'flycheck-error-list-line-number)
-                  (propertize (symbol-name level) 'face (flycheck-error-level-error-list-face level))
-                  (propertize (flycheck-error-message err) 'face 'flycheck-error-list-error-message)
-                  (propertize (symbol-name (flycheck-error-checker err))
-                              'face 'flycheck-error-list-checker-name))
-          (set-marker (make-marker)
-                      (flycheck-error-pos err)
-                      (if (flycheck-error-filename err)
-                          (find-file-noselect (flycheck-error-filename err) 'nowarn)
-                        (flycheck-error-buffer err)))
-          (pcase level
-            ('error ?e)
-            ('warning ?w)
-            (_ ?i)))))
+         (format fmt
+                 (propertize file
+                             'face 'flycheck-error-list-filename
+                             'consult--candidate
+                             (set-marker (make-marker)
+                                         (flycheck-error-pos err)
+                                         (if (flycheck-error-filename err)
+                                             (find-file-noselect (flycheck-error-filename err) 'nowarn)
+                                           (flycheck-error-buffer err)))
+                             'consult--type
+                             (pcase level
+                               ('error ?e)
+                               ('warning ?w)
+                               (_ ?i)))
+                 (propertize line 'face 'flycheck-error-list-line-number)
+                 (propertize (symbol-name level) 'face (flycheck-error-level-error-list-face level))
+                 (propertize (flycheck-error-message err) 'face 'flycheck-error-list-error-message)
+                 (propertize (symbol-name (flycheck-error-checker err))
+                             'face 'flycheck-error-list-checker-name))))
      errors)))
 
 ;;;###autoload
@@ -83,11 +90,9 @@
    :history t ;; disable history
    :require-match t
    :sort nil
-   :narrow `(,(lambda (cand) (= (caddr cand) consult--narrow))
-             (?e . "Error")
-             (?w . "Warning")
-             (?i . "Info"))
-   :lookup #'consult--lookup-cadr
+   :title (consult--type-title consult-flycheck--narrow)
+   :narrow (consult--type-narrow consult-flycheck--narrow)
+   :lookup #'consult--lookup-candidate
    :state (consult--jump-state 'consult-preview-error)))
 
 (provide 'consult-flycheck)

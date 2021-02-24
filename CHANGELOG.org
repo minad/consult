@@ -20,6 +20,7 @@
 - Added consult-completion-in-region-styles customization variable
 - Added consult-xref. The function can be set as `xref-show-xrefs-function'
   and `xref-show-definitions-function'.
+- Added support for the candidate grouping function `x-group-function`
 
 * Version 0.5 (2021-02-09)
 

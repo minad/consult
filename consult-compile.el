@@ -26,6 +26,11 @@
 (require 'consult)
 (require 'compile)
 
+(defconst consult-compile--narrow
+  '((?e . "Error")
+    (?w . "Warning")
+    (?i . "Info")))
+
 (defun consult-compile--font-lock (str)
   "Apply `font-lock' faces in STR, copy them to `face'."
   (let ((pos 0) (len (length str)))
@@ -45,18 +50,22 @@
         (while (setq pos (compilation-next-single-property-change pos 'compilation-message))
           (when-let (msg (get-text-property pos 'compilation-message))
             (goto-char pos)
-            (push (list
+            (push (propertize
                    (consult-compile--font-lock (consult--buffer-substring pos (line-end-position)))
-                   (point-marker)
-                   msg)
+                   'consult--type (pcase (compilation--message->type msg)
+                                    (0 ?i)
+                                    (1 ?w)
+                                    (_ ?e))
+                   'consult-compile--marker (point-marker)
+                   'consult-compile--loc (compilation--message->loc msg))
                   candidates))))
       (nreverse candidates))))
 
 (defun consult-compile--error-lookup (_ candidates cand)
   "Lookup marker of CAND by accessing CANDIDATES list."
-  (when-let (cand (assoc cand candidates))
-    (let ((marker (cadr cand))
-          (loc (compilation--message->loc (caddr cand))))
+  (when-let (cand (car (member cand candidates)))
+    (let ((marker (get-text-property 0 'consult-compile--marker cand))
+          (loc (get-text-property 0 'consult-compile--loc cand)))
       (when (buffer-live-p (marker-buffer marker))
         (consult--position-marker
          ;; taken from compile.el
@@ -98,15 +107,8 @@ preview of the currently selected error."
    :require-match t
    :history t ;; disable history
    :lookup #'consult-compile--error-lookup
-   :narrow `(,(lambda (cand)
-                (= (pcase (compilation--message->type (caddr cand))
-                     (0 ?i)
-                     (1 ?w)
-                     (_ ?e))
-                   consult--narrow))
-             (?e . "Error")
-             (?w . "Warning")
-             (?i . "Info"))
+   :title (consult--type-title consult-compile--narrow)
+   :narrow (consult--type-narrow consult-compile--narrow)
    :history '(:input consult--error-history)
    :state (consult--jump-state 'consult-preview-error)))
 
