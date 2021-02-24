@@ -1718,18 +1718,17 @@ KEYMAP is a command-specific keymap."
                          ((and narrow name) (cons narrow name)))))
                     sources)))
 
-(defun consult--multi-annotate (sources max-width)
+(defun consult--multi-annotate (sources sep)
   "Return annotation function used by `consult--multi' with SOURCES.
 
-MAX-WIDTH is the maximum candidate display width."
+SEP is the separator string."
   (lambda (cand)
     (let* ((src (consult--multi-source sources cand))
            (annotate (plist-get src :annotate))
            (ann (if annotate
                     (funcall annotate (cdr (get-text-property 0 'consult-multi cand)))
                   (plist-get src :name))))
-      (when ann
-        (concat (propertize " " 'display `(space :align-to (+ left ,max-width))) ann)))))
+      (and ann (concat sep ann)))))
 
 (defun consult--multi-lookup (sources)
   "Lookup function used by `consult--multi' with SOURCES."
@@ -1838,7 +1837,9 @@ Optional source fields:
                             :category  'consult-multi
                             :predicate (consult--multi-predicate sources)
                             :narrow    (consult--multi-narrow sources)
-                            :annotate  (consult--multi-annotate sources max-width)
+                            :annotate  (consult--multi-annotate
+                                        sources
+                                        (propertize " " 'display `(space :align-to (+ left ,max-width))))
                             :lookup    (consult--multi-lookup sources)
                             :state     (consult--multi-state sources))))))
     (when-let (history (plist-get (cdr selected) :history))
