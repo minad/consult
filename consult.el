@@ -729,9 +729,21 @@ KEY is the key function."
   "Return t if position POS lies in range `point-min' to `point-max'."
   (<= (point-min) pos (point-max)))
 
-(defun consult--get-annotation (cand)
-  "Return 'consult--annotation property from CAND."
-  (get-text-property 0 'consult--annotation cand))
+(defun consult--get-property (prop)
+  "Return PROP property from candidate."
+  (lambda (cand)
+    (get-text-property 0 prop cand)))
+
+(defun consult--type-title (types)
+  "Return title function for TYPES."
+  (lambda (cand)
+    (alist-get (get-text-property 0 'consult--type cand) types)))
+
+(defun consult--type-narrow (types)
+  "Return narrowing configuration from TYPES."
+  (cons
+   (lambda (cand) (eq (get-text-property 0 'consult--type cand) consult--narrow))
+   types))
 
 (defun consult--lookup-member (_ candidates cand)
   "Lookup CAND in CANDIDATES list, return original element."
@@ -745,14 +757,15 @@ KEY is the key function."
   "Lookup CAND in CANDIDATES alist, return cdr of element."
   (cdr (assoc cand candidates)))
 
-(defun consult--lookup-cadr (_ candidates cand)
-  "Lookup CAND in CANDIDATES alist, return cadr of element."
-  (cadr (assoc cand candidates)))
-
 (defun consult--lookup-location (_ candidates cand)
   "Lookup CAND in CANDIDATES list of 'consult-location category, return the marker."
   (when-let (found (member cand candidates))
     (car (get-text-property 0 'consult-location (car found)))))
+
+(defun consult--lookup-candidate (_ candidates cand)
+  "Lookup CAND in CANDIDATES list and return property 'consult--candidate."
+  (when-let (found (member cand candidates))
+    (get-text-property 0 'consult--candidate (car found))))
 
 (defun consult--forbid-minibuffer ()
   "Raise an error if executed from the minibuffer."
@@ -1594,10 +1607,21 @@ See `consult--read' for the CANDIDATES, KEYMAP, ADD-HISTORY, NARROW and PREVIEW-
          (setq options (plist-put options ,(intern (format ":%s" key)) (setq ,key ,val)))))
     default)))
 
+(defun consult--group-candidates (title candidates)
+  "Group CANDIDATES according to TITLE function."
+  (let ((groups))
+    (dolist (cand candidates)
+      (let* ((title (funcall title cand))
+             (group (assoc title groups)))
+        (if group
+            (setcdr group (cons cand (cdr group)))
+          (push (list title cand) groups))))
+    (mapc (lambda (x) (setcdr x (nreverse (cdr x)))) (nreverse groups))))
+
 (cl-defun consult--read (candidates &rest options &key
                                     prompt predicate require-match history default
                                     keymap category initial narrow add-history annotate
-                                    state preview-key sort default-top lookup)
+                                    state preview-key sort default-top lookup title)
   "Enhanced completing read function selecting from CANDIDATES.
 
 Keyword OPTIONS:
@@ -1615,6 +1639,7 @@ ANNOTATE is the annotation function.
 INITIAL is initial input.
 DEFAULT-TOP must be nil if the default candidate should not be moved to the top.
 STATE is the state function, see `consult--with-preview'.
+TITLE is the title function, called for each candidate string.
 PREVIEW-KEY are the preview keys (nil, 'any, a single key or a list of keys).
 NARROW is an alist of narrowing prefix strings and description.
 KEYMAP is a command-specific keymap."
@@ -1654,6 +1679,8 @@ KEYMAP is a command-specific keymap."
                                     ('metadata
                                      ;; Return completion metadata
                                      `(metadata
+                                       ,@(when title `((x-group-function
+                                                        . ,(apply-partially #'consult--group-candidates title))))
                                        ,@(when annotate `((annotation-function . ,annotate)))
                                        ,@(when category `((category . ,category)))
                                        ,@(unless sort '((cycle-sort-function . identity)
@@ -1722,6 +1749,11 @@ KEYMAP is a command-specific keymap."
                   (funcall annotate (cdr (get-text-property 0 'consult-multi cand)))
                 (plist-get src :name))))
     (and ann (concat consult--multi-align ann))))
+
+(defun consult--multi-title (cand)
+  "Return title of candidate CAND, used by `consult--multi'."
+  (let ((src (consult--multi-source cand)))
+    (or (plist-get src :name) (capitalize (symbol-name (plist-get src :category))))))
 
 (defun consult--multi-lookup (_ candidates cand)
   "Lookup CAND in CANDIDATES, used by `consult--multi'."
@@ -1830,6 +1862,7 @@ Optional source fields:
                             :category  'consult-multi
                             :predicate #'consult--multi-predicate
                             :annotate  #'consult--multi-annotate
+                            :title     #'consult--multi-title
                             :lookup    #'consult--multi-lookup
                             :narrow    (consult--multi-narrow)
                             :state     (consult--multi-state))))))
@@ -2531,9 +2564,18 @@ From these files, the commands are extracted."
               (when (and (consp cmd)
                          (eq (car cmd) 'defun)
                          (commandp (cdr cmd))
-                         (not (string-match-p command-filter (symbol-name (cdr cmd))))
                          (not (get (cdr cmd) 'byte-obsolete-info)))
-                (push (cons (cdr cmd) key) commands)))))))))
+                (let ((name (symbol-name (cdr cmd))))
+                  (unless (string-match-p command-filter name)
+                    (push (propertize name
+                                      'consult--candidate (cdr cmd)
+                                      'consult--type key)
+                          commands)))))))))))
+
+(defconst consult--mode-command-narrow
+  '((?m . "Major")
+    (?l . "Local Minor")
+    (?g . "Global Minor")))
 
 ;;;###autoload
 (defun consult-mode-command (&rest modes)
@@ -2547,21 +2589,21 @@ If no MODES are specified, use currently active major and minor modes."
                                     (and (boundp m) (symbol-value m)))
                                   minor-mode-list))))
   (command-execute
-   (intern
-    (consult--read
-     (consult--mode-command-candidates modes)
-     :prompt "Mode command: "
-     :predicate
-     (lambda (cand)
-       (if consult--narrow
-           (= (cdr cand) consult--narrow)
-         (/= (cdr cand) ?g)))
-     :narrow '((?m . "Major")
-               (?l . "Local Minor")
-               (?g . "Global Minor"))
-     :require-match t
-     :history 'consult--mode-command-history
-     :category 'command))))
+   (consult--read
+    (consult--mode-command-candidates modes)
+    :prompt "Mode command: "
+    :predicate
+    (lambda (cand)
+      (let ((key (get-text-property 0 'consult--type cand)))
+        (if consult--narrow
+            (= key consult--narrow)
+          (/= key ?g))))
+    :lookup #'consult--lookup-candidate
+    :title (consult--type-title consult--mode-command-narrow)
+    :narrow consult--mode-command-narrow
+    :require-match t
+    :history 'consult--mode-command-history
+    :category 'command)))
 
 ;;;;; Command: consult-yank
 
@@ -2706,6 +2748,17 @@ This function can be used as `register-preview-function'."
   ;; Such registers don't do anything, and can be ignored.
   (or (seq-filter #'cdr register-alist) (user-error "All registers are empty")))
 
+(defun consult--register-candidates ()
+  "Return list of formatted register candidates."
+  (mapcar (lambda (reg)
+            (propertize
+             (consult--register-format reg)
+             'consult--candidate (car reg)
+             'consult--type
+             (car (seq-find (lambda (x) (funcall (caddr x) (cdr reg)))
+                            consult-register-narrow))))
+          (sort (consult--register-alist) #'car-less-than-car)))
+
 ;;;###autoload
 (defun consult-register (&optional arg)
   "Load register and either jump to location or insert the stored text.
@@ -2717,34 +2770,28 @@ register access functions. The command supports narrowing, see
 `consult-register-narrow'. Marker positions are previewed. See
 `jump-to-register' and `insert-register' for the meaning of prefix ARG."
   (interactive "P")
-  (consult-register-load
-   (consult--read
-    (mapcar (lambda (reg) (cons (consult--register-format reg) (car reg)))
-            (sort (consult--register-alist) #'car-less-than-car))
-    :prompt "Register: "
-    :category 'consult-register
-    :state
-    (let ((preview (consult--jump-preview)))
-      (lambda (cand restore)
-        (funcall preview
-                 ;; Preview markers
-                 (when-let (reg (get-register cand))
-                   (and (markerp reg) reg))
-                 restore)))
-    :narrow
-    (cons
-     (lambda (cand)
-       (let ((reg (get-register (cdr cand))))
-         (eq consult--narrow
-             (car (seq-find (lambda (x) (funcall (caddr x) reg))
-                            consult-register-narrow)))))
-     (mapcar (pcase-lambda (`(,x ,y ,_)) (cons x y))
-             consult-register-narrow))
-    :sort nil
-    :require-match t
-    :history t ;; disable history
-    :lookup #'consult--lookup-cdr)
-   arg))
+  (let ((narrow (mapcar (lambda (x) (cons (car x) (cadr x)))
+                        consult-register-narrow)))
+    (consult-register-load
+     (consult--read
+      (consult--register-candidates)
+      :prompt "Register: "
+      :category 'consult-register
+      :state
+      (let ((preview (consult--jump-preview)))
+        (lambda (cand restore)
+          ;; Preview only markers
+          (funcall preview
+                   (when-let (reg (get-register cand))
+                     (and (markerp reg) reg))
+                   restore)))
+      :title (consult--type-title narrow)
+      :narrow (consult--type-narrow narrow)
+      :sort nil
+      :require-match t
+      :history t ;; disable history
+      :lookup #'consult--lookup-candidate)
+     arg)))
 
 ;;;###autoload
 (defun consult-register-load (reg &optional arg)
@@ -2871,6 +2918,20 @@ number. Otherwise store point, frameset, window or kmacro."
                nil)))
          nil)))))
 
+(defun consult--bookmark-candidates ()
+  "Return bookmark candidates."
+  (bookmark-maybe-load-default-file)
+  (let ((narrow (mapcar (pcase-lambda (`(,y ,_ ,x)) (cons x y))
+                        consult-bookmark-narrow)))
+    (mapcar (lambda (cand)
+              (let ((bm (bookmark-get-bookmark-record cand)))
+                (propertize (car cand)
+                            'consult--type
+                            (alist-get
+                             (alist-get 'handler bm #'bookmark-default-handler)
+                           narrow))))
+            bookmark-alist)))
+
 ;;;###autoload
 (defun consult-bookmark (name)
   "If bookmark NAME exists, open it, otherwise create a new bookmark with NAME.
@@ -2879,30 +2940,20 @@ The command supports preview of file bookmarks and narrowing. See the
 variable `consult-bookmark-narrow' for the narrowing configuration."
   (interactive
    (list
-    (consult--read
-     (progn
-       (bookmark-maybe-load-default-file)
-       bookmark-alist)
-     :prompt "Bookmark: "
-     :state (consult--bookmark-preview)
-     :category 'bookmark
-     :history 'bookmark-history
-     ;; Add default names to future history.
-     ;; Ignore errors such that `consult-bookmark' can be used in
-     ;; buffers which are not backed by a file.
-     :add-history (ignore-errors (bookmark-prop-get (bookmark-make-record) 'defaults))
-     :narrow
-     (cons
-      (let ((narrow (mapcar (pcase-lambda (`(,y ,_ ,x)) (cons x y))
-                            consult-bookmark-narrow)))
-        (lambda (cand)
-          (when-let (bm (bookmark-get-bookmark-record cand))
-            (eq consult--narrow
-                (alist-get
-                 (alist-get 'handler bm #'bookmark-default-handler)
-                 narrow)))))
-      (mapcar (pcase-lambda (`(,x ,y ,_)) (cons x y))
-              consult-bookmark-narrow)))))
+    (let ((narrow (mapcar (pcase-lambda (`(,x ,y ,_)) (cons x y))
+                          consult-bookmark-narrow)))
+      (consult--read
+       (consult--bookmark-candidates)
+       :prompt "Bookmark: "
+       :state (consult--bookmark-preview)
+       :category 'bookmark
+       :history 'bookmark-history
+       ;; Add default names to future history.
+       ;; Ignore errors such that `consult-bookmark' can be used in
+       ;; buffers which are not backed by a file.
+       :add-history (ignore-errors (bookmark-prop-get (bookmark-make-record) 'defaults))
+       :title (consult--type-title narrow)
+       :narrow (consult--type-narrow narrow)))))
   (bookmark-maybe-load-default-file)
   (if (assoc name bookmark-alist)
       (bookmark-jump name)
@@ -3030,40 +3081,45 @@ In order to select from a specific HISTORY, pass the history variable as argumen
     map)
   "Additional keymap used by `consult-isearch'.")
 
-(defun consult--isearch-candidates (narrow)
-  "Return isearch history candidates categorized by NARROW."
+(defun consult--isearch-candidates ()
+  "Return isearch history candidates."
   ;; NOTE: Do not throw an error on empty history,
   ;; in order to allow starting a search.
   ;; We do not :require-match here!
-  (let* ((history (if (eq t search-default-mode)
-                      (append regexp-search-ring search-ring)
-                    (append search-ring regexp-search-ring)))
-         (max-len (if history
-                      (+ 4 (apply #'max (mapcar #'length history)))
-                    0))
-         (align (propertize " " 'display `(space :align-to (+ left ,max-len)))))
-    (consult--remove-dups
-     (mapcar
-      (lambda (cand)
-        ;; Emacs 27.1 uses settings on the search string, we can use that for narrowing.
-        (let* ((props (plist-member (text-properties-at 0 cand)
-                                    'isearch-regexp-function))
-               (type (pcase (cadr props)
-                       ((and 'nil (guard (not props))) ?r)
-                       ('nil                           ?l)
-                       ('word-search-regexp            ?w)
-                       ('isearch-symbol-regexp         ?s)
-                       ('char-fold-to-regexp           ?c)
-                       (_                              ?u))))
-          (concat (propertize
-                   ;; Disambiguate history items. The same string could
-                   ;; occur with different search types.
-                   (char-to-string (+ consult--tofu-char type))
-                   'invisible t
-                   'consult--annotation
-                   (concat align (alist-get type narrow)))
-                  cand)))
-      history))))
+  (let ((history (if (eq t search-default-mode)
+                     (append regexp-search-ring search-ring)
+                   (append search-ring regexp-search-ring))))
+    (cons
+     (consult--remove-dups
+      (mapcar
+       (lambda (cand)
+         ;; Emacs 27.1 uses settings on the search string, we can use that for narrowing.
+         (let* ((props (plist-member (text-properties-at 0 cand)
+                                     'isearch-regexp-function))
+                (type (pcase (cadr props)
+                        ((and 'nil (guard (not props))) ?r)
+                        ('nil                           ?l)
+                        ('word-search-regexp            ?w)
+                        ('isearch-symbol-regexp         ?s)
+                        ('char-fold-to-regexp           ?c)
+                        (_                              ?u))))
+           ;; Disambiguate history items. The same string could
+           ;; occur with different search types.
+           (concat (propertize (char-to-string (+ consult--tofu-char type))
+                               'invisible t)
+                   cand)))
+       history))
+     (if history
+         (+ 4 (apply #'max (mapcar #'length history)))
+       0))))
+
+(defconst consult--isearch-narrow
+  '((?c . "Char")
+    (?u . "Custom")
+    (?l . "Literal")
+    (?r . "Regexp")
+    (?s . "Symbol")
+    (?w . "Word")))
 
 ;;;###autoload
 (defun consult-isearch ()
@@ -3073,26 +3129,27 @@ This replaces the current search string if Isearch is active, and
 starts a new Isearch session otherwise."
   (interactive)
   (consult--forbid-minibuffer)
-  (let ((isearch-message-function 'ignore) ;; Avoid flicker in echo area
-        (inhibit-redisplay t)              ;; Avoid flicker in mode line
-        (narrow '((?c . "Char")
-                  (?u . "Custom")
-                  (?l . "Literal")
-                  (?r . "Regexp")
-                  (?s . "Symbol")
-                  (?w . "Word"))))
+  (let* ((isearch-message-function 'ignore) ;; Avoid flicker in echo area
+         (inhibit-redisplay t)              ;; Avoid flicker in mode line
+         (candidates (consult--isearch-candidates))
+         (align (propertize " " 'display `(space :align-to (+ left ,(cdr candidates))))))
     (unless isearch-mode (isearch-mode t))
     (with-isearch-suspended
      (setq isearch-new-string
            (consult--read
-            (consult--isearch-candidates narrow)
+            (car candidates)
             :prompt "I-search: "
             :category 'consult-isearch
             :history t ;; disable history
             :sort nil
-            :annotate #'consult--get-annotation
             :initial isearch-string
             :keymap consult-isearch-map
+            :annotate
+            (lambda (cand) (concat align (alist-get (- (aref cand 0) consult--tofu-char)
+                                                    consult--isearch-narrow)))
+            :title
+            (lambda (cand) (alist-get (- (aref cand 0) consult--tofu-char)
+                                      consult--isearch-narrow))
             :lookup
             (lambda (_ candidates str)
               (if-let (found (member str candidates)) (substring (car found) 1) str))
@@ -3106,8 +3163,8 @@ starts a new Isearch session otherwise."
                 (isearch-update)))
             :narrow
             (cons
-             (lambda (cand) (eq (- (aref cand 0) consult--tofu-char) consult--narrow))
-             narrow))
+             (lambda (cand) (= (- (aref cand 0) consult--tofu-char) consult--narrow))
+             consult--isearch-narrow))
            isearch-new-message
            (mapconcat 'isearch-text-char-description isearch-new-string "")))
     ;; Setting `isearch-regexp' etc only works outside of `with-isearch-suspended'.
@@ -3121,10 +3178,17 @@ starts a new Isearch session otherwise."
   "Return list of minor-mode candidate strings."
   (mapcar
    (pcase-lambda (`(,name . ,sym))
-     (list name sym
-           (concat
-            (if (local-variable-if-set-p sym) "l" "g")
-            (if (and (boundp sym) (symbol-value sym)) "i" "o"))))
+     (propertize
+      name
+      'consult--candidate sym
+      'consult--minor-mode-narrow
+      (logior
+       (lsh (if (local-variable-if-set-p sym) ?l ?g) 8)
+       (if (and (boundp sym) (symbol-value sym)) ?i ?o))
+      'consult--minor-mode-title
+      (concat
+       (if (local-variable-if-set-p sym) "Local " "Global ")
+       (if (and (boundp sym) (symbol-value sym)) "On" "Off"))))
    (nconc
     ;; according to describe-minor-mode-completion-table-for-symbol
     ;; the minor-mode-list contains *all* minor modes
@@ -3138,6 +3202,12 @@ starts a new Isearch session otherwise."
                         (cons lighter sym))))
                   minor-mode-alist)))))
 
+(defconst consult--minor-mode-menu-narrow
+  '((?l . "Local")
+    (?g . "Global")
+    (?i . "On")
+    (?o . "Off")))
+
 ;;;###autoload
 (defun consult-minor-mode-menu ()
   "Enable or disable minor mode.
@@ -3150,12 +3220,15 @@ This is an alternative to `minor-mode-menu-from-indicator'."
     :prompt "Minor mode: "
     :require-match t
     :category 'minor-mode
-    :narrow `(,(lambda (cand) (seq-position (caddr cand) consult--narrow))
-              (?l . "Local")
-              (?g . "Global")
-              (?i . "On")
-              (?o . "Off"))
-    :lookup #'consult--lookup-cadr
+    :title (consult--get-property 'consult--minor-mode-title)
+    :narrow
+    (cons
+     (lambda (cand)
+       (let ((narrow (get-text-property 0 'consult--minor-mode-narrow cand)))
+         (or (= (logand narrow 255) consult--narrow)
+             (= (lsh narrow -8) consult--narrow))))
+     consult--minor-mode-menu-narrow)
+    :lookup #'consult--lookup-candidate
     :history 'consult--minor-mode-menu-history)))
 
 ;;;;; Command: consult-theme
@@ -3379,8 +3452,8 @@ order to determine the project-specific files and buffers, the
     (mapcar (pcase-lambda (`((,keys ,counter ,format) . ,index))
               (propertize
                (format-kbd-macro keys 1)
-               'consult--kmacro-index index
-               'consult--annotation
+               'consult--candidate index
+               'consult--kmacro-annotation
                ;; If the counter is 0 and the counter format is its default,
                ;; then there is a good chance that the counter isn't actually
                ;; being used.  This can only be wrong when a user
@@ -3408,11 +3481,8 @@ Macros containing mouse clicks are omitted."
                    :require-match t
                    :sort nil
                    :history 'consult--kmacro-history
-                   :annotate #'consult--get-annotation
-                   :lookup
-                   (lambda (_ candidates cand)
-                     (get-text-property 0 'consult--kmacro-index
-                                        (car (member cand candidates)))))))
+                   :annotate (consult--get-property 'consult--kmacro-annotation)
+                   :lookup #'consult--lookup-candidate)))
     (if (= 0 selected)
         ;; If the first element has been selected, just run the last macro.
         (kmacro-call-macro (or arg 1) t nil)
@@ -3462,7 +3532,7 @@ TYPES is the mode-specific types configuration."
              (if-let (type (cdr (assoc name types)))
                   (setq next-prefix (propertize name
                                                 'face 'consult-imenu-prefix
-                                                'consult--imenu-type (car type))
+                                                'consult--type (car type))
                         next-face (cadr type))
                 (setq next-prefix (propertize name 'face 'consult-imenu-prefix))))
            (consult--imenu-flatten next-prefix next-face (cdr item) types))
@@ -3541,29 +3611,33 @@ this function can jump across buffers."
   "Choose from imenu ITEMS with preview.
 
 The symbol at point is added to the future history."
-  (consult--imenu-jump
-   (consult--read
-    (or items (user-error "Imenu is empty"))
-    :prompt "Go to item: "
-    :state
-    (let ((preview (consult--jump-preview)))
-      (lambda (cand restore)
-        ;; Only preview simple menu items which are markers,
-        ;; in order to avoid any bad side effects.
-        (funcall preview (and (markerp (cdr cand)) (cdr cand)) restore)))
-    :require-match t
-    :narrow
-    (when-let (types (plist-get (cdr (seq-find (lambda (x) (derived-mode-p (car x)))
-                                               consult-imenu-config))
-                                :types))
-      (cons (lambda (cand)
-              (eq (get-text-property 0 'consult--imenu-type (car cand)) consult--narrow))
-            (mapcar (lambda (x) (cons (car x) (cadr x))) types)))
-    :category 'imenu
-    :lookup #'consult--lookup-cons
-    :history 'consult--imenu-history
-    :add-history (thing-at-point 'symbol)
-    :sort nil)))
+  (let ((narrow
+         (mapcar (lambda (x) (cons (car x) (cadr x)))
+                 (plist-get (cdr (seq-find (lambda (x) (derived-mode-p (car x)))
+                                           consult-imenu-config))
+                           :types))))
+    (consult--imenu-jump
+     (consult--read
+      (or items (user-error "Imenu is empty"))
+      :prompt "Go to item: "
+      :state
+      (let ((preview (consult--jump-preview)))
+        (lambda (cand restore)
+          ;; Only preview simple menu items which are markers,
+          ;; in order to avoid any bad side effects.
+          (funcall preview (and (markerp (cdr cand)) (cdr cand)) restore)))
+      :require-match t
+      :title (consult--type-title narrow)
+      :narrow
+      (cons
+       (lambda (cand)
+         (eq (get-text-property 0 'consult--type (car cand)) consult--narrow))
+       narrow)
+      :category 'imenu
+      :lookup #'consult--lookup-cons
+      :history 'consult--imenu-history
+      :add-history (thing-at-point 'symbol)
+      :sort nil))))
 
 ;;;###autoload
 (defun consult-imenu ()
