@@ -2890,7 +2890,9 @@ variable `consult-bookmark-narrow' for the narrowing configuration."
   (interactive
    (list
     (consult--read
-     (bookmark-all-names)
+     (progn
+       (bookmark-maybe-load-default-file)
+       bookmark-alist)
      :prompt "Bookmark: "
      :state (consult--bookmark-preview)
      :category 'bookmark
@@ -2904,8 +2906,7 @@ variable `consult-bookmark-narrow' for the narrowing configuration."
       (let ((narrow (mapcar (pcase-lambda (`(,y ,_ ,x)) (cons x y))
                             consult-bookmark-narrow)))
         (lambda (cand)
-          (when-let (bm (bookmark-get-bookmark-record
-                         (assoc cand bookmark-alist)))
+          (when-let (bm (bookmark-get-bookmark-record cand))
             (eq consult--narrow
                 (alist-get
                  (alist-get 'handler bm #'bookmark-default-handler)
