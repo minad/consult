@@ -42,6 +42,23 @@
                   candidates))))
       (nreverse candidates))))
 
+(defun consult-compile--error-lookup (_ candidates cand)
+  "Lookup marker of CAND by accessing CANDIDATES list."
+  (when-let (cand (assoc cand candidates))
+    (let ((marker (cadr cand))
+          (loc (compilation--message->loc (caddr cand))))
+      (when (buffer-live-p (marker-buffer marker))
+        (consult--position-marker
+         ;; taken from compile.el
+         (apply #'compilation-find-file
+                marker
+                (caar (compilation--loc->file-struct loc))
+                (cadar (compilation--loc->file-struct loc))
+                (compilation--file-struct->formats
+                 (compilation--loc->file-struct loc)))
+         (compilation--loc->line loc)
+         (compilation--loc->col loc))))))
+
 (defun consult-compile--compilation-buffers (file)
   "Return a list of compilation buffers relevant to FILE."
   (seq-filter (lambda (buffer)
@@ -70,25 +87,7 @@ preview of the currently selected error."
    :sort nil
    :require-match t
    :history t ;; disable history
-   :lookup (lambda (_ candidates cand)
-             (when-let (cand (assoc cand candidates))
-               (let ((marker (cadr cand))
-                     (loc (compilation--message->loc (caddr cand))))
-                 (when (buffer-live-p (marker-buffer marker))
-                   (with-current-buffer
-                       ;; taken from compile.el
-                       (apply #'compilation-find-file
-                              marker
-                              (caar (compilation--loc->file-struct loc))
-                              (cadar (compilation--loc->file-struct loc))
-                              (compilation--file-struct->formats
-                               (compilation--loc->file-struct loc)))
-                     (goto-char (point-min))
-                     ;; location might be invalid by now
-                     (ignore-errors
-                       (forward-line (- (compilation--loc->line loc) 1))
-                       (forward-char (compilation--loc->col loc)))
-                     (point-marker))))))
+   :lookup #'consult-compile--error-lookup
    :narrow `(,(lambda (cand)
                 (= (pcase (compilation--message->type (caddr cand))
                      (0 ?i)
