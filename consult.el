@@ -442,6 +442,12 @@ should not be considered as stable as the public API."
 
 ;;;; Internal variables
 
+(defvar consult--multi-sources nil
+  "Vector of currently active `consult--multi' sources.")
+
+(defvar consult--multi-align nil
+  "Alignment string for annotations for `consult--multi-annotate'.")
+
 (defvar consult--buffer-display #'switch-to-buffer
   "Buffer display function.")
 
@@ -1686,53 +1692,49 @@ KEYMAP is a command-specific keymap."
 
 ;;;; Internal API: consult--multi
 
-(defsubst consult--multi-source (sources cand)
-  "Lookup source for CAND from SOURCES list."
-  (aref sources (- (aref cand 0) consult--tofu-char)))
+(defsubst consult--multi-source (cand)
+  "Lookup source for CAND from `consult--multi-sources' list."
+  (aref consult--multi-sources (- (aref cand 0) consult--tofu-char)))
 
-(defun consult--multi-predicate (sources)
-  "Return predicate function used by `consult--multi' with SOURCES."
-  (lambda (cand)
-    (let* ((src (consult--multi-source sources cand))
-           (narrow (plist-get src :narrow)))
-      (or (eq consult--narrow (or (car-safe narrow) narrow -1))
-          (not (or consult--narrow (plist-get src :hidden)))))))
+(defun consult--multi-predicate (cand)
+  "Predicate function called for each candidate CAND by `consult--multi'."
+  (let* ((src (consult--multi-source cand))
+         (narrow (plist-get src :narrow))
+         (type (or (car-safe narrow) narrow -1)))
+    (or (eq consult--narrow type)
+        (not (or consult--narrow (plist-get src :hidden))))))
 
-(defun consult--multi-narrow (sources)
-  "Return narrow list used by `consult--multi' with SOURCES."
+(defun consult--multi-narrow ()
+  "Return narrow list used by `consult--multi'."
   (delq nil (mapcar (lambda (src)
                       (let ((narrow (plist-get src :narrow))
                             (name (plist-get src :name)))
                         (cond
                          ((consp narrow) narrow)
                          ((and narrow name) (cons narrow name)))))
-                    sources)))
+                    consult--multi-sources)))
 
-(defun consult--multi-annotate (sources sep)
-  "Return annotation function used by `consult--multi' with SOURCES.
+(defun consult--multi-annotate (cand)
+  "Annotate candidate CAND, used by `consult--multi'."
+  (let* ((src (consult--multi-source cand))
+         (annotate (plist-get src :annotate))
+         (ann (if annotate
+                  (funcall annotate (cdr (get-text-property 0 'consult-multi cand)))
+                (plist-get src :name))))
+    (and ann (concat consult--multi-align ann))))
 
-SEP is the separator string."
-  (lambda (cand)
-    (let* ((src (consult--multi-source sources cand))
-           (annotate (plist-get src :annotate))
-           (ann (if annotate
-                    (funcall annotate (cdr (get-text-property 0 'consult-multi cand)))
-                  (plist-get src :name))))
-      (and ann (concat sep ann)))))
+(defun consult--multi-lookup (_ candidates cand)
+  "Lookup CAND in CANDIDATES, used by `consult--multi'."
+  (if-let (found (member cand candidates))
+      (cons (cdr (get-text-property 0 'consult-multi (car found)))
+            (consult--multi-source cand))
+    (unless (string-blank-p cand)
+      (list cand))))
 
-(defun consult--multi-lookup (sources)
-  "Lookup function used by `consult--multi' with SOURCES."
-  (lambda (_ candidates cand)
-    (if-let (found (member cand candidates))
-        (cons (cdr (get-text-property 0 'consult-multi (car found)))
-              (consult--multi-source sources cand))
-      (unless (string-blank-p cand)
-        (list cand)))))
-
-(defun consult--multi-candidates (sources)
-  "Return candidates from SOURCES for `consult--multi'."
+(defun consult--multi-candidates ()
+  "Return `consult--multi' candidates from `consult--multi-sources'."
   (let ((def) (idx 0) (max-width 0) (candidates))
-    (seq-doseq (src sources)
+    (seq-doseq (src consult--multi-sources)
       (let* ((face (plist-get src :face))
              (cat (plist-get src :category))
              (items (plist-get src :items))
@@ -1753,7 +1755,7 @@ SEP is the separator string."
     (list def (+ 3 max-width) (nreverse candidates))))
 
 (defun consult--multi-preprocess (sources)
-  "Preprocess SOURCES, remove disabled sources."
+  "Preprocess SOURCES, return vector of sources without disabled sources."
   (vconcat
    (seq-filter (lambda (src)
                  (if-let (pred (plist-get src :enabled))
@@ -1763,12 +1765,12 @@ SEP is the separator string."
                          (if (symbolp src) (symbol-value src) src))
                        sources))))
 
-(defun consult--multi-state (sources)
-  "State function for SOURCES."
+(defun consult--multi-state ()
+  "State function for `consult--multi'."
   (when-let (states (delq nil (mapcar (lambda (src)
-                                       (when-let (fun (plist-get src :state))
-                                         (cons src (funcall fun))))
-                                      sources)))
+                                        (when-let (fun (plist-get src :state))
+                                          (cons src (funcall fun))))
+                                      consult--multi-sources)))
     (let ((last-fun))
       (pcase-lambda (`(,cand . ,src) restore)
         (if restore
@@ -1812,26 +1814,25 @@ Optional source fields:
 * :action - Action function called with the selected candidate.
 * :state - State constructor for the source, must return the state function.
 * Other source fields can be added specifically to the use case."
-  (pcase-let*
-      ((sources (consult--multi-preprocess sources))
-       (`(,def ,max-width ,candidates)
-        (consult--with-increased-gc
-         (let ((consult--cache))
-           (consult--multi-candidates sources))))
-       (selected (apply #'consult--read
-                          candidates
+  (let* ((consult--multi-sources (consult--multi-preprocess sources))
+         (candidates (consult--with-increased-gc
+                      (let ((consult--cache))
+                        (consult--multi-candidates))))
+         (consult--multi-align (propertize
+                                " " 'display
+                                `(space :align-to (+ left ,(cadr candidates)))))
+         (selected (apply #'consult--read
+                          (caddr candidates)
                           (append
                            options
                            (list
-                            :default   def
+                            :default   (car candidates)
                             :category  'consult-multi
-                            :predicate (consult--multi-predicate sources)
-                            :narrow    (consult--multi-narrow sources)
-                            :annotate  (consult--multi-annotate
-                                        sources
-                                        (propertize " " 'display `(space :align-to (+ left ,max-width))))
-                            :lookup    (consult--multi-lookup sources)
-                            :state     (consult--multi-state sources))))))
+                            :predicate #'consult--multi-predicate
+                            :annotate  #'consult--multi-annotate
+                            :lookup    #'consult--multi-lookup
+                            :narrow    (consult--multi-narrow)
+                            :state     (consult--multi-state))))))
     (when-let (history (plist-get (cdr selected) :history))
       (add-to-history history (car selected)))
     (when-let (action (plist-get (cdr selected) :action))
