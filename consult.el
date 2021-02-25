@@ -281,6 +281,10 @@ substrings. ARG is replaced by the filter string and OPTS by the auxillary
 command options."
   :type 'string)
 
+(defcustom consult-preview-extend nil
+  "Whether the preview overlay should extend beyond end of line."
+  :type 'boolean)
+
 (defcustom consult-preview-key 'any
   "Preview trigger keys, can be nil, 'any, a single key or a list of keys."
   :type '(choice (const any) (const nil) key-sequence (repeat key-sequence)))
@@ -342,7 +346,7 @@ should not be considered as stable as the public API."
   :group 'faces)
 
 (defface consult-preview-line
-  '((t :inherit region))
+  '((t :extend t :inherit region))
   "Face used to for line previews.")
 
 (defface consult-preview-match
@@ -1011,10 +1015,11 @@ FACE is the cursor face."
        (cand
         (consult--jump-nomark cand)
         (setq invisible (consult--invisible-show))
-        (let ((pos (point)))
+        (let ((extend consult-preview-extend)
+              (pos (point)))
           (setq overlays
                 (list (consult--overlay (line-beginning-position)
-                                        (line-end-position)
+                                        (+ (line-end-position) (if extend 1 0))
                                         'face 'consult-preview-line)
                       (consult--overlay pos (1+ pos) 'face face)))))
        ;; If position cannot be previewed, return to saved position
