@@ -648,16 +648,6 @@ The line beginning/ending BEG/END is bound in BODY."
   "Create filter regexp from REGEXPS."
   (mapconcat (lambda (x) (concat "\\(?:" x "\\)")) regexps "\\|"))
 
-(defun consult--font-lock (str)
-  "Apply `font-lock' faces in STR, copy them to `face'."
-  (let ((pos 0) (len (length str)))
-    (while (< pos len)
-      (let* ((face (get-text-property pos 'font-lock-face str))
-             (end (or (text-property-not-all pos len 'font-lock-face face str) len)))
-        (put-text-property pos end 'face face str)
-        (setq pos end)))
-    str))
-
 (defun consult--format-directory-prompt (prompt dir)
   "Format PROMPT, expand directory DIR and return them as a pair."
   (save-match-data
@@ -3469,7 +3459,7 @@ TYPES is the mode-specific types configuration."
                (next-face face))
            (if prefix
                (setq next-prefix (concat prefix "/" (propertize name 'face 'consult-imenu-prefix)))
-             (if-let (type (cdr (assoc (car item) types)))
+             (if-let (type (cdr (assoc name types)))
                   (setq next-prefix (propertize name
                                                 'face 'consult-imenu-prefix
                                                 'consult--imenu-type (car type))
