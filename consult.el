@@ -3741,7 +3741,7 @@ See `consult-grep' for more details regarding the asynchronous search."
   (let ((candidates))
     (save-match-data
       (dolist (str lines)
-        (when (string-match "\\`\\(.*?\\([^ ]+\\)(\\([^,)]+\\)[^)]*).*?\\) +- +\\(.*\\)\\'" str)
+        (when (string-match "\\`\\(.*?\\([^ ]+\\) *(\\([^,)]+\\)[^)]*).*?\\) +- +\\(.*\\)\\'" str)
           (let ((names (match-string 1 str))
                 (name (match-string 2 str))
                 (section (match-string 3 str))
