@@ -342,7 +342,7 @@ should not be considered as stable as the public API."
   :group 'faces)
 
 (defface consult-preview-line
-  '((t :inherit region))
+  '((t :inherit consult-preview-region :extend t))
   "Face used to for line previews.")
 
 (defface consult-preview-match
@@ -358,11 +358,11 @@ should not be considered as stable as the public API."
   "Face used to for cursor previews and marks in `consult-compile-error'.")
 
 (defface consult-preview-yank
-  '((t :inherit consult-preview-line))
+  '((t :inherit consult-preview-region))
   "Face used to for yank previews in `consult-yank'.")
 
 (defface consult-preview-region
-  '((t :inherit consult-preview-yank))
+  '((t :inherit region))
   "Face used to for completion previews in `consult-completion-in-region'.")
 
 (defface consult-narrow-indicator
@@ -1014,7 +1014,7 @@ FACE is the cursor face."
         (let ((pos (point)))
           (setq overlays
                 (list (consult--overlay (line-beginning-position)
-                                        (line-end-position)
+                                        (1+ (line-end-position))
                                         'face 'consult-preview-line)
                       (consult--overlay pos (1+ pos) 'face face)))))
        ;; If position cannot be previewed, return to saved position
