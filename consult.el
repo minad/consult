@@ -2859,16 +2859,15 @@ number. Otherwise store point, frameset, window or kmacro."
          (when-let (bm (and cand
                             (bookmark-get-bookmark-record
                              (assoc cand bookmark-alist))))
-           (if-let* ((file
-                      ;; Only preview bookmarks with the default handler.
-                      (and (eq (alist-get 'handler bm #'bookmark-default-handler)
-                               #'bookmark-default-handler)
-                           (alist-get 'filename bm)))
-                     (pos (alist-get 'position bm))
-                     (buf (funcall open file)))
-               (set-marker (make-marker) pos buf)
-             (message "No preview for special bookmark")
-             nil))
+           (let ((handler (alist-get 'handler bm #'bookmark-default-handler)))
+             ;; Only preview bookmarks with the default handler.
+             (if-let* ((file (and (eq handler #'bookmark-default-handler)
+                                  (alist-get 'filename bm)))
+                       (pos (alist-get 'position bm))
+                       (buf (funcall open file)))
+                 (set-marker (make-marker) pos buf)
+               (message "No preview for %s" handler)
+               nil)))
          nil)))))
 
 ;;;###autoload
