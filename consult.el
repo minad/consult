@@ -1630,20 +1630,20 @@ See `consult--read' for the CANDIDATES, KEYMAP, ADD-HISTORY, NARROW and PREVIEW-
 
 Keyword OPTIONS:
 
-PROMPT is the string to prompt with.
-PREDICATE is a filter function for the candidates.
+PROMPT is the string which is shown as prompt message in the minibuffer.
+PREDICATE is a filter function called for each candidate.
 REQUIRE-MATCH equals t means that an exact match is required.
 HISTORY is the symbol of the history variable.
 DEFAULT is the default selected value.
 ADD-HISTORY is a list of items to add to the history.
 CATEGORY is the completion category.
 SORT should be set to nil if the candidates are already sorted.
-LOOKUP is a function which is applied to the result.
-ANNOTATE is the annotation function.
-INITIAL is initial input.
+LOOKUP is a lookup function passed the input, candidate list and candidate string.
+ANNOTATE is a function passed a candidate string to return an annotation string.
+INITIAL is the initial input.
 DEFAULT-TOP must be nil if the default candidate should not be moved to the top.
 STATE is the state function, see `consult--with-preview'.
-TITLE is the title function, called for each candidate string.
+TITLE is a function passed a candidate string to return a grouping title.
 PREVIEW-KEY are the preview keys (nil, 'any, a single key or a list of keys).
 NARROW is an alist of narrowing prefix strings and description.
 KEYMAP is a command-specific keymap."
