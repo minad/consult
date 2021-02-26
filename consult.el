@@ -1839,7 +1839,7 @@ Required source fields:
 * :items - List of strings to select from or function returning list of strings.
 
 Optional source fields:
-* :name - Name of the source, used for narrowing and annotation.
+* :name - Name of the source, used for narrowing, group titles and annotations.
 * :narrow - Narrowing character or (character . string) pair.
 * :enabled - Function which must return t if the source is enabled.
 * :hidden - When t candidates of this source are hidden by default.

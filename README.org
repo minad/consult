@@ -23,7 +23,7 @@ files. Various search commands are provided, like an asynchronous
 =consult-grep=, and =consult-line=, which resembles [[https://github.com/abo-abo/swiper#swiper][Swiper]] or [[https://github.com/emacsorphanage/helm-swoop][Helm-Swoop]]. Some
 of the offered commands are greatly enhanced versions of existing Emacs
 commands. For example the command =consult-imenu= presents a flat list of the
-Imenu with [[#live-previews][live preview]] and [[#narrowing-to-subsets][narrowing support]]. Please take a look at the [[#available-commands][full
+Imenu with [[#live-previews][live preview]] and [[#narrowing-and-grouping][narrowing support]]. Please take a look at the [[#available-commands][full
 list of commands]].
 
 All Consult commands are compatible with completion systems based on the
@@ -341,7 +341,7 @@ variables and functions with their descriptions.
   :end:
 
  Consult enhances =completing-read= with live previews of candidates, additional
- narrowing capabilities to candidate subsets and asynchronously generated
+ narrowing capabilities to candidate groups and asynchronously generated
  candidate lists. This functionality is provided by the internal =consult--read=
  function, which is used by most Consult commands. The =consult--read= function
  is a thin wrapper around =completing-read=. In order to support multiple
@@ -371,30 +371,35 @@ variables and functions with their descriptions.
  =:preview-key=, such that preview can be manual for some commands, for some
  commands automatic and for some commands completely disabled.
 
-** Narrowing to subsets
+** Narrowing and grouping
    :properties:
-   :description: Restricting the completion to a candidate subset
-   :custom_id: narrowing-to-subsets
+   :description: Restricting the completion to a candidate group
+   :custom_id: narrowing-and-grouping
    :end:
  #+cindex: narrowing
 
- Consult has special support to narrow to candidate subsets. This functionality
- is useful if the list of candidates consists of candidates of multiple types or
+ Consult has special support for candidate groups which are separated by
+ separator lines with titles if supported by the completion system. As of now,
+ Selectrum and Icomplete-vertical provide support. This functionality is useful
+ if the list of candidates consists of candidates of multiple types or
  candidates from [[#multiple-sources][multiple sources]], like the =consult-buffer= command, which
- shows both buffers and recently opened files.
+ shows both buffers and recently opened files. Note that the group titles can be
+ disabled by setting the =:title= property of the corresponding command in the
+ =consult-config= configuration alist to nil.
 
- When you use the =consult-buffer= command, you can press =b SPC= and the list
- of candidates will be restricted such that only buffers are shown. If you press
- =DEL= afterwards, the full candidate list will be shown again. Furthermore a
- narrowing prefix key and a widening key can be configured which can be pressed
- to achieve the same effect, see the configuration variables
- =consult-narrow-key= and =consult-widen-key=.
+ By entering a narrowing prefix or by pressing a narrowing key it is possible to
+ restrict the completion candidates to a certain candidate group. When you use
+ the =consult-buffer= command, you can enter the prefix =b SPC= and the list of
+ candidates will be restricted to buffers only. If you press =DEL= afterwards,
+ the full candidate list will be shown again. Furthermore a narrowing prefix key
+ and a widening key can be configured which can be pressed to achieve the same
+ effect, see the configuration variables =consult-narrow-key= and
+ =consult-widen-key=.
 
- If [[https://github.com/justbur/emacs-which-key][which-key]] is installed, the possible narrowing keys are shown in the
- which-key window after pressing the prefix key =consult-narrow-key=.
- Furthermore there is the =consult-narrow-help= command which can be bound to a
- key in the =consult-narrow-map= if this is desired, as shown in the [[#use-package-example][example
- configuration]].
+ If [[https://github.com/justbur/emacs-which-key][which-key]] is installed, the narrowing keys are shown in the which-key window
+ after pressing the prefix key =consult-narrow-key=. Furthermore there is the
+ =consult-narrow-help= command which can be bound to a key in the
+ =consult-narrow-map= if this is desired, as shown in the [[#use-package-example][example configuration]].
 
 ** Asynchronous search
    :properties:
@@ -474,7 +479,7 @@ variables and functions with their descriptions.
   - =:items= List of strings to select from or function returning list of strings.
 
   Optional source fields:
-  - =:name= Name of the source, used for narrowing and annotation.
+  - =:name= Name of the source, used for narrowing, group titles and annotations.
   - =:narrow= Narrowing character or =(character . string)= pair.
   - =:enabled= Function which must return t if the source is enabled.
   - =:hidden= When t candidates of this source are hidden by default.
@@ -838,6 +843,7 @@ contributed.
  - =:history= set the history variable symbol
  - =:add-history= add items to the future history, for example symbol at point
  - =:sort= enable or disable sorting
+ - =:title= set to nil in order to disable candidate grouping and titles.
 
  #+begin_src emacs-lisp
  ;; Set preview for `consult-buffer' to key `M-p'
