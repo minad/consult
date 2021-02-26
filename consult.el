@@ -1336,7 +1336,7 @@ the comma is passed to ASYNC, the second part is used for filtering."
 
 ASYNC is the async function which receives the candidates.
 CMD is the command argument list."
-  (let ((proc) (last-args) (indicator))
+  (let ((proc) (last-args) (indicator) (count))
     (lambda (action)
       (pcase action
         ("" ;; If no input is provided kill current process
@@ -1353,6 +1353,7 @@ CMD is the command argument list."
                (overlay-put indicator 'display #("*" 0 1 (face consult-async-running)))
                (consult--async-log "consult--async-process started %S\n" args)
                (setq
+                count 0
                 proc
                 (make-process
                  :connection-type 'pipe
@@ -1370,10 +1371,10 @@ CMD is the command argument list."
                          (setq rest (concat rest (car lines)))
                        (setcar lines (concat rest (car lines)))
                        (setq rest (car (last lines)))
+                       (setq count (+ count (length lines) -1))
                        (funcall async (nbutlast lines)))))
                  :sentinel
                  (lambda (_ event)
-                   (consult--async-log "consult--async-process sentinel: %s\n" event)
                    (when flush
                      (setq flush nil)
                      (funcall async 'flush))
@@ -1386,7 +1387,10 @@ CMD is the command argument list."
                                  (t
                                   #("!" 0 1 (face consult-async-failed)))))
                    (when (and (string-prefix-p "finished" event) (not (string= rest "")))
-                     (funcall async (list rest))))))))))
+                     (setq count (+ count 1))
+                     (funcall async (list rest)))
+                   (consult--async-log "consult--async-process sentinel: event=%s lines=%d\n"
+                                       (string-trim event) count))))))))
         ('destroy
          (ignore-errors (delete-process proc))
          (delete-overlay indicator)
