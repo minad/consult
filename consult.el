@@ -1215,10 +1215,10 @@ Examples: \"/async/filter\", \"#async#filter\"."
 FUN is the original completion style function.
 SPLIT is the splitter function.
 STYLES are the original completion styles."
-  (lambda (str table pred point &optional metadata)
+  (lambda (str table pred point)
     (let ((completion-styles styles)
           (parts (funcall split str point)))
-      (funcall fun (cadr parts) table pred (caddr parts) metadata))))
+      (funcall fun (cadr parts) table pred (caddr parts)))))
 
 (defun consult--split-setup (split)
   "Setup splitting completion style with splitter function SPLIT."
