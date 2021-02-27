@@ -1638,8 +1638,8 @@ DEFAULT is the default selected value.
 ADD-HISTORY is a list of items to add to the history.
 CATEGORY is the completion category.
 SORT should be set to nil if the candidates are already sorted.
-LOOKUP is a lookup function passed the input, candidate list and candidate string.
-ANNOTATE is a function passed a candidate string to return an annotation string.
+LOOKUP is a lookup function passed the input, candidates and candidate string.
+ANNOTATE is a function passed a candidate string to return an annotation.
 INITIAL is the initial input.
 DEFAULT-TOP must be nil if the default candidate should not be moved to the top.
 STATE is the state function, see `consult--with-preview'.
@@ -1671,47 +1671,43 @@ KEYMAP is a command-specific keymap."
       ;; lambda string representation larger, which makes debugging much worse.
       ;; Fortunately the overcapturing problem does not affect the bytecode
       ;; interpreter which does a proper scope analyis.
-      (let ((result
-             (consult--with-preview preview-key state
-                                    (lambda (input cand)
-                                      (funcall lookup input (funcall async nil) cand))
-                                    (apply-partially #'run-hook-with-args-until-success
-                                                     'consult--completion-candidate-hook)
-               (completing-read prompt
-                                (lambda (str pred action)
-                                  (pcase action
-                                    ('metadata
+      (let* ((metadata `(metadata
+                         ,@(when title `((x-group-function
+                                          . ,(apply-partially #'consult--group-candidates title))))
+                         ,@(when annotate `((annotation-function . ,annotate)))
+                         ,@(when category `((category . ,category)))
+                         ,@(unless sort '((cycle-sort-function . identity)
+                                          (display-sort-function . identity)))))
+             (result
+              (consult--with-preview preview-key state
+                                     (lambda (input cand)
+                                       (funcall lookup input (funcall async nil) cand))
+                                     (apply-partially #'run-hook-with-args-until-success
+                                                      'consult--completion-candidate-hook)
+                (completing-read prompt
+                                 (lambda (str pred action)
+                                   (pcase action
                                      ;; Return completion metadata
-                                     `(metadata
-                                       ,@(when title `((x-group-function
-                                                        . ,(apply-partially #'consult--group-candidates title))))
-                                       ,@(when annotate `((annotation-function . ,annotate)))
-                                       ,@(when category `((category . ,category)))
-                                       ,@(unless sort '((cycle-sort-function . identity)
-                                                        (display-sort-function . identity)))))
-                                    (`(boundaries . ,_)
+                                     ('metadata metadata)
                                      ;; Return completion boundaries; Currently unused by Consult.
                                      ;; The boundaries specify the part of the input string which is
                                      ;; supposed to be used for filtering. In the future we may want
                                      ;; to use boundaries in order to implement async filtering.
-                                     nil)
-                                    ('nil
+                                     (`(boundaries . ,_) nil)
                                      ;; Try to complete `str' prefix and return completed string.
                                      ;; This is feature is only used by prefix completion styles
                                      ;; like `basic'.
-                                     (try-completion str (funcall async nil) pred))
-                                    ('t
+                                     ('nil (try-completion str (funcall async nil) pred))
                                      ;; Return all candidates matching the prefix `str'.
                                      ;; Usually this called with the empty string, except
                                      ;; when using `basic' completion. For other completion
                                      ;; styles the actual filtering takes place later.
-                                     (all-completions str (funcall async nil) pred))
-                                    (_
+                                     ('t (all-completions str (funcall async nil) pred))
                                      ;; Return t if the input `str' matches one of the candidates.
-                                     (test-completion str (funcall async nil) pred))))
-                                predicate require-match initial
-                                (if (symbolp history) history (cadr history))
-                                default))))
+                                     (_ (test-completion str (funcall async nil) pred))))
+                                 predicate require-match initial
+                                 (if (symbolp history) history (cadr history))
+                                 default))))
         (pcase-exhaustive history
           (`(:input ,var)
            (set var (cdr (symbol-value var)))
