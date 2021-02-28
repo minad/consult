@@ -1491,11 +1491,12 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
           (setq opts (substring input (match-end 0))
                 input (substring input 0 (match-beginning 0))
                 opts (ignore-errors (split-string-and-unquote opts))))
-        (mapcan (lambda (x)
-                  (if (string= x "OPTS")
-                      opts
-                    (list (replace-regexp-in-string "ARG" input x 'fixedcase 'literal))))
-                cmd)))))
+        (unless (string-blank-p input)
+          (mapcan (lambda (x)
+                    (if (string= x "OPTS")
+                        opts
+                      (list (replace-regexp-in-string "ARG" input x 'fixedcase 'literal))))
+                  cmd))))))
 
 (defmacro consult--async-command (cmd &rest transforms)
   "Asynchronous CMD pipeline with TRANSFORMS."
