@@ -1149,8 +1149,8 @@ completion or Embark for actions.
 
 If you find a bug or suspect that there is a problem with Consult, please check
 first that you have @strong{updated all the relevant packages} to the newest version.
-This includes Selectrum, Icomplete-vertical, Embark, Orderless and Prescient in
-case you are using any of those packages.
+This includes Selectrum, Icomplete-vertical, Marginalia, Embark, Orderless and
+Prescient in case you are using any of those packages.
 
 Please provide the necessary important information with your bug report:
 
