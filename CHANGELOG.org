@@ -3,6 +3,7 @@
 #+language: en
 
 * Development (main branch)
+* Version 0.6 (2021-03-02)
 
 - Bugfixes
 - consult-keep/focus-lines: Align behavior on regions with built-in keep-lines.
