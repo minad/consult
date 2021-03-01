@@ -6,48 +6,48 @@
 * Version 0.6 (2021-03-02)
 
 - Bugfixes
-- consult-keep/focus-lines: Align behavior on regions with built-in keep-lines.
-- consult-buffer: Enable file sources only when recentf-mode is enabled
-- consult--multi: Add :default flag, use flag for consult--source-buffer
-- Add consult-grep-max-columns to prevent performance issues for long lines
-- Add consult-fontify-preserve customization variable
-- consult-line: Quits Isearch, when started from an Isearch session
-- consult-register-load: Align prefix argument handling with insert-register
-- Rename consult-error to consult-compile-error
-- consult-compile-error: Allow calling the command from any buffer,
+- =consult-keep/focus-lines=: Align behavior on regions with built-in =keep-lines=.
+- =consult-buffer=: Enable file sources only when =recentf-mode= is enabled
+- =consult--multi=: Add =:default= flag, use flag for =consult--source-buffer=
+- Add =consult-grep-max-columns= to prevent performance issues for long lines
+- Add =consult-fontify-preserve= customization variable
+- =consult-line=: Quits Isearch, when started from an Isearch session
+- =consult-register-load=: Align prefix argument handling with =insert-register=
+- Rename =consult-error= to =consult-compile-error=
+- =consult-compile-error=: Allow calling the command from any buffer,
   use the errors from all compilation buffers related to the current buffer.
-- consult-man: Handle aggreated entries returned by mandoc
-- consult-completion-in-region: Added preview and consult-preview-region face
-- Added consult-completion-in-region-styles customization variable
-- Added consult-xref. The function can be set as `xref-show-xrefs-function'
-  and `xref-show-definitions-function'.
-- Added support for the candidate grouping function `x-group-function`
+- =consult-man=: Handle aggreated entries returned by mandoc
+- =consult-completion-in-region=: Added preview and =consult-preview-region= face
+- Added =consult-completion-in-region-styles= customization variable
+- Added =consult-xref=. The function can be set as =xref-show-xrefs-function=
+  and =xref-show-definitions-function=.
+- Added support for the candidate grouping function =x-group-function=
 
 * Version 0.5 (2021-02-09)
 
 - Bugfixes
-- consult-keep/focus-lines: If region is active, operate only on the region.
-- consult-register-format: Do not truncate register strings.
-- Multi sources/consult-buffer: Ensure that original buffer is
+- =consult-keep/focus-lines=: If region is active, operate only on the region.
+- =consult-register-format=: Do not truncate register strings.
+- =consult-buffer= multi sources: Ensure that original buffer is
   shown, when the currently selected source does not perform preview.
-- Add consult-preview-raw-size
+- Add =consult-preview-raw-size=
 - Expose preview functionality for multi-source bookmarks/files
-- Multi sources: Add :enabled, :state and :action fields
-- consult-imenu: Add faces depending on item types
+- Multi sources: Add =:enabled=, =:state= and =:action= fields
+- =consult-imenu=: Add faces depending on item types
 
 * Version 0.4 (2021-02-01)
 
 - Bugfixes
-- Introduce multi sources, reimplement consult-buffer with multi sources
-- consult-isearch: Add preview highlighting
-- consult-line: Use isearch-string when invoked from running isearch
+- Introduce multi sources, reimplement =consult-buffer= with multi sources
+- =consult-isearch=: Add preview highlighting
+- =consult-line=: Use =isearch-string= when invoked from running isearch
 
 * Version 0.3 (2021-01-28)
 
 - Bugfixes
-- New command consult-isearch
-- New functions consult-register-format, consult-register-window,
-  removed consult-register-preview
+- New command =consult-isearch=
+- New functions =consult-register-format=, =consult-register-window=,
+  removed =consult-register-preview=
 
 * Version 0.2 (2021-01-16)
 
