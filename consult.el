@@ -193,7 +193,7 @@ type specified by :toplevel."
   :type '(repeat (cons symbol plist)))
 
 (defcustom consult-buffer-filter
-  '("\\` " "\\`\\*Completions\\*\\'")
+  '("\\` " "\\`\\*Completions\\*\\'" "\\`\\*tramp/.*\\*\\'")
   "Filter regexps for `consult-buffer'.
 
 The default setting is to filter only ephemeral buffer names beginning
