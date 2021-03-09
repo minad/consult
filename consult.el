@@ -3295,10 +3295,7 @@ The command supports previewing the currently selected theme."
 
 (defun consult--file-action (file)
   "Open FILE via `consult--buffer-display' function."
-  (pcase-exhaustive consult--buffer-display
-    ('switch-to-buffer (find-file file))
-    ('switch-to-buffer-other-window (find-file-other-window file))
-    ('switch-to-buffer-other-frame (find-file-other-frame file))))
+  (funcall consult--buffer-display (find-file-noselect file)))
 
 (defun consult--bookmark-action (bm)
   "Open BM via `consult--buffer-display' function."
