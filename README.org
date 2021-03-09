@@ -898,6 +898,11 @@ is possible to get started with only default completion and Consult and add more
 components later to the mix, e.g., using Selectrum for enhanced minibuffer
 completion or Embark for actions.
 
+The Selectrum repository provides a [[https://github.com/raxod502/selectrum/tree/master/test][set of scripts]] which allow testing multiple
+package combinations including various completion systems and Consult. After
+cloning the Selectrum repository, the scripts can be executed as
+=./run.sh <package-combo.el>=.
+
 * Bug reports
   :properties:
   :description: How to create reproducible bug reports
