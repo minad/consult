@@ -1146,8 +1146,8 @@ completion or Embark for actions.
 
 The Selectrum repository provides a @uref{https://github.com/raxod502/selectrum/tree/master/test, set of scripts} which allow testing multiple
 package combinations including various completion systems and Consult. After
-cloning the Selectrum repository, the scripts can be executed as
-@samp{./run.sh <package-combo.el>}.
+cloning the Selectrum repository, the scripts can be executed with
+@samp{cd selectrum/test; ./run.sh <package-combo.el>}.
 
 @node Bug reports
 @chapter Bug reports
