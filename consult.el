@@ -3280,7 +3280,11 @@ The command supports previewing the currently selected theme."
   "Buffer preview function."
   (let ((orig-buf (current-buffer)))
     (lambda (cand restore)
-      (unless (or restore (eq consult--buffer-display #'switch-to-buffer-other-frame))
+      (when (and (not restore)
+                 ;; Only preview in current window and other window.
+                 ;; Preview in frames and tabs is not possible since these don't get cleaned up.
+                 (or (eq consult--buffer-display #'switch-to-buffer)
+                     (eq consult--buffer-display #'switch-to-buffer-other-window)))
         (cond
          ((and cand (get-buffer cand)) (funcall consult--buffer-display cand 'norecord))
          ((buffer-live-p orig-buf) (funcall consult--buffer-display orig-buf 'norecord)))))))
