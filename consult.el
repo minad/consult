@@ -2239,8 +2239,11 @@ The symbol at point and the last `isearch-string' is added to the future history
 (defun consult-keep-lines (&optional filter initial)
   "Select a subset of the lines in the current buffer with live preview.
 
-The lines selected are those that match the minibuffer input.
-This command obeys narrowing.
+The selected lines are kept and the other lines are deleted. When called
+interactively, the lines selected are those that match the minibuffer input.
+When called from elisp, the filtering is performed by a FILTER function. This
+command obeys narrowing.
+
 FILTER is the filter function.
 INITIAL is the initial input."
   ;; Use consult-location completion category when filtering lines
@@ -2311,10 +2314,16 @@ INITIAL is the initial input."
 
 ;;;###autoload
 (defun consult-focus-lines (&optional show filter initial)
-  "Hide or show lines according to FILTER function.
+  "Hide or show lines using overlays.
 
-With optional prefix argument SHOW reveal the hidden lines.
-Optional INITIAL input can be provided when called from Lisp."
+The selected lines are shown and the other lines hidden. When called
+interactively, the lines selected are those that match the minibuffer input.
+With optional prefix argument SHOW reveal the hidden lines. When called from
+elisp, the filtering is performed by a FILTER function. This command obeys
+narrowing.
+
+FILTER is the filter function.
+INITIAL is the initial input."
   (interactive
    ;; Use consult-location completion category when filtering lines
    (list current-prefix-arg (consult--completion-filter 'consult-location nil)))
