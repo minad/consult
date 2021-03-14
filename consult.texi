@@ -1133,7 +1133,9 @@ depending on your personal preferences.
 @item
 @uref{https://github.com/d12frosted/flyspell-correct, flyspell-correct}: Apply spelling corrections by selecting via @samp{completing-read}
 @item
-@uref{https://codeberg.org/jao/consult-notmuch, consult-notmuch}: Access the @uref{https://notmuchmail.org/, Notmuch} email system using Consult
+@uref{https://codeberg.org/jao/consult-notmuch, consult-notmuch}: Access the @uref{https://notmuchmail.org/, Notmuch} email system using Consult.
+@item
+@uref{https://codeberg.org/jao/consult-recoll, consult-recoll}: Access the @uref{https://www.lesbonscomptes.com/recoll/, Recoll} desktop full-text search using Consult.
 @item
 @uref{https://codeberg.org/jao/espotify, consult-spotify}: Access the Spotify API and control your local music player.
 @end itemize
