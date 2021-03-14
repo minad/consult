@@ -2240,8 +2240,9 @@ The symbol at point and the last `isearch-string' is added to the future history
   "Select a subset of the lines in the current buffer with live preview.
 
 The selected lines are kept and the other lines are deleted. When called
-interactively, the lines selected are those that match the minibuffer input.
-When called from elisp, the filtering is performed by a FILTER function. This
+interactively, the lines selected are those that match the minibuffer input. In
+order to match the inverse of the input, prefix the input with `! '. When
+called from elisp, the filtering is performed by a FILTER function. This
 command obeys narrowing.
 
 FILTER is the filter function.
@@ -2317,10 +2318,10 @@ INITIAL is the initial input."
   "Hide or show lines using overlays.
 
 The selected lines are shown and the other lines hidden. When called
-interactively, the lines selected are those that match the minibuffer input.
-With optional prefix argument SHOW reveal the hidden lines. When called from
-elisp, the filtering is performed by a FILTER function. This command obeys
-narrowing.
+interactively, the lines selected are those that match the minibuffer input. In
+order to match the inverse of the input, prefix the input with `! '. With
+optional prefix argument SHOW reveal the hidden lines. When called from elisp,
+the filtering is performed by a FILTER function. This command obeys narrowing.
 
 FILTER is the filter function.
 INITIAL is the initial input."
