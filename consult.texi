@@ -118,12 +118,10 @@ in greater detail.
 
 Most provided commands follow the meaningful naming scheme @samp{consult-<thing>}.
 
-@tip
 @strong{TIP:} If you have @uref{https://github.com/minad/marginalia, Marginalia} installed and heavy annotators enabled, type @samp{M-x
 ^consult} to see all Consult commands with their abbreviated description.
 Alternatively, type @samp{C-h a ^consult} to get an overview of all Consult
 variables and functions with their descriptions.
-@end tip
 
 @menu
 * Virtual Buffers::              Buffers, bookmarks and recent files
@@ -745,10 +743,8 @@ since some details may still change.
 
 @cindex embark
 
-@note
-@strong{NOTE:} Install the @samp{embark-consult} package from MELPA, which provides
+@strong{NOTE}: Install the @samp{embark-consult} package from MELPA, which provides
 Consult-specific Embark actions and the Occur buffer export.
-@end note
 
 Embark is a versatile package which offers context dependent actions,
 comparable to a context menu. See the @uref{https://github.com/oantolin/embark, Embark manual} for an extensive
@@ -789,12 +785,10 @@ the box with the default completion, Icomplete and Selectrum.
 There is the @uref{https://github.com/minad/consult/wiki, Consult wiki}, where additional configuration examples can be
 contributed.
 
-@note
 @strong{IMPORTANT:} It is strongly recommended that you enable @uref{https://www.gnu.org/software/emacs/manual/html_node/elisp/Lexical-Binding.html, lexical binding} in your
 configuration. Consult uses a functional programming style, relying on lambdas
 and lexical closures. For this reason many Consult-related snippets require
 lexical binding.
-@end note
 
 @menu
 * Use-package example::          Configuration example based on use-package
@@ -814,10 +808,8 @@ effort. In order to use the Consult commands, it is advised to add keybindings
 for commands which are accessed often. Rarely used commands can be invoked via
 @samp{M-x}. Feel free to only bind the commands you consider useful to your workflow.
 
-@note
 @strong{NOTE:} There is the @uref{https://github.com/minad/consult/wiki, Consult wiki}, where additional configuration examples can be
 contributed.
-@end note
 
 @lisp
 ;; Example configuration for Consult
@@ -930,12 +922,10 @@ contributed.
 
 @cindex customization
 
-@tip
 @strong{TIP:} If you have @uref{https://github.com/minad/marginalia, Marginalia} installed, type @samp{M-x customize-variable RET
  ^consult} to see all Consult-specific customizable variables with their current
 values and abbreviated description. Alternatively, type @samp{C-h a ^consult} to get
 an overview of all Consult variables and functions with their descriptions.
-@end tip
 
 @multitable {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
 @headitem Variable
@@ -1048,11 +1038,9 @@ an overview of all Consult variables and functions with their descriptions.
 @node Fine-tuning
 @section Fine-tuning of individual commands
 
-@note
 @strong{NOTE:} Consult allows fine-grained customization of individual commands. This
 configuration feature is made available for experienced users with special
 requirements.
-@end note
 
 Commands allow flexible, individual customization by setting the
 @samp{consult-config} list. You can override any option passed to the internal
