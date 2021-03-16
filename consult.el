@@ -685,13 +685,17 @@ Otherwise the `default-directory' is returned."
   (cond
    ((stringp dir) (consult--format-directory-prompt prompt dir))
    (dir (consult--format-directory-prompt prompt (read-directory-name "Directory: " nil nil t)))
-   ((when-let (root (and consult-project-root-function
-                         (funcall consult-project-root-function)))
+   ((when-let (root (consult--project-root))
       (save-match-data
         (if (string-match "/\\([^/]+\\)/\\'" root)
             (cons (format "%s in project %s: " prompt (match-string 1 root)) root)
           (consult--format-directory-prompt prompt root)))))
    (t (consult--format-directory-prompt prompt default-directory))))
+
+(defun consult--project-root ()
+  "Return project root as absolute path."
+  (when-let (root (and consult-project-root-function (funcall consult-project-root-function)))
+    (expand-file-name root)))
 
 (defun consult--format-location (file line &optional str)
   "Format location string 'FILE:LINE:STR'."
@@ -3336,7 +3340,7 @@ The command supports previewing the currently selected theme."
     :enabled   ,(lambda () consult-project-root-function)
     :items
     ,(lambda ()
-       (when-let (root (funcall consult-project-root-function))
+       (when-let (root (consult--project-root))
          (mapcar #'buffer-name
                  (seq-filter (lambda (x)
                                (when-let (file (buffer-file-name x))
@@ -3356,7 +3360,7 @@ The command supports previewing the currently selected theme."
                                 recentf-mode))
     :items
     ,(lambda ()
-      (when-let (root (funcall consult-project-root-function))
+      (when-let (root (consult--project-root))
         (let ((len (length root))
               (inv-root (propertize root 'invisible t))
               (ht (consult--cached-buffer-file-hash)))
@@ -3601,7 +3605,7 @@ TYPES is the mode-specific types configuration."
 
 (defun consult--imenu-project-buffers ()
   "Return project buffers with the same `major-mode' as the current buffer."
-  (if-let (root (and consult-project-root-function (funcall consult-project-root-function)))
+  (if-let (root (consult--project-root))
       (seq-filter (lambda (buf)
                     (when-let (file (buffer-file-name buf))
                       (and (eq (buffer-local-value 'major-mode buf) major-mode)
