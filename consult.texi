@@ -1154,37 +1154,27 @@ cloning the Selectrum repository, the scripts can be executed with
 @node Bug reports
 @chapter Bug reports
 
-If you find a bug or suspect that there is a problem with Consult, please check
-first that you have @strong{updated all the relevant packages} to the newest version.
-This includes Selectrum, Icomplete-vertical, Marginalia, Embark, Orderless and
+If you find a bug or suspect that there is a problem with Consult, please carry
+out the following steps:
+
+@enumerate
+@item
+Check first that @strong{all the relevant packages are updated to the newest version}. This
+includes Selectrum, Icomplete-vertical, Marginalia, Embark, Orderless and
 Prescient in case you are using any of those packages.
-
-Please provide the necessary important information with your bug report:
-
-@itemize
 @item
-The full stack trace in case the bug triggers an exception.
+Ensure that either @samp{icomplete-mode} or @samp{selectrum-mode} is enabled.
+Furthermore @samp{ivy-mode} and @samp{helm-mode} must be disabled.
 @item
-Your Emacs version, since bugs are often dependant on the Emacs version.
+Ensure that the @samp{completion-styles} variable is properly configured. Try to set
+@samp{completion-styles} to a list including @samp{substring} or @samp{orderless}.
 @item
-Your operating system, since the Emacs builds vary between Linux, Mac and
-Windows.
-@item
-The package manager, e.g., straight.el or package.el, you are using to install
-the Emacs packages. This information is helpful to exclude update issues.
-@item
-If you are using Evil or other special packages which change Emacs on a
-fundamental level. There have been Evil-related problems before, which are
-fixed now.
-@end itemize
-
 Try to reproduce the issue by starting a barebone Emacs instance with @samp{emacs -Q}
-on the command line. Then execute the following code in the scratch buffer. This
-way we can exclude side effects due to configuration settings.
-
-When evaluating Consult-related code snippets it is required to enable @uref{https://www.gnu.org/software/emacs/manual/html_node/elisp/Lexical-Binding.html, lexical
-binding}. Consult uses a functional programming style, relying on lambdas and
-lexical closures.
+on the command line. Execute the following minimal code snippets in the
+scratch buffer. This way we can exclude side effects due to configuration
+settings. If other packages are relevant to reproduce the issue, include them
+in the minimal configuration snippet.
+@end enumerate
 
 @lisp
 ;; Minimal setup using Selectrum
@@ -1201,6 +1191,31 @@ lexical closures.
 (require 'consult)
 (setq completion-styles '(substring))
 @end lisp
+
+Please provide the necessary important information with your bug report:
+
+@itemize
+@item
+The minimal configuration snippet used to reproduce the issue.
+@item
+The full stack trace in case the bug triggers an exception.
+@item
+Your Emacs version, since bugs are often version-dependant.
+@item
+Your operating system, since Emacs builds vary between Linux, Mac and
+Windows.
+@item
+The package manager, e.g., straight.el or package.el, used to install
+the Emacs packages. This information is helpful to exclude update issues.
+@item
+If you are using Evil or other special packages which change Emacs on a
+fundamental level. There have been Evil-related problems before, which are
+fixed now.
+@end itemize
+
+When evaluating Consult-related code snippets it is required to enable @uref{https://www.gnu.org/software/emacs/manual/html_node/elisp/Lexical-Binding.html, lexical
+binding}. Consult uses a functional programming style, relying on lambdas and
+lexical closures.
 
 @node Contributions
 @chapter Contributions

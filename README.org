@@ -909,30 +909,21 @@ cloning the Selectrum repository, the scripts can be executed with
   :description: How to create reproducible bug reports
   :end:
 
-If you find a bug or suspect that there is a problem with Consult, please check
-first that you have *updated all the relevant packages* to the newest version.
-This includes Selectrum, Icomplete-vertical, Marginalia, Embark, Orderless and
-Prescient in case you are using any of those packages.
+If you find a bug or suspect that there is a problem with Consult, please carry
+out the following steps:
 
-Please provide the necessary important information with your bug report:
-
-- The full stack trace in case the bug triggers an exception.
-- Your Emacs version, since bugs are often dependant on the Emacs version.
-- Your operating system, since the Emacs builds vary between Linux, Mac and
-  Windows.
-- The package manager, e.g., straight.el or package.el, you are using to install
-  the Emacs packages. This information is helpful to exclude update issues.
-- If you are using Evil or other special packages which change Emacs on a
-  fundamental level. There have been Evil-related problems before, which are
-  fixed now.
-
-Try to reproduce the issue by starting a barebone Emacs instance with =emacs -Q=
-on the command line. Then execute the following code in the scratch buffer. This
-way we can exclude side effects due to configuration settings.
-
-When evaluating Consult-related code snippets it is required to enable [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Lexical-Binding.html][lexical
-binding]]. Consult uses a functional programming style, relying on lambdas and
-lexical closures.
+1. Check first that *all the relevant packages are updated to the newest version*. This
+   includes Selectrum, Icomplete-vertical, Marginalia, Embark, Orderless and
+   Prescient in case you are using any of those packages.
+2. Ensure that either =icomplete-mode= or =selectrum-mode= is enabled.
+   Furthermore =ivy-mode= and =helm-mode= must be disabled.
+3. Ensure that the =completion-styles= variable is properly configured. Try to set
+   =completion-styles= to a list including =substring= or =orderless=.
+4. Try to reproduce the issue by starting a barebone Emacs instance with =emacs -Q=
+   on the command line. Execute the following minimal code snippets in the
+   scratch buffer. This way we can exclude side effects due to configuration
+   settings. If other packages are relevant to reproduce the issue, include them
+   in the minimal configuration snippet.
 
 #+begin_src emacs-lisp
 ;; Minimal setup using Selectrum
@@ -949,6 +940,23 @@ lexical closures.
 (require 'consult)
 (setq completion-styles '(substring))
 #+end_src
+
+Please provide the necessary important information with your bug report:
+
+- The minimal configuration snippet used to reproduce the issue.
+- The full stack trace in case the bug triggers an exception.
+- Your Emacs version, since bugs are often version-dependant.
+- Your operating system, since Emacs builds vary between Linux, Mac and
+  Windows.
+- The package manager, e.g., straight.el or package.el, used to install
+  the Emacs packages. This information is helpful to exclude update issues.
+- If you are using Evil or other special packages which change Emacs on a
+  fundamental level. There have been Evil-related problems before, which are
+  fixed now.
+
+When evaluating Consult-related code snippets it is required to enable [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Lexical-Binding.html][lexical
+binding]]. Consult uses a functional programming style, relying on lambdas and
+lexical closures.
 
 * Contributions
   :properties:
