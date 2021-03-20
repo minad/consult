@@ -3344,7 +3344,7 @@ The command supports previewing the currently selected theme."
          (mapcar #'buffer-name
                  (seq-filter (lambda (x)
                                (when-let (file (buffer-file-name x))
-                                 (file-in-directory-p file root)))
+                                 (string-prefix-p root file)))
                              (consult--cached-buffers))))))
   "Project buffer candidate source for `consult-buffer'.")
 
@@ -3368,7 +3368,7 @@ The command supports previewing the currently selected theme."
                     (concat inv-root (substring x len)))
                   (seq-filter (lambda (x)
                                 (and (not (gethash x ht))
-                                     (file-in-directory-p x root)))
+                                     (string-prefix-p root x)))
                               recentf-list))))))
   "Project file candidate source for `consult-buffer'.")
 
@@ -3609,7 +3609,7 @@ TYPES is the mode-specific types configuration."
       (seq-filter (lambda (buf)
                     (when-let (file (buffer-file-name buf))
                       (and (eq (buffer-local-value 'major-mode buf) major-mode)
-                           (file-in-directory-p file root))))
+                           (string-prefix-p root file))))
                   (buffer-list))
     (list (current-buffer))))
 
