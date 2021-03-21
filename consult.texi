@@ -1114,9 +1114,7 @@ consult-flycheck: Provides the consult-flycheck command
 @item
 @uref{https://github.com/oantolin/embark, embark and embark-consult}: Action commands, which can act on the completion candidates
 @item
-@uref{https://github.com/oantolin/orderless, orderless}: Completion style, Flexible candidate filtering
-@item
-@uref{https://github.com/raxod502/prescient.el, prescient}: Frecency-based candidate sorting, also offers filtering
+@uref{https://github.com/oantolin/orderless, orderless}: Completion style which offers flexible candidate filtering
 @end itemize
 
 There exist more packages related to Consult which provide wider integration
@@ -1125,19 +1123,21 @@ depending on your personal preferences.
 
 @itemize
 @item
-@uref{https://github.com/justbur/emacs-which-key, which-key}: Helpful mode showing keybindings, also shows the Consult narrowing keys
-@item
-@uref{https://github.com/mhayashi1120/Emacs-wgrep, wgrep}: Editing of grep buffers, can be used together with @samp{consult-grep} via Embark
-@item
 @uref{https://github.com/minad/bookmark-view, bookmark-view}: Store window configuration as bookmarks, integrates with @samp{consult-buffer}
-@item
-@uref{https://github.com/d12frosted/flyspell-correct, flyspell-correct}: Apply spelling corrections by selecting via @samp{completing-read}
 @item
 @uref{https://codeberg.org/jao/consult-notmuch, consult-notmuch}: Access the @uref{https://notmuchmail.org/, Notmuch} email system using Consult.
 @item
 @uref{https://codeberg.org/jao/consult-recoll, consult-recoll}: Access the @uref{https://www.lesbonscomptes.com/recoll/, Recoll} desktop full-text search using Consult.
 @item
 @uref{https://codeberg.org/jao/espotify, consult-spotify}: Access the Spotify API and control your local music player.
+@item
+@uref{https://github.com/d12frosted/flyspell-correct, flyspell-correct}: Apply spelling corrections by selecting via @samp{completing-read}
+@item
+@uref{https://github.com/mhayashi1120/Emacs-wgrep, wgrep}: Editing of grep buffers, can be used together with @samp{consult-grep} via Embark
+@item
+@uref{https://github.com/justbur/emacs-which-key, which-key}: Helpful mode showing keybindings, also shows the Consult narrowing keys
+@item
+@uref{https://github.com/raxod502/prescient.el, prescient}: Sorts completion candidates according to frecency.
 @end itemize
 
 Note that all packages are independent and can potentially be exchanged with
