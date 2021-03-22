@@ -157,7 +157,7 @@ order to narrow to recent files. Ephemeral buffers can be shown by pressing
 @item
 b Buffers
 @item
-f Files
+f Files (Requires @samp{recentf-mode})
 @item
 m Bookmarks
 @item
@@ -176,7 +176,8 @@ bookmarks and narrowing.
 @item
 @samp{consult-recent-file}: Select from recent files with preview.
 You might prefer the powerful @samp{consult-buffer} instead, which can include
-recent files as a virtual buffer source.
+recent files as a virtual buffer source. Note that @samp{recentf-mode} should be
+enabled in order to track recent files.
 @end itemize
 
 @node Editing
