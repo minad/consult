@@ -798,8 +798,9 @@ KEY is the key function."
     (jit-lock-fontify-now start end)))
 
 (defun consult--define-key (map key cmd desc)
-  "Bind CMD to KEY in MAP and add which-key description DESC."
-  (define-key map key cmd)
+  "Bind CMD to KEY with DESC in MAP.
+Also create a which-key pseudo key to show the description."
+  (define-key map key (cons desc cmd))
   ;; The which-key description is potentially fragile if something is changed on the side
   ;; of which-key. Keep an eye on that. An alternative more standard-compliant method
   ;; would be to use `menu-item', but this is unfortunately not yet supported by which-key
