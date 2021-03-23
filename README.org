@@ -397,10 +397,14 @@ variables and functions with their descriptions.
  effect, see the configuration variables =consult-narrow-key= and
  =consult-widen-key=.
 
- If [[https://github.com/justbur/emacs-which-key][which-key]] is installed, the narrowing keys are shown in the which-key window
- after pressing the prefix key =consult-narrow-key=. Furthermore there is the
- =consult-narrow-help= command which can be bound to a key in the
- =consult-narrow-map= if this is desired, as shown in the [[#use-package-example][example configuration]].
+ After pressing =consult-narrow-key=, the possible narrowing keys can be shown
+ by pressing =C-h=. When pressing =C-h= after some prefix key, the
+ =prefix-help-command= is invoked, which shows the keybinding help window by
+ default. As a more compact alternative, there is the =consult-narrow-help=
+ command which can be bound to a key, for example =?= or =C-h= in the
+ =consult-narrow-map=, as shown in the [[#use-package-example][example configuration]]. If [[https://github.com/justbur/emacs-which-key][which-key]] is
+ installed, the narrowing keys are automatically shown in the which-key window
+ after pressing the =consult-narrow-key=.
 
 ** Asynchronous search
    :properties:

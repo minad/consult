@@ -516,10 +516,14 @@ and a widening key can be configured which can be pressed to achieve the same
 effect, see the configuration variables @samp{consult-narrow-key} and
 @samp{consult-widen-key}.
 
-If @uref{https://github.com/justbur/emacs-which-key, which-key} is installed, the narrowing keys are shown in the which-key window
-after pressing the prefix key @samp{consult-narrow-key}. Furthermore there is the
-@samp{consult-narrow-help} command which can be bound to a key in the
-@samp{consult-narrow-map} if this is desired, as shown in the @ref{Use-package example, , example configuration}.
+After pressing @samp{consult-narrow-key}, the possible narrowing keys can be shown
+by pressing @samp{C-h}. When pressing @samp{C-h} after some prefix key, the
+@samp{prefix-help-command} is invoked, which shows the keybinding help window by
+default. As a more compact alternative, there is the @samp{consult-narrow-help}
+command which can be bound to a key, for example @samp{?} or @samp{C-h} in the
+@samp{consult-narrow-map}, as shown in the @ref{Use-package example, , example configuration}. If @uref{https://github.com/justbur/emacs-which-key, which-key} is
+installed, the narrowing keys are automatically shown in the which-key window
+after pressing the @samp{consult-narrow-key}.
 
 @node Asynchronous search
 @section Asynchronous search
