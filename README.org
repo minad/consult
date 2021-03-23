@@ -624,7 +624,13 @@ variables and functions with their descriptions.
  they can be edited via the =occur-edit-mode= (press key =e=). Similarily,
  Embark supports exporting the matches found by =consult-grep=,
  =consult-ripgrep= and =consult-git-grep= to a Grep buffer, where the matches
- across files can be edited, if the [[https://github.com/mhayashi1120/Emacs-wgrep][wgrep]] package is installed.
+ across files can be edited, if the [[https://github.com/mhayashi1120/Emacs-wgrep][wgrep]] package is installed. The two
+ workflows are symmetric.
+
+ + =consult-line= -> =embark-export= to =occur-mode= buffer
+   -> =occur-edit-mode= for editing of matches in buffer.
+ + =consult-grep= -> =embark-export= to =grep-mode= buffer
+   -> =wgrep= for editing of all matches.
 
 * Configuration
   :properties:

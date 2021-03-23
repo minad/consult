@@ -769,7 +769,17 @@ the matching lines from @samp{consult-line}, @samp{consult-outline}, @samp{consu
 they can be edited via the @samp{occur-edit-mode} (press key @samp{e}). Similarily,
 Embark supports exporting the matches found by @samp{consult-grep},
 @samp{consult-ripgrep} and @samp{consult-git-grep} to a Grep buffer, where the matches
-across files can be edited, if the @uref{https://github.com/mhayashi1120/Emacs-wgrep, wgrep} package is installed.
+across files can be edited, if the @uref{https://github.com/mhayashi1120/Emacs-wgrep, wgrep} package is installed. The two
+workflows are symmetric.
+
+@itemize
+@item
+@samp{consult-line} -> @samp{embark-export} to @samp{occur-mode} buffer
+-> @samp{occur-edit-mode} for editing of matches in buffer.
+@item
+@samp{consult-grep} -> @samp{embark-export} to @samp{grep-mode} buffer
+-> @samp{wgrep} for editing of all matches.
+@end itemize
 
 @node Configuration
 @chapter Configuration
