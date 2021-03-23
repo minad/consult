@@ -77,7 +77,7 @@ This is the key representation accepted by `define-key'."
 (defcustom consult-widen-key nil
   "Key used for widening during completion.
 
-If this key is unset, defaults to 'consult-narrow-key SPC'.
+If this key is unset, defaults to twice the `consult-narrow-key'.
 
 The key must be either a string or a vector.
 This is the key representation accepted by `define-key'."
@@ -1116,8 +1116,8 @@ candidate argument can be nil if the selection has been aborted."
 ;;;; Narrowing support
 
 (defun consult--widen-key ()
-  "Return widening key, if `consult-widen-key' is not set, default to 'consult-narrow-key SPC'."
-  (or consult-widen-key (and consult-narrow-key (vconcat consult-narrow-key " "))))
+  "Return widening key, if `consult-widen-key' is not set, defaults to twice `consult-narrow-key'."
+  (or consult-widen-key (and consult-narrow-key (vconcat consult-narrow-key consult-narrow-key))))
 
 (defun consult-narrow (key)
   "Narrow current completion with KEY.
@@ -1189,10 +1189,9 @@ to make it available for commands with narrowing."
           consult--narrow-prefixes settings))
   (when consult-narrow-key
     (dolist (pair consult--narrow-prefixes)
-      (when (/= (car pair) 32)
-        (consult--define-key map
-                             (vconcat consult-narrow-key (vector (car pair)))
-                             #'consult-narrow (cdr pair)))))
+      (consult--define-key map
+                           (vconcat consult-narrow-key (vector (car pair)))
+                           #'consult-narrow (cdr pair))))
   (when-let (widen (consult--widen-key))
     (consult--define-key map widen #'consult-narrow "All")))
 
