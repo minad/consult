@@ -1739,13 +1739,15 @@ KEYMAP is a command-specific keymap."
 
 (defun consult--multi-narrow ()
   "Return narrow list used by `consult--multi'."
-  (delq nil (mapcar (lambda (src)
-                      (let ((narrow (plist-get src :narrow))
-                            (name (plist-get src :name)))
-                        (cond
-                         ((consp narrow) narrow)
-                         ((and narrow name) (cons narrow name)))))
-                    consult--multi-sources)))
+  (thread-last consult--multi-sources
+    (mapcar (lambda (src)
+              (when-let (narrow (plist-get src :narrow))
+                (if (consp narrow)
+                    narrow
+                  (when-let (name (plist-get src :name))
+                    (cons narrow name))))))
+    (delq nil)
+    (consult--remove-dups)))
 
 (defun consult--multi-annotate (cand)
   "Annotate candidate CAND, used by `consult--multi'."
