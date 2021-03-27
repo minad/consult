@@ -3432,10 +3432,7 @@ order to determine the project-specific files and buffers, the
   (interactive)
   (when-let (buffer (consult--multi consult-buffer-sources
                                     :require-match
-                                    (pcase confirm-nonexistent-file-or-buffer
-                                      ('nil nil)
-                                      ('after-completion 'confirm-after-completion)
-                                      (_ 'confirm))
+                                    (confirm-nonexistent-file-or-buffer)
                                     :prompt "Switch to: "
                                     :history 'consult--buffer-history
                                     :sort nil))
