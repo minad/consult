@@ -3431,6 +3431,11 @@ order to determine the project-specific files and buffers, the
 `consult--multi' for the configuration of the virtual buffer sources."
   (interactive)
   (when-let (buffer (consult--multi consult-buffer-sources
+                                    :require-match
+                                    (pcase confirm-nonexistent-file-or-buffer
+                                      ('nil nil)
+                                      ('after-completion 'confirm-after-completion)
+                                      (_ 'confirm))
                                     :prompt "Switch to: "
                                     :history 'consult--buffer-history
                                     :sort nil))

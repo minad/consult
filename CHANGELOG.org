@@ -3,6 +3,11 @@
 #+language: en
 
 * Development (main branch)
+
+- Bugfixes
+- =consult-buffer=: Respect =confirm-nonexistent-file-or-buffer=
+- =consult-widen-key=: Change default setting to twice the =consult-narrow-key=
+
 * Version 0.6 (2021-03-02)
 
 - Bugfixes
