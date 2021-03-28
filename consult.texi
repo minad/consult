@@ -1093,7 +1093,7 @@ Useful options are:
 ;; to the commands which select the previous or next candidate.
 (setq consult-config `((consult-theme :preview-key nil)
                        (consult-buffer :preview-key ,(kbd "M-p"))
-                       (consult-line :preview-key (list ,(kbd "<S-down>") ,(kbd "<S-up>")))))
+                       (consult-line :preview-key (,(kbd "<S-down>") ,(kbd "<S-up>")))))
 @end lisp
 
 Generally it is possible to modify commands for your individual needs by the
