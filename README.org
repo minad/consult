@@ -924,8 +924,8 @@ If you find a bug or suspect that there is a problem with Consult, please carry
 out the following steps:
 
 1. Check first that *all the relevant packages are updated to the newest version*. This
-   includes Selectrum, Icomplete-vertical, Marginalia, Embark, Orderless and
-   Prescient in case you are using any of those packages.
+   includes Consult, Selectrum, Icomplete-vertical, Marginalia, Embark,
+   Orderless and Prescient in case you are using any of those packages.
 2. Ensure that either =icomplete-mode= or =selectrum-mode= is enabled.
    Furthermore =ivy-mode= and =helm-mode= must be disabled.
 3. Ensure that the =completion-styles= variable is properly configured. Try to set

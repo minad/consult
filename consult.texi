@@ -1175,8 +1175,8 @@ out the following steps:
 @enumerate
 @item
 Check first that @strong{all the relevant packages are updated to the newest version}. This
-includes Selectrum, Icomplete-vertical, Marginalia, Embark, Orderless and
-Prescient in case you are using any of those packages.
+includes Consult, Selectrum, Icomplete-vertical, Marginalia, Embark,
+Orderless and Prescient in case you are using any of those packages.
 @item
 Ensure that either @samp{icomplete-mode} or @samp{selectrum-mode} is enabled.
 Furthermore @samp{ivy-mode} and @samp{helm-mode} must be disabled.
