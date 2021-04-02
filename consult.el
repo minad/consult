@@ -1698,18 +1698,31 @@ KEYMAP is a command-specific keymap."
                                      ;; The boundaries specify the part of the input string which is
                                      ;; supposed to be used for filtering. In the future we may want
                                      ;; to use boundaries in order to implement async filtering.
-                                     (`(boundaries . ,_) nil)
+                                     (`(boundaries . ,suffix)
+                                      `(boundaries ,(if-let (pos (seq-position str ?#)) (1+ pos) (length str)) . 0))
                                      ;; Try to complete `str' prefix and return completed string.
                                      ;; This is feature is only used by prefix completion styles
                                      ;; like `basic'.
-                                     ('nil (try-completion str (funcall async nil) pred))
+                                     ('nil
+                                      (if-let (pos (seq-position str ?#))
+                                          (setq str (substring str (1+ pos)))
+                                        (setq str ""))
+                                      (try-completion str (funcall async nil) pred))
                                      ;; Return all candidates matching the prefix `str'.
                                      ;; Usually this called with the empty string, except
                                      ;; when using `basic' completion. For other completion
                                      ;; styles the actual filtering takes place later.
-                                     ('t (all-completions str (funcall async nil) pred))
+                                     ('t
+                                      (if-let (pos (seq-position str ?#))
+                                          (setq str (substring str (1+ pos)))
+                                        (setq str ""))
+                                      (all-completions str (funcall async nil) pred))
                                      ;; Return t if the input `str' matches one of the candidates.
-                                     (_ (test-completion str (funcall async nil) pred))))
+                                     (_
+                                      (if-let (pos (seq-position str ?#))
+                                          (setq str (substring str (1+ pos)))
+                                        (setq str ""))
+                                      (test-completion str (funcall async nil) pred))))
                                  predicate require-match initial
                                  (if (symbolp history) history (cadr history))
                                  default))))
