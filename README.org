@@ -28,7 +28,7 @@ list of commands]].
 
 All Consult commands are compatible with completion systems based on the
 standard Emacs =completing-read= API, notably the default completion system,
-[[https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html][Icomplete]], [[https://github.com/raxod502/selectrum][Selectrum]] and [[https://github.com/oantolin/embark/][Embark]], with which Consult works out of the box. If
+[[https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html][Icomplete]], [[https://github.com/raxod502/selectrum][Selectrum]], [[https://github.com/minad/vertico][Vertico]] and [[https://github.com/oantolin/embark/][Embark]], with which Consult works out of the box. If
 Icomplete is used, it is recommended to install [[https://github.com/oantolin/icomplete-vertical][Icomplete-vertical]] to enjoy the
 enhanced visuals. The completion system specifics in this package are kept to a
 minimum. The ability of the Consult commands to work well with arbitrary
@@ -381,8 +381,8 @@ variables and functions with their descriptions.
 
  Consult has special support for candidate groups which are separated by
  separator lines with titles if supported by the completion system. As of now,
- Selectrum and Icomplete-vertical provide support. This functionality is useful
- if the list of candidates consists of candidates of multiple types or
+ Selectrum, Vertico and Icomplete-vertical provide support. This functionality
+ is useful if the list of candidates consists of candidates of multiple types or
  candidates from [[#multiple-sources][multiple sources]], like the =consult-buffer= command, which
  shows both buffers and recently opened files. Note that the group titles can be
  disabled by setting the =:title= property of the corresponding command in the
@@ -647,8 +647,7 @@ other non-standard package managers.
 
 Note that there are two packages as of now: =consult= and =consult-flycheck=.
 =consult-flycheck= is a separate package such that the core =consult= package
-only depends on Emacs core components. The =consult= package will work out of
-the box with the default completion, Icomplete and Selectrum.
+only depends on Emacs core components.
 
 There is the [[https://github.com/minad/consult/wiki][Consult wiki]], where additional configuration examples can be
 contributed.
@@ -886,7 +885,7 @@ It is recommended to install the following package combination:
 
 - consult: This package
 - consult-flycheck: Provides the consult-flycheck command
-- [[https://github.com/raxod502/selectrum][selectrum]] or [[https://github.com/oantolin/icomplete-vertical][icomplete-vertical]]: Vertical completion systems
+- [[https://github.com/raxod502/selectrum][selectrum]], [[https://github.com/minad/vertico][vertico]] or [[https://github.com/oantolin/icomplete-vertical][icomplete-vertical]]: Vertical completion systems
 - [[https://github.com/minad/marginalia][marginalia]]: Annotations for the completion candidates
 - [[https://github.com/oantolin/embark][embark and embark-consult]]: Action commands, which can act on the completion candidates
 - [[https://github.com/oantolin/orderless][orderless]]: Completion style which offers flexible candidate filtering
@@ -907,8 +906,7 @@ depending on your personal preferences.
 Note that all packages are independent and can potentially be exchanged with
 alternative components, since there exist no hard dependencies. Furthermore it
 is possible to get started with only default completion and Consult and add more
-components later to the mix, e.g., using Selectrum for enhanced minibuffer
-completion or Embark for actions.
+components later to the mix, e.g., using Embark for actions.
 
 The Selectrum repository provides a [[https://github.com/raxod502/selectrum/tree/master/test][set of scripts]] which allow testing multiple
 package combinations including various completion systems and Consult. After
@@ -923,9 +921,9 @@ cloning the Selectrum repository, the scripts can be executed with
 If you find a bug or suspect that there is a problem with Consult, please carry
 out the following steps:
 
-1. Check first that *all the relevant packages are updated to the newest version*. This
-   includes Consult, Selectrum, Icomplete-vertical, Marginalia, Embark,
-   Orderless and Prescient in case you are using any of those packages.
+1. Check first that *all the relevant packages are updated to the newest version*.
+   This includes Consult, Selectrum, Vertico, Icomplete-vertical, Marginalia,
+   Embark, Orderless and Prescient in case you are using any of those packages.
 2. Ensure that either =icomplete-mode= or =selectrum-mode= is enabled.
    Furthermore =ivy-mode= and =helm-mode= must be disabled.
 3. Ensure that the =completion-styles= variable is properly configured. Try to set

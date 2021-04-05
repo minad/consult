@@ -91,7 +91,7 @@ list of commands}.
 
 All Consult commands are compatible with completion systems based on the
 standard Emacs @samp{completing-read} API, notably the default completion system,
-@uref{https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html, Icomplete}, @uref{https://github.com/raxod502/selectrum, Selectrum} and @uref{https://github.com/oantolin/embark/, Embark}, with which Consult works out of the box. If
+@uref{https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html, Icomplete}, @uref{https://github.com/raxod502/selectrum, Selectrum}, @uref{https://github.com/minad/vertico, Vertico} and @uref{https://github.com/oantolin/embark/, Embark}, with which Consult works out of the box. If
 Icomplete is used, it is recommended to install @uref{https://github.com/oantolin/icomplete-vertical, Icomplete-vertical} to enjoy the
 enhanced visuals. The completion system specifics in this package are kept to a
 minimum. The ability of the Consult commands to work well with arbitrary
@@ -500,8 +500,8 @@ commands automatic and for some commands completely disabled.
 
 Consult has special support for candidate groups which are separated by
 separator lines with titles if supported by the completion system. As of now,
-Selectrum and Icomplete-vertical provide support. This functionality is useful
-if the list of candidates consists of candidates of multiple types or
+Selectrum, Vertico and Icomplete-vertical provide support. This functionality
+is useful if the list of candidates consists of candidates of multiple types or
 candidates from @ref{Multiple sources, , multiple sources}, like the @samp{consult-buffer} command, which
 shows both buffers and recently opened files. Note that the group titles can be
 disabled by setting the @samp{:title} property of the corresponding command in the
@@ -794,8 +794,7 @@ other non-standard package managers.
 
 Note that there are two packages as of now: @samp{consult} and @samp{consult-flycheck}.
 @samp{consult-flycheck} is a separate package such that the core @samp{consult} package
-only depends on Emacs core components. The @samp{consult} package will work out of
-the box with the default completion, Icomplete and Selectrum.
+only depends on Emacs core components.
 
 There is the @uref{https://github.com/minad/consult/wiki, Consult wiki}, where additional configuration examples can be
 contributed.
@@ -1123,7 +1122,7 @@ consult: This package
 @item
 consult-flycheck: Provides the consult-flycheck command
 @item
-@uref{https://github.com/raxod502/selectrum, selectrum} or @uref{https://github.com/oantolin/icomplete-vertical, icomplete-vertical}: Vertical completion systems
+@uref{https://github.com/raxod502/selectrum, selectrum}, @uref{https://github.com/minad/vertico, vertico} or @uref{https://github.com/oantolin/icomplete-vertical, icomplete-vertical}: Vertical completion systems
 @item
 @uref{https://github.com/minad/marginalia, marginalia}: Annotations for the completion candidates
 @item
@@ -1158,8 +1157,7 @@ depending on your personal preferences.
 Note that all packages are independent and can potentially be exchanged with
 alternative components, since there exist no hard dependencies. Furthermore it
 is possible to get started with only default completion and Consult and add more
-components later to the mix, e.g., using Selectrum for enhanced minibuffer
-completion or Embark for actions.
+components later to the mix, e.g., using Embark for actions.
 
 The Selectrum repository provides a @uref{https://github.com/raxod502/selectrum/tree/master/test, set of scripts} which allow testing multiple
 package combinations including various completion systems and Consult. After
@@ -1174,9 +1172,9 @@ out the following steps:
 
 @enumerate
 @item
-Check first that @strong{all the relevant packages are updated to the newest version}. This
-includes Consult, Selectrum, Icomplete-vertical, Marginalia, Embark,
-Orderless and Prescient in case you are using any of those packages.
+Check first that @strong{all the relevant packages are updated to the newest version}.
+This includes Consult, Selectrum, Vertico, Icomplete-vertical, Marginalia,
+Embark, Orderless and Prescient in case you are using any of those packages.
 @item
 Ensure that either @samp{icomplete-mode} or @samp{selectrum-mode} is enabled.
 Furthermore @samp{ivy-mode} and @samp{helm-mode} must be disabled.
