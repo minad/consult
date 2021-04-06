@@ -1210,7 +1210,7 @@ Examples: \"/async/filter\", \"#async#filter\"."
           (string-match (concat "^" q "\\([^" q "]*\\)" q "?") str)
           (list (match-string 1 str)
                 (substring str (match-end 0))
-                (- point (match-end 0)))))
+                (max 0 (- point (match-end 0))))))
     (list str "" 0)))
 
 (defun consult--split-wrap (fun split styles)
