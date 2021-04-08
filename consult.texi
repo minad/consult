@@ -1120,7 +1120,7 @@ It is recommended to install the following package combination:
 @item
 consult: This package
 @item
-consult-flycheck: Provides the consult-flycheck command
+consult-flycheck: Provides the @samp{consult-flycheck} command
 @item
 @uref{https://github.com/raxod502/selectrum, selectrum}, @uref{https://github.com/minad/vertico, vertico} or @uref{https://github.com/oantolin/icomplete-vertical, icomplete-vertical}: Vertical completion systems
 @item
@@ -1132,7 +1132,7 @@ consult-flycheck: Provides the consult-flycheck command
 @end itemize
 
 There exist more packages related to Consult which provide wider integration
-with the Emacs ecosystem. You may want to install some of these packages too
+with the Emacs ecosystem. You may want to install some of these packages
 depending on your personal preferences.
 
 @itemize
@@ -1151,7 +1151,7 @@ depending on your personal preferences.
 @item
 @uref{https://github.com/justbur/emacs-which-key, which-key}: Helpful mode showing keybindings, also shows the Consult narrowing keys
 @item
-@uref{https://github.com/raxod502/prescient.el, prescient}: Sorts completion candidates according to frecency.
+@uref{https://github.com/raxod502/prescient.el, prescient}: Sorts completion candidates according to frecency (Selectrum specific).
 @end itemize
 
 Note that all packages are independent and can potentially be exchanged with

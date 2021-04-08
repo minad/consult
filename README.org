@@ -884,14 +884,14 @@ contributed.
 It is recommended to install the following package combination:
 
 - consult: This package
-- consult-flycheck: Provides the consult-flycheck command
+- consult-flycheck: Provides the =consult-flycheck= command
 - [[https://github.com/raxod502/selectrum][selectrum]], [[https://github.com/minad/vertico][vertico]] or [[https://github.com/oantolin/icomplete-vertical][icomplete-vertical]]: Vertical completion systems
 - [[https://github.com/minad/marginalia][marginalia]]: Annotations for the completion candidates
 - [[https://github.com/oantolin/embark][embark and embark-consult]]: Action commands, which can act on the completion candidates
 - [[https://github.com/oantolin/orderless][orderless]]: Completion style which offers flexible candidate filtering
 
 There exist more packages related to Consult which provide wider integration
-with the Emacs ecosystem. You may want to install some of these packages too
+with the Emacs ecosystem. You may want to install some of these packages
 depending on your personal preferences.
 
 - [[https://github.com/minad/bookmark-view][bookmark-view]]: Store window configuration as bookmarks, integrates with =consult-buffer=
@@ -901,7 +901,7 @@ depending on your personal preferences.
 - [[https://github.com/d12frosted/flyspell-correct][flyspell-correct]]: Apply spelling corrections by selecting via =completing-read=
 - [[https://github.com/mhayashi1120/Emacs-wgrep][wgrep]]: Editing of grep buffers, can be used together with =consult-grep= via Embark
 - [[https://github.com/justbur/emacs-which-key][which-key]]: Helpful mode showing keybindings, also shows the Consult narrowing keys
-- [[https://github.com/raxod502/prescient.el][prescient]]: Sorts completion candidates according to frecency.
+- [[https://github.com/raxod502/prescient.el][prescient]]: Sorts completion candidates according to frecency (Selectrum specific).
 
 Note that all packages are independent and can potentially be exchanged with
 alternative components, since there exist no hard dependencies. Furthermore it
