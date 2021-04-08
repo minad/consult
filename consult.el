@@ -886,36 +886,33 @@ Since the line number is part of the candidate it will be matched-on during comp
                str))
             candidates)))
 
-(defsubst consult--buffer-substring (beg end &optional fontifyp)
+(defsubst consult--buffer-substring (beg end &optional fontify)
   "Return buffer substring between BEG and END.
-If FONTIFYP and `consult-fontify-preserve' are non-nil, first ensure that the
+If FONTIFY and `consult-fontify-preserve' are non-nil, first ensure that the
 region has been fontified."
   (if consult-fontify-preserve
       (progn
-        (when fontifyp
+        (when fontify
           (consult--fontify-region beg end))
         (buffer-substring beg end))
     (buffer-substring-no-properties beg end)))
 
-(defun consult--region-with-cursor (begin end marker)
+(defun consult--region-with-cursor (beg end marker)
   "Return region string with a marking at the cursor position.
 
-BEGIN is the begin position.
+BEG is the begin position.
 END is the end position.
 MARKER is the cursor position."
-  (let ((str (consult--buffer-substring begin end)))
+  (let ((str (consult--buffer-substring beg end 'fontify)))
     (if (>= marker end)
         (concat str #(" " 0 1 (face consult-preview-cursor)))
-      (put-text-property (- marker begin) (- (1+ marker) begin)
+      (put-text-property (- marker beg) (- (1+ marker) beg)
                          'face 'consult-preview-cursor str)
       str)))
 
 (defun consult--line-with-cursor (marker)
   "Return current line where the cursor MARKER is highlighted."
-  (let ((beg (line-beginning-position))
-        (end (line-end-position)))
-    (consult--fontify-region beg end)
-    (consult--region-with-cursor beg end marker)))
+  (consult--region-with-cursor (line-beginning-position) (line-end-position) marker))
 
 (defun consult--merge-config (args)
   "Merge `consult-config' plists into the keyword arguments of ARGS."
@@ -1944,7 +1941,9 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
       (while (save-excursion (re-search-forward heading-regexp nil t))
         (setq line (+ line (consult--count-lines (match-beginning 0))))
         (push (list (point-marker) line
-                    (consult--buffer-substring (line-beginning-position) (line-end-position) t))
+                    (consult--buffer-substring (line-beginning-position)
+                                               (line-end-position)
+                                               'fontify))
               candidates)
         (unless (eobp) (forward-char 1))))
     (unless candidates
