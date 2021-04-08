@@ -886,10 +886,15 @@ Since the line number is part of the candidate it will be matched-on during comp
                str))
             candidates)))
 
-(defsubst consult--buffer-substring (beg end)
-  "Return buffer substring between BEG and END."
+(defsubst consult--buffer-substring (beg end &optional fontifyp)
+  "Return buffer substring between BEG and END.
+If FONTIFYP and `consult-fontify-preserve' are non-nil, first ensure that the
+region has been fontified."
   (if consult-fontify-preserve
-      (buffer-substring beg end)
+      (progn
+        (when fontifyp
+          (consult--fontify-region beg end))
+        (buffer-substring beg end))
     (buffer-substring-no-properties beg end)))
 
 (defun consult--region-with-cursor (begin end marker)
@@ -1927,7 +1932,6 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
 (defun consult--outline-candidates ()
   "Return alist of outline headings and positions."
   (consult--forbid-minibuffer)
-  (consult--fontify-all)
   (let* ((line (line-number-at-pos (point-min) consult-line-numbers-widen))
          (heading-regexp (concat "^\\(?:"
                                  (if (boundp 'outline-regexp)
@@ -1940,7 +1944,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
       (while (save-excursion (re-search-forward heading-regexp nil t))
         (setq line (+ line (consult--count-lines (match-beginning 0))))
         (push (list (point-marker) line
-                    (consult--buffer-substring (line-beginning-position) (line-end-position)))
+                    (consult--buffer-substring (line-beginning-position) (line-end-position) t))
               candidates)
         (unless (eobp) (forward-char 1))))
     (unless candidates
