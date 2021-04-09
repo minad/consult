@@ -31,8 +31,8 @@
 (defvar selectrum-is-active)
 (defvar selectrum-move-default-candidate)
 (defvar selectrum-refine-candidates-function)
-(declare-function selectrum-exhibit "selectrum")
-(declare-function selectrum-get-current-candidate "selectrum")
+(declare-function selectrum-exhibit "ext:selectrum")
+(declare-function selectrum-get-current-candidate "ext:selectrum")
 
 (defun consult-selectrum--filter (_category highlight)
   "Return selectrum filter function with HIGHLIGHT."

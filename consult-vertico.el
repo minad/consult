@@ -26,8 +26,8 @@
 
 ;; NOTE: It is not guaranteed that Vertico is available during compilation!
 (defvar vertico--input)
-(declare-function vertico--exhibit "vertico")
-(declare-function vertico--candidate "vertico")
+(declare-function vertico--exhibit "ext:vertico")
+(declare-function vertico--candidate "ext:vertico")
 
 (defun consult-vertico--candidate ()
   "Return current candidate for Consult preview."
