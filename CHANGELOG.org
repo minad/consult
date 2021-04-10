@@ -8,6 +8,7 @@
 - =consult-buffer=: Respect =confirm-nonexistent-file-or-buffer=
 - =consult-widen-key=: Change default setting to twice the =consult-narrow-key=
 - =consult-flycheck=: Sort errors first
+- Added support for the Vertico completion system
 
 * Version 0.6 (2021-03-02)
 
