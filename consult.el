@@ -1599,7 +1599,7 @@ PREVIEW-KEY is the preview key."
       (setq pos (1+ pos)))
     (when (> pos min)
       (remove-list-of-text-properties min pos '(display))
-      (add-text-properties min pos (list 'invisible t 'rear-nonsticky t)))))
+      (add-text-properties min pos '(invisible t rear-nonsticky t cursor-intangible t)))))
 
 (cl-defun consult--read-setup (candidates &key keymap add-history narrow preview-key &allow-other-keys)
   "Minibuffer setup for `consult--read'.
@@ -1787,8 +1787,7 @@ KEYMAP is a command-specific keymap."
         (dolist (item items)
           (let ((cand (concat (char-to-string (+ consult--tofu-char idx)) item))
                 (width (consult--display-width item)))
-            (add-text-properties 0 1 (list 'invisible t 'consult-multi (cons cat item))
-                                 cand)
+            (add-text-properties 0 1 `(invisible t consult-multi (,cat . ,item)) cand)
             (put-text-property 1 (length cand) 'face face cand)
             (when (> width max-width) (setq max-width width))
             (push cand candidates))))
