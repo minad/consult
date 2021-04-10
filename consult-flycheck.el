@@ -38,6 +38,19 @@
     (?w . "Warning")
     (?i . "Info")))
 
+(defun consult-flycheck--sort-predicate (x y)
+  "Compare X and Y first by severity, then by location.
+In contrast to `flycheck-error-level-<' sort errors first."
+  (let* ((lx (flycheck-error-level x))
+         (ly (flycheck-error-level y))
+         (sx (flycheck-error-level-severity lx))
+         (sy (flycheck-error-level-severity ly)))
+    (if (= sx sy)
+        (if (string= lx ly)
+            (flycheck-error-< x y)
+          (string< lx ly))
+      (> sx sy))))
+
 (defun consult-flycheck--candidates ()
   "Return flycheck errors as alist."
   (consult--forbid-minibuffer)
@@ -51,7 +64,7 @@
                        (buffer-name (flycheck-error-buffer err)))
                      (number-to-string (flycheck-error-line err))
                      err))
-                  (seq-sort #'flycheck-error-level-< flycheck-current-errors)))
+                  (seq-sort #'consult-flycheck--sort-predicate flycheck-current-errors)))
          (file-width (apply #'max (mapcar (lambda (x) (length (car x))) errors)))
          (line-width (apply #'max (mapcar (lambda (x) (length (cadr x))) errors)))
          (fmt (format "%%-%ds %%-%ds %%-7s %%s (%%s)" file-width line-width)))

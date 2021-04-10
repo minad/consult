@@ -7,6 +7,7 @@
 - Bugfixes
 - =consult-buffer=: Respect =confirm-nonexistent-file-or-buffer=
 - =consult-widen-key=: Change default setting to twice the =consult-narrow-key=
+- =consult-flycheck=: Sort errors first
 
 * Version 0.6 (2021-03-02)
 
