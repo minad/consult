@@ -1690,13 +1690,14 @@ KEYMAP is a command-specific keymap."
       ;; Fortunately the overcapturing problem does not affect the bytecode
       ;; interpreter which does a proper scope analyis.
       (let* ((metadata `(metadata
-                         ,@(when title `((x-group-function
-                                          . ,(apply-partially #'consult--read-group title))))
+                         ,@(when title
+                             `((x-group-function
+                                . ,(apply-partially #'consult--read-group title))))
                          ,@(when annotate
                              `((affixation-function
                                 . ,(apply-partially #'consult--read-affixate annotate))
-                             `((annotation-function
-                                . ,(apply-partially #'consult--read-annotate annotate)))))
+                               (annotation-function
+                                . ,(apply-partially #'consult--read-annotate annotate))))
                          ,@(when category `((category . ,category)))
                          ,@(unless sort '((cycle-sort-function . identity)
                                           (display-sort-function . identity)))))
