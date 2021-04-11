@@ -9,6 +9,9 @@
 - =consult-widen-key=: Change default setting to twice the =consult-narrow-key=
 - =consult-flycheck=: Sort errors first
 - Added support for the Vertico completion system
+- Consult adds disambiguation suffixes as suffix instead of as prefix now
+  for the commands =consult-line=, =consult-buffer=, etc.
+  This allows to use the =basic= completion style and TAB completion.
 
 * Version 0.6 (2021-03-02)
 
