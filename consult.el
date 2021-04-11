@@ -994,6 +994,7 @@ FACE is the cursor face."
         (saved-min (point-min-marker))
         (saved-max (point-max-marker))
         (saved-pos (point-marker)))
+    (set-marker-insertion-type saved-max t) ;; Grow when text is inserted
     (lambda (cand restore)
       (consult--invisible-restore invisible)
       (mapc #'delete-overlay overlays)
