@@ -1574,7 +1574,9 @@ PREVIEW-KEY is the preview key."
 
 (defsubst consult--tofu-append (cand id)
   "Append tofu-encoded ID to CAND."
-  (concat cand (propertize (char-to-string (+ consult--tofu-char id)) 'invisible t)))
+  (setq id (char-to-string (+ consult--tofu-char id)))
+  (add-text-properties 0 1 '(invisible t consult-strip t) id)
+  (concat cand id))
 
 (defsubst consult--tofu-get (cand)
   "Extract tofu-encoded ID from CAND."
@@ -1593,7 +1595,7 @@ PREVIEW-KEY is the preview key."
                                                   (% n consult--tofu-range)))
                                str))
              (and (>= n consult--tofu-range) (setq n (/ n consult--tofu-range)))))
-    (put-text-property 0 (length str) 'invisible t str)
+    (add-text-properties 0 (length str) '(invisible t consult-strip t) str)
     str))
 
 (cl-defun consult--read-setup (candidates &key keymap add-history narrow preview-key &allow-other-keys)
@@ -2042,7 +2044,7 @@ The alist contains (string . position) pairs."
                   (push (concat
                          (propertize (consult--format-location (buffer-name buf) line)
                                      'consult-location (cons marker line)
-                                     'consult-location-strip t)
+                                     'consult-strip t)
                          (consult--line-with-cursor marker)
                          (consult--tofu-encode marker))
                         candidates))))))))
