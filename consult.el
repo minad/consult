@@ -855,7 +855,7 @@ Also create a which-key pseudo key to show the description."
   "Add MARKER and LINE as 'consult-location text property to CAND.
 Furthermore append tofu-encoded MARKER suffix for disambiguation."
   (setq cand (concat cand (consult--tofu-encode marker)))
-  (put-text-property 0 (length cand) 'consult-location (cons marker line) cand)
+  (put-text-property 0 1 'consult-location (cons marker line) cand)
   cand)
 
 (defsubst consult--buffer-substring (beg end &optional fontify)
@@ -2039,12 +2039,11 @@ The alist contains (string . position) pairs."
                 (goto-char pos)
                 ;; `line-number-at-pos' is slow, see comment in `consult--mark-candidates'.
                 (let ((line (line-number-at-pos pos consult-line-numbers-widen)))
-                  (push (propertize
-                         (concat
-                          (consult--format-location (buffer-name buf) line)
-                          (consult--line-with-cursor marker)
-                          (consult--tofu-encode marker))
-                         'consult-location (cons marker line))
+                  (push (concat
+                         (propertize (consult--format-location (buffer-name buf) line)
+                                     'consult-location (cons marker line))
+                         (consult--line-with-cursor marker)
+                         (consult--tofu-encode marker))
                         candidates))))))))
     (unless candidates
       (user-error "No global marks"))
