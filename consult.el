@@ -600,6 +600,8 @@ The line beginning/ending BEG/END is bound in BODY."
            ,@body
            (setq ,beg (1+ ,end)))))))
 
+;; `substring-width'/`string-display-width', upstream bug,
+;; see http://debbugs.gnu.org/cgi/bugreport.cgi?bug=47712
 (defun consult--display-width (string)
   "Compute width of STRING taking display and invisible properties into account."
   (let ((pos 0) (width 0) (end (length string)))
@@ -616,8 +618,7 @@ The line beginning/ending BEG/END is bound in BODY."
                                (string-width
                                 ;; Avoid allocation for the full string.
                                 ;; There should be a `substring-width' provided by Emacs.
-                                ;; TODO: Propose upstream? Alternatively propose
-                                ;; this whole `display-width' function to upstream.
+                                ;; see http://debbugs.gnu.org/cgi/bugreport.cgi?bug=47712
                                 (if (and (= pos 0) (= nexti end))
                                     string
                                   (substring-no-properties string pos nexti))))))
