@@ -2041,7 +2041,8 @@ The alist contains (string . position) pairs."
                 (let ((line (line-number-at-pos pos consult-line-numbers-widen)))
                   (push (concat
                          (propertize (consult--format-location (buffer-name buf) line)
-                                     'consult-location (cons marker line))
+                                     'consult-location (cons marker line)
+                                     'consult-location-strip t)
                          (consult--line-with-cursor marker)
                          (consult--tofu-encode marker))
                         candidates))))))))
