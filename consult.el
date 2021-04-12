@@ -61,10 +61,6 @@
 
 ;;;; Customization
 
-(defcustom consult-completion-in-region-styles nil
-  "The `completion-styles' used by `consult-completion-in-region'."
-  :type completion--styles-type)
-
 (defcustom consult-narrow-key nil
   "Prefix key for narrowing during completion.
 
@@ -2472,11 +2468,29 @@ functions and in `consult-completion-in-region'."
 
 The function is called with 4 arguments: START END COLLECTION PREDICATE.
 The arguments and expected return value are as specified for
-`completion-in-region'. Use as a value for `completion-in-region-function'."
-  (let* ((completion-styles (or consult-completion-in-region-styles completion-styles))
+`completion-in-region'. Use as a value for `completion-in-region-function'.
+
+The function can be configured via `consult-config'.
+
+    (setf (alist-get #'consult-completion-in-region consult-config)
+      '(:completion-styles (basic)))
+
+These configuration options are supported:
+
+    * :cycle-threshold - Cycling threshold (def: `completion-cycle-threshold')
+    * :completion-styles - Use completion styles (def: `completion-styles')
+    * :require-match - Require matches when completing (def: nil)
+    * :prompt - The prompt string shown in the minibuffer"
+  (let* ((config (alist-get #'consult-completion-in-region consult-config))
+         (prompt (or (plist-get config :prompt) "Completion: "))
+         (completion-styles (or (plist-get config :completion-styles) completion-styles))
+         (require-match (plist-get config :require-match))
+         (preview-key (if (plist-member config :preview-key)
+                          (plist-get config :preview-key)
+                        consult-preview-key))
          (initial (buffer-substring-no-properties start end))
          (metadata (completion-metadata initial collection predicate))
-         (threshold (completion--cycle-threshold metadata))
+         (threshold (or (plist-get config :cycle-threshold) (completion--cycle-threshold metadata)))
          (all (completion-all-completions initial collection predicate (length initial))))
     ;; error if `threshold' is t or the improper list `all' is too short
     (if (or (not (consp (ignore-errors (nthcdr threshold all))))
@@ -2493,15 +2507,9 @@ The arguments and expected return value are as specified for
                 (concat (substring initial 0 limit) (car all)))
                (t (car
                    (consult--with-preview
-                       ;; preview key
-                       (unless (minibufferp)
-                         (let ((config (alist-get #'consult-completion-in-region consult-config)))
-                           (if (plist-member config :preview-key)
-                               (plist-get config :preview-key)
-                             consult-preview-key)))
+                       preview-key
                        ;; preview state
-                       (consult--region-preview
-                        start end 'consult-preview-region)
+                       (consult--region-preview start end 'consult-preview-region)
                        ;; transformation function
                        (if (eq category 'file)
                            (if (file-name-absolute-p initial)
@@ -2519,10 +2527,8 @@ The arguments and expected return value are as specified for
                            ;; starts at the end of minibuffer contents, as for other types of completion.
                            ;; However this is undefined behavior since initial does not only contain the
                            ;; directory, but also the filename.
-                           (read-file-name
-                            "Completion: " initial initial t nil predicate)
-                         (completing-read
-                          "Completion: " collection predicate t initial)))))))))
+                           (read-file-name prompt initial initial require-match nil predicate)
+                         (completing-read prompt collection predicate require-match initial)))))))))
         (if completion
             (progn
               (delete-region start end)
