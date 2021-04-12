@@ -31,7 +31,7 @@
 
 (defun consult-vertico--candidate ()
   "Return current candidate for Consult preview."
-  (and vertico--input (vertico--candidate)))
+  (and vertico--input (vertico--candidate 'highlight)))
 
 (defun consult-vertico--refresh ()
   "Refresh completion UI, used by Consult async/narrowing."
