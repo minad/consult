@@ -2479,7 +2479,8 @@ The arguments and expected return value are as specified for
          (threshold (completion--cycle-threshold metadata))
          (all (completion-all-completions initial collection predicate (length initial))))
     ;; error if `threshold' is t or the improper list `all' is too short
-    (if (not (ignore-errors (nthcdr threshold all)))
+    (if (or (not (consp (ignore-errors (nthcdr threshold all))))
+            (and completion-cycling completion-all-sorted-completions))
         (completion--in-region start end collection predicate)
       (let* ((limit (car (completion-boundaries initial collection predicate "")))
              (category (completion-metadata-get metadata 'category))
