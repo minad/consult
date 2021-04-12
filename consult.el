@@ -2644,19 +2644,21 @@ If no MODES are specified, use currently active major and minor modes."
 
 (defun consult--yank-read ()
   "Open kill ring menu and return selected text."
-  (consult--read
-   (consult--remove-dups kill-ring)
-   :prompt "Yank text: "
-   :history t ;; disable history
-   :sort nil
-   :category 'consult-yank
-   :require-match t
-   :lookup #'consult--lookup-member
-   :state
-   (consult--region-preview (point)
-                          ;; If previous command is yank, hide previously yanked text
-                          (or (and (eq last-command 'yank) (mark t)) (point))
-                          'consult-preview-yank)))
+  (car (member
+        (consult--read
+         (consult--remove-dups kill-ring)
+         :prompt "Yank text: "
+         :history t ;; disable history
+         :sort nil
+         :category 'consult-yank
+         :require-match t
+         :state
+         (consult--region-preview
+          (point)
+          ;; If previous command is yank, hide previously yanked text
+          (or (and (eq last-command 'yank) (mark t)) (point))
+          'consult-preview-yank))
+        kill-ring)))
 
 ;; Insert selected text.
 ;; Adapted from the Emacs yank function.
