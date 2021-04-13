@@ -1000,6 +1000,7 @@ Code contributions:
 - [[https://github.com/omar-polo][Omar Polo]]
 - [[https://github.com/astoff][Augusto Stoffel]]
 - [[https://codeberg.org/jao/][Jose A Ortega Ruiz]]
+- [[https://github.com/noctuid][Fox Kiester]]
 
 Advice and useful discussions:
 - [[https://github.com/clemera/][Clemens Radermacher]]

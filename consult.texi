@@ -1269,6 +1269,8 @@ Code contributions:
 @uref{https://github.com/astoff, Augusto Stoffel}
 @item
 @uref{https://codeberg.org/jao/, Jose A Ortega Ruiz}
+@item
+@uref{https://github.com/noctuid, Fox Kiester}
 @end itemize
 
 Advice and useful discussions:
