@@ -928,10 +928,10 @@ MARKER is the cursor position."
         (when restore-recentf
           (setq recentf-list saved-recentf))))))
 
-;; Derived from ctrlf, originally isearch
 (defun consult--invisible-show (&optional permanently)
   "Disable any overlays that are currently hiding point.
-PERMANENTLY non-nil means the overlays will not be restored later."
+PERMANENTLY non-nil means the overlays will not be restored later.
+See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
   (let ((opened))
     (dolist (ov (overlays-in (line-beginning-position) (line-end-position)) opened)
       (when (and (invisible-p (overlay-get ov 'invisible))
@@ -943,9 +943,9 @@ PERMANENTLY non-nil means the overlays will not be restored later."
               (funcall func nil)
             (overlay-put ov 'invisible nil)))))))
 
-;; Derived from ctrlf, originally isearch
 (defun consult--invisible-restore (overlays)
-  "Restore any opened OVERLAYS that were previously disabled."
+  "Restore any opened OVERLAYS that were previously disabled.
+See `isearch-open-necessary-overlays'."
   (dolist (ov overlays)
     (if-let (func (overlay-get (car ov) 'isearch-open-invisible-temporary))
         (funcall func t)
