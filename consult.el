@@ -928,28 +928,28 @@ MARKER is the cursor position."
         (when restore-recentf
           (setq recentf-list saved-recentf))))))
 
-(defun consult--invisible-show (&optional permanently)
-  "Disable any overlays that are currently hiding point.
-PERMANENTLY non-nil means the overlays will not be restored later.
+(defun consult--invisible-open-permanently ()
+  "Open overlays which hide the current line.
 See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
-  (let ((opened))
-    (dolist (ov (overlays-in (line-beginning-position) (line-end-position)) opened)
-      (when (and (invisible-p (overlay-get ov 'invisible))
-                 (overlay-get ov 'isearch-open-invisible))
-        (if permanently
-            (funcall (overlay-get ov 'isearch-open-invisible) ov)
-          (push (cons ov (overlay-get ov 'invisible)) opened)
-          (if-let (func (overlay-get ov 'isearch-open-invisible-temporary))
-              (funcall func nil)
-            (overlay-put ov 'invisible nil)))))))
+  (dolist (ov (overlays-in (line-beginning-position) (line-end-position)))
+    (when-let (fun (overlay-get ov 'isearch-open-invisible))
+      (when (invisible-p (overlay-get ov 'invisible))
+        (funcall fun ov)))))
 
-(defun consult--invisible-restore (overlays)
-  "Restore any opened OVERLAYS that were previously disabled.
-See `isearch-open-necessary-overlays'."
-  (dolist (ov overlays)
-    (if-let (func (overlay-get (car ov) 'isearch-open-invisible-temporary))
-        (funcall func t)
-      (overlay-put (car ov) 'invisible (cdr ov)))))
+(defun consult--invisible-open-temporarily ()
+  "Temporarily open overlays which hide the current line.
+See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
+  (let ((restore))
+    (dolist (ov (overlays-in (line-beginning-position) (line-end-position)) restore)
+      (let ((inv (overlay-get ov 'invisible)))
+        (when (and (invisible-p inv) (overlay-get ov 'isearch-open-invisible))
+          (push (if-let (fun (overlay-get ov 'isearch-open-invisible-temporary))
+                    (progn
+                      (funcall fun nil)
+                      (lambda () (funcall fun t)))
+                  (overlay-put ov 'invisible nil)
+                  (lambda () (overlay-put ov 'invisible inv)))
+                restore))))))
 
 (defun consult--jump-nomark (pos)
   "Go to POS and recenter."
@@ -976,7 +976,7 @@ See `isearch-open-necessary-overlays'."
     (unless (and (markerp pos) (not (eq (current-buffer) (marker-buffer pos))))
       (push-mark (point) t))
     (consult--jump-nomark pos)
-    (consult--invisible-show t))
+    (consult--invisible-open-permanently))
   nil)
 
 ;; Matched strings are not highlighted as of now.
@@ -993,8 +993,9 @@ FACE is the cursor face."
         (saved-pos (point-marker)))
     (set-marker-insertion-type saved-max t) ;; Grow when text is inserted
     (lambda (cand restore)
-      (consult--invisible-restore invisible)
+      (mapc #'funcall invisible)
       (mapc #'delete-overlay overlays)
+      (setq invisible nil overlays nil)
       (cond
        (restore
         (let ((saved-buffer (marker-buffer saved-pos)))
@@ -1006,13 +1007,12 @@ FACE is the cursor face."
        ;; Jump to position
        (cand
         (consult--jump-nomark cand)
-        (setq invisible (consult--invisible-show))
-        (let ((pos (point)))
-          (setq overlays
-                (list (consult--overlay (line-beginning-position)
-                                        (1+ (line-end-position))
-                                        'face 'consult-preview-line)
-                      (consult--overlay pos (1+ pos) 'face face)))))
+        (setq invisible (consult--invisible-open-temporarily)
+              overlays
+              (list (consult--overlay (line-beginning-position)
+                                      (1+ (line-end-position))
+                                      'face 'consult-preview-line)
+                    (consult--overlay (point) (1+ (point)) 'face face))))
        ;; If position cannot be previewed, return to saved position
        (t (consult--jump-nomark saved-pos))))))
 
