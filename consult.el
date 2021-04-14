@@ -596,8 +596,11 @@ The line beginning/ending BEG/END is bound in BODY."
            ,@body
            (setq ,beg (1+ ,end)))))))
 
-;; `substring-width'/`string-display-width', upstream bug,
-;; see http://debbugs.gnu.org/cgi/bugreport.cgi?bug=47712
+(defmacro consult--static-if (cond then &rest else)
+  "If COND yields non-nil at compile time, do THEN, else do ELSE."
+  (declare (indent 2))
+  (if (eval cond) then (macroexp-progn else)))
+
 (defun consult--display-width (string)
   "Compute width of STRING taking display and invisible properties into account."
   (let ((pos 0) (width 0) (end (length string)))
@@ -611,13 +614,14 @@ The line beginning/ending BEG/END is bound in BODY."
             (let ((nexti (next-single-property-change pos 'invisible string nextd)))
               (unless (get-text-property pos 'invisible string)
                 (setq width (+ width
-                               (string-width
-                                ;; Avoid allocation for the full string.
-                                ;; There should be a `substring-width' provided by Emacs.
-                                ;; see http://debbugs.gnu.org/cgi/bugreport.cgi?bug=47712
-                                (if (and (= pos 0) (= nexti end))
-                                    string
-                                  (substring-no-properties string pos nexti))))))
+                               ;; bug#47712: Emacs 28 can compute `string-width' of substrings
+                               (consult--static-if (= 3 (cdr (func-arity #'string-width)))
+                                   (string-width string pos nexti)
+                                 (string-width
+                                  ;; Avoid allocation for the full string.
+                                  (if (and (= pos 0) (= nexti end))
+                                      string
+                                    (substring-no-properties string pos nexti)))))))
               (setq pos nexti))))))
     width))
 
