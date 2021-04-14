@@ -717,18 +717,9 @@ Otherwise the `default-directory' is returned."
        ,@puts
        ,ov)))
 
-(defun consult--remove-dups (list &optional key)
-  "Remove duplicate strings from LIST. Keep first occurrence of a key.
-
-KEY is the key function."
-  (let ((ht (make-hash-table :test #'equal :size (length list)))
-        (accum)
-        (key (or key #'identity)))
-    (dolist (entry list (nreverse accum))
-      (let ((k (funcall key entry)))
-        (unless (gethash k ht)
-          (puthash k t ht)
-          (push entry accum))))))
+(defun consult--remove-dups (list)
+  "Remove duplicate strings from LIST."
+  (delete-dups (copy-sequence list)))
 
 (defsubst consult--in-range-p (pos)
   "Return t if position POS lies in range `point-min' to `point-max'."
@@ -1510,7 +1501,7 @@ Note that `consult-narrow-key' and `consult-widen-key' are bound dynamically.")
   "Add ITEMS to the minibuffer history via `minibuffer-default-add-function'."
   (setq-local minibuffer-default-add-function
               (lambda ()
-                (consult--remove-dups
+                (delete-dups
                  (append
                   ;; the defaults are at the beginning of the future history
                   (if (listp minibuffer-default)
@@ -1766,7 +1757,7 @@ KEYMAP is a command-specific keymap."
                   (when-let (name (plist-get src :name))
                     (cons narrow name))))))
     (delq nil)
-    (consult--remove-dups)))
+    (delete-dups)))
 
 (defun consult--multi-annotate (cand)
   "Annotate candidate CAND, used by `consult--multi'."
@@ -2005,7 +1996,7 @@ The alist contains (string . position) pairs."
                    (consult--line-with-cursor marker) marker
                    (line-number-at-pos pos consult-line-numbers-widen))
                   candidates)))))
-    (nreverse (consult--remove-dups candidates))))
+    (nreverse (delete-dups candidates))))
 
 ;;;###autoload
 (defun consult-mark ()
@@ -2053,7 +2044,7 @@ The alist contains (string . position) pairs."
                         candidates))))))))
     (unless candidates
       (user-error "No global marks"))
-    (nreverse (consult--remove-dups candidates))))
+    (nreverse (delete-dups candidates))))
 
 ;;;###autoload
 (defun consult-global-mark ()
@@ -3032,7 +3023,7 @@ The default value of the completion is the symbol at point."
 
 This command can act as a drop-in replacement for `repeat-complex-command'."
   (interactive)
-  (let* ((history (or (consult--remove-dups (mapcar #'prin1-to-string command-history))
+  (let* ((history (or (delete-dups (mapcar #'prin1-to-string command-history))
                       (user-error "There are no previous complex commands")))
          (cmd (read (consult--read
                      history
@@ -3135,7 +3126,7 @@ In order to select from a specific HISTORY, pass the history variable as argumen
                      (append regexp-search-ring search-ring)
                    (append search-ring regexp-search-ring))))
     (cons
-     (consult--remove-dups
+     (delete-dups
       (mapcar
        (lambda (cand)
          ;; Emacs 27.1 uses settings on the search string, we can use that for narrowing.
@@ -3508,7 +3499,7 @@ order to determine the project-specific files and buffers, the
                  (format " (counter=%d, format=%s) " counter format))
                 ((/= counter 0) ;; show counter if non-zero
                  (format " (counter=%d)" counter))))))
-    (consult--remove-dups)))
+    (delete-dups)))
 
 ;;;###autoload
 (defun consult-kmacro (arg)
