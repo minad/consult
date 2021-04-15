@@ -2372,26 +2372,28 @@ Print an error message with MSG function."
     nil))
 
 ;;;###autoload
-(defun consult-goto-line ()
+(defun consult-goto-line (&optional arg)
   "Read line number and jump to the line with preview.
 
-The command respects narrowing and the settings
-`consult-goto-line-numbers' and `consult-line-numbers-widen'."
-  (interactive)
-  (consult--forbid-minibuffer)
-  (consult--local-let ((display-line-numbers consult-goto-line-numbers)
-                       (display-line-numbers-widen consult-line-numbers-widen))
-    (while (if-let (pos (consult--goto-line-position
-                         (consult--prompt
-                          :prompt "Go to line: "
-                          :state (let ((preview (consult--jump-preview)))
-                                    (lambda (str restore)
-                                      (funcall preview
-                                               (consult--goto-line-position str #'ignore)
-                                               restore))))
-                         #'minibuffer-message))
-               (consult--jump pos)
-             t))))
+Jump directly if a line number is given as prefix ARG. The command respects narrowing and the
+settings `consult-goto-line-numbers' and `consult-line-numbers-widen'."
+  (interactive "P")
+  (if arg
+      (call-interactively #'goto-line)
+    (consult--forbid-minibuffer)
+    (consult--local-let ((display-line-numbers consult-goto-line-numbers)
+                         (display-line-numbers-widen consult-line-numbers-widen))
+      (while (if-let (pos (consult--goto-line-position
+                           (consult--prompt
+                            :prompt "Go to line: "
+                            :state (let ((preview (consult--jump-preview)))
+                                     (lambda (str restore)
+                                       (funcall preview
+                                                (consult--goto-line-position str #'ignore)
+                                                restore))))
+                           #'minibuffer-message))
+                 (consult--jump pos)
+               t)))))
 
 ;;;;; Command: consult-recent-file
 
