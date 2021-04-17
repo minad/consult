@@ -1180,29 +1180,28 @@ Examples: \"/async/filter\", \"#async#filter\"."
                 (max 0 (- point (match-end 0))))))
     (list str "" 0)))
 
-(defun consult--split-wrap (fun split styles)
-  "Create splitting completion style function.
-
-FUN is the original completion style function.
-SPLIT is the splitter function.
-STYLES are the original completion styles."
-  (lambda (str table pred point)
-    (let ((completion-styles styles)
-          (parts (funcall split str point)))
-      (funcall fun (cadr parts) table pred (caddr parts)))))
-
 (defun consult--split-setup (split)
   "Setup splitting completion style with splitter function SPLIT."
-  (setq-local completion-styles-alist
-              (cons (list 'consult--split
-                          (consult--split-wrap #'completion-try-completion
-                                               split completion-styles)
-                          (consult--split-wrap #'completion-all-completions
-                                               split completion-styles) "")
-                    completion-styles-alist))
-  (setq-local completion-styles '(consult--split))
-  (setq-local completion-category-defaults nil)
-  (setq-local completion-category-overrides nil))
+  (let* ((styles completion-styles)
+         (catdef completion-category-defaults)
+         (catovr completion-category-overrides)
+         (try (lambda (str table pred point)
+                (let ((completion-styles styles)
+                      (completion-category-defaults catdef)
+                      (completion-category-overrides catovr)
+                      (parts (funcall split str point)))
+                  (completion-try-completion (cadr parts) table pred (caddr parts)))))
+         (all (lambda (str table pred point)
+                (let ((completion-styles styles)
+                      (completion-category-defaults catdef)
+                      (completion-category-overrides catovr)
+                      (parts (funcall split str point)))
+                  (completion-all-completions (cadr parts) table pred (caddr parts))))))
+    (setq-local completion-styles-alist (cons `(consult--split ,try ,all "")
+                                              completion-styles-alist))
+    (setq-local completion-styles '(consult--split))
+    (setq-local completion-category-defaults nil)
+    (setq-local completion-category-overrides nil)))
 
 ;;;; Async support
 
@@ -2375,8 +2374,9 @@ Print an error message with MSG function."
 (defun consult-goto-line (&optional arg)
   "Read line number and jump to the line with preview.
 
-Jump directly if a line number is given as prefix ARG. The command respects narrowing and the
-settings `consult-goto-line-numbers' and `consult-line-numbers-widen'."
+Jump directly if a line number is given as prefix ARG. The command respects
+narrowing and the settings `consult-goto-line-numbers' and
+`consult-line-numbers-widen'."
   (interactive "P")
   (if arg
       (call-interactively #'goto-line)
