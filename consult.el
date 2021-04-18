@@ -1936,14 +1936,14 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
   (consult--forbid-minibuffer)
   (let* ((line (line-number-at-pos (point-min) consult-line-numbers-widen))
          (heading-regexp (concat "^\\(?:"
-                                 (or (bound-and-true-p outline-regexp)
-                                     "[*\^L]+") ;; default definition from outline.el
+                                 ;; default definition from outline.el
+                                 (or (bound-and-true-p outline-regexp) "[*\^L]+")
                                  "\\)"))
          (heading-alist (bound-and-true-p outline-heading-alist))
-         (level-function (or (bound-and-true-p outline-level)
-                             (lambda () ;; as in the default from outline.el
-                               (or (cdr (assoc (match-string 0) heading-alist))
-                                   (- (match-end 0) (match-beginning 0))))))
+         (level-fun (or (bound-and-true-p outline-level)
+                        (lambda () ;; as in the default from outline.el
+                          (or (cdr (assoc (match-string 0) heading-alist))
+                              (- (match-end 0) (match-beginning 0))))))
          (candidates))
     (save-excursion
       (goto-char (point-min))
@@ -1953,8 +1953,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                (consult--buffer-substring (line-beginning-position)
                                           (line-end-position)
                                           'fontify)
-               (point-marker) line
-               'consult-level (funcall level-function))
+               (point-marker) line 'consult--outline-level (funcall level-fun))
               candidates)
         (unless (eobp) (forward-char 1))))
     (unless candidates
@@ -1965,16 +1964,16 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
 (defun consult-outline ()
   "Jump to an outline heading, obtained by matching against `outline-regexp'.
 
-This command supports candidate preview.
+This command supports narrowing to a heading level and candidate preview.
 The symbol at point is added to the future history."
   (interactive)
   (let* ((cands (consult--with-increased-gc (consult--outline-candidates)))
-         (min-level (apply 'min (mapcar (consult--get-property 'consult-level)
-                                        cands)))
-         (narrow-fn (lambda (cand)
-                      (<= (get-text-property 0 'consult-level cand)
-                          (+ consult--narrow min-level -49))))
-         (narrow-cats (mapcar (lambda (c) (cons c (format "Level ≤ %c" c)))
+         (min-level (+ -49 (apply #'min (mapcar (consult--get-property 'consult--outline-level)
+                                                cands))))
+         (narrow-fun (lambda (cand)
+                       (<= (get-text-property 0 'consult--outline-level cand)
+                           (+ consult--narrow min-level))))
+         (narrow-cats (mapcar (lambda (c) (cons c (format "Level %c" c)))
                               (number-sequence ?1 ?9))))
     (consult--read
      cands
@@ -1984,7 +1983,7 @@ The symbol at point is added to the future history."
      :sort nil
      :require-match t
      :lookup #'consult--line-match
-     :narrow (cons narrow-fn narrow-cats)
+     :narrow (cons narrow-fun narrow-cats)
      :history '(:input consult--line-history)
      :add-history (thing-at-point 'symbol)
      :state (consult--jump-state))))

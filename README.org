@@ -174,8 +174,8 @@ variables and functions with their descriptions.
    preview and recursive editing.
  - =consult-global-mark=: Jump to a marker in the =global-mark-ring=.
    Supports live preview and recursive editing.
- - =consult-outline=: Jump to a heading of the outline. Supports live
-   preview and recursive editing.
+ - =consult-outline=: Jump to a heading of the outline. Supports narrowing
+   to a heading level, live preview and recursive editing.
  - =consult-imenu=: Jump to imenu item in the current buffer. Supports
    live preview, recursive editing and narrowing.
  - =consult-project-imenu=: Jump to imenu item in project buffers, with

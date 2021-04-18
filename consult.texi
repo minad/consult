@@ -263,8 +263,8 @@ preview and recursive editing.
 @samp{consult-global-mark}: Jump to a marker in the @samp{global-mark-ring}.
 Supports live preview and recursive editing.
 @item
-@samp{consult-outline}: Jump to a heading of the outline. Supports live
-preview and recursive editing.
+@samp{consult-outline}: Jump to a heading of the outline. Supports narrowing
+to a heading level, live preview and recursive editing.
 @item
 @samp{consult-imenu}: Jump to imenu item in the current buffer. Supports
 live preview, recursive editing and narrowing.
@@ -1245,10 +1245,11 @@ wiki}.
 @chapter Acknowledgements
 
 You probably guessed from the name that this package took inspiration from
-@uref{https://github.com/abo-abo/swiper#counsel, Counsel} by Oleh Krehel. Some of the Consult commands originated in the @uref{https://github.com/raxod502/selectrum/wiki/Useful-Commands, Selectrum
-wiki}. The commands have been rewritten and greatly enhanced in comparison to the
-wiki versions. In particular all Selectrum-specific code has been removed, such
-that the commands are compatible with the @samp{completing-read} API@.
+@uref{https://github.com/abo-abo/swiper#counsel, Counsel} by Oleh Krehel. Some of the Consult commands originated in the Counsel
+package or the @uref{https://github.com/raxod502/selectrum/wiki/Useful-Commands, Selectrum wiki}. The commands have been rewritten and greatly
+enhanced in comparison to the original versions. In particular all
+Selectrum-specific code has been removed, such that the commands are compatible
+with the @samp{completing-read} API@.
 
 Code contributions:
 @itemize
