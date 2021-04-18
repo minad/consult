@@ -837,11 +837,11 @@ Also create a which-key pseudo key to show the description."
 (defun consult--line-prefix ()
   "Annotate `consult-location' candidates with line numbers."
   (let* ((width (length (number-to-string (line-number-at-pos
-                                          (point-max)
-                                          consult-line-numbers-widen))))
+                                           (point-max)
+                                           consult-line-numbers-widen))))
          (fmt (propertize (format "%%%dd " width) 'face 'consult-line-number-prefix)))
-  (lambda (cand)
-    (list cand (format fmt (cdr (get-text-property 0 'consult-location cand))) ""))))
+    (lambda (cand)
+      (list cand (format fmt (cdr (get-text-property 0 'consult-location cand))) ""))))
 
 (defun consult--location-candidate (cand marker line &rest props)
   "Add MARKER and LINE as 'consult-location text property to CAND.
@@ -901,25 +901,25 @@ MARKER is the cursor position."
          (saved-recentf (when restore-recentf (copy-sequence recentf-list))))
     (lambda (&optional name)
       (if name
-        (or (get-file-buffer name)
-            (when-let (attrs (file-attributes name))
-              (let ((size (file-attribute-size attrs)))
-                (if (> size consult-preview-max-size)
-                    (prog1 nil
-                      (message "File `%s' (%s) is too large for preview"
-                               name (file-size-human-readable size)))
-                  (let* ((enable-dir-local-variables nil)
-                         (enable-local-variables (and enable-local-variables :safe))
-                         (inhibit-message t)
-                         (buf (find-file-noselect
-                               name 'nowarn
-                               (> size consult-preview-raw-size))))
-                    (push buf new-buffers)
-                    ;; Only keep a few buffers alive
-                    (while (> (length new-buffers) consult-preview-max-count)
-                      (consult--kill-clean-buffer (car (last new-buffers)))
-                      (setq new-buffers (nbutlast new-buffers)))
-                    buf)))))
+          (or (get-file-buffer name)
+              (when-let (attrs (file-attributes name))
+                (let ((size (file-attribute-size attrs)))
+                  (if (> size consult-preview-max-size)
+                      (prog1 nil
+                        (message "File `%s' (%s) is too large for preview"
+                                 name (file-size-human-readable size)))
+                    (let* ((enable-dir-local-variables nil)
+                           (enable-local-variables (and enable-local-variables :safe))
+                           (inhibit-message t)
+                           (buf (find-file-noselect
+                                 name 'nowarn
+                                 (> size consult-preview-raw-size))))
+                      (push buf new-buffers)
+                      ;; Only keep a few buffers alive
+                      (while (> (length new-buffers) consult-preview-max-count)
+                        (consult--kill-clean-buffer (car (last new-buffers)))
+                        (setq new-buffers (nbutlast new-buffers)))
+                      buf)))))
         (mapc #'consult--kill-clean-buffer new-buffers)
         (when restore-recentf
           (setq recentf-list saved-recentf))))))
@@ -2982,7 +2982,7 @@ number. Otherwise store point, frameset, window or kmacro."
                             'consult--type
                             (alist-get
                              (alist-get 'handler bm #'bookmark-default-handler)
-                           narrow))))
+                             narrow))))
             bookmark-alist)))
 
 ;;;###autoload
@@ -3302,9 +3302,9 @@ The command supports previewing the currently selected theme."
        :lookup (lambda (_input _cands x)
                  (and x (not (string= x "default")) (intern-soft x)))
        :state (lambda (cand restore)
-                  (cond
-                   ((and restore (not cand)) (consult-theme saved-theme))
-                   ((memq cand avail-themes) (consult-theme cand))))
+                (cond
+                 ((and restore (not cand)) (consult-theme saved-theme))
+                 ((memq cand avail-themes) (consult-theme cand))))
        :default (symbol-name (or saved-theme 'default))))))
   (unless (eq theme (car custom-enabled-themes))
     (mapc #'disable-theme custom-enabled-themes)
@@ -3582,11 +3582,11 @@ TYPES is the mode-specific types configuration."
            (if prefix
                (setq next-prefix (concat prefix "/" (propertize name 'face 'consult-imenu-prefix)))
              (if-let (type (cdr (assoc name types)))
-                  (setq next-prefix (propertize name
-                                                'face 'consult-imenu-prefix
-                                                'consult--type (car type))
-                        next-face (cadr type))
-                (setq next-prefix (propertize name 'face 'consult-imenu-prefix))))
+                 (setq next-prefix (propertize name
+                                               'face 'consult-imenu-prefix
+                                               'consult--type (car type))
+                       next-face (cadr type))
+               (setq next-prefix (propertize name 'face 'consult-imenu-prefix))))
            (consult--imenu-flatten next-prefix next-face (cdr item) types))
        (let* ((name (car item))
               (key (if prefix (concat prefix " " (propertize name 'face face)) name))
@@ -3667,7 +3667,7 @@ The symbol at point is added to the future history."
          (mapcar (lambda (x) (cons (car x) (cadr x)))
                  (plist-get (cdr (seq-find (lambda (x) (derived-mode-p (car x)))
                                            consult-imenu-config))
-                           :types))))
+                            :types))))
     (consult--imenu-jump
      (consult--read
       (or items (user-error "Imenu is empty"))
