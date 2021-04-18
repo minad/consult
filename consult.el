@@ -1955,6 +1955,16 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
       (user-error "No headings"))
     (nreverse candidates)))
 
+(defun consult--outline-level (cand)
+  "Return the level of outline candidate CAND."
+  (require 'outline)
+  (let ((marker (car (get-text-property 0 'consult-location cand))))
+    (with-current-buffer (marker-buffer marker)
+      (save-excursion
+        (goto-char marker)
+        (outline-back-to-heading)
+        (funcall outline-level)))))
+
 ;;;###autoload
 (defun consult-outline ()
   "Jump to an outline heading, obtained by matching against `outline-regexp'.
@@ -1962,17 +1972,25 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
 This command supports candidate preview.
 The symbol at point is added to the future history."
   (interactive)
-  (consult--read
-   (consult--with-increased-gc (consult--outline-candidates))
-   :prompt "Go to heading: "
-   :annotate (consult--line-prefix)
-   :category 'consult-location
-   :sort nil
-   :require-match t
-   :lookup #'consult--line-match
-   :history '(:input consult--line-history)
-   :add-history (thing-at-point 'symbol)
-   :state (consult--jump-state)))
+  (let* ((cands (consult--with-increased-gc (consult--outline-candidates)))
+         (min-level (apply 'min (mapcar 'consult--outline-level cands)))
+         (narrow-fn (lambda (cand)
+                      (<= (consult--outline-level cand)
+                          (+ consult--narrow min-level -49))))
+         (narrow-cats (mapcar (lambda (c) (cons c (format "Level ≤ %c" c)))
+                              (number-sequence ?1 ?9))))
+    (consult--read
+     cands
+     :prompt "Go to heading: "
+     :annotate (consult--line-prefix)
+     :category 'consult-location
+     :sort nil
+     :require-match t
+     :lookup #'consult--line-match
+     :narrow (cons narrow-fn narrow-cats)
+     :history '(:input consult--line-history)
+     :add-history (thing-at-point 'symbol)
+     :state (consult--jump-state))))
 
 ;;;;; Command: consult-mark
 
