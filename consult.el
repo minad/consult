@@ -1968,8 +1968,9 @@ This command supports narrowing to a heading level and candidate preview.
 The symbol at point is added to the future history."
   (interactive)
   (let* ((cands (consult--with-increased-gc (consult--outline-candidates)))
-         (min-level (+ -49 (apply #'min (mapcar (consult--get-property 'consult--outline-level)
-                                                cands))))
+         (min-level (- (apply #'min (mapcar (consult--get-property 'consult--outline-level)
+                                            cands))
+                       ?1))
          (narrow-fun (lambda (cand)
                        (<= (get-text-property 0 'consult--outline-level cand)
                            (+ consult--narrow min-level))))
