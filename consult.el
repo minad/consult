@@ -843,11 +843,12 @@ Also create a which-key pseudo key to show the description."
   (lambda (cand)
     (list cand (format fmt (cdr (get-text-property 0 'consult-location cand))) ""))))
 
-(defun consult--location-candidate (cand marker line)
+(defun consult--location-candidate (cand marker line &rest props)
   "Add MARKER and LINE as 'consult-location text property to CAND.
-Furthermore append tofu-encoded MARKER suffix for disambiguation."
+Furthermore add the additional text properties PROPS, and append
+tofu-encoded MARKER suffix for disambiguation."
   (setq cand (concat cand (consult--tofu-encode marker)))
-  (put-text-property 0 1 'consult-location (cons marker line) cand)
+  (add-text-properties 0 1 `(consult-location (,marker . ,line) ,@props) cand)
   cand)
 
 (defsubst consult--buffer-substring (beg end &optional fontify)
@@ -1935,10 +1936,14 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
   (consult--forbid-minibuffer)
   (let* ((line (line-number-at-pos (point-min) consult-line-numbers-widen))
          (heading-regexp (concat "^\\(?:"
-                                 (if (boundp 'outline-regexp)
-                                     outline-regexp
-                                   "[*\^L]+") ;; default definition from outline.el
+                                 (or (bound-and-true-p outline-regexp)
+                                     "[*\^L]+") ;; default definition from outline.el
                                  "\\)"))
+         (heading-alist (bound-and-true-p outline-heading-alist))
+         (level-function (or (bound-and-true-p outline-level)
+                             (lambda () ;; as in the default from outline.el
+                               (or (cdr (assoc (match-string 0) heading-alist))
+                                   (- (match-end 0) (match-beginning 0))))))
          (candidates))
     (save-excursion
       (goto-char (point-min))
@@ -1948,7 +1953,8 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                (consult--buffer-substring (line-beginning-position)
                                           (line-end-position)
                                           'fontify)
-               (point-marker) line)
+               (point-marker) line
+               'consult-level (funcall level-function))
               candidates)
         (unless (eobp) (forward-char 1))))
     (unless candidates
@@ -1962,17 +1968,26 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
 This command supports candidate preview.
 The symbol at point is added to the future history."
   (interactive)
-  (consult--read
-   (consult--with-increased-gc (consult--outline-candidates))
-   :prompt "Go to heading: "
-   :annotate (consult--line-prefix)
-   :category 'consult-location
-   :sort nil
-   :require-match t
-   :lookup #'consult--line-match
-   :history '(:input consult--line-history)
-   :add-history (thing-at-point 'symbol)
-   :state (consult--jump-state)))
+  (let* ((cands (consult--with-increased-gc (consult--outline-candidates)))
+         (min-level (apply 'min (mapcar (consult--get-property 'consult-level)
+                                        cands)))
+         (narrow-fn (lambda (cand)
+                      (<= (get-text-property 0 'consult-level cand)
+                          (+ consult--narrow min-level -49))))
+         (narrow-cats (mapcar (lambda (c) (cons c (format "Level ≤ %c" c)))
+                              (number-sequence ?1 ?9))))
+    (consult--read
+     cands
+     :prompt "Go to heading: "
+     :annotate (consult--line-prefix)
+     :category 'consult-location
+     :sort nil
+     :require-match t
+     :lookup #'consult--line-match
+     :narrow (cons narrow-fn narrow-cats)
+     :history '(:input consult--line-history)
+     :add-history (thing-at-point 'symbol)
+     :state (consult--jump-state))))
 
 ;;;;; Command: consult-mark
 
