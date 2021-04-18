@@ -987,10 +987,11 @@ wiki]].
   :end:
 
 You probably guessed from the name that this package took inspiration from
-[[https://github.com/abo-abo/swiper#counsel][Counsel]] by Oleh Krehel. Some of the Consult commands originated in the [[https://github.com/raxod502/selectrum/wiki/Useful-Commands][Selectrum
-wiki]]. The commands have been rewritten and greatly enhanced in comparison to the
-wiki versions. In particular all Selectrum-specific code has been removed, such
-that the commands are compatible with the =completing-read= API.
+[[https://github.com/abo-abo/swiper#counsel][Counsel]] by Oleh Krehel. Some of the Consult commands originated in the Counsel
+package or the [[https://github.com/raxod502/selectrum/wiki/Useful-Commands][Selectrum wiki]]. The commands have been rewritten and greatly
+enhanced in comparison to the original versions. In particular all
+Selectrum-specific code has been removed, such that the commands are compatible
+with the =completing-read= API.
 
 Code contributions:
 - [[https://github.com/oantolin/][Omar Antolín Camarena]]
