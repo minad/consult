@@ -843,11 +843,12 @@ Also create a which-key pseudo key to show the description."
   (lambda (cand)
     (list cand (format fmt (cdr (get-text-property 0 'consult-location cand))) ""))))
 
-(defun consult--location-candidate (cand marker line)
+(defun consult--location-candidate (cand marker line &rest props)
   "Add MARKER and LINE as 'consult-location text property to CAND.
-Furthermore append tofu-encoded MARKER suffix for disambiguation."
+Furthermore add the additional text properties PROPS, and append
+tofu-encoded MARKER suffix for disambiguation."
   (setq cand (concat cand (consult--tofu-encode marker)))
-  (put-text-property 0 1 'consult-location (cons marker line) cand)
+  (add-text-properties 0 1 `(consult-location (,marker . ,line) ,@props) cand)
   cand)
 
 (defsubst consult--buffer-substring (beg end &optional fontify)
@@ -1952,9 +1953,9 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                (consult--buffer-substring (line-beginning-position)
                                           (line-end-position)
                                           'fontify)
-               (point-marker) line)
+               (point-marker) line
+               'consult-level (funcall level-function))
               candidates)
-        (put-text-property 0 1 'consult-level (funcall level-function) (car candidates))
         (unless (eobp) (forward-char 1))))
     (unless candidates
       (user-error "No headings"))
