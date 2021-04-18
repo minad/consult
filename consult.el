@@ -1,7 +1,7 @@
 ;;; consult.el --- Consulting completing-read -*- lexical-binding: t -*-
 
 ;; Author: Daniel Mendler and Consult contributors
-;; Maintainer: Daniel Mendler
+;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2020
 ;; License: GPL-3.0-or-later
 ;; Version: 0.6
