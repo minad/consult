@@ -879,14 +879,6 @@ MARKER is the cursor position."
   "Return current line where the cursor MARKER is highlighted."
   (consult--region-with-cursor (line-beginning-position) (line-end-position) marker))
 
-(defun consult--merge-config (args)
-  "Merge `consult-config' plists into the keyword arguments of ARGS."
-  (if-let (config (alist-get this-command consult-config))
-      (append (seq-take-while (lambda (x) (not (keywordp x))) args)
-              config
-              (seq-drop-while (lambda (x) (not (keywordp x))) args))
-    args))
-
 ;;;; Preview support
 
 (defun consult--kill-clean-buffer (buf)
@@ -1599,15 +1591,6 @@ See `consult--read' for the CANDIDATES, KEYMAP, ADD-HISTORY, NARROW and PREVIEW-
   (consult--setup-keymap keymap (functionp candidates) narrow preview-key)
   (consult--add-history add-history))
 
-(defmacro consult--read-defaults (&rest default)
-  "Set DEFAULT options."
-  (macroexp-progn
-   (mapcar
-    (pcase-lambda (`(,key ,val))
-      `(unless (plist-member options ,(intern (format ":%s" key)))
-         (setq options (plist-put options ,(intern (format ":%s" key)) (setq ,key ,val)))))
-    default)))
-
 (defun consult--read-group (title candidates)
   "Group CANDIDATES according to TITLE function."
   (let ((groups))
@@ -1633,47 +1616,12 @@ See `consult--read' for the CANDIDATES, KEYMAP, ADD-HISTORY, NARROW and PREVIEW-
               (if (consp ann) ann (list cand (or ann "")))))
           cands))
 
-(cl-defun consult--read (candidates &rest options &key
-                                    prompt predicate require-match history default
-                                    keymap category initial narrow add-history annotate
-                                    state preview-key sort default-top lookup title)
-  "Enhanced completing read function selecting from CANDIDATES.
-
-Keyword OPTIONS:
-
-PROMPT is the string which is shown as prompt message in the minibuffer.
-PREDICATE is a filter function called for each candidate.
-REQUIRE-MATCH equals t means that an exact match is required.
-HISTORY is the symbol of the history variable.
-DEFAULT is the default selected value.
-ADD-HISTORY is a list of items to add to the history.
-CATEGORY is the completion category.
-SORT should be set to nil if the candidates are already sorted.
-LOOKUP is a lookup function passed the input, candidates and candidate string.
-ANNOTATE is a function passed a candidate string to return an annotation.
-INITIAL is the initial input.
-DEFAULT-TOP must be nil if the default candidate should not be moved to the top.
-STATE is the state function, see `consult--with-preview'.
-TITLE is a function passed a candidate string to return a grouping title.
-PREVIEW-KEY are the preview keys (nil, 'any, a single key or a list of keys).
-NARROW is an alist of narrowing prefix strings and description.
-KEYMAP is a command-specific keymap."
-  ;; supported types
-  (cl-assert (or (functionp candidates)     ;; async table
-                 (obarrayp candidates)      ;; obarray
-                 (hash-table-p candidates)  ;; hash table
-                 (not candidates)           ;; empty list
-                 (stringp (car candidates)) ;; string list
-                 (symbolp (car candidates)) ;; symbol list
-                 (and (consp (car candidates)) (stringp (caar candidates)))   ;; string alist
-                 (and (consp (car candidates)) (symbolp (caar candidates))))) ;; symbol alist
+(cl-defun consult--read-1 (candidates &rest options &key
+                                      prompt predicate require-match history default
+                                      keymap category initial narrow add-history annotate
+                                      state preview-key sort default-top lookup title)
+  "See `consult--read' for documentation."
   (ignore default-top narrow add-history keymap)
-  (consult--read-defaults
-   (prompt "Select: ")
-   (preview-key consult-preview-key)
-   (sort t)
-   (default-top t)
-   (lookup (lambda (_input _cands x) x)))
   (consult--minibuffer-with-setup-hook
       (:append (lambda () (apply #'consult--read-setup candidates options)))
     (consult--with-async (async candidates)
@@ -1731,7 +1679,51 @@ KEYMAP is a command-specific keymap."
           ((pred symbolp)))
         (car result)))))
 
-(advice-add #'consult--read :filter-args #'consult--merge-config)
+(cl-defun consult--read (candidates &rest options &key
+                                      prompt predicate require-match history default
+                                      keymap category initial narrow add-history annotate
+                                      state preview-key sort default-top lookup title)
+  "Enhanced completing read function selecting from CANDIDATES.
+
+Keyword OPTIONS:
+
+PROMPT is the string which is shown as prompt message in the minibuffer.
+PREDICATE is a filter function called for each candidate.
+REQUIRE-MATCH equals t means that an exact match is required.
+HISTORY is the symbol of the history variable.
+DEFAULT is the default selected value.
+ADD-HISTORY is a list of items to add to the history.
+CATEGORY is the completion category.
+SORT should be set to nil if the candidates are already sorted.
+LOOKUP is a lookup function passed the input, candidates and candidate string.
+ANNOTATE is a function passed a candidate string to return an annotation.
+INITIAL is the initial input.
+DEFAULT-TOP must be nil if the default candidate should not be moved to the top.
+STATE is the state function, see `consult--with-preview'.
+TITLE is a function passed a candidate string to return a grouping title.
+PREVIEW-KEY are the preview keys (nil, 'any, a single key or a list of keys).
+NARROW is an alist of narrowing prefix strings and description.
+KEYMAP is a command-specific keymap."
+  ;; supported types
+  (cl-assert (or (functionp candidates)     ;; async table
+                 (obarrayp candidates)      ;; obarray
+                 (hash-table-p candidates)  ;; hash table
+                 (not candidates)           ;; empty list
+                 (stringp (car candidates)) ;; string list
+                 (symbolp (car candidates)) ;; symbol list
+                 (and (consp (car candidates)) (stringp (caar candidates)))   ;; string alist
+                 (and (consp (car candidates)) (symbolp (caar candidates))))) ;; symbol alist
+  (ignore prompt predicate require-match history default
+          keymap category initial narrow add-history annotate
+          state preview-key sort default-top lookup title)
+  (apply #'consult--read-1 candidates
+         (append (alist-get this-command consult-config)
+                 options
+                 (list :prompt "Select: "
+                       :preview-key consult-preview-key
+                       :sort t
+                       :default-top t
+                       :lookup (lambda (_input _cands x) x)))))
 
 ;;;; Internal API: consult--multi
 
@@ -1888,9 +1880,19 @@ Optional source fields:
 
 ;;;; Internal API: consult--prompt
 
-(cl-defun consult--prompt (&key (prompt "Input: ") history add-history initial default
-                                keymap state (preview-key consult-preview-key)
-                                (transform #'identity))
+(cl-defun consult--prompt-1 (&key prompt history add-history initial default
+                                  keymap state preview-key transform)
+  "See `consult--prompt' for documentation."
+  (consult--minibuffer-with-setup-hook
+      (:append (lambda ()
+                 (consult--setup-keymap keymap nil nil preview-key)
+                 (consult--add-history add-history)))
+    (car (consult--with-preview preview-key state
+                                (lambda (inp _) (funcall transform inp)) (lambda () t)
+           (read-from-minibuffer prompt initial nil nil history default)))))
+
+(cl-defun consult--prompt (&rest options &key prompt history add-history initial default
+                                 keymap state preview-key transform)
   "Read from minibuffer.
 
 PROMPT is the string to prompt with.
@@ -1902,15 +1904,14 @@ ADD-HISTORY is a list of items to add to the history.
 STATE is the state function, see `consult--with-preview'.
 PREVIEW-KEY are the preview keys (nil, 'any, a single key or a list of keys).
 KEYMAP is a command-specific keymap."
-  (consult--minibuffer-with-setup-hook
-      (:append (lambda ()
-                 (consult--setup-keymap keymap nil nil preview-key)
-                 (consult--add-history add-history)))
-    (car (consult--with-preview preview-key state
-                                (lambda (inp _) (funcall transform inp)) (lambda () t)
-           (read-from-minibuffer prompt initial nil nil history default)))))
-
-(advice-add #'consult--prompt :filter-args #'consult--merge-config)
+  (ignore prompt history add-history initial default
+          keymap state preview-key transform)
+  (apply #'consult--prompt-1
+         (append (alist-get this-command consult-config)
+                 options
+                 (list :prompt "Input: "
+                       :preview-key consult-preview-key
+                       :transform #'identity))))
 
 ;;;; Commands
 
