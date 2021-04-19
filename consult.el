@@ -357,6 +357,10 @@ should not be considered as stable as the public API."
   '((t :inherit consult-preview-region))
   "Face used to for yank previews in `consult-yank'.")
 
+(defface consult-preview-history
+  '((t :inherit consult-preview-region))
+  "Face used to for in-buffer history previews in `consult-history'.")
+
 (defface consult-preview-region
   '((t :inherit region))
   "Face used to for completion previews in `consult-completion-in-region'.")
@@ -3110,6 +3114,10 @@ In order to select from a specific HISTORY, pass the history variable as argumen
                 (and (minibufferp)
                      (eq minibuffer-history-variable 'extended-command-history)
                      'command)
+                :state
+                (unless (minibufferp)
+                  (consult--region-preview (point) (point)
+                                           'consult-preview-history))
                 :sort nil))))
     (when (minibufferp)
       (delete-minibuffer-contents))
