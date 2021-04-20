@@ -321,7 +321,7 @@ Each element of the list must have the form '(char name predicate)."
 Each element of the list must have the form '(char name handler)."
   :type '(repeat (list character string function)))
 
-(defcustom consult-config nil
+(defcustom consult-config (list #'consult--config-term-no-preview)
   "Command configuration list, which allows fine-grained configuration.
 
 Each element of the list is either a function, taking a command
@@ -1040,6 +1040,16 @@ FACE is the cursor face."
       (funcall preview cand restore)
       (when (and cand restore)
         (consult--jump cand)))))
+
+(defun consult--config-term-no-preview (command)
+  "Return a plist to disable preview in `term-mode'.
+Insertion previews for `consult-yank', `consult-completion-in-region' and
+`consult-history' don't work well in `term-mode'. Putting this function into
+`consult-config' will disable them in `term-mode'"
+  (and (memq command '(consult-yank consult-yank-pop consult-history
+                                    consult-completion-in-region))
+       (derived-mode-p 'term-mode)
+       '(:preview-key nil)))
 
 (defun consult--with-preview-1 (preview-key state transform candidate fun)
   "Add preview support for FUN.
