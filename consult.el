@@ -324,13 +324,13 @@ Each element of the list must have the form '(char name handler)."
 (defcustom consult-config (list #'consult--config-term-no-preview)
   "Command configuration list, which allows fine-grained configuration.
 
-Each element of the list is either a function, taking a command
-as its sole argument and returning a plist or a cons cell of the
-form (COMMAND-NAME . PLIST). The plist of the first matching
-element will be passed to `consult--read' as options, when called
-from the corresponding command. Note that the options depend on
-the private `consult--read' API and should not be considered as
-stable as the public API.
+Each element of the list is either a cons cell of the
+form (COMMAND-NAME . PLIST) or a function, taking a command as
+its sole argument and returning a plist. The plists of all
+matching elements are combined and passed to `consult--read' as
+options. Note that the options depend on the private
+`consult--read' API and should not be considered as stable as the
+public API.
 
 A function is considered matching if it returns a non-nil plist
 and a cons cell is considered matching if its car matches the
@@ -893,16 +893,12 @@ MARKER is the cursor position."
 COMMAND is the command to search the alist for."
   (let ((tail consult-config)
         (ret nil))
-    (while
-        (and tail
-             (let ((elem (car tail)))
-               (cond ((functionp elem)
-                      (setq ret (funcall elem command))
-                      (null ret))
-                     ((eq (car elem) command)
-                      (setq ret (cdr elem))
-                      nil)
-                     (t t))))
+    (while tail
+      (let ((elem (car tail)))
+        (cond ((functionp elem)
+               (setq ret (append ret (funcall elem command))))
+              ((eq (car elem) command)
+               (setq ret (append ret (cdr elem))))))
       (setq tail (cdr tail)))
     ret))
 
