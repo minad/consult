@@ -864,9 +864,9 @@ contributed.
  ;; Note that you should bind <S-up> and <S-down> in the
  ;; `minibuffer-local-completion-map' or `selectrum-minibuffer-map'
  ;; to the commands which select the previous or next candidate.
- (setq consult-config `((consult-theme :preview-key nil)
-                        (consult-buffer :preview-key ,(kbd "M-p"))
-                        (consult-line :preview-key (,(kbd "<S-down>") ,(kbd "<S-up>")))))
+ (setf (alist-get 'consult-theme consult-config) '(:preview-key nil))
+ (setf (alist-get 'consult-buffer consult-config) `(:preview-key ,(kbd "M-p")))
+ (setf (alist-get 'consult-line consult-config) `(:preview-key (,(kbd "<S-down>") ,(kbd "<S-up>"))))
  #+end_src
 
  Generally it is possible to modify commands for your individual needs by the
