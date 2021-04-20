@@ -358,6 +358,8 @@ should not be considered as stable as the public API."
   "Face used to for previews of text to be inserted.
 Used by `consult-completion-in-region', `consult-yank' and `consult-history'.")
 
+(define-obsolete-face-alias 'consult-preview-yank
+  'consult-preview-insertion "0.6")
 (define-obsolete-face-alias 'consult-preview-region
   'consult-preview-insertion "0.6")
 
@@ -2457,12 +2459,11 @@ narrowing and the settings `consult-goto-line-numbers' and
 
 ;;;;; Command: consult-completion-in-region
 
-(defun consult--region-preview (start end face)
+(defun consult--insertion-preview (start end)
   "State function for previewing a candidate in a specific region.
-The candidates are previewed in the region from START to END
-using the given FACE. This function is used as the `:state'
-argument for `consult--read' in the `consult-yank' family of
-functions and in `consult-completion-in-region'."
+The candidates are previewed in the region from START to END. This function is
+used as the `:state' argument for `consult--read' in the `consult-yank' family
+of functions and in `consult-completion-in-region'."
   (unless (minibufferp)
     (let (ov)
       (lambda (cand restore)
@@ -2471,7 +2472,7 @@ functions and in `consult-completion-in-region'."
           (unless ov (setq ov (consult--overlay start end 'invisible t)))
           ;; Use `add-face-text-property' on a copy of "cand in order to merge face properties
           (setq cand (copy-sequence cand))
-          (add-face-text-property 0 (length cand) face t cand)
+          (add-face-text-property 0 (length cand) 'consult-preview-insertion t cand)
           ;; Use the `before-string' property since the overlay might be empty.
           (overlay-put ov 'before-string cand))))))
 
@@ -2524,7 +2525,7 @@ These configuration options are supported:
                    (consult--with-preview
                        preview-key
                        ;; preview state
-                       (consult--region-preview start end 'consult-preview-insertion)
+                       (consult--insertion-preview start end)
                        ;; transformation function
                        (if (eq category 'file)
                            (if (file-name-absolute-p initial)
@@ -2673,11 +2674,10 @@ If no MODES are specified, use currently active major and minor modes."
     :category 'consult-yank
     :require-match t
     :state
-    (consult--region-preview
+    (consult--insertion-preview
      (point)
      ;; If previous command is yank, hide previously yanked text
-     (or (and (eq last-command 'yank) (mark t)) (point))
-     'consult-preview-insertion))))
+     (or (and (eq last-command 'yank) (mark t)) (point))))))
 
 ;; Insert selected text.
 ;; Adapted from the Emacs yank function.
@@ -3112,8 +3112,7 @@ In order to select from a specific HISTORY, pass the history variable as argumen
                      (eq minibuffer-history-variable 'extended-command-history)
                      'command)
                 :state
-                (consult--region-preview (point) (point)
-                                         'consult-preview-insertion)
+                (consult--insertion-preview (point) (point))
                 :sort nil))))
     (when (minibufferp)
       (delete-minibuffer-contents))
