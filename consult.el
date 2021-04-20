@@ -322,13 +322,22 @@ Each element of the list must have the form '(char name handler)."
   :type '(repeat (list character string function)))
 
 (defcustom consult-config nil
-  "Command configuration alist, which allows fine-grained configuration.
+  "Command configuration list, which allows fine-grained configuration.
 
-Each element of the list must have the form (command-name plist...). The options
-set here will be passed to `consult--read', when called from the corresponding
-command. Note that the options depend on the private `consult--read' API and
-should not be considered as stable as the public API."
-  :type '(alist :key-type symbol :value-type plist))
+Each element of the list is either a function, taking a command
+as its sole argument and returning a plist or a cons cell of the
+form (COMMAND-NAME . PLIST). The plist of the first matching
+element will be passed to `consult--read' as options, when called
+from the corresponding command. Note that the options depend on
+the private `consult--read' API and should not be considered as
+stable as the public API.
+
+A function is considered matching if it returns a non-nil plist
+and a cons cell is considered matching if its car matches the
+current command."
+  :type '(repeat (radio (cons (symbol :tag "Command")
+                              (plist :tag "Options"))
+                        (function :tag "Function returning options or nil"))))
 
 ;;;; Faces
 
@@ -878,6 +887,24 @@ MARKER is the cursor position."
 (defun consult--line-with-cursor (marker)
   "Return current line where the cursor MARKER is highlighted."
   (consult--region-with-cursor (line-beginning-position) (line-end-position) marker))
+
+(defun consult--get-config (command)
+  "Get the appropriate plist options from `consult-config'.
+COMMAND is the command to search the alist for."
+  (let ((tail consult-config)
+        (ret nil))
+    (while
+        (and tail
+             (let ((elem (car tail)))
+               (cond ((functionp elem)
+                      (setq ret (funcall elem command))
+                      (null ret))
+                     ((eq (car elem) command)
+                      (setq ret (cdr elem))
+                      nil)
+                     (t t))))
+      (setq tail (cdr tail)))
+    ret))
 
 ;;;; Preview support
 
@@ -1717,7 +1744,7 @@ KEYMAP is a command-specific keymap."
           keymap category initial narrow add-history annotate
           state preview-key sort default-top lookup title)
   (apply #'consult--read-1 candidates
-         (append (alist-get this-command consult-config)
+         (append (consult--get-config this-command)
                  options
                  (list :prompt "Select: "
                        :preview-key consult-preview-key
@@ -1907,7 +1934,7 @@ KEYMAP is a command-specific keymap."
   (ignore prompt history add-history initial default
           keymap state preview-key transform)
   (apply #'consult--prompt-1
-         (append (alist-get this-command consult-config)
+         (append (consult--get-config this-command)
                  options
                  (list :prompt "Input: "
                        :preview-key consult-preview-key
@@ -2495,7 +2522,7 @@ These configuration options are supported:
     * :completion-styles - Use completion styles (def: `completion-styles')
     * :require-match - Require matches when completing (def: nil)
     * :prompt - The prompt string shown in the minibuffer"
-  (let* ((config (alist-get #'consult-completion-in-region consult-config))
+  (let* ((config (consult--get-config #'consult-completion-in-region))
          (prompt (or (plist-get config :prompt) "Completion: "))
          (completion-styles (or (plist-get config :completion-styles) completion-styles))
          (require-match (plist-get config :require-match))
