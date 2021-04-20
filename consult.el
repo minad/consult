@@ -338,7 +338,7 @@ should not be considered as stable as the public API."
   :group 'faces)
 
 (defface consult-preview-line
-  '((t :inherit consult-preview-region :extend t))
+  '((t :inherit consult-preview-insertion :extend t))
   "Face used to for line previews.")
 
 (defface consult-preview-match
@@ -353,17 +353,13 @@ should not be considered as stable as the public API."
   '((t :inherit isearch-fail))
   "Face used to for cursor previews and marks in `consult-compile-error'.")
 
-(defface consult-preview-yank
-  '((t :inherit consult-preview-region))
-  "Face used to for yank previews in `consult-yank'.")
-
-(defface consult-preview-history
-  '((t :inherit consult-preview-region))
-  "Face used to for in-buffer history previews in `consult-history'.")
-
-(defface consult-preview-region
+(defface consult-preview-insertion
   '((t :inherit region))
-  "Face used to for completion previews in `consult-completion-in-region'.")
+  "Face used to for previews of text to be inserted.
+Used by `consult-completion-in-region', `consult-yank' and `consult-history'.")
+
+(define-obsolete-face-alias 'consult-preview-region
+  'consult-preview-insertion "0.6")
 
 (defface consult-narrow-indicator
   '((t :inherit warning))
@@ -2528,7 +2524,7 @@ These configuration options are supported:
                    (consult--with-preview
                        preview-key
                        ;; preview state
-                       (consult--region-preview start end 'consult-preview-region)
+                       (consult--region-preview start end 'consult-preview-insertion)
                        ;; transformation function
                        (if (eq category 'file)
                            (if (file-name-absolute-p initial)
@@ -2681,7 +2677,7 @@ If no MODES are specified, use currently active major and minor modes."
      (point)
      ;; If previous command is yank, hide previously yanked text
      (or (and (eq last-command 'yank) (mark t)) (point))
-     'consult-preview-yank))))
+     'consult-preview-insertion))))
 
 ;; Insert selected text.
 ;; Adapted from the Emacs yank function.
@@ -3117,7 +3113,7 @@ In order to select from a specific HISTORY, pass the history variable as argumen
                      'command)
                 :state
                 (consult--region-preview (point) (point)
-                                         'consult-preview-history)
+                                         'consult-preview-insertion)
                 :sort nil))))
     (when (minibufferp)
       (delete-minibuffer-contents))
