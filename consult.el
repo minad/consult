@@ -2467,16 +2467,17 @@ The candidates are previewed in the region from START to END
 using the given FACE. This function is used as the `:state'
 argument for `consult--read' in the `consult-yank' family of
 functions and in `consult-completion-in-region'."
-  (let (ov)
-    (lambda (cand restore)
-      (if restore
-          (when ov (delete-overlay ov))
-        (unless ov (setq ov (consult--overlay start end 'invisible t)))
-        ;; Use `add-face-text-property' on a copy of "cand in order to merge face properties
-        (setq cand (copy-sequence cand))
-        (add-face-text-property 0 (length cand) face t cand)
-        ;; Use the `before-string' property since the overlay might be empty.
-        (overlay-put ov 'before-string cand)))))
+  (unless (minibufferp)
+    (let (ov)
+      (lambda (cand restore)
+        (if restore
+            (when ov (delete-overlay ov))
+          (unless ov (setq ov (consult--overlay start end 'invisible t)))
+          ;; Use `add-face-text-property' on a copy of "cand in order to merge face properties
+          (setq cand (copy-sequence cand))
+          (add-face-text-property 0 (length cand) face t cand)
+          ;; Use the `before-string' property since the overlay might be empty.
+          (overlay-put ov 'before-string cand))))))
 
 ;; Use minibuffer completion as the UI for completion-at-point
 ;;;###autoload
@@ -3115,9 +3116,8 @@ In order to select from a specific HISTORY, pass the history variable as argumen
                      (eq minibuffer-history-variable 'extended-command-history)
                      'command)
                 :state
-                (unless (minibufferp)
-                  (consult--region-preview (point) (point)
-                                           'consult-preview-history))
+                (consult--region-preview (point) (point)
+                                         'consult-preview-history)
                 :sort nil))))
     (when (minibufferp)
       (delete-minibuffer-contents))
