@@ -38,38 +38,28 @@
 
 (defun consult-org--narrow ()
   "Narrowing configuration for `consult-org' commands."
-  (let ((triples (append
-                  ;; TODO keywords
-                  (seq-filter
-                   (lambda (it) (<= ?a (car it) ?z))
-                   (mapcar (lambda (s)
-                             (list (downcase (string-to-char s))
-                                   s
-                                   (lambda (cand)
-                                     (string-equal s (get-text-property
-                                                      0 'consult-org--todo cand)))))
-                           (mapcan 'cdr org-todo-keywords)))
-                  ;; Priorities
-                  (mapcar (lambda (c)
-                            (list c
-                                  (format "Priority %c" c)
-                                  (lambda (cand)
-                                    (eq c (get-text-property
-                                           0 'consult-org--priority cand)))))
+  (let ((todo-keywords (seq-filter
+                        (lambda (it) (<= ?a (car it) ?z))
+                        (mapcar (lambda (s)
+                                  (pcase-let ((`(,a ,b) (split-string s "(")))
+                                    (cons (downcase (string-to-char (or b a))) a)))
+                                (mapcan 'cdr org-todo-keywords)))))
+    (cons (lambda (cand)
+            (cond ((<= ?1 consult--narrow ?9)
+                   (<= (get-text-property 0 'consult-org--level cand)
+                       (- consult--narrow ?0)))
+                  ((<= ?A consult--narrow ?Z)
+                   (eq (get-text-property 0 'consult-org--priority cand)
+                       consult--narrow))
+                  ((when-let ((todo (alist-get consult--narrow todo-keywords)))
+                     (string-equal (get-text-property 0 'consult-org--todo cand)
+                                   todo)))))
+          (append (mapcar (lambda (c) (cons c (format "Level %c" c)))
+                          (number-sequence ?1 ?9))
+                  (mapcar (lambda (c) (cons c (format "Priority %c" c)))
                           (number-sequence (max ?A org-highest-priority)
                                            (min ?Z org-lowest-priority)))
-                  ;; Outline levels
-                  (mapcar (lambda (i)
-                            (list (+ i ?0)
-                                  (format "Level %i" i)
-                                  (lambda (cand)
-                                    (>= i (get-text-property
-                                           0 'consult-org--level cand)))))
-                          (number-sequence 1 9)))))
-    (cons (lambda (cand)
-            (funcall (nth 2 (assoc consult--narrow triples))
-                     cand))
-          (mapcar (pcase-lambda (`(,c ,s _)) (cons c s)) triples))))
+                  todo-keywords))))
 
 (defun consult-org--entries (match scope &rest skip)
   "Return a list of consult locations from Org entries.
