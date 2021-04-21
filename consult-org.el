@@ -100,16 +100,17 @@ buffer are offered."
    (consult--read
     (consult--with-increased-gc (consult-org--entries match scope))
     :prompt "Go to heading: "
-    :category 'consult-org
+    :category 'consult-org-heading
     :sort nil
-    :title (lambda (cand)
-             (let ((marker (car (get-text-property 0 'consult-location cand))))
-               (buffer-name (marker-buffer marker))))
+    :title (unless (member scope '(nil 'tree 'region 'region-start-level 'file))
+             ;; Don't add titles when only showing entries from current buffer
+             (lambda (cand)
+               (let ((marker (car (get-text-property 0 'consult-location cand))))
+                 (buffer-name (marker-buffer marker)))))
     :narrow (consult-org--narrow)
     :require-match t
     :lookup #'consult--lookup-location
     :history '(:input consult-org--history)
-    :add-history (when (featurep 'org-clock) org-clock-current-task)
     :state (consult--jump-preview))))
 
 ;;;###autoload
@@ -150,7 +151,7 @@ recent clocked item."
            (and (member m1 org-clock-history)
                 (not (member m1 (member m2 org-clock-history))))))))
      :prompt "Clock in: "
-     :category 'consult-org
+     :category 'consult-org-heading
      :sort nil
      :title (lambda (cand)
               (let ((m (car (get-text-property 0 'consult-location cand))))
