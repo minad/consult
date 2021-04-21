@@ -1296,11 +1296,12 @@ the comma is passed to ASYNC, the second part is used for filtering."
     (goto-char (point-max))
     (insert (apply #'format formatted args))))
 
-(defun consult--async-process (async cmd)
+(defun consult--async-process (async cmd &rest props)
   "Create process source async function.
 
 ASYNC is the async function which receives the candidates.
-CMD is the command argument list."
+CMD is the command argument list.
+PROPS are optional properties passed to `make-process'."
   (let ((proc) (last-args) (indicator) (count))
     (lambda (action)
       (pcase action
@@ -1321,51 +1322,53 @@ CMD is the command argument list."
                (setq
                 count 0
                 proc
-                (make-process
-                 :connection-type 'pipe
-                 :name (car args)
-                 ;;; XXX tramp bug, the stderr buffer must be empty
-                 :stderr stderr-buffer
-                 :noquery t
-                 :file-handler t ;; allow tramp
-                 :command args
-                 :filter
-                 (lambda (_ out)
-                   (when flush
-                     (setq flush nil)
-                     (funcall async 'flush))
-                   (let ((lines (split-string out "\n")))
-                     (if (not (cdr lines))
-                         (setq rest (concat rest (car lines)))
-                       (setcar lines (concat rest (car lines)))
-                       (setq rest (car (last lines)))
-                       (setq count (+ count (length lines) -1))
-                       (funcall async (nbutlast lines)))))
-                 :sentinel
-                 (lambda (_ event)
-                   (when flush
-                     (setq flush nil)
-                     (funcall async 'flush))
-                   (overlay-put indicator 'display
-                                (cond
-                                 ((string-prefix-p "killed" event)
-                                  #(";" 0 1 (face consult-async-failed)))
-                                 ((string-prefix-p "finished" event)
-                                  #(":" 0 1 (face consult-async-finished)))
-                                 (t
-                                  #("!" 0 1 (face consult-async-failed)))))
-                   (when (and (string-prefix-p "finished" event) (not (string= rest "")))
-                     (setq count (+ count 1))
-                     (funcall async (list rest)))
-                   (consult--async-log
-                    "consult--async-process sentinel: event=%s lines=%d\n"
-                    (string-trim event) count)
-                   (with-current-buffer (get-buffer-create consult--async-log)
-                     (goto-char (point-max))
-                     (insert ">>>>> stderr >>>>>\n")
-                     (insert-buffer-substring stderr-buffer)
-                     (insert "<<<<< stderr <<<<<\n")
-                     (kill-buffer stderr-buffer)))))))))
+                (apply
+                 #'make-process
+                 (append
+                  props
+                  (list
+                   :connection-type 'pipe
+                   :name (car args)
+                   :stderr stderr-buffer ;;; XXX tramp bug, the stderr buffer must be empty
+                   :noquery t
+                   :command args
+                   :filter
+                   (lambda (_ out)
+                     (when flush
+                       (setq flush nil)
+                       (funcall async 'flush))
+                     (let ((lines (split-string out "\n")))
+                       (if (not (cdr lines))
+                           (setq rest (concat rest (car lines)))
+                         (setcar lines (concat rest (car lines)))
+                         (setq rest (car (last lines)))
+                         (setq count (+ count (length lines) -1))
+                         (funcall async (nbutlast lines)))))
+                   :sentinel
+                   (lambda (_ event)
+                     (when flush
+                       (setq flush nil)
+                       (funcall async 'flush))
+                     (overlay-put indicator 'display
+                                  (cond
+                                   ((string-prefix-p "killed" event)
+                                    #(";" 0 1 (face consult-async-failed)))
+                                   ((string-prefix-p "finished" event)
+                                    #(":" 0 1 (face consult-async-finished)))
+                                   (t
+                                    #("!" 0 1 (face consult-async-failed)))))
+                     (when (and (string-prefix-p "finished" event) (not (string= rest "")))
+                       (setq count (+ count 1))
+                       (funcall async (list rest)))
+                     (consult--async-log
+                      "consult--async-process sentinel: event=%s lines=%d\n"
+                      (string-trim event) count)
+                     (with-current-buffer (get-buffer-create consult--async-log)
+                       (goto-char (point-max))
+                       (insert ">>>>> stderr >>>>>\n")
+                       (insert-buffer-substring stderr-buffer)
+                       (insert "<<<<< stderr <<<<<\n")
+                       (kill-buffer stderr-buffer)))))))))))
         ('destroy
          (ignore-errors (delete-process proc))
          (delete-overlay indicator)
@@ -1473,13 +1476,17 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
                       (list (replace-regexp-in-string "ARG" input x 'fixedcase 'literal))))
                   cmd))))))
 
-(defmacro consult--async-command (cmd &rest transforms)
-  "Asynchronous CMD pipeline with TRANSFORMS."
+(defmacro consult--async-command (cmd &rest args)
+  "Asynchronous CMD pipeline.
+
+ARGS is a list of `make-process' properties and transforms."
   (declare (indent 1))
   `(thread-first (consult--async-sink)
      (consult--async-refresh-timer)
-     ,@transforms
-     (consult--async-process (consult--command-args ,cmd))
+     ,@(seq-take-while (lambda (x) (not (keywordp x))) args)
+     (consult--async-process
+      (consult--command-args ,cmd)
+      ,@(seq-drop-while (lambda (x) (not (keywordp x))) args))
      (consult--async-throttle)
      (consult--async-split)))
 
@@ -3786,7 +3793,8 @@ The symbol at point is added to the future history."
          (default-directory (cdr prompt-dir)))
     (consult--read
      (consult--async-command cmd
-       (consult--async-transform consult--grep-matches))
+       (consult--async-transform consult--grep-matches)
+       :file-handler t) ;; allow tramp
      :prompt (car prompt-dir)
      :lookup #'consult--lookup-cdr
      :state (consult--grep-state)
@@ -3846,7 +3854,8 @@ The filename at point is added to the future history."
   (find-file
    (consult--read
     (consult--async-command cmd
-      (consult--async-map (lambda (x) (string-remove-prefix "./" x))))
+      (consult--async-map (lambda (x) (string-remove-prefix "./" x)))
+      :file-handler t) ;; allow tramp
     :prompt prompt
     :sort nil
     :require-match t
