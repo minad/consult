@@ -168,6 +168,8 @@ variables and functions with their descriptions.
  #+findex: consult-outline
  #+findex: consult-imenu
  #+findex: consult-project-imenu
+ #+findex: consult-org-heading
+ #+findex: consult-org-agenda
  - =consult-goto-line=: Jump to line number enhanced with live preview.
    This is a drop-in replacement for =goto-line=.
  - =consult-mark=: Jump to a marker in the =mark-ring=. Supports live
@@ -182,6 +184,12 @@ variables and functions with their descriptions.
    the same major mode as the current buffer. Supports live preview,
    recursive editing and narrowing. This feature has been inspired by
    [[https://github.com/vspinu/imenu-anywhere][imenu-anywhere]].
+ - =consult-org-heading=: Similar to =consult-outline=, for Org
+   buffers. Supports narrowing by heading level, priority and TODO
+   state, as well as live preview and recursive editing.
+ - =consult-org-agenda=: Jump to an agenda heading. Supports
+   narrowing by heading level, priority and TODO state, as well as
+   live preview and recursive editing.
 
 ** Search
    :properties:
@@ -319,6 +327,7 @@ variables and functions with their descriptions.
  #+findex: consult-theme
  #+findex: consult-man
  #+findex: consult-xref
+ #+findex: consult-org-clock-in
  - =consult-apropos=: Replacement for =apropos= with completion.
  - =consult-man=: Find Unix man page, via Unix =apropos= or =man -k=.
    The selected man page is opened using the Emacs =man= command.
@@ -338,6 +347,8 @@ variables and functions with their descriptions.
    candidates.
  - =consult-xref=: Integration with xref. This function can be set as
    as =xref-show-xrefs-function= and =xref-show-definitions-function=.
+ - =consult-org-clock-in=: Select a task and clock into it. Supports
+   narrowing by heading level, priority and TODO state.
 
 * Special features
   :properties:
