@@ -36,38 +36,40 @@
 
 (defvar consult-org--history nil)
 
-(defvar consult-org--narrow
-  (append
-   ;; TODO keywords
-   (seq-filter
-    (lambda (it) (<= ?a (car it) ?z))
-    (mapcar (lambda (k)
-                  (list (downcase (string-to-char k)) k
-                        (lambda (cand)
-                          (string-equal k (get-text-property 0 'consult-org-todo cand)))))
-            (mapcan 'cdr org-todo-keywords)))
-   ;; Priorities
-   (mapcar (lambda (c)
-             (list c
-                   (format "Priority %c" c)
-                   (lambda (cand)
-                     (eq c (get-text-property 0 'consult-org-priority cand)))))
-           (number-sequence (max ?A org-highest-priority)
-                            (min ?Z org-lowest-priority)))
-   ;; Outline levels
-   (mapcar (lambda (i)
-             (list (+ i ?0)
-                   (format "Level %i" i)
-                   (lambda (cand)
-                     (>= i (get-text-property 0 'consult-org-level cand)))))
-           (number-sequence 1 9))))
-
 (defun consult-org--narrow ()
-  (cons (lambda (cand)
-          (funcall (nth 2 (assoc consult--narrow consult-org--narrow))
-                   cand))
-        (mapcar (pcase-lambda (`(,c ,s _)) (cons c s))
-                consult-org--narrow)))
+  "Narrowing configuration for `consult-org' commands."
+  (let ((triples (append
+                  ;; TODO keywords
+                  (seq-filter
+                   (lambda (it) (<= ?a (car it) ?z))
+                   (mapcar (lambda (s)
+                             (list (downcase (string-to-char s))
+                                   s
+                                   (lambda (cand)
+                                     (string-equal s (get-text-property
+                                                      0 'consult-org--todo cand)))))
+                           (mapcan 'cdr org-todo-keywords)))
+                  ;; Priorities
+                  (mapcar (lambda (c)
+                            (list c
+                                  (format "Priority %c" c)
+                                  (lambda (cand)
+                                    (eq c (get-text-property
+                                           0 'consult-org--priority cand)))))
+                          (number-sequence (max ?A org-highest-priority)
+                                           (min ?Z org-lowest-priority)))
+                  ;; Outline levels
+                  (mapcar (lambda (i)
+                            (list (+ i ?0)
+                                  (format "Level %i" i)
+                                  (lambda (cand)
+                                    (>= i (get-text-property
+                                           0 'consult-org--level cand)))))
+                          (number-sequence 1 9)))))
+    (cons (lambda (cand)
+            (funcall (nth 2 (assoc consult--narrow triples))
+                     cand))
+          (mapcar (pcase-lambda (`(,c ,s _)) (cons c s)) triples))))
 
 (defun consult-org--entries (match scope &rest skip)
   "Return a list of consult locations from Org entries.
@@ -81,14 +83,14 @@ MATCH, SCOPE and SKIP are as in `org-map-entries'."
        (consult--location-candidate
         (org-format-outline-path (org-get-outline-path t t))
         (point-marker)
-        (current-line)
-        'consult-org-level level
-        'consult-org-todo todo
-        'consult-org-priority prio)))
+        (org-current-line)
+        'consult-org--level level
+        'consult-org--todo todo
+        'consult-org--priority prio)))
    match scope skip))
 
 ;;;###autoload
-(defun consult-org-goto (&optional match scope)
+(defun consult-org-heading (&optional match scope)
   "Jump to an Org heading.
 
 MATCH and SCOPE are as in `org-map-entries' and determine which
@@ -119,10 +121,10 @@ buffer are offered."
 By default, all agenda entries are offered.  MATCH is as in
 `org-map-entries' and can used to refine this."
   (interactive)
-  (consult-org-goto match 'agenda))
+  (consult-org-heading match 'agenda))
 
 ;;;###autoload
-(defun consult-org-clock-in (&optional match scope)
+(defun consult-org-clock (&optional match scope)
   "Clock into an Org heading.
 
 MATCH and SCOPE are as in `org-map-entries' and determine which
