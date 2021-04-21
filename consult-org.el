@@ -119,6 +119,8 @@ buffer are offered."
 By default, all agenda entries are offered.  MATCH is as in
 `org-map-entries' and can used to refine this."
   (interactive)
+  (unless org-agenda-files
+    (user-error "No agenda files"))
   (consult-org-heading match 'agenda))
 
 ;;;###autoload
@@ -129,13 +131,13 @@ MATCH and SCOPE are as in `org-map-entries' and determine which
 entries are offered.  By default, offer entries of files with a
 recent clocked item."
   (interactive)
-  (unless scope
-    (org-clock-load)
-    (setq scope (thread-last org-clock-history
-                  (mapcar 'marker-buffer)
-                  (mapcar 'buffer-file-name)
-                  seq-uniq
-                  (seq-remove 'null))))
+  (setq scope (or scope
+                  (thread-last (progn (org-clock-load) org-clock-history)
+                    (mapcar 'marker-buffer)
+                    (mapcar 'buffer-file-name)
+                    seq-uniq
+                    (seq-remove 'null))
+                  (user-error "No recent clocked tasks")))
   (org-clock-clock-in
    (list
     (consult--read
