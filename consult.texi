@@ -252,6 +252,8 @@ If a region is active, store the region in register @samp{x}.
 @findex consult-outline
 @findex consult-imenu
 @findex consult-project-imenu
+@findex consult-org-heading
+@findex consult-org-agenda
 @itemize
 @item
 @samp{consult-goto-line}: Jump to line number enhanced with live preview.
@@ -273,6 +275,14 @@ live preview, recursive editing and narrowing.
 the same major mode as the current buffer. Supports live preview,
 recursive editing and narrowing. This feature has been inspired by
 @uref{https://github.com/vspinu/imenu-anywhere, imenu-anywhere}.
+@item
+@samp{consult-org-heading}: Similar to @samp{consult-outline}, for Org
+buffers. Supports narrowing by heading level, priority and TODO
+state, as well as live preview and recursive editing.
+@item
+@samp{consult-org-agenda}: Jump to an agenda heading. Supports
+narrowing by heading level, priority and TODO state, as well as
+live preview and recursive editing.
 @end itemize
 
 @node Search
@@ -428,6 +438,7 @@ mode via the keys @samp{l/g/m}.
 @findex consult-theme
 @findex consult-man
 @findex consult-xref
+@findex consult-org-clock-in
 @itemize
 @item
 @samp{consult-apropos}: Replacement for @samp{apropos} with completion.
@@ -454,6 +465,9 @@ candidates.
 @item
 @samp{consult-xref}: Integration with xref. This function can be set as
 as @samp{xref-show-xrefs-function} and @samp{xref-show-definitions-function}.
+@item
+@samp{consult-org-clock-in}: Select a task and clock into it. Supports
+narrowing by heading level, priority and TODO state.
 @end itemize
 
 @node Special features
