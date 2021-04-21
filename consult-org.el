@@ -65,19 +65,27 @@
   "Return a list of consult locations from Org entries.
 
 MATCH, SCOPE and SKIP are as in `org-map-entries'."
-  (setq org-outline-path-cache nil)
-  (apply
-   #'org-map-entries
-   (lambda ()
-     (pcase-let ((`(_ ,level ,todo ,prio) (org-heading-components)))
-       (consult--location-candidate
-        (org-format-outline-path (org-get-outline-path t t))
-        (point-marker)
-        (org-current-line)
-        'consult-org--level level
-        'consult-org--todo todo
-        'consult-org--priority prio)))
-   match scope skip))
+  (let (opoint line buffer)
+    (apply
+     #'org-map-entries
+     (lambda ()
+       (unless (eq buffer (current-buffer))
+         (setq opoint (point-min))
+         (setq line 1)
+         (setq buffer (current-buffer))
+         (setq org-outline-path-cache nil))
+       (setq line (+ line (consult--count-lines (prog1 (point)
+                                                  (goto-char opoint)))))
+       (setq opoint (point))
+       (pcase-let ((`(_ ,level ,todo ,prio) (org-heading-components)))
+         (consult--location-candidate
+          (org-format-outline-path (org-get-outline-path t t))
+          (point-marker)
+          line
+          'consult-org--level level
+          'consult-org--todo todo
+          'consult-org--priority prio)))
+     match scope skip)))
 
 ;;;###autoload
 (defun consult-org-heading (&optional match scope)
