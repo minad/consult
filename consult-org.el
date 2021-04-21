@@ -100,7 +100,7 @@ buffer are offered."
    (consult--read
     (consult--with-increased-gc (consult-org--entries match scope))
     :prompt "Go to heading: "
-    :category 'consult-org-heading
+    :category 'consult-location
     :sort nil
     :title (unless (member scope '(nil 'tree 'region 'region-start-level 'file))
              ;; Don't add titles when only showing entries from current buffer
@@ -117,7 +117,7 @@ buffer are offered."
 (defun consult-org-agenda (&optional match)
   "Jump to an Org agenda heading.
 
-By default, all agenda entries are offered.  MATCH is as in
+By default, all agenda entries are offered. MATCH is as in
 `org-map-entries' and can used to refine this."
   (interactive)
   (unless org-agenda-files
@@ -125,11 +125,11 @@ By default, all agenda entries are offered.  MATCH is as in
   (consult-org-heading match 'agenda))
 
 ;;;###autoload
-(defun consult-org-clock (&optional match scope)
+(defun consult-org-clock-in (&optional match scope)
   "Clock into an Org heading.
 
 MATCH and SCOPE are as in `org-map-entries' and determine which
-entries are offered.  By default, offer entries of files with a
+entries are offered. By default, offer entries of files with a
 recent clocked item."
   (interactive)
   (setq scope (or scope
@@ -151,7 +151,7 @@ recent clocked item."
            (and (member m1 org-clock-history)
                 (not (member m1 (member m2 org-clock-history))))))))
      :prompt "Clock in: "
-     :category 'consult-org-heading
+     :category 'consult-location
      :sort nil
      :title (lambda (cand)
               (let ((m (car (get-text-property 0 'consult-location cand))))
