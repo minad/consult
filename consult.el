@@ -1914,6 +1914,8 @@ Optional source fields:
                                  keymap state preview-key transform)
   "Read from minibuffer.
 
+Keyword OPTIONS:
+
 PROMPT is the string to prompt with.
 TRANSFORM is a function which is applied to the current input string.
 HISTORY is the symbol of the history variable.
