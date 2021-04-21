@@ -495,7 +495,7 @@ Size of private unicode plane b.")
   "Large gc percentage for temporary increase.")
 
 (defvar consult--async-log
-  " *consult-async-log*"
+  " *consult-async*"
   "Buffer for async logging output used by `consult--async-process'.")
 
 (defvar-local consult--imenu-cache nil
@@ -1309,6 +1309,7 @@ CMD is the command argument list."
          (setq last-args nil))
         ((pred stringp)
          (let ((args (funcall cmd action))
+               (stderr-buffer (generate-new-buffer " *consult-async-stderr*"))
                (flush t)
                (rest ""))
            (unless (equal args last-args)
@@ -1323,8 +1324,10 @@ CMD is the command argument list."
                 (make-process
                  :connection-type 'pipe
                  :name (car args)
-                 :stderr consult--async-log
+                 ;;; XXX tramp bug, the stderr buffer must be empty
+                 :stderr stderr-buffer
                  :noquery t
+                 :file-handler t ;; allow tramp
                  :command args
                  :filter
                  (lambda (_ out)
@@ -1354,8 +1357,15 @@ CMD is the command argument list."
                    (when (and (string-prefix-p "finished" event) (not (string= rest "")))
                      (setq count (+ count 1))
                      (funcall async (list rest)))
-                   (consult--async-log "consult--async-process sentinel: event=%s lines=%d\n"
-                                       (string-trim event) count))))))))
+                   (consult--async-log
+                    "consult--async-process sentinel: event=%s lines=%d\n"
+                    (string-trim event) count)
+                   (with-current-buffer (get-buffer-create consult--async-log)
+                     (goto-char (point-max))
+                     (insert ">>>>> stderr >>>>>\n")
+                     (insert-buffer-substring stderr-buffer)
+                     (insert "<<<<< stderr <<<<<\n")
+                     (kill-buffer stderr-buffer)))))))))
         ('destroy
          (ignore-errors (delete-process proc))
          (delete-overlay indicator)
