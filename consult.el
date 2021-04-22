@@ -3767,11 +3767,10 @@ same major mode as the current buffer are used. See also
             (setq str (apply #'concat (nreverse matches)))
             (when (> (length str) consult-grep-max-columns)
               (setq str (substring str 0 consult-grep-max-columns)))
-            (push (list
-                   (consult--format-location
-                    (string-remove-prefix default-directory file)
-                    line str)
-                   file line (or col 0))
+            (push `(,(consult--format-location
+                      (string-remove-prefix default-directory file)
+                      line str)
+                    ,file ,line . ,(or col 0))
                   candidates)))))
     (nreverse candidates)))
 
@@ -3786,7 +3785,7 @@ same major mode as the current buffer are used. See also
        jump
        (consult--position-marker
         (and cand (funcall (if restore #'find-file open) (car cand)))
-        (cadr cand) (caddr cand))
+        (cadr cand) (cddr cand))
        restore))))
 
 (defun consult--grep (prompt cmd dir initial)
