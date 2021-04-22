@@ -124,6 +124,11 @@ By default, all agenda entries are offered. MATCH is as in
     (user-error "No agenda files"))
   (consult-org-heading match 'agenda))
 
+(define-hash-table-test 'consult-org--marker-hash
+  'equal
+  (lambda (m)
+    (sxhash-equal (cons (marker-position m) (marker-buffer m)))))
+
 ;;;###autoload
 (defun consult-org-clock-in (&optional match scope)
   "Clock into an Org heading.
@@ -132,36 +137,47 @@ MATCH and SCOPE are as in `org-map-entries' and determine which
 entries are offered. By default, offer entries of files with a
 recent clocked item."
   (interactive)
-  (setq scope (or scope
-                  (thread-last (progn (org-clock-load) org-clock-history)
-                    (mapcar 'marker-buffer)
-                    (mapcar 'buffer-file-name)
-                    seq-uniq
-                    (seq-remove 'null))
-                  (user-error "No recent clocked tasks")))
-  (org-clock-clock-in
-   (list
-    (consult--read
-     (consult--with-increased-gc
-      (sort ;; Recent items first, everything else in their original order
-       (consult-org--entries match scope)
-       (lambda (c1 c2)
-         (let ((m1 (car (get-text-property 0 'consult-location c1)))
-               (m2 (car (get-text-property 0 'consult-location c2))))
-           (and (member m1 org-clock-history)
-                (not (member m1 (member m2 org-clock-history))))))))
-     :prompt "Clock in: "
-     :category 'consult-location
-     :sort nil
-     :title (lambda (cand)
-              (let ((m (car (get-text-property 0 'consult-location cand))))
-                (if (member m org-clock-history)
-                    "Recent"
-                  (buffer-name (marker-buffer m)))))
-     :narrow (consult-org--narrow)
-     :require-match t
-     :lookup #'consult--lookup-location
-     :history '(:input consult-org--history)))))
+  (let* ((scope (or scope
+                    (thread-last (progn (org-clock-load) org-clock-history)
+                      (mapcar 'marker-buffer)
+                      (mapcar 'buffer-file-name)
+                      seq-uniq
+                      (seq-remove 'null))
+                    (user-error "No recent clocked tasks")))
+         (candidates (consult--with-increased-gc
+                      (consult-org--entries match scope)))
+         (recent-candidates (let ((h (make-hash-table :test 'consult-org--marker-hash))
+                                  (k (make-hash-table :test 'consult-org--marker-hash)))
+                              (dolist (m org-clock-history)
+                                (puthash m t h))
+                              (dolist (c candidates)
+                                (when-let ((m (car (get-text-property
+                                                    0 'consult-location c)))
+                                           ((gethash m h)))
+                                  (puthash m c k)))
+                              k)))
+    (org-clock-clock-in
+     (list
+      (consult--read
+       (append
+        (mapcar (lambda (m) (gethash m recent-candidates))
+                            org-clock-history)
+        (seq-remove (lambda (c) (gethash (car (get-text-property
+                                               0 'consult-location c))
+                                         recent-candidates))
+                    candidates))
+       :prompt "Clock in: "
+       :category 'consult-location
+       :sort nil
+       :title (lambda (cand)
+                (let ((m (car (get-text-property 0 'consult-location cand))))
+                  (if (gethash m recent-candidates)
+                      "Recent"
+                    (buffer-name (marker-buffer m)))))
+       :narrow (consult-org--narrow)
+       :require-match t
+       :lookup #'consult--lookup-location
+       :history '(:input consult-org--history))))))
 
 (provide 'consult-org)
 ;;; consult-org.el ends here
