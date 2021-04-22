@@ -999,8 +999,13 @@ FACE is the cursor face."
         (consult--jump-nomark cand)
         (setq invisible (consult--invisible-open-temporarily)
               overlays
-              (list (consult--overlay (line-beginning-position)
-                                      (1+ (line-end-position))
+              (list (consult--overlay (save-excursion
+                                        (beginning-of-visual-line)
+                                        (point))
+                                      (save-excursion
+                                        (end-of-visual-line)
+                                        (let ((end (line-end-position)))
+                                          (if (= (point) end) (1+ end) (point))))
                                       'face 'consult-preview-line)
                     (consult--overlay (point) (1+ (point)) 'face face))))
        ;; If position cannot be previewed, return to saved position
