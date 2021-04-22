@@ -1266,7 +1266,7 @@ Code contributions:
 @item
 @uref{https://github.com/jakanakaevangeli, jakanakaevangeli}
 @item
-@uref{https://github.com/inigoserna/, inigoserna}
+@uref{https://hg.serna.eu, Iñigo Serna}
 @item
 @uref{https://github.com/aspiers/, Adam Spiers}
 @item

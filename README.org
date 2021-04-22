@@ -1000,7 +1000,7 @@ Code contributions:
 - [[https://github.com/clemera/][Clemens Radermacher]]
 - [[https://github.com/tomfitzhenry/][Tom Fitzhenry]]
 - [[https://github.com/jakanakaevangeli][jakanakaevangeli]]
-- [[https://github.com/inigoserna/][inigoserna]]
+- [[https://hg.serna.eu][Iñigo Serna]]
 - [[https://github.com/aspiers/][Adam Spiers]]
 - [[https://github.com/omar-polo][Omar Polo]]
 - [[https://github.com/astoff][Augusto Stoffel]]
