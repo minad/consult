@@ -102,7 +102,7 @@ buffer are offered."
     :prompt "Go to heading: "
     :category 'consult-location
     :sort nil
-    :title (unless (member scope '(nil 'tree 'region 'region-start-level 'file))
+    :title (unless (member scope '(nil tree region region-start-level file))
              ;; Don't add titles when only showing entries from current buffer
              (lambda (cand)
                (let ((marker (car (get-text-property 0 'consult-location cand))))
