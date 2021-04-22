@@ -241,7 +241,7 @@ command options."
   :type 'integer)
 
 (defcustom consult-ripgrep-command
-  "rg --null --line-buffered --color=ansi --max-columns=250\
+  "rg --null --line-buffered --color=ansi --max-columns=1000\
    --no-heading --line-number . -e ARG OPTS"
   "Command line string for ripgrep, see `consult-ripgrep'.
 
