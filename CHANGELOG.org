@@ -17,6 +17,7 @@
 - =consult-grep= and related commands: Strip the file name if grouping is used.
 - =consult-find/grep=: Ensure that the commands work with Tramp
 - =consult-outline=: Add narrowing
+- =consult-line=: Highlight visual line during jump preview
 
 * Version 0.6 (2021-03-02)
 
