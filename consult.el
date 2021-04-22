@@ -3748,7 +3748,8 @@ same major mode as the current buffer are used. See also
     (save-match-data
       (dolist (str lines)
         (when (string-match consult--grep-regexp str)
-          (let* ((file (expand-file-name (match-string 1 str)))
+          (let* ((file-path (expand-file-name (match-string 1 str)))
+                 (file-name (string-remove-prefix default-directory file-path))
                  (line (string-to-number (match-string 2 str)))
                  (start (match-end 0))
                  (max-len (+ start (* 2 consult-grep-max-columns)))
@@ -3767,11 +3768,9 @@ same major mode as the current buffer are used. See also
             (setq str (apply #'concat (nreverse matches)))
             (when (> (length str) consult-grep-max-columns)
               (setq str (substring str 0 consult-grep-max-columns)))
-            (push `(,(consult--format-location
-                      (string-remove-prefix default-directory file)
-                      line str)
-                    ,file ,line . ,(or col 0))
-                  candidates)))))
+            (setq str (consult--format-location file-name line str))
+            (put-text-property 0 1 'consult--grep-file file-name str)
+            (push `(,str ,file-path ,line . ,(or col 0)) candidates)))))
     (nreverse candidates)))
 
 (defun consult--grep-state ()
@@ -3806,6 +3805,7 @@ The symbol at point is added to the future history."
      :add-history (concat consult-async-default-split (thing-at-point 'symbol))
      :require-match t
      :category 'consult-grep
+     :title (consult--get-property 'consult--grep-file)
      :history '(:input consult--grep-history)
      :sort nil)))
 
