@@ -3757,7 +3757,8 @@ same major mode as the current buffer are used. See also
     (save-match-data
       (dolist (str lines)
         (when (string-match consult--grep-regexp str)
-          (let* ((file (expand-file-name (match-string 1 str)))
+          (let* ((file-path (expand-file-name (match-string 1 str)))
+                 (file-name (string-remove-prefix default-directory file-path))
                  (line (string-to-number (match-string 2 str)))
                  (start (match-end 0))
                  (max-len (+ start (* 2 consult-grep-max-columns)))
@@ -3776,11 +3777,9 @@ same major mode as the current buffer are used. See also
             (setq str (apply #'concat (nreverse matches)))
             (when (> (length str) consult-grep-max-columns)
               (setq str (substring str 0 consult-grep-max-columns)))
-            (push `(,(consult--format-location
-                      (string-remove-prefix default-directory file)
-                      line str)
-                    ,file ,line . ,(or col 0))
-                  candidates)))))
+            (setq str (consult--format-location file-name line str))
+            (put-text-property 0 1 'consult--grep-file file-name str)
+            (push `(,str ,file-path ,line . ,(or col 0)) candidates)))))
     (nreverse candidates)))
 
 (defun consult--grep-state ()
@@ -3796,6 +3795,13 @@ same major mode as the current buffer are used. See also
         (and cand (funcall (if restore #'find-file open) (car cand)))
         (cadr cand) (cddr cand))
        restore))))
+
+(defun consult--grep-group (candidates)
+  "Group CANDIDATES by file name."
+  (if (stringp candidates)
+      (let ((file (get-text-property 0 'consult--grep-file candidates)))
+        (cons (substring candidates (1+ (length file))) file))
+    (consult--group-by-title (consult--get-property 'consult--grep-file) candidates)))
 
 (defun consult--grep (prompt cmd dir initial)
   "Run grep CMD in DIR with INITIAL input.
@@ -3815,6 +3821,7 @@ The symbol at point is added to the future history."
      :add-history (concat consult-async-default-split (thing-at-point 'symbol))
      :require-match t
      :category 'consult-grep
+     :group #'consult--grep-group
      :history '(:input consult--grep-history)
      :sort nil)))
 
