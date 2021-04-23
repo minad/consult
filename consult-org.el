@@ -23,35 +23,32 @@
 ;;; Code:
 
 (require 'consult)
-(require 'org-agenda)
+(require 'org)
 
 (defvar consult-org--history nil)
 
 (defun consult-org--narrow ()
   "Narrowing configuration for `consult-org' commands."
-  (let ((todo-keywords
-         ;; TODO: Is there no function in org which provides keywords+keys?
-         ;; Why do we have to do our own splitting here?
+  (let ((todo-kws
          (seq-filter
-          (lambda (it) (<= ?a (car it) ?z))
+          (lambda (x) (<= ?a (car x) ?z))
           (mapcar (lambda (s)
                     (pcase-let ((`(,a ,b) (split-string s "(")))
                       (cons (downcase (string-to-char (or b a))) a)))
-                  (mapcan #'cdr org-todo-keywords)))))
+                  (apply #'append (mapcar #'cdr org-todo-keywords))))))
     (cons (lambda (cand)
             (pcase-let ((`(_ ,level ,todo ,prio)
                          (get-text-property 0 'consult-org-heading cand)))
               (cond
                ((<= ?1 consult--narrow ?9) (<= level (- consult--narrow ?0)))
                ((<= ?A consult--narrow ?Z) (eq prio consult--narrow))
-               ;; TODO instead attach a 'consult-org--todo-key to the candidate
-               (t (equal todo (alist-get consult--narrow todo-keywords))))))
-          (append (mapcar (lambda (c) (cons c (format "Level %c" c)))
-                          (number-sequence ?1 ?9))
-                  (mapcar (lambda (c) (cons c (format "Priority %c" c)))
-                          (number-sequence (max ?A org-highest-priority)
-                                           (min ?Z org-lowest-priority)))
-                  todo-keywords))))
+               (t (equal todo (alist-get consult--narrow todo-kws))))))
+          (nconc (mapcar (lambda (c) (cons c (format "Level %c" c)))
+                         (number-sequence ?1 ?9))
+                 (mapcar (lambda (c) (cons c (format "Priority %c" c)))
+                         (number-sequence (max ?A org-highest-priority)
+                                          (min ?Z org-lowest-priority)))
+                 todo-kws))))
 
 (defun consult-org--headings (match scope &rest skip)
   "Return a list of Org heading candidates.
