@@ -24,7 +24,6 @@
 
 (require 'consult)
 (require 'org-agenda)
-(require 'org-clock)
 
 (defvar consult-org--history nil)
 
@@ -121,73 +120,6 @@ By default, all agenda entries are offered. MATCH is as in
   (unless org-agenda-files
     (user-error "No agenda files"))
   (consult-org-heading match 'agenda))
-
-;; Only suitable for short-lived hash tables, since a marker's
-;; position can change.
-(define-hash-table-test 'consult-org--marker-test
-  'equal
-  (lambda (m)
-    (sxhash-equal (cons (marker-position m) (marker-buffer m)))))
-
-;;;###autoload
-(defun consult-org-clock-in (&optional match scope)
-  "Clock into an Org heading.
-
-MATCH and SCOPE are as in `org-map-entries' and determine which
-entries are offered. By default, offer entries of files with a
-recent clocked item."
-  (interactive)
-  ;; TODO move all preprocessing into the increased gc, into a `consult-org--clock-in-candidates'
-  ;; function, which returns candidates and recent hash
-  (let* ((scope (or scope
-                    (thread-last (progn (org-clock-load) org-clock-history)
-                      (mapcar #'marker-buffer)
-                      (mapcar #'buffer-file-name)
-                      (delete-dups)
-                      (delq nil))
-                    ;; TODO use current file as scope as fallback?
-                    ;; I am still not entirely happy with the idea of using the list of files
-                    ;; containing recent clock entries as scope. Here we invent some new scope
-                    ;; which is not present in Org. It may be preferrable to use either the current Org
-                    ;; file or the agenda or maybe we could even define our own org scope variable?
-                    (user-error "No recent clocked tasks")))
-         (candidates (consult--with-increased-gc
-                      (consult-org--entries match scope)))
-         (recent (let ((tbl (make-hash-table :test 'consult-org--marker-test
-                                             :size org-clock-history-length)))
-                   (dolist (m org-clock-history)
-                     (puthash m t tbl))
-                   (dolist (c candidates)
-                     (let ((m (car (get-text-property 0 'consult-location c))))
-                       (when (gethash m tbl)
-                         (puthash m c tbl))))
-                   tbl)))
-    (org-clock-clock-in
-     (list
-      (consult--read
-       ;; TODO This code should also go to `consult-org--clock-in-candidates'
-       (nconc
-        (seq-filter #'stringp
-                    (mapcar (lambda (m) (gethash m recent))
-                            org-clock-history))
-        (seq-remove (lambda (c) (gethash
-                                 (car (get-text-property 0 'consult-location c))
-                                 recent))
-                    candidates))
-       :prompt "Clock in: "
-       :category 'consult-location
-       :sort nil
-       :group
-       (apply-partially #'consult--group-by-title
-                        (lambda (cand)
-                          (let ((m (car (get-text-property 0 'consult-location cand))))
-                            (if (gethash m recent)
-                                "Recent"
-                              (buffer-name (marker-buffer m))))))
-       :narrow (consult-org--narrow)
-       :require-match t
-       :lookup #'consult--lookup-location
-       :history '(:input consult-org--history))))))
 
 (provide 'consult-org)
 ;;; consult-org.el ends here
