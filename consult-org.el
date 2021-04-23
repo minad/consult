@@ -65,17 +65,19 @@ MATCH, SCOPE and SKIP are as in `org-map-entries'."
     (apply
      #'org-map-entries
      (lambda ()
+       ;; TODO: Is there no better way to obtain the line number? I guess it is guaranteed that
+       ;; `org-map-entries' iterates over all entries in a file in order.
        (unless (eq buffer (current-buffer))
          (setq opoint (point-min)
                line 1
                buffer (current-buffer)
-               org-outline-path-cache nil))
+               org-outline-path-cache nil)) ;; Reset the cache since `org-get-outline-path' uses the cache
        (setq line (+ line (consult--count-lines (prog1 (point)
                                                   (goto-char opoint))))
              opoint (point))
        (pcase-let ((`(_ ,level ,todo ,prio) (org-heading-components)))
          (consult--location-candidate
-          (org-format-outline-path (org-get-outline-path t t))
+          (org-format-outline-path (org-get-outline-path 'with-self 'use-cache))
           (point-marker)
           line
           'consult-org--level level
@@ -158,6 +160,7 @@ recent clocked item."
     (org-clock-clock-in
      (list
       (consult--read
+       ;; TODO This code should also go to `consult-org--clock-in-candidates'
        (nconc
         (seq-filter #'stringp
                     (mapcar (lambda (m) (gethash m recent))
