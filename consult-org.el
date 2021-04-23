@@ -61,11 +61,10 @@ MATCH, SCOPE and SKIP are as in `org-map-entries'."
     (apply
      #'org-map-entries
      (lambda ()
+        ;; Reset the cache when the buffer changes, since `org-get-outline-path' uses the cache
        (unless (eq buffer (current-buffer))
-         ;; TODO is it necessary to reset the cache? Is `org-format-outline-path' incapable of
-         ;; detecting if the buffer changed?
          (setq buffer (current-buffer)
-               org-outline-path-cache nil)) ;; Reset the cache since `org-get-outline-path' uses the cache
+               org-outline-path-cache nil))
        (pcase-let ((`(_ ,level ,todo ,prio . _) (org-heading-components))
                    (cand (org-format-outline-path (org-get-outline-path 'with-self 'use-cache))))
          (put-text-property 0 1 'consult-org-heading (list (point-marker) level todo prio) cand)
