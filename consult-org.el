@@ -41,7 +41,7 @@
                   (mapcan #'cdr org-todo-keywords)))))
     (cons (lambda (cand)
             (cond ((<= ?1 consult--narrow ?9)
-                   (<= (get-text-property 0 'consult--org-level cand)
+                   (<= (get-text-property 0 'consult-org--level cand)
                        (- consult--narrow ?0)))
                   ((<= ?A consult--narrow ?Z)
                    (eq (get-text-property 0 'consult-org--priority cand)
@@ -78,8 +78,8 @@ MATCH, SCOPE and SKIP are as in `org-map-entries'."
           (org-format-outline-path (org-get-outline-path t t))
           (point-marker)
           line
-          'consult--org-level level
-          'consult-org--todo todo
+          'consult-org--level level
+          'consult-org--todo todo ;; TODO attach key instead?
           'consult-org--priority prio)))
      match scope skip)))
 
@@ -92,24 +92,22 @@ entries are offered.  By default, all entries of the current
 buffer are offered."
   (interactive (unless (derived-mode-p 'org-mode)
                  (user-error "Must be called from an Org buffer")))
-  (consult--jump
-   (consult--read
-    (consult--with-increased-gc (consult-org--entries match scope))
-    :prompt "Go to heading: "
-    :category 'consult-location
-    :sort nil
-    :group (unless (member scope '(nil tree region region-start-level file))
-             ;; Don't add titles when only showing entries from current buffer
-             (apply-partially
+  (consult--read
+   (consult--with-increased-gc (consult-org--entries match scope))
+   :prompt "Go to heading: "
+   :category 'consult-location
+   :sort nil
+   :group (unless (memq scope '(nil tree region region-start-level file))
+            ;; Don't add titles when only showing entries from current buffer
+            (apply-partially
               #'consult--group-by-title
               (lambda (cand)
-                (let ((marker (car (get-text-property 0 'consult-location cand))))
-                  (buffer-name (marker-buffer marker))))))
-    :narrow (consult-org--narrow)
-    :require-match t
-    :lookup #'consult--lookup-location
-    :history '(:input consult-org--history)
-    :state (consult--jump-preview))))
+                (buffer-name (marker-buffer (car (get-text-property 0 'consult-location cand)))))))
+   :narrow (consult-org--narrow)
+   :require-match t
+   :lookup #'consult--lookup-location
+   :history '(:input consult-org--history)
+   :state (consult--jump-state)))
 
 ;;;###autoload
 (defun consult-org-agenda (&optional match)
@@ -137,6 +135,8 @@ MATCH and SCOPE are as in `org-map-entries' and determine which
 entries are offered. By default, offer entries of files with a
 recent clocked item."
   (interactive)
+  ;; TODO move all preprocessing into the increased gc, into a `consult-org--clock-in-candidates'
+  ;; function, which returns candidates and recent hash
   (let* ((scope (or scope
                     (thread-last (progn (org-clock-load) org-clock-history)
                       (mapcar #'marker-buffer)
