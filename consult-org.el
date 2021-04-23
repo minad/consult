@@ -38,7 +38,7 @@
                   (apply #'append (mapcar #'cdr org-todo-keywords))))))
     (cons (lambda (cand)
             (pcase-let ((`(_ ,level ,todo ,prio)
-                         (get-text-property 0 'consult-org-heading cand)))
+                         (get-text-property 0 'consult-org--heading cand)))
               (cond
                ((<= ?1 consult--narrow ?9) (<= level (- consult--narrow ?0)))
                ((<= ?A consult--narrow ?Z) (eq prio consult--narrow))
@@ -50,21 +50,25 @@
                                           (min ?Z org-lowest-priority)))
                  todo-kws))))
 
-(defun consult-org--headings (match scope &rest skip)
+(defun consult-org--headings (prefix match scope &rest skip)
   "Return a list of Org heading candidates.
 
+If PREFIX is non-nil, prefix the candidates with the buffer name.
 MATCH, SCOPE and SKIP are as in `org-map-entries'."
   (let (buffer)
     (apply
      #'org-map-entries
      (lambda ()
         ;; Reset the cache when the buffer changes, since `org-get-outline-path' uses the cache
-       (unless (eq buffer (current-buffer))
-         (setq buffer (current-buffer)
+       (unless (eq buffer (buffer-name))
+         (setq buffer (buffer-name)
                org-outline-path-cache nil))
        (pcase-let ((`(_ ,level ,todo ,prio . _) (org-heading-components))
                    (cand (org-format-outline-path (org-get-outline-path 'with-self 'use-cache))))
-         (put-text-property 0 1 'consult-org-heading (list (point-marker) level todo prio) cand)
+         (when prefix
+           (setq cand (concat buffer " " cand))
+           (put-text-property 0 (1+ (length buffer)) 'consult-org--buffer t cand))
+         (put-text-property 0 1 'consult-org--heading (list (point-marker) level todo prio) cand)
          cand))
      match scope skip)))
 
@@ -77,26 +81,26 @@ entries are offered.  By default, all entries of the current
 buffer are offered."
   (interactive (unless (derived-mode-p 'org-mode)
                  (user-error "Must be called from an Org buffer")))
-  (consult--read
-   (consult--with-increased-gc (consult-org--headings match scope))
-   :prompt "Go to heading: "
-   :category 'consult-org-heading
-   :sort nil
-   :require-match t
-   :history '(:input consult-org--history)
-   :narrow (consult-org--narrow)
-   :state (consult--jump-state)
-   :title
-   ;; Don't add titles when only showing entries from current buffer
-   (unless (memq scope '(nil tree region region-start-level file))
-     (lambda (cand transform)
-       (if transform
-           cand
-         (buffer-name (marker-buffer (car (get-text-property 0 'consult-org-heading cand)))))))
-   :lookup
-   (lambda (_ candidates cand)
-     (when-let (found (member cand candidates))
-       (car (get-text-property 0 'consult-org-heading (car found)))))))
+  (let ((prefix (not (memq scope '(nil tree region region-start-level file)))))
+    (consult--read
+     (consult--with-increased-gc (consult-org--headings prefix match scope))
+     :prompt "Go to heading: "
+     :category 'consult-org-heading
+     :sort nil
+     :require-match t
+     :history '(:input consult-org--history)
+     :narrow (consult-org--narrow)
+     :state (consult--jump-state)
+     :title
+     (when prefix
+       (lambda (cand transform)
+         (if transform
+             (substring cand (next-single-property-change 0 'consult-org--buffer cand))
+           (buffer-name (marker-buffer (car (get-text-property 0 'consult-org--heading cand)))))))
+     :lookup
+     (lambda (_ candidates cand)
+       (when-let (found (member cand candidates))
+         (car (get-text-property 0 'consult-org--heading (car found))))))))
 
 ;;;###autoload
 (defun consult-org-agenda (&optional match)
