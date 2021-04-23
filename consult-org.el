@@ -1,13 +1,5 @@
 ;;; consult-org.el --- Consult commands for org-mode -*- lexical-binding: t -*-
 
-;; Author: Daniel Mendler and Consult contributors
-;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
-;; Created: 2020
-;; License: GPL-3.0-or-later
-;; Version: 0.6
-;; Package-Requires: ((consult "0.6") (org "9.1") (emacs "26.1"))
-;; Homepage: https://github.com/minad/consult
-
 ;; This file is not part of GNU Emacs.
 
 ;; This program is free software: you can redistribute it and/or modify
