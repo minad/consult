@@ -38,19 +38,23 @@
 
 (defun consult-org--narrow ()
   "Narrowing configuration for `consult-org' commands."
-  (let ((todo-keywords (seq-filter
-                        (lambda (it) (<= ?a (car it) ?z))
-                        (mapcar (lambda (s)
-                                  (pcase-let ((`(,a ,b) (split-string s "(")))
-                                    (cons (downcase (string-to-char (or b a))) a)))
-                                (mapcan 'cdr org-todo-keywords)))))
+  (let ((todo-keywords
+         ;; TODO: Is there no function in org which provides keywords+keys?
+         ;; Why do we have to do our own splitting here?
+         (seq-filter
+          (lambda (it) (<= ?a (car it) ?z))
+          (mapcar (lambda (s)
+                    (pcase-let ((`(,a ,b) (split-string s "(")))
+                      (cons (downcase (string-to-char (or b a))) a)))
+                  (mapcan #'cdr org-todo-keywords)))))
     (cons (lambda (cand)
             (cond ((<= ?1 consult--narrow ?9)
-                   (<= (get-text-property 0 'consult--outline-level cand)
+                   (<= (get-text-property 0 'consult--org-level cand)
                        (- consult--narrow ?0)))
                   ((<= ?A consult--narrow ?Z)
                    (eq (get-text-property 0 'consult-org--priority cand)
                        consult--narrow))
+                  ;; TODO instead attach a 'consult-org--todo-key to the candidate
                   ((when-let ((todo (alist-get consult--narrow todo-keywords)))
                      (string-equal (get-text-property 0 'consult-org--todo cand)
                                    todo)))))
@@ -70,19 +74,19 @@ MATCH, SCOPE and SKIP are as in `org-map-entries'."
      #'org-map-entries
      (lambda ()
        (unless (eq buffer (current-buffer))
-         (setq opoint (point-min))
-         (setq line 1)
-         (setq buffer (current-buffer))
-         (setq org-outline-path-cache nil))
+         (setq opoint (point-min)
+               line 1
+               buffer (current-buffer)
+               org-outline-path-cache nil))
        (setq line (+ line (consult--count-lines (prog1 (point)
-                                                  (goto-char opoint)))))
-       (setq opoint (point))
+                                                  (goto-char opoint))))
+             opoint (point))
        (pcase-let ((`(_ ,level ,todo ,prio) (org-heading-components)))
          (consult--location-candidate
           (org-format-outline-path (org-get-outline-path t t))
           (point-marker)
           line
-          'consult--outline-level level
+          'consult--org-level level
           'consult-org--todo todo
           'consult-org--priority prio)))
      match scope skip)))
@@ -95,18 +99,20 @@ MATCH and SCOPE are as in `org-map-entries' and determine which
 entries are offered.  By default, all entries of the current
 buffer are offered."
   (interactive (unless (derived-mode-p 'org-mode)
-                 (user-error "Must be called from an Org buffer.")))
+                 (user-error "Must be called from an Org buffer")))
   (consult--jump
    (consult--read
     (consult--with-increased-gc (consult-org--entries match scope))
     :prompt "Go to heading: "
     :category 'consult-location
     :sort nil
-    :title (unless (member scope '(nil tree region region-start-level file))
+    :group (unless (member scope '(nil tree region region-start-level file))
              ;; Don't add titles when only showing entries from current buffer
-             (lambda (cand)
-               (let ((marker (car (get-text-property 0 'consult-location cand))))
-                 (buffer-name (marker-buffer marker)))))
+             (apply-partially
+              #'consult--group-by-title
+              (lambda (cand)
+                (let ((marker (car (get-text-property 0 'consult-location cand))))
+                  (buffer-name (marker-buffer marker))))))
     :narrow (consult-org--narrow)
     :require-match t
     :lookup #'consult--lookup-location
@@ -141,10 +147,10 @@ recent clocked item."
   (interactive)
   (let* ((scope (or scope
                     (thread-last (progn (org-clock-load) org-clock-history)
-                      (mapcar 'marker-buffer)
-                      (mapcar 'buffer-file-name)
-                      seq-uniq
-                      (seq-remove 'null))
+                      (mapcar #'marker-buffer)
+                      (mapcar #'buffer-file-name)
+                      (delete-dups)
+                      (delq nil))
                     (user-error "No recent clocked tasks")))
          (candidates (consult--with-increased-gc
                       (consult-org--entries match scope)))
@@ -160,8 +166,8 @@ recent clocked item."
     (org-clock-clock-in
      (list
       (consult--read
-       (append
-        (seq-filter 'stringp
+       (nconc
+        (seq-filter #'stringp
                     (mapcar (lambda (m) (gethash m recent))
                             org-clock-history))
         (seq-remove (lambda (c) (gethash
@@ -171,11 +177,13 @@ recent clocked item."
        :prompt "Clock in: "
        :category 'consult-location
        :sort nil
-       :title (lambda (cand)
-                (let ((m (car (get-text-property 0 'consult-location cand))))
-                  (if (gethash m recent)
-                      "Recent"
-                    (buffer-name (marker-buffer m)))))
+       :group
+       (apply-partially #'consult--group-by-title
+                        (lambda (cand)
+                          (let ((m (car (get-text-property 0 'consult-location cand))))
+                            (if (gethash m recent)
+                                "Recent"
+                              (buffer-name (marker-buffer m))))))
        :narrow (consult-org--narrow)
        :require-match t
        :lookup #'consult--lookup-location
