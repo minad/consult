@@ -424,7 +424,6 @@ mode via the keys @samp{l/g/m}.
 @node Org Mode
 @section Org Mode
 
-@findex consult-org-clock-in
 @findex consult-org-heading
 @findex consult-org-agenda
 @itemize
@@ -436,9 +435,6 @@ state, as well as live preview and recursive editing.
 @samp{consult-org-agenda}: Jump to an agenda heading. Supports
 narrowing by heading level, priority and TODO state, as well as
 live preview and recursive editing.
-@item
-@samp{consult-org-clock-in}: Select a task and clock into it. Supports
-narrowing by heading level, priority and TODO state.
 @end itemize
 
 @node Miscellaneous

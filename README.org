@@ -313,7 +313,6 @@ variables and functions with their descriptions.
    :description: Org-specific commands
    :end:
 
- #+findex: consult-org-clock-in
  #+findex: consult-org-heading
  #+findex: consult-org-agenda
  - =consult-org-heading=: Similar to =consult-outline=, for Org
@@ -322,8 +321,6 @@ variables and functions with their descriptions.
  - =consult-org-agenda=: Jump to an agenda heading. Supports
    narrowing by heading level, priority and TODO state, as well as
    live preview and recursive editing.
- - =consult-org-clock-in=: Select a task and clock into it. Supports
-   narrowing by heading level, priority and TODO state.
 
 ** Miscellaneous
    :properties:
