@@ -86,12 +86,13 @@ buffer are offered."
    :prompt "Go to heading: "
    :category 'consult-org-heading
    :sort nil
-   :group (unless (memq scope '(nil tree region region-start-level file))
-            ;; Don't add titles when only showing entries from current buffer
-            (apply-partially
-              #'consult--group-by-title
-              (lambda (cand)
-                (buffer-name (marker-buffer (car (get-text-property 0 'consult-org-heading cand)))))))
+   :title
+   (unless (memq scope '(nil tree region region-start-level file))
+     ;; Don't add titles when only showing entries from current buffer
+     (lambda (cand transform)
+       (if transform
+           cand
+         (buffer-name (marker-buffer (car (get-text-property 0 'consult-org-heading cand)))))))
    :narrow (consult-org--narrow)
    :require-match t
    :lookup
