@@ -53,7 +53,7 @@
                                            (min ?Z org-lowest-priority)))
                   todo-keywords))))
 
-(defun consult-org--headlines (match scope &rest skip)
+(defun consult-org--headings (match scope &rest skip)
   "Return a list of Org heading candidates.
 
 MATCH, SCOPE and SKIP are as in `org-map-entries'."
@@ -82,7 +82,7 @@ buffer are offered."
   (interactive (unless (derived-mode-p 'org-mode)
                  (user-error "Must be called from an Org buffer")))
   (consult--read
-   (consult--with-increased-gc (consult-org--headlines match scope))
+   (consult--with-increased-gc (consult-org--headings match scope))
    :prompt "Go to heading: "
    :category 'consult-org-heading
    :sort nil
