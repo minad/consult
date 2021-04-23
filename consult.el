@@ -732,11 +732,12 @@ Otherwise the `default-directory' is returned."
   (lambda (cand)
     (get-text-property 0 prop cand)))
 
-(defun consult--type-group (types)
+(defun consult--type-title (types)
   "Return title function for TYPES."
-  (apply-partially #'consult--group-by-title
-                   (lambda (cand)
-                     (alist-get (get-text-property 0 'consult--type cand) types))))
+  (lambda (cand transform)
+    (if transform
+        cand
+      (alist-get (get-text-property 0 'consult--type cand) types))))
 
 (defun consult--type-narrow (types)
   "Return narrowing configuration from TYPES."
@@ -1614,21 +1615,6 @@ See `consult--read' for the CANDIDATES, KEYMAP, ADD-HISTORY, NARROW and PREVIEW-
   (consult--setup-keymap keymap (functionp candidates) narrow preview-key)
   (consult--add-history add-history))
 
-(defun consult--group-by-title (title candidates)
-  "Group CANDIDATES according to TITLE function."
-  (if (stringp candidates)
-      ;; Return transformed candidate and title
-      (cons candidates (funcall title candidates))
-    ;; Return groups
-    (let ((groups))
-      (dolist (cand candidates)
-        (let* ((title (funcall title cand))
-               (group (assoc title groups)))
-          (if group
-              (setcdr group (cons cand (cdr group)))
-            (push (list title cand) groups))))
-      (mapc (lambda (x) (setcdr x (nreverse (cdr x)))) (nreverse groups)))))
-
 (defun consult--read-annotate (fun cand)
   "Annotate CAND with annotation function FUN."
   (pcase (funcall fun cand)
@@ -1646,7 +1632,7 @@ See `consult--read' for the CANDIDATES, KEYMAP, ADD-HISTORY, NARROW and PREVIEW-
 (cl-defun consult--read-1 (candidates &rest options &key
                                       prompt predicate require-match history default
                                       keymap category initial narrow add-history annotate
-                                      state preview-key sort default-top lookup group)
+                                      state preview-key sort default-top lookup title)
   "See `consult--read' for documentation."
   (ignore default-top narrow add-history keymap)
   (consult--minibuffer-with-setup-hook
@@ -1659,7 +1645,7 @@ See `consult--read' for the CANDIDATES, KEYMAP, ADD-HISTORY, NARROW and PREVIEW-
       ;; interpreter which does a proper scope analyis.
       (let* ((metadata `(metadata
                          ,@(when category `((category . ,category)))
-                         ,@(when group `((x-group-function . ,group)))
+                         ,@(when title `((x-title-function . ,title)))
                          ,@(when annotate
                              `((affixation-function
                                 . ,(apply-partially #'consult--read-affixate annotate))
@@ -1707,7 +1693,7 @@ See `consult--read' for the CANDIDATES, KEYMAP, ADD-HISTORY, NARROW and PREVIEW-
 (cl-defun consult--read (candidates &rest options &key
                                       prompt predicate require-match history default
                                       keymap category initial narrow add-history annotate
-                                      state preview-key sort default-top lookup group)
+                                      state preview-key sort default-top lookup title)
   "Enhanced completing read function selecting from CANDIDATES.
 
 Keyword OPTIONS:
@@ -1725,7 +1711,7 @@ ANNOTATE is a function passed a candidate string to return an annotation.
 INITIAL is the initial input.
 DEFAULT-TOP must be nil if the default candidate should not be moved to the top.
 STATE is the state function, see `consult--with-preview'.
-GROUP is a group function passed a list of candidates.
+TITLE is a title function passed a candidate, returns (transformed-candidate . title)
 PREVIEW-KEY are the preview keys (nil, 'any, a single key or a list of keys).
 NARROW is an alist of narrowing prefix strings and description.
 KEYMAP is a command-specific keymap."
@@ -1740,7 +1726,7 @@ KEYMAP is a command-specific keymap."
                  (and (consp (car candidates)) (symbolp (caar candidates))))) ;; symbol alist
   (ignore prompt predicate require-match history default
           keymap category initial narrow add-history annotate
-          state preview-key sort default-top lookup group)
+          state preview-key sort default-top lookup title)
   (apply #'consult--read-1 candidates
          (append (alist-get this-command consult-config)
                  options
@@ -1785,10 +1771,12 @@ KEYMAP is a command-specific keymap."
                 (plist-get src :name))))
     (and ann (concat consult--multi-align ann))))
 
-(defun consult--multi-title (cand)
-  "Return title of candidate CAND, used by `consult--multi'."
-  (let ((src (consult--multi-source cand)))
-    (or (plist-get src :name) (capitalize (symbol-name (plist-get src :category))))))
+(defun consult--multi-title (cand transform)
+  "Return title of candidate CAND or TRANSFORM the candidate."
+  (if transform
+      cand
+    (let ((src (consult--multi-source cand)))
+      (or (plist-get src :name) (capitalize (symbol-name (plist-get src :category)))))))
 
 (defun consult--multi-lookup (_ candidates cand)
   "Lookup CAND in CANDIDATES, used by `consult--multi'."
@@ -1893,8 +1881,7 @@ Optional source fields:
                             :category  'consult-multi
                             :predicate #'consult--multi-predicate
                             :annotate  #'consult--multi-annotate
-                            :group     (apply-partially #'consult--group-by-title
-                                                        #'consult--multi-title)
+                            :title     #'consult--multi-title
                             :lookup    #'consult--multi-lookup
                             :narrow    (consult--multi-narrow)
                             :state     (consult--multi-state))))))
@@ -2676,7 +2663,7 @@ If no MODES are specified, use currently active major and minor modes."
             (= key consult--narrow)
           (/= key ?g))))
     :lookup #'consult--lookup-candidate
-    :group (consult--type-group consult--mode-command-narrow)
+    :title (consult--type-title consult--mode-command-narrow)
     :narrow consult--mode-command-narrow
     :require-match t
     :history 'consult--mode-command-history
@@ -2867,7 +2854,7 @@ register access functions. The command supports narrowing, see
                    (when-let (reg (get-register cand))
                      (and (markerp reg) reg))
                    restore)))
-      :group (consult--type-group narrow)
+      :title (consult--type-title narrow)
       :narrow (consult--type-narrow narrow)
       :sort nil
       :require-match t
@@ -3034,7 +3021,7 @@ variable `consult-bookmark-narrow' for the narrowing configuration."
        ;; Ignore errors such that `consult-bookmark' can be used in
        ;; buffers which are not backed by a file.
        :add-history (ignore-errors (bookmark-prop-get (bookmark-make-record) 'defaults))
-       :group (consult--type-group narrow)
+       :title (consult--type-title narrow)
        :narrow (consult--type-narrow narrow)))))
   (bookmark-maybe-load-default-file)
   (if (assoc name bookmark-alist)
@@ -3228,10 +3215,8 @@ starts a new Isearch session otherwise."
             :keymap consult-isearch-map
             :annotate
             (lambda (cand) (concat align (alist-get (consult--tofu-get cand) consult--isearch-narrow)))
-            :group
-            (apply-partially
-             #'consult--group-by-title
-             (lambda (cand) (alist-get (consult--tofu-get cand) consult--isearch-narrow)))
+            :title
+            (lambda (cand transform) (if transform cand (alist-get (consult--tofu-get cand) consult--isearch-narrow)))
             :lookup
             (lambda (_ candidates str)
               (if-let (found (member str candidates)) (substring (car found) 0 -1) str))
@@ -3302,10 +3287,9 @@ This is an alternative to `minor-mode-menu-from-indicator'."
     :prompt "Minor mode: "
     :require-match t
     :category 'minor-mode
-    :group
-    (apply-partially
-     #'consult--group-by-title
-     (consult--get-property 'consult--minor-mode-title))
+    :title
+    (lambda (cand transform)
+      (if transform cand (get-text-property 0 'consult--minor-mode-title cand)))
     :narrow
     (cons
      (lambda (cand)
@@ -3715,7 +3699,7 @@ The symbol at point is added to the future history."
           ;; in order to avoid any bad side effects.
           (funcall preview (and (markerp (cdr cand)) (cdr cand)) restore)))
       :require-match t
-      :group (consult--type-group narrow)
+      :title (consult--type-title narrow)
       :narrow
       (cons
        (lambda (cand)
@@ -3796,12 +3780,11 @@ same major mode as the current buffer are used. See also
         (cadr cand) (cddr cand))
        restore))))
 
-(defun consult--grep-group (candidates)
-  "Group CANDIDATES by file name."
-  (if (stringp candidates)
-      (let ((file (get-text-property 0 'consult--grep-file candidates)))
-        (cons (substring candidates (1+ (length file))) file))
-    (consult--group-by-title (consult--get-property 'consult--grep-file) candidates)))
+(defun consult--grep-title (cand transform)
+  "Return title for CAND or TRANSFORM the candidate."
+  (if transform
+      (substring cand (1+ (length (get-text-property 0 'consult--grep-file cand))))
+    (get-text-property 0 'consult--grep-file cand)))
 
 (defun consult--grep (prompt cmd dir initial)
   "Run grep CMD in DIR with INITIAL input.
@@ -3821,7 +3804,7 @@ The symbol at point is added to the future history."
      :add-history (concat consult-async-default-split (thing-at-point 'symbol))
      :require-match t
      :category 'consult-grep
-     :group #'consult--grep-group
+     :title #'consult--grep-title
      :history '(:input consult--grep-history)
      :sort nil)))
 

@@ -507,7 +507,7 @@ Selectrum, Vertico and Icomplete-vertical provide support. This functionality
 is useful if the list of candidates consists of candidates of multiple types or
 candidates from @ref{Multiple sources, , multiple sources}, like the @samp{consult-buffer} command, which
 shows both buffers and recently opened files. Note that the group titles can be
-disabled by setting the @samp{:group} property of the corresponding command in the
+disabled by setting the @samp{:title} property of the corresponding command in the
 @samp{consult-config} configuration alist to nil.
 
 By entering a narrowing prefix or by pressing a narrowing key it is possible to
@@ -1080,7 +1080,7 @@ Useful options are:
 @item
 @samp{:sort} enable or disable sorting
 @item
-@samp{:group} set to nil in order to disable candidate grouping and titles.
+@samp{:title} set to nil in order to disable candidate grouping and titles.
 @end itemize
 
 @lisp
