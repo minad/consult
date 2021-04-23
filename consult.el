@@ -727,11 +727,6 @@ Otherwise the `default-directory' is returned."
   "Return t if position POS lies in range `point-min' to `point-max'."
   (<= (point-min) pos (point-max)))
 
-(defun consult--get-property (prop)
-  "Return PROP property from candidate."
-  (lambda (cand)
-    (get-text-property 0 prop cand)))
-
 (defun consult--type-title (types)
   "Return title function for TYPES."
   (lambda (cand transform)
@@ -1984,8 +1979,10 @@ This command supports narrowing to a heading level and candidate preview.
 The symbol at point is added to the future history."
   (interactive)
   (let* ((cands (consult--with-increased-gc (consult--outline-candidates)))
-         (min-level (- (apply #'min (mapcar (consult--get-property 'consult--outline-level)
-                                            cands))
+         (min-level (- (apply #'min (mapcar
+                                     (lambda (cand)
+                                       (get-text-property 0 'consult--outline-level cand))
+                                     cands))
                        ?1))
          (narrow-fun (lambda (cand)
                        (<= (get-text-property 0 'consult--outline-level cand)
@@ -3557,7 +3554,9 @@ Macros containing mouse clicks are omitted."
                    :require-match t
                    :sort nil
                    :history 'consult--kmacro-history
-                   :annotate (consult--get-property 'consult--kmacro-annotation)
+                   :annotate
+                   (lambda (cand)
+                     (get-text-property 0 'consult--kmacro-annotation cand))
                    :lookup #'consult--lookup-candidate)))
     (if (= 0 selected)
         ;; If the first element has been selected, just run the last macro.
