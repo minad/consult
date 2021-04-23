@@ -3214,9 +3214,13 @@ starts a new Isearch session otherwise."
             :initial isearch-string
             :keymap consult-isearch-map
             :annotate
-            (lambda (cand) (concat align (alist-get (consult--tofu-get cand) consult--isearch-narrow)))
+            (lambda (cand)
+              (concat align (alist-get (consult--tofu-get cand) consult--isearch-narrow)))
             :title
-            (lambda (cand transform) (if transform cand (alist-get (consult--tofu-get cand) consult--isearch-narrow)))
+            (lambda (cand transform)
+              (if transform
+                  cand
+                (alist-get (consult--tofu-get cand) consult--isearch-narrow)))
             :lookup
             (lambda (_ candidates str)
               (if-let (found (member str candidates)) (substring (car found) 0 -1) str))
@@ -3699,12 +3703,19 @@ The symbol at point is added to the future history."
           ;; in order to avoid any bad side effects.
           (funcall preview (and (markerp (cdr cand)) (cdr cand)) restore)))
       :require-match t
-      :title (consult--type-title narrow)
+      :title
+      (when narrow
+        (lambda (cand transform)
+          (when-let (type (get-text-property 0 'consult--type cand))
+            (if transform
+                (substring cand (1+ (next-single-property-change 0 'consult--type cand)))
+              (alist-get type narrow)))))
       :narrow
-      (cons
-       (lambda (cand)
-         (eq (get-text-property 0 'consult--type (car cand)) consult--narrow))
-       narrow)
+      (when narrow
+        (cons
+         (lambda (cand)
+           (eq (get-text-property 0 'consult--type (car cand)) consult--narrow))
+         narrow))
       :category 'imenu
       :lookup #'consult--lookup-cons
       :history 'consult--imenu-history
