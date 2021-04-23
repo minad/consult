@@ -12,7 +12,10 @@
 - Consult adds disambiguation suffixes as suffix instead of as prefix now
   for the commands =consult-line=, =consult-buffer=, etc.
   This allows to use the =basic= completion style and TAB completion.
-- =consult--read=: The =:title= argument has been revised.
+- =consult--read=: The =:title= function must accept two arguments now,
+  the candidate string and a flag. If the flag is nil, the function should
+  return the title of the candidate, otherwise the function should return the
+  transformed candidate.
 - =consult-grep= and related commands: Strip the file name if grouping is used.
 - =consult-find/grep=: Ensure that the commands work with Tramp
 - =consult-outline=: Add narrowing
