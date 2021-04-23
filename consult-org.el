@@ -82,21 +82,21 @@ buffer are offered."
    :prompt "Go to heading: "
    :category 'consult-org-heading
    :sort nil
+   :require-match t
+   :history '(:input consult-org--history)
+   :narrow (consult-org--narrow)
+   :state (consult--jump-state)
    :title
+   ;; Don't add titles when only showing entries from current buffer
    (unless (memq scope '(nil tree region region-start-level file))
-     ;; Don't add titles when only showing entries from current buffer
      (lambda (cand transform)
        (if transform
            cand
          (buffer-name (marker-buffer (car (get-text-property 0 'consult-org-heading cand)))))))
-   :narrow (consult-org--narrow)
-   :require-match t
    :lookup
    (lambda (_ candidates cand)
      (when-let (found (member cand candidates))
-       (car (get-text-property 0 'consult-org-heading (car found)))))
-   :history '(:input consult-org--history)
-   :state (consult--jump-state)))
+       (car (get-text-property 0 'consult-org-heading (car found)))))))
 
 ;;;###autoload
 (defun consult-org-agenda (&optional match)
