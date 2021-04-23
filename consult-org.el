@@ -46,7 +46,7 @@
                                 (mapcan 'cdr org-todo-keywords)))))
     (cons (lambda (cand)
             (cond ((<= ?1 consult--narrow ?9)
-                   (<= (get-text-property 0 'consult-org--level cand)
+                   (<= (get-text-property 0 'consult--outline-level cand)
                        (- consult--narrow ?0)))
                   ((<= ?A consult--narrow ?Z)
                    (eq (get-text-property 0 'consult-org--priority cand)
@@ -82,7 +82,7 @@ MATCH, SCOPE and SKIP are as in `org-map-entries'."
           (org-format-outline-path (org-get-outline-path t t))
           (point-marker)
           line
-          'consult-org--level level
+          'consult--outline-level level
           'consult-org--todo todo
           'consult-org--priority prio)))
      match scope skip)))
@@ -124,7 +124,9 @@ By default, all agenda entries are offered. MATCH is as in
     (user-error "No agenda files"))
   (consult-org-heading match 'agenda))
 
-(define-hash-table-test 'consult-org--marker-hash
+;; Only suitable for short-lived hash tables, since a marker's
+;; position can change.
+(define-hash-table-test 'consult-org--marker-test
   'equal
   (lambda (m)
     (sxhash-equal (cons (marker-position m) (marker-buffer m)))))
@@ -146,32 +148,32 @@ recent clocked item."
                     (user-error "No recent clocked tasks")))
          (candidates (consult--with-increased-gc
                       (consult-org--entries match scope)))
-         (recent-candidates (let ((h (make-hash-table :test 'consult-org--marker-hash))
-                                  (k (make-hash-table :test 'consult-org--marker-hash)))
-                              (dolist (m org-clock-history)
-                                (puthash m t h))
-                              (dolist (c candidates)
-                                (when-let ((m (car (get-text-property
-                                                    0 'consult-location c)))
-                                           ((gethash m h)))
-                                  (puthash m c k)))
-                              k)))
+         (recent (let ((tbl (make-hash-table :test 'consult-org--marker-test
+                                             :size org-clock-history-length)))
+                   (dolist (m org-clock-history)
+                     (puthash m t tbl))
+                   (dolist (c candidates)
+                     (let ((m (car (get-text-property 0 'consult-location c))))
+                       (when (gethash m tbl)
+                         (puthash m c tbl))))
+                   tbl)))
     (org-clock-clock-in
      (list
       (consult--read
        (append
-        (mapcar (lambda (m) (gethash m recent-candidates))
-                            org-clock-history)
-        (seq-remove (lambda (c) (gethash (car (get-text-property
-                                               0 'consult-location c))
-                                         recent-candidates))
+        (seq-filter 'stringp
+                    (mapcar (lambda (m) (gethash m recent))
+                            org-clock-history))
+        (seq-remove (lambda (c) (gethash
+                                 (car (get-text-property 0 'consult-location c))
+                                 recent))
                     candidates))
        :prompt "Clock in: "
        :category 'consult-location
        :sort nil
        :title (lambda (cand)
                 (let ((m (car (get-text-property 0 'consult-location cand))))
-                  (if (gethash m recent-candidates)
+                  (if (gethash m recent)
                       "Recent"
                     (buffer-name (marker-buffer m)))))
        :narrow (consult-org--narrow)
