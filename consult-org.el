@@ -39,16 +39,13 @@
                       (cons (downcase (string-to-char (or b a))) a)))
                   (mapcan #'cdr org-todo-keywords)))))
     (cons (lambda (cand)
-            (cond ((<= ?1 consult--narrow ?9)
-                   (<= (get-text-property 0 'consult-org--level cand)
-                       (- consult--narrow ?0)))
-                  ((<= ?A consult--narrow ?Z)
-                   (eq (get-text-property 0 'consult-org--priority cand)
-                       consult--narrow))
-                  ;; TODO instead attach a 'consult-org--todo-key to the candidate
-                  ((when-let ((todo (alist-get consult--narrow todo-keywords)))
-                     (string-equal (get-text-property 0 'consult-org--todo cand)
-                                   todo)))))
+            (pcase-let ((`(_ ,level ,todo ,prio)
+                         (get-text-property 0 'consult-org-heading cand)))
+              (cond
+               ((<= ?1 consult--narrow ?9) (<= level (- consult--narrow ?0)))
+               ((<= ?A consult--narrow ?Z) (eq prio consult--narrow))
+               ;; TODO instead attach a 'consult-org--todo-key to the candidate
+               (t (equal todo (alist-get consult--narrow todo-keywords))))))
           (append (mapcar (lambda (c) (cons c (format "Level %c" c)))
                           (number-sequence ?1 ?9))
                   (mapcar (lambda (c) (cons c (format "Priority %c" c)))
@@ -56,32 +53,23 @@
                                            (min ?Z org-lowest-priority)))
                   todo-keywords))))
 
-(defun consult-org--entries (match scope &rest skip)
-  "Return a list of consult locations from Org entries.
+(defun consult-org--headlines (match scope &rest skip)
+  "Return a list of Org heading candidates.
 
 MATCH, SCOPE and SKIP are as in `org-map-entries'."
-  (let (opoint line buffer)
+  (let (buffer)
     (apply
      #'org-map-entries
      (lambda ()
-       ;; TODO: Is there no better way to obtain the line number? I guess it is guaranteed that
-       ;; `org-map-entries' iterates over all entries in a file in order.
        (unless (eq buffer (current-buffer))
-         (setq opoint (point-min)
-               line 1
-               buffer (current-buffer)
+         ;; TODO is it necessary to reset the cache? Is `org-format-outline-path' incapable of
+         ;; detecting if the buffer changed?
+         (setq buffer (current-buffer)
                org-outline-path-cache nil)) ;; Reset the cache since `org-get-outline-path' uses the cache
-       (setq line (+ line (consult--count-lines (prog1 (point)
-                                                  (goto-char opoint))))
-             opoint (point))
-       (pcase-let ((`(_ ,level ,todo ,prio) (org-heading-components)))
-         (consult--location-candidate
-          (org-format-outline-path (org-get-outline-path 'with-self 'use-cache))
-          (point-marker)
-          line
-          'consult-org--level level
-          'consult-org--todo todo ;; TODO attach key instead?
-          'consult-org--priority prio)))
+       (pcase-let ((`(_ ,level ,todo ,prio . _) (org-heading-components))
+                   (cand (org-format-outline-path (org-get-outline-path 'with-self 'use-cache))))
+         (put-text-property 0 1 'consult-org-heading (list (point-marker) level todo prio) cand)
+         cand))
      match scope skip)))
 
 ;;;###autoload
@@ -94,19 +82,22 @@ buffer are offered."
   (interactive (unless (derived-mode-p 'org-mode)
                  (user-error "Must be called from an Org buffer")))
   (consult--read
-   (consult--with-increased-gc (consult-org--entries match scope))
+   (consult--with-increased-gc (consult-org--headlines match scope))
    :prompt "Go to heading: "
-   :category 'consult-location
+   :category 'consult-org-heading
    :sort nil
    :group (unless (memq scope '(nil tree region region-start-level file))
             ;; Don't add titles when only showing entries from current buffer
             (apply-partially
               #'consult--group-by-title
               (lambda (cand)
-                (buffer-name (marker-buffer (car (get-text-property 0 'consult-location cand)))))))
+                (buffer-name (marker-buffer (car (get-text-property 0 'consult-org-heading cand)))))))
    :narrow (consult-org--narrow)
    :require-match t
-   :lookup #'consult--lookup-location
+   :lookup
+   (lambda (_ candidates cand)
+     (when-let (found (member cand candidates))
+       (car (get-text-property 0 'consult-org-heading (car found)))))
    :history '(:input consult-org--history)
    :state (consult--jump-state)))
 
