@@ -145,6 +145,11 @@ recent clocked item."
                       (mapcar #'buffer-file-name)
                       (delete-dups)
                       (delq nil))
+                    ;; TODO use current file as scope as fallback?
+                    ;; I am still not entirely happy with the idea of using the list of files
+                    ;; containing recent clock entries as scope. Here we invent some new scope
+                    ;; which is not present in Org. It may be preferrable to use either the current Org
+                    ;; file or the agenda or maybe we could even define our own org scope variable?
                     (user-error "No recent clocked tasks")))
          (candidates (consult--with-increased-gc
                       (consult-org--entries match scope)))
