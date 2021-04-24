@@ -49,6 +49,7 @@ Available commands
 * Compilation errors::           Jumping to compilation errors
 * Histories::                    Navigating histories
 * Modes::                        Toggling minor modes and executing commands
+* Org Mode::                     Org-specific commands
 * Miscellaneous::                Various other useful commands
 
 Special features
@@ -133,6 +134,7 @@ variables and functions with their descriptions.
 * Compilation errors::           Jumping to compilation errors
 * Histories::                    Navigating histories
 * Modes::                        Toggling minor modes and executing commands
+* Org Mode::                     Org-specific commands
 * Miscellaneous::                Various other useful commands
 @end menu
 
@@ -417,6 +419,22 @@ respectively.
 @samp{consult-mode-command}: Run a command from the currently active minor
 or major modes. Supports narrowing to local-minor/global-minor/major
 mode via the keys @samp{l/g/m}.
+@end itemize
+
+@node Org Mode
+@section Org Mode
+
+@findex consult-org-heading
+@findex consult-org-agenda
+@itemize
+@item
+@samp{consult-org-heading}: Similar to @samp{consult-outline}, for Org
+buffers. Supports narrowing by heading level, priority and TODO
+state, as well as live preview and recursive editing.
+@item
+@samp{consult-org-agenda}: Jump to an agenda heading. Supports
+narrowing by heading level, priority and TODO state, as well as
+live preview and recursive editing.
 @end itemize
 
 @node Miscellaneous

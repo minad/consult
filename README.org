@@ -308,6 +308,20 @@ variables and functions with their descriptions.
    or major modes. Supports narrowing to local-minor/global-minor/major
    mode via the keys =l/g/m=.
 
+** Org Mode
+   :properties:
+   :description: Org-specific commands
+   :end:
+
+ #+findex: consult-org-heading
+ #+findex: consult-org-agenda
+ - =consult-org-heading=: Similar to =consult-outline=, for Org
+   buffers. Supports narrowing by heading level, priority and TODO
+   state, as well as live preview and recursive editing.
+ - =consult-org-agenda=: Jump to an agenda heading. Supports
+   narrowing by heading level, priority and TODO state, as well as
+   live preview and recursive editing.
+
 ** Miscellaneous
    :properties:
    :description: Various other useful commands
