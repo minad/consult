@@ -1155,15 +1155,17 @@ depending on your personal preferences.
 
 @itemize
 @item
-@uref{https://github.com/minad/corfu, corfu}, @uref{https://github.com/company-mode/company-mode, company}: Completion systems for @samp{completion-at-point} using small popups
-@item
-@uref{https://github.com/minad/bookmark-view, bookmark-view}: Store window configuration as bookmarks, integrates with @samp{consult-buffer}
-@item
 @uref{https://codeberg.org/jao/consult-notmuch, consult-notmuch}: Access the @uref{https://notmuchmail.org/, Notmuch} email system using Consult.
 @item
 @uref{https://codeberg.org/jao/consult-recoll, consult-recoll}: Access the @uref{https://www.lesbonscomptes.com/recoll/, Recoll} desktop full-text search using Consult.
 @item
 @uref{https://codeberg.org/jao/espotify, consult-spotify}: Access the Spotify API and control your local music player.
+@item
+@uref{https://github.com/gagbo/consult-lsp, consult-lsp}: Integration with @uref{https://github.com/emacs-lsp/lsp-mode, LSP-Mode} (Language Server Protocol).
+@item
+@uref{https://github.com/minad/corfu, corfu}, @uref{https://github.com/company-mode/company-mode, company}: Completion systems for @samp{completion-at-point} using small popups
+@item
+@uref{https://github.com/minad/bookmark-view, bookmark-view}: Store window configuration as bookmarks, integrates with @samp{consult-buffer}
 @item
 @uref{https://github.com/d12frosted/flyspell-correct, flyspell-correct}: Apply spelling corrections by selecting via @samp{completing-read}
 @item
@@ -1292,8 +1294,6 @@ Code contributions:
 @item
 @uref{https://github.com/astoff, Augusto Stoffel}
 @item
-@uref{https://codeberg.org/jao/, Jose A Ortega Ruiz}
-@item
 @uref{https://github.com/noctuid, Fox Kiester}
 @end itemize
 
@@ -1315,6 +1315,19 @@ Advice and useful discussions:
 @uref{https://github.com/tomfitzhenry/, Tom Fitzhenry}
 @item
 @uref{https://github.com/hmelman/, Howard Melman}
+@item
+@uref{https://github.com/monnier/, Stefan Monnier}
+@item
+@uref{https://github.com/dgutov/, Dmitry Gutov}
+@end itemize
+
+Authors of supplementary @samp{consult-*} packages:
+
+@itemize
+@item
+@uref{https://codeberg.org/jao/, Jose A Ortega Ruiz}
+@item
+@uref{https://github.com/gagbo/, Gerry Agbobada}
 @end itemize
 
 @node Indices
