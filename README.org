@@ -1030,6 +1030,8 @@ Advice and useful discussions:
 - [[https://github.com/manuel-uberti/][Manuel Uberti]]
 - [[https://github.com/tomfitzhenry/][Tom Fitzhenry]]
 - [[https://github.com/hmelman/][Howard Melman]]
+- [[https://github.com/monnier/][Stefan Monnier]]
+- [[https://github.com/dgutov/][Dmitry Gutov]]
 
 #+html: <!--
 
