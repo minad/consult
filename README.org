@@ -1035,8 +1035,8 @@ Advice and useful discussions:
 
 Authors of supplementary =consult-*= packages:
 
-- [[https://codeberg.org/jao/][Jose A Ortega Ruiz]]
-- [[https://github.com/gagbo/][Gerry Agbobada]]
+- [[https://codeberg.org/jao/][Jose A Ortega Ruiz]] ([[https://codeberg.org/jao/consult-notmuch][consult-notmuch]], [[https://codeberg.org/jao/consult-recoll][consult-recoll]], [[https://codeberg.org/jao/espotify][consult-spotify]])
+- [[https://github.com/gagbo/][Gerry Agbobada]] ([[https://github.com/gagbo/consult-lsp][consult-lsp]])
 
 #+html: <!--
 

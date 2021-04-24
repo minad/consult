@@ -1325,9 +1325,9 @@ Authors of supplementary @samp{consult-*} packages:
 
 @itemize
 @item
-@uref{https://codeberg.org/jao/, Jose A Ortega Ruiz}
+@uref{https://codeberg.org/jao/, Jose A Ortega Ruiz} (@uref{https://codeberg.org/jao/consult-notmuch, consult-notmuch}, @uref{https://codeberg.org/jao/consult-recoll, consult-recoll}, @uref{https://codeberg.org/jao/espotify, consult-spotify})
 @item
-@uref{https://github.com/gagbo/, Gerry Agbobada}
+@uref{https://github.com/gagbo/, Gerry Agbobada} (@uref{https://github.com/gagbo/consult-lsp, consult-lsp})
 @end itemize
 
 @node Indices
