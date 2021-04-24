@@ -1716,7 +1716,6 @@ KEYMAP is a command-specific keymap."
                  (hash-table-p candidates)  ;; hash table
                  (not candidates)           ;; empty list
                  (stringp (car candidates)) ;; string list
-                 (symbolp (car candidates)) ;; symbol list
                  (and (consp (car candidates)) (stringp (caar candidates)))   ;; string alist
                  (and (consp (car candidates)) (symbolp (caar candidates))))) ;; symbol alist
   (ignore prompt predicate require-match history default
@@ -3315,13 +3314,13 @@ The command supports previewing the currently selected theme."
                                     (cons nil (custom-available-themes))))
           (saved-theme (car custom-enabled-themes)))
       (consult--read
-       (mapcar (lambda (x) (or x 'default)) avail-themes)
+       (mapcar (lambda (x) (if x (symbol-name x) "default")) avail-themes)
        :prompt "Theme: "
        :require-match t
        :category 'theme
        :history 'consult--theme-history
        :lookup (lambda (_input _cands x)
-                 (and x (not (string= x "default")) (intern-soft x)))
+                 (and x (not (equal x "default")) (intern-soft x)))
        :state (lambda (cand restore)
                 (cond
                  ((and restore (not cand)) (consult-theme saved-theme))
