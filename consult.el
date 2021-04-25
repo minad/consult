@@ -48,7 +48,6 @@
   (require 'cl-lib)
   (require 'subr-x))
 (require 'bookmark)
-(require 'imenu)
 (require 'kmacro)
 (require 'recentf)
 (require 'ring)
@@ -173,21 +172,6 @@ This is necessary in order to prevent a large startup time
 for navigation commands like `consult-line'."
   :type 'integer)
 
-(defcustom consult-imenu-config
-  '((emacs-lisp-mode :toplevel "Functions"
-                     :types ((?f "Functions" font-lock-function-name-face)
-                             (?m "Macros"    font-lock-function-name-face)
-                             (?p "Packages"  font-lock-constant-face)
-                             (?t "Types"     font-lock-type-face)
-                             (?v "Variables" font-lock-variable-name-face))))
-  "Imenu configuration, faces and narrowing keys used by `consult-imenu'.
-
-For each type a narrowing key and a name must be specified. The face is
-optional. The imenu representation provided by the backend usually puts
-functions directly at the toplevel. `consult-imenu' moves them instead under the
-type specified by :toplevel."
-  :type '(repeat (cons symbol plist)))
-
 (defcustom consult-buffer-filter
   '("\\` " "\\`\\*Completions\\*\\'" "\\`\\*tramp/.*\\*\\'")
   "Filter regexps for `consult-buffer'.
@@ -293,20 +277,6 @@ command options."
   "Number of files to keep open at once during preview."
   :type 'integer)
 
-(defcustom consult-register-narrow
-  `((?n "Number" ,#'numberp)
-    (?s "String" ,#'stringp)
-    (?r "Rectangle" ,(lambda (x) (stringp (car-safe x))))
-    ;; frameset-register-p and kmacro-register-p exists since 27.1
-    (?f "Frameset" ,(lambda (x) (eq (type-of x) 'frameset-register)))
-    (?k "Kmacro" ,(lambda (x) (eq (type-of x) 'kmacro-register)))
-    (?p "Point" ,(lambda (x) (or (markerp x) (eq (car-safe x) 'file-query))))
-    (?w "Window" ,(lambda (x) (window-configuration-p (car-safe x)))))
-  "Register narrowing configuration.
-
-Each element of the list must have the form '(char name predicate)."
-  :type '(repeat (list character string function)))
-
 (defcustom consult-bookmark-narrow
   `((?f "File" ,#'bookmark-default-handler)
     (?h "Help" ,#'help-bookmark-jump)
@@ -391,10 +361,6 @@ Used by `consult-completion-in-region', `consult-yank' and `consult-history'.")
   '((t :inherit font-lock-keyword-face))
   "Face used to highlight keys, e.g., in `consult-register'.")
 
-(defface consult-imenu-prefix
-  '((t :inherit consult-key))
-  "Face used to highlight imenu prefix in `consult-imenu'.")
-
 (defface consult-line-number
   '((t :inherit consult-key))
   "Face used to highlight location line in `consult-global-mark'.")
@@ -436,7 +402,6 @@ Used by `consult-completion-in-region', `consult-yank' and `consult-history'.")
 (defvar consult--mode-command-history nil)
 (defvar consult--kmacro-history nil)
 (defvar consult--buffer-history nil)
-(defvar consult--imenu-history nil)
 
 ;;;; Internal variables
 
@@ -497,9 +462,6 @@ Size of private unicode plane b.")
 (defvar consult--async-log
   " *consult-async*"
   "Buffer for async logging output used by `consult--async-process'.")
-
-(defvar-local consult--imenu-cache nil
-  "Buffer local cached imenu.")
 
 (defconst consult--grep-regexp
   (let ((esc "\\(?:\e\\[[0-9;]*[mK]\\)*")
@@ -2738,224 +2700,6 @@ Otherwise replace the just-yanked text with the selected text."
                          (set-marker (mark-marker) (point) (current-buffer))))))))
   nil)
 
-;;;;; Command: consult-register
-
-;;;###autoload
-(defun consult-register-window (buffer &optional show-empty)
-  "Enhanced drop-in replacement for `register-preview'.
-
-BUFFER is the window buffer.
-SHOW-EMPTY must be t if the window should be shown for an empty register list."
-  (let ((regs (seq-filter #'cdr register-alist))
-        (separator
-         (and (display-graphic-p)
-              (propertize (concat (propertize " " 'display '(space :align-to right)) "\n")
-                          'face '(:inherit consult-separator :height 1 :underline t)))))
-    (when (or show-empty regs)
-      (with-current-buffer-window buffer
-          (cons 'display-buffer-below-selected
-                '((window-height . fit-window-to-buffer)
-	          (preserve-size . (nil . t))))
-          nil
-        (setq-local cursor-in-non-selected-windows nil)
-        (setq-local mode-line-format nil)
-        (setq-local truncate-lines t)
-        (setq-local window-min-height 1)
-        (setq-local window-resize-pixelwise t)
-        (insert (mapconcat
-                 (lambda (reg)
-                   (concat (funcall register-preview-function reg) separator))
-                 (seq-sort #'car-less-than-car regs) nil))))))
-
-;;;###autoload
-(defun consult-register-format (reg)
-  "Enhanced preview of register REG.
-
-This function can be used as `register-preview-function'."
-  (concat (consult--register-format reg) "\n"))
-
-(defun consult--register-format (reg)
-  "Format register REG for preview."
-  (pcase-let ((`(,key . ,val) reg))
-    (let* ((key-str (single-key-description key))
-           (fmt (format "%%-%ds " (max 3 (length key-str)))))
-      (concat
-       (format fmt (propertize key-str 'face 'consult-key))
-       ;; Special printing for certain register types
-       (cond
-        ;; Display full string
-        ((or (stringp val) (stringp (car-safe val)))
-         (when (consp val)
-           (setq val (mapconcat #'identity val "\n")))
-         (mapconcat #'identity
-                    (seq-take (split-string (string-trim val) "\n") 3)
-                    (format fmt "\n")))
-        ;; Display 'file-query
-        ((eq (car-safe val) 'file-query)
-         (format "%s at position %d"
-                 (propertize (abbreviate-file-name (cadr val)) 'face 'consult-file)
-                 (caddr val)))
-        ;; Display full line of buffer
-        ((and (markerp val) (buffer-live-p (marker-buffer val)))
-         (with-current-buffer (marker-buffer val)
-           (save-restriction
-             (save-excursion
-               (widen)
-               (goto-char val)
-               (consult--format-location (buffer-name) (line-number-at-pos)
-                                         (consult--line-with-cursor val))))))
-        ;; Default printing for the other types
-        (t (register-describe-oneline key)))))))
-
-(defun consult--register-alist ()
-  "Return register list or raise an error if the list is empty."
-  ;; Sometimes, registers are made without a `cdr'.
-  ;; Such registers don't do anything, and can be ignored.
-  (or (seq-filter #'cdr register-alist) (user-error "All registers are empty")))
-
-(defun consult--register-candidates ()
-  "Return list of formatted register candidates."
-  (mapcar (lambda (reg)
-            (propertize
-             (consult--register-format reg)
-             'consult--candidate (car reg)
-             'consult--type
-             (car (seq-find (lambda (x) (funcall (caddr x) (cdr reg)))
-                            consult-register-narrow))))
-          (sort (consult--register-alist) #'car-less-than-car)))
-
-;;;###autoload
-(defun consult-register (&optional arg)
-  "Load register and either jump to location or insert the stored text.
-
-This command is useful to search the register contents. For quick access to
-registers it is still recommended to use the register functions
-`consult-register-load' and `consult-register-store' or the built-in built-in
-register access functions. The command supports narrowing, see
-`consult-register-narrow'. Marker positions are previewed. See
-`jump-to-register' and `insert-register' for the meaning of prefix ARG."
-  (interactive "P")
-  (let ((narrow (mapcar (lambda (x) (cons (car x) (cadr x)))
-                        consult-register-narrow)))
-    (consult-register-load
-     (consult--read
-      (consult--register-candidates)
-      :prompt "Register: "
-      :category 'consult-register
-      :state
-      (let ((preview (consult--jump-preview)))
-        (lambda (cand restore)
-          ;; Preview only markers
-          (funcall preview
-                   (when-let (reg (get-register cand))
-                     (and (markerp reg) reg))
-                   restore)))
-      :title (consult--type-title narrow)
-      :narrow (consult--type-narrow narrow)
-      :sort nil
-      :require-match t
-      :history t ;; disable history
-      :lookup #'consult--lookup-candidate)
-     arg)))
-
-;;;###autoload
-(defun consult-register-load (reg &optional arg)
-  "Do what I mean with a REG.
-
-For a window configuration, restore it. For a number or text, insert it. For a
-location, jump to it. See `jump-to-register' and `insert-register' for the
-meaning of prefix ARG."
-  (interactive
-   (list
-    (and (consult--register-alist)
-         (register-read-with-preview "Load register: "))
-    current-prefix-arg))
-  (condition-case nil
-      (jump-to-register reg arg)
-    (user-error (insert-register reg (not arg)))))
-
-(defun consult--register-action (action-list)
-  "Read register key and execute action from ACTION-LIST.
-
-This function is derived from `register-read-with-preview'."
-  (let* ((buffer "*Register Preview*")
-         (prefix (car action-list))
-         (action-list (cdr action-list))
-         (action (car (nth 0 action-list)))
-         (reg)
-         (preview
-          (lambda ()
-	    (unless (get-buffer-window buffer)
-	      (register-preview buffer 'show-empty)
-              (when-let (win (get-buffer-window buffer))
-                (with-selected-window win
-                  (let ((inhibit-read-only t))
-                    (goto-char (point-max))
-                    (insert
-                     (propertize (concat prefix ":  ") 'face 'consult-help)
-                     (mapconcat
-                      (lambda (x)
-                        (concat (propertize (format "M-%c" (car x)) 'face 'consult-key)
-                                " " (propertize (cadr x) 'face 'consult-help)))
-                      action-list "  "))
-                    (fit-window-to-buffer)))))))
-	 (timer (when (numberp register-preview-delay)
-	          (run-with-timer register-preview-delay nil preview)))
-	 (help-chars (seq-remove #'get-register (cons help-char help-event-list))))
-    (unwind-protect
-        (while (not reg)
-	  (while (memq (read-key (propertize (caddr (assq action action-list))
-                                             'face 'minibuffer-prompt))
-		       help-chars)
-            (funcall preview))
-          (cond
-           ((or (eq ?\C-g last-input-event)
-                (eq 'escape last-input-event)
-                (eq ?\C-\[ last-input-event))
-            (keyboard-quit))
-           ((and (numberp last-input-event) (assq (logxor #x8000000 last-input-event) action-list))
-            (setq action (logxor #x8000000 last-input-event)))
-	   ((characterp last-input-event)
-            (setq reg last-input-event))
-           (t (error "Non-character input-event"))))
-      (when (timerp timer)
-        (cancel-timer timer))
-      (let ((w (get-buffer-window buffer)))
-        (when (window-live-p w)
-          (delete-window w)))
-      (when (get-buffer buffer)
-        (kill-buffer buffer)))
-    (when reg
-      (funcall (cadddr (assq action action-list)) reg))))
-
-;;;###autoload
-(defun consult-register-store (arg)
-  "Store register dependent on current context, showing an action menu.
-
-With an active region, store/append/prepend the contents, optionally deleting
-the region when a prefix ARG is given. With a numeric prefix ARG, store/add the
-number. Otherwise store point, frameset, window or kmacro."
-  (interactive "P")
-  (consult--register-action
-   (cond
-    ((use-region-p)
-     (let ((beg (region-beginning))
-           (end (region-end)))
-       `("Region"
-         (?c "copy" "Copy region to register: " ,(lambda (r) (copy-to-register r beg end arg t)))
-         (?a "append" "Append region to register: " ,(lambda (r) (append-to-register r beg end arg)))
-         (?p "prepend" "Prepend region to register: " ,(lambda (r) (prepend-to-register r beg end arg))))))
-    ((numberp arg)
-     `(,(format "Number %s" arg)
-       (?s "store" ,(format "Store %s in register: " arg) ,(lambda (r) (number-to-register arg r)))
-       (?a "add" ,(format "Add %s to register: " arg) ,(lambda (r) (increment-register arg r)))))
-    (t
-     `("Store"
-       (?p "point" "Point to register: " ,#'point-to-register)
-       (?f "frameset" "Frameset to register: " ,#'frameset-to-register)
-       (?w "window" "Window to register: " ,#'window-configuration-to-register)
-       ,@(and last-kbd-macro `((?k "kmacro" "Kmacro to register: " ,#'kmacro-to-register))))))))
-
 ;;;;; Command: consult-bookmark
 
 (defun consult--bookmark-preview ()
@@ -3575,172 +3319,6 @@ Macros containing mouse clicks are omitted."
               (list last-kbd-macro
                     kmacro-counter
                     kmacro-counter-format))))))
-
-;;;;; Command: consult-imenu
-
-(defun consult--imenu-special (_name pos buf name fn &rest args)
-  "Wrapper function for special imenu items.
-
-POS is the position.
-BUF is the buffer.
-NAME is the item name.
-FN is the original special item function.
-ARGS are the arguments to the special item function."
-  (funcall consult--buffer-display buf)
-  (apply fn name pos args))
-
-(defun consult--imenu-flatten (prefix face list types)
-  "Flatten imenu LIST.
-
-PREFIX is prepended in front of all items.
-FACE is the item face.
-TYPES is the mode-specific types configuration."
-  (mapcan
-   (lambda (item)
-     (if (imenu--subalist-p item)
-         (let ((name (car item))
-               (next-prefix prefix)
-               (next-face face))
-           (if prefix
-               (setq next-prefix (concat prefix "/" (propertize name 'face 'consult-imenu-prefix)))
-             (if-let (type (cdr (assoc name types)))
-                 (setq next-prefix (propertize name
-                                               'face 'consult-imenu-prefix
-                                               'consult--type (car type))
-                       next-face (cadr type))
-               (setq next-prefix (propertize name 'face 'consult-imenu-prefix))))
-           (consult--imenu-flatten next-prefix next-face (cdr item) types))
-       (let* ((name (car item))
-              (key (if prefix (concat prefix " " (propertize name 'face face)) name))
-              (payload (cdr item)))
-         (list (cons key
-                     (pcase payload
-                       ;; Simple marker item
-                       ((pred markerp) payload)
-                       ;; Simple integer item
-                       ((pred integerp) (copy-marker payload))
-                       ;; Semantic uses overlay for positions
-                       ((pred overlayp) (copy-marker (overlay-start payload)))
-                       ;; Wrap special item
-                       (`(,pos ,fn . ,args)
-                        (nconc
-                         (list pos #'consult--imenu-special (current-buffer) name fn)
-                         args))
-                       (_ (error "Unknown imenu item: %S" item))))))))
-   list))
-
-(defun consult--imenu-compute ()
-  "Compute imenu candidates."
-  (consult--forbid-minibuffer)
-  (let* ((imenu-use-markers t)
-         ;; Generate imenu, see `imenu--make-index-alist'.
-         (items (imenu--truncate-items
-	         (save-excursion
-		   (save-restriction
-		     (widen)
-		     (funcall imenu-create-index-function)))))
-         (config (cdr (seq-find (lambda (x) (derived-mode-p (car x))) consult-imenu-config))))
-    ;; Fix toplevel items, e.g., emacs-lisp-mode toplevel items are functions
-    (when-let (toplevel (plist-get config :toplevel))
-      (let ((tops (seq-remove (lambda (x) (listp (cdr x))) items))
-            (rest (seq-filter (lambda (x) (listp (cdr x))) items)))
-        (setq items (nconc rest (and tops (list (cons toplevel tops)))))))
-    ;; Apply our flattening in order to ease searching the imenu.
-    (consult--imenu-flatten
-     nil nil items
-     (mapcar (pcase-lambda (`(,x ,y ,z)) (list y x z))
-             (plist-get config :types)))))
-
-(defun consult--imenu-items ()
-  "Return cached imenu candidates."
-  (unless (equal (car consult--imenu-cache) (buffer-modified-tick))
-    (setq consult--imenu-cache (cons (buffer-modified-tick) (consult--imenu-compute))))
-  (cdr consult--imenu-cache))
-
-(defun consult--imenu-all-items (buffers)
-  "Return all imenu items from each BUFFERS."
-  (seq-mapcat (lambda (buf) (with-current-buffer buf (consult--imenu-items))) buffers))
-
-(defun consult--imenu-project-buffers ()
-  "Return project buffers with the same `major-mode' as the current buffer."
-  (if-let (root (consult--project-root))
-      (seq-filter (lambda (buf)
-                    (when-let (file (buffer-file-name buf))
-                      (and (eq (buffer-local-value 'major-mode buf) major-mode)
-                           (string-prefix-p root file))))
-                  (buffer-list))
-    (list (current-buffer))))
-
-(defun consult--imenu-jump (item)
-  "Jump to imenu ITEM via `consult--jump'.
-
-In contrast to the builtin `imenu' jump function,
-this function can jump across buffers."
-  (pcase item
-    (`(,name ,pos ,fn . ,args) (apply fn name pos args))
-    (`(,_ . ,pos) (consult--jump pos))
-    (_ (error "Unknown imenu item: %S" item))))
-
-(defun consult--imenu (items)
-  "Choose from imenu ITEMS with preview.
-
-The symbol at point is added to the future history."
-  (let ((narrow
-         (mapcar (lambda (x) (cons (car x) (cadr x)))
-                 (plist-get (cdr (seq-find (lambda (x) (derived-mode-p (car x)))
-                                           consult-imenu-config))
-                            :types))))
-    (consult--imenu-jump
-     (consult--read
-      (or items (user-error "Imenu is empty"))
-      :prompt "Go to item: "
-      :state
-      (let ((preview (consult--jump-preview)))
-        (lambda (cand restore)
-          ;; Only preview simple menu items which are markers,
-          ;; in order to avoid any bad side effects.
-          (funcall preview (and (markerp (cdr cand)) (cdr cand)) restore)))
-      :require-match t
-      :title
-      (when narrow
-        (lambda (cand transform)
-          (when-let (type (get-text-property 0 'consult--type cand))
-            (if transform
-                (substring cand (1+ (next-single-property-change 0 'consult--type cand)))
-              (alist-get type narrow)))))
-      :narrow
-      (when narrow
-        (cons
-         (lambda (cand)
-           (eq (get-text-property 0 'consult--type (car cand)) consult--narrow))
-         narrow))
-      :category 'imenu
-      :lookup #'consult--lookup-cons
-      :history 'consult--imenu-history
-      :add-history (thing-at-point 'symbol)
-      :sort nil))))
-
-;;;###autoload
-(defun consult-imenu ()
-  "Choose item from flattened `imenu' using `completing-read' with preview.
-
-The command supports preview and narrowing. See the variable
-`consult-imenu-config', which configures the narrowing.
-
-See also `consult-project-imenu'."
-  (interactive)
-  (consult--imenu (consult--imenu-items)))
-
-;;;###autoload
-(defun consult-project-imenu ()
-  "Choose item from the imenus of all buffers from the same project.
-
-In order to determine the buffers belonging to the same project, the
-`consult-project-root-function' is used. Only the buffers with the
-same major mode as the current buffer are used. See also
-`consult-imenu' for more details."
-  (interactive)
-  (consult--imenu (consult--imenu-all-items (consult--imenu-project-buffers))))
 
 ;;;;; Command: consult-grep
 

@@ -17,8 +17,8 @@
 
 ;;; Commentary:
 
-;; Provides a completing-read interface for some Org mode
-;; actions. This is an extra package, to allow lazy loading of Org.
+;; Provides a `completing-read' interface for Org mode navigation.
+;; This is an extra package, to allow lazy loading of Org.
 
 ;;; Code:
 
