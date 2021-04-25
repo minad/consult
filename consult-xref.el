@@ -31,13 +31,15 @@
 (defun consult-xref--candidates (xrefs)
   "Return candidate list from XREFS."
   (mapcar (lambda (xref)
-            (let ((loc (xref-item-location xref))
-                  (xref-file-name-display 'nondirectory))
-              (cons
-               (consult--format-location (xref-location-group loc)
-                                         (or (xref-location-line loc) 0)
-                                         (xref-item-summary xref))
-               xref)))
+            (let* ((loc (xref-item-location xref))
+                   (xref-file-name-display 'nondirectory)
+                   (group (xref-location-group loc))
+                   (cand (consult--format-location group
+                                                   (or (xref-location-line loc) 0)
+                                                   (xref-item-summary xref))))
+              (add-text-properties
+               0 1 `(consult--candidate ,xref consult-xref--group ,group) cand)
+              cand))
           xrefs))
 
 (defun consult-xref--preview (display)
@@ -65,6 +67,12 @@
                     (t (message "No preview for %s" (type-of loc))))
                    nil)))))))
 
+(defun consult-xref--title (cand transform)
+  "Return title for CAND or TRANSFORM the candidate."
+  (if transform
+      (substring cand (1+ (length (get-text-property 0 'consult-xref--group cand))))
+    (get-text-property 0 'consult-xref--group cand)))
+
 ;;;###autoload
 (defun consult-xref (fetcher &optional alist)
   "Show xrefs with preview in the minibuffer.
@@ -84,6 +92,7 @@ FETCHER and ALIST arguments."
           :require-match t
           :sort nil
           :category 'xref-location
+          :title #'consult-xref--title
           :state
           ;; do not preview other frame
           (when-let (fun (pcase-exhaustive display
@@ -91,7 +100,7 @@ FETCHER and ALIST arguments."
                            ('window #'switch-to-buffer-other-window)
                            ('nil #'switch-to-buffer)))
             (consult-xref--preview fun))
-          :lookup #'consult--lookup-cdr)
+          :lookup #'consult--lookup-candidate)
        (cdar candidates))
      display)))
 
