@@ -28,15 +28,16 @@ list of commands]].
 
 All Consult commands are compatible with completion systems based on the
 standard Emacs =completing-read= API, notably the default completion system,
-[[https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html][Icomplete]], [[https://github.com/raxod502/selectrum][Selectrum]], [[https://github.com/minad/vertico][Vertico]] and [[https://github.com/oantolin/embark/][Embark]], with which Consult works out of the box. If
-Icomplete is used, it is recommended to install [[https://github.com/oantolin/icomplete-vertical][Icomplete-vertical]] to enjoy the
-enhanced visuals. The completion system specifics in this package are kept to a
-minimum. The ability of the Consult commands to work well with arbitrary
-completion systems is one of main advantages of the package. Consult fits well
-into existing setups and it helps you to create a full completion environment
-out of small and independent components. Note that, if you use [[https://github.com/abo-abo/swiper#ivy][Ivy]] or [[https://github.com/emacs-helm/helm][Helm]], you
-probably don't need Consult, since both packages come with their own set of
-commands.
+[[https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html][Icomplete]], [[https://github.com/raxod502/selectrum][Selectrum]], [[https://github.com/minad/vertico][Vertico]] and [[https://github.com/oantolin/embark/][Embark]], with which Consult works out of the
+box. On Emacs 28, Icomplete offers a built-in =icomplete-vertical-mode=, on
+earlier Emacs versions you can install the external [[https://github.com/oantolin/icomplete-vertical][Icomplete-vertical]] package.
+
+The completion system specifics in this package are kept to a minimum. The
+ability of the Consult commands to work well with arbitrary completion systems
+is one of main advantages of the package. Consult fits well into existing setups
+and it helps you to create a full completion environment out of small and
+independent components. Note that, if you use [[https://github.com/abo-abo/swiper#ivy][Ivy]] or [[https://github.com/emacs-helm/helm][Helm]], you probably don't
+need Consult, since both packages come with their own set of commands.
 
 There are the [[https://github.com/minad/marginalia/][Marginalia]] and [[https://github.com/oantolin/embark/][Embark]] packages, which can be combined with
 Consult. Marginalia enriches the completion display with annotations, for
@@ -341,8 +342,8 @@ variables and functions with their descriptions.
  - =consult-completion-in-region=: Function which can be used as
    =completion-in-region-function=. This way, the minibuffer completion UI will
    be used for =completion-at-point=. This function is particularily useful in
-   combination with Icomplete-vertical, since Icomplete does not provide its own
-   =completion-in-region-function=. Selectrum already comes with its own
+   combination with Vertico or Icomplete, since these UIs do not provide their
+   own =completion-in-region-function=. Selectrum already comes with its own
    function. However you may not want to transfer the completion at point into
    the minibuffer and prefer to see the completions directly in the buffer as a
    small popup. In that case you can either use the [[https://github.com/minad/corfu][Corfu]] or the [[https://github.com/company-mode/company-mode][Company]]
@@ -398,7 +399,7 @@ variables and functions with their descriptions.
 
  Consult has special support for candidate groups which are separated by
  separator lines with titles if supported by the completion system. As of now,
- Selectrum, Vertico and Icomplete-vertical provide support. This functionality
+ Selectrum, Vertico and [[https://github.com/oantolin/icomplete-vertical][Icomplete-vertical]] provide support. This functionality
  is useful if the list of candidates consists of candidates of multiple types or
  candidates from [[#multiple-sources][multiple sources]], like the =consult-buffer= command, which
  shows both buffers and recently opened files. Note that the group titles can be
@@ -901,7 +902,8 @@ It is recommended to install the following package combination:
 
 - consult: This package
 - consult-flycheck: Provides the =consult-flycheck= command
-- [[https://github.com/raxod502/selectrum][selectrum]], [[https://github.com/minad/vertico][vertico]] or [[https://github.com/oantolin/icomplete-vertical][icomplete-vertical]]: Vertical completion systems
+- [[https://github.com/raxod502/selectrum][selectrum]], [[https://github.com/minad/vertico][vertico]]: Vertical completion systems
+- [[https://github.com/oantolin/icomplete-vertical][icomplete-vertical]]: Vertical display for Icomplete (external package for Emacs 27, built-in on Emacs 28)
 - [[https://github.com/minad/marginalia][marginalia]]: Annotations for the completion candidates
 - [[https://github.com/oantolin/embark][embark and embark-consult]]: Action commands, which can act on the completion candidates
 - [[https://github.com/oantolin/orderless][orderless]]: Completion style which offers flexible candidate filtering
