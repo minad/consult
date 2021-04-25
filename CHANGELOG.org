@@ -19,8 +19,11 @@
 - =consult-grep= and related commands: Strip the file name if grouping is used.
 - =consult-find/grep=: Ensure that the commands work with Tramp
 - =consult-outline=: Add narrowing
-- =consult-line=: Highlight visual line during jump preview
 - Added =consult-org-heading= and =consult-org-agenda=
+- =consult-line=: Highlight visual line during jump preview
+- =consult-line=: Start search at current line, add configuration variable
+  =consult-start-from-top=. The starting point can be toggled by the prefix
+  argument =C-u=.
 
 * Version 0.6 (2021-03-02)
 

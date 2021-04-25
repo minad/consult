@@ -831,6 +831,7 @@ contributed.
  | consult-imenu-config          | ...              | Mode-specific configuration for =consult-imenu=       |
  | consult-line-numbers-widen    | t                | Show absolute line numbers when narrowing is active.  |
  | consult-line-point-placement  | 'match-beginning | Placement of the point used by =consult-line=         |
+ | consult-line-start-from-top   | nil              | Start the =consult-line= search from the top          |
  | consult-locate-command        | "locate ..."     | Command line arguments for locate                     |
  | consult-mode-command-filter   | ...              | Filter for =consult-mode-command=                     |
  | consult-mode-histories        | ...              | Mode-specific history variables                       |

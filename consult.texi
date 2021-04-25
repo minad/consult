@@ -1027,6 +1027,9 @@ an overview of all Consult variables and functions with their descriptions.
 @item consult-line-point-placement
 @tab 'match-beginning
 @tab Placement of the point used by @samp{consult-line}
+@item consult-line-start-from-top
+@tab nil
+@tab Start the @samp{consult-line} search from the top
 @item consult-locate-command
 @tab "locate @dots{}"
 @tab Command line arguments for locate

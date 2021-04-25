@@ -145,6 +145,11 @@ You may want to add a function which pulses the current line, e.g.,
 `xref-pulse-momentarily'."
   :type 'hook)
 
+(defcustom consult-line-start-from-top nil
+  "Start search from the top if non-nil.
+Otherwise start the search at the current line and wrap around."
+  :type 'boolean)
+
 (defcustom consult-line-point-placement 'match-beginning
   "Where to leave point after `consult-line' jumps to a match."
   :type '(choice (const :tag "Beginning of the line" line-beginning)
@@ -1667,7 +1672,7 @@ LOOKUP is a lookup function passed the input, candidates and candidate string.
 ANNOTATE is a function passed a candidate string to return an annotation.
 INITIAL is the initial input.
 STATE is the state function, see `consult--with-preview'.
-TITLE is a title function passed a candidate, returns (transformed-candidate . title)
+TITLE is a title function passed a candidate, returns (transformed-cand . title)
 PREVIEW-KEY are the preview keys (nil, 'any, a single key or a list of keys).
 NARROW is an alist of narrowing prefix strings and description.
 KEYMAP is a command-specific keymap."
@@ -2055,8 +2060,8 @@ The symbol at point is added to the future history."
 
 ;;;;; Command: consult-line
 
-(defun consult--line-candidates ()
-  "Return alist of lines and positions."
+(defun consult--line-candidates (top)
+  "Return list of line candidates; start from top if TOP non-nil."
   (consult--forbid-minibuffer)
   (consult--fontify-all)
   (let* ((default-cand)
@@ -2069,14 +2074,20 @@ The symbol at point is added to the future history."
         (unless (string-blank-p str)
           (let ((cand (consult--location-candidate str (point-marker) line))
                 (delta (abs (- curr-line line))))
+            (push cand candidates)
             (when (< delta default-delta)
-              (setq default-cand cand
-                    default-delta delta))
-            (push cand candidates)))
+              (setq default-cand candidates
+                    default-delta delta))))
         (setq line (1+ line))))
     (unless candidates
       (user-error "No lines"))
-    (cons default-cand (nreverse candidates))))
+    (cons (car default-cand)
+          (nreverse
+           (if top
+               candidates
+             (let ((before (cdr default-cand)))
+               (setcdr default-cand nil)
+               (nconc before candidates)))))))
 
 (defun consult--line-match (input candidates cand)
   "Lookup position of match.
@@ -2118,14 +2129,17 @@ CAND is the currently selected candidate."
         (ignore-errors (+ pos end))))))
 
 ;;;###autoload
-(defun consult-line (&optional initial)
+(defun consult-line (&optional initial start)
   "Search for a matching line and jump to the line beginning.
 
 The default candidate is a non-empty line closest to point.
-This command obeys narrowing. Optionally INITIAL input can be provided.
+This command obeys narrowing. Optional INITIAL input can be provided.
+The search starting point is changed if the START prefix argument is set.
 The symbol at point and the last `isearch-string' is added to the future history."
-  (interactive)
-  (let ((candidates (consult--with-increased-gc (consult--line-candidates))))
+  (interactive (list nil (not (not current-prefix-arg))))
+  (let ((candidates (consult--with-increased-gc
+                     (consult--line-candidates
+                      (not (eq start consult-line-start-from-top))))))
     (consult--read
      (cdr candidates)
      :prompt "Go to line: "
