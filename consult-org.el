@@ -64,7 +64,9 @@ MATCH, SCOPE and SKIP are as in `org-map-entries'."
          (setq buffer (buffer-name)
                org-outline-path-cache nil))
        (pcase-let ((`(_ ,level ,todo ,prio . _) (org-heading-components))
-                   (cand (org-format-outline-path (org-get-outline-path 'with-self 'use-cache))))
+                   (cand (org-format-outline-path
+                          (org-get-outline-path 'with-self 'use-cache)
+                          most-positive-fixnum)))
          (when prefix
            (setq cand (concat buffer " " cand))
            (put-text-property 0 (1+ (length buffer)) 'consult-org--buffer t cand))
