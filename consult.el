@@ -1589,9 +1589,9 @@ See `consult--read' for the CANDIDATES, KEYMAP, ADD-HISTORY, NARROW and PREVIEW-
 (cl-defun consult--read-1 (candidates &rest options &key
                                       prompt predicate require-match history default
                                       keymap category initial narrow add-history annotate
-                                      state preview-key sort default-top lookup title)
+                                      state preview-key sort lookup title)
   "See `consult--read' for documentation."
-  (ignore default-top narrow add-history keymap)
+  (ignore narrow add-history keymap)
   (consult--minibuffer-with-setup-hook
       (:append (lambda () (apply #'consult--read-setup candidates options)))
     (consult--with-async (async candidates)
@@ -1650,7 +1650,7 @@ See `consult--read' for the CANDIDATES, KEYMAP, ADD-HISTORY, NARROW and PREVIEW-
 (cl-defun consult--read (candidates &rest options &key
                                       prompt predicate require-match history default
                                       keymap category initial narrow add-history annotate
-                                      state preview-key sort default-top lookup title)
+                                      state preview-key sort lookup title)
   "Enhanced completing read function selecting from CANDIDATES.
 
 Keyword OPTIONS:
@@ -1666,7 +1666,6 @@ SORT should be set to nil if the candidates are already sorted.
 LOOKUP is a lookup function passed the input, candidates and candidate string.
 ANNOTATE is a function passed a candidate string to return an annotation.
 INITIAL is the initial input.
-DEFAULT-TOP must be nil if the default candidate should not be moved to the top.
 STATE is the state function, see `consult--with-preview'.
 TITLE is a title function passed a candidate, returns (transformed-candidate . title)
 PREVIEW-KEY are the preview keys (nil, 'any, a single key or a list of keys).
@@ -1682,14 +1681,13 @@ KEYMAP is a command-specific keymap."
                  (and (consp (car candidates)) (symbolp (caar candidates))))) ;; symbol alist
   (ignore prompt predicate require-match history default
           keymap category initial narrow add-history annotate
-          state preview-key sort default-top lookup title)
+          state preview-key sort lookup title)
   (apply #'consult--read-1 candidates
          (append (alist-get this-command consult-config)
                  options
                  (list :prompt "Select: "
                        :preview-key consult-preview-key
                        :sort t
-                       :default-top t
                        :lookup (lambda (_input _cands x) x)))))
 
 ;;;; Internal API: consult--multi
@@ -2134,7 +2132,6 @@ The symbol at point and the last `isearch-string' is added to the future history
      :annotate (consult--line-prefix)
      :category 'consult-location
      :sort nil
-     :default-top nil
      :require-match t
      ;; Always add last isearch string to future history
      :add-history (list (thing-at-point 'symbol) isearch-string)

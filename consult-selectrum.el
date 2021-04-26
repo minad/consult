@@ -29,7 +29,6 @@
 (defvar selectrum-fix-vertical-window-height)
 (defvar selectrum-highlight-candidates-function)
 (defvar selectrum-is-active)
-(defvar selectrum-move-default-candidate)
 (defvar selectrum-refine-candidates-function)
 (declare-function selectrum-exhibit "ext:selectrum")
 (declare-function selectrum-get-current-candidate "ext:selectrum")
@@ -63,11 +62,9 @@
       (kill-local-variable 'selectrum-default-value-format))
     (selectrum-exhibit 'keep-selected)))
 
-(cl-defun consult-selectrum--read-setup-adv (candidates &key default-top &allow-other-keys)
+(defun consult-selectrum--read-setup-adv (candidates &rest _)
   "Advice for `consult--read-setup' for Selectrum specific setup.
-
-See `consult--read' for the CANDIDATES and DEFAULT-TOP arguments."
-  (setq-local selectrum-move-default-candidate default-top)
+See `consult--read' for the CANDIDATES argument."
   ;; Fix selectrum height for async completion table
   (when (functionp candidates) (setq-local selectrum-fix-vertical-window-height t)))
 
