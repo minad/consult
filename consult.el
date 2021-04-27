@@ -50,7 +50,6 @@
 (require 'bookmark)
 (require 'kmacro)
 (require 'recentf)
-(require 'ring)
 (require 'seq)
 
 (defgroup consult nil
@@ -2855,6 +2854,7 @@ for which the command history is used."
                       major-mode)))
         (symbol-value (cdr history))))))
 
+(declare-function ring-elements "ring")
 ;; This command has been adopted from https://github.com/oantolin/completing-history/.
 ;;;###autoload
 (defun consult-history (&optional history)
