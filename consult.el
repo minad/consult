@@ -295,6 +295,16 @@ command options."
 Each element of the list must have the form '(char name handler)."
   :type '(repeat (list character string function)))
 
+(defcustom consult-line-thing-at-point '(region url symbol sexp)
+  "A list of symbols to try to get the \"thing\" at point.
+
+Each element of the list should be one of the symbols supported
+by `thing-at-point'. This variable is used by the command
+`consult-line-thing-at-point' to yank the initial \"thing\" as
+text to the search string."
+  :type '(repeat (symbol :tag "Thing symbol"))
+  :group 'consult)
+
 (defcustom consult-config nil
   "Command configuration alist, which allows fine-grained configuration.
 
@@ -2155,6 +2165,29 @@ The symbol at point and the last `isearch-string' is added to the future history
      :initial (or initial
                   (and isearch-mode (prog1 isearch-string (isearch-done))))
      :state (consult--jump-state))))
+
+;;;###autoload
+(defun consult-line-thing-at-point (&optional start)
+  "Search for the \"thing\" found near point and jump to the line beginning.
+
+The search starting point is changed if the START prefix argument is set.
+Like ordinary `consult-line' except that the \"thing\" found at point is added
+to the search string initially. The \"thing\" is defined by `thing-at-point'.
+You can customize the variable `consult-line-thing-at-point' to define a list
+of symbols to try to find a \"thing\" at point. For example, when the list
+contains the symbol `region' and the region is active, then text from the
+active region is added to the search string."
+  (interactive (list (not (not current-prefix-arg))))
+  (let ((thing (seq-some (lambda (thing)
+                            (thing-at-point thing t))
+                          consult-line-thing-at-point)))
+    (cond
+     (thing
+      (when (use-region-p)
+        (deactivate-mark))
+      (consult-line thing start))
+     (t
+      (user-error "No thing at point")))))
 
 ;;;;; Command: consult-keep-lines
 
