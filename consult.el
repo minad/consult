@@ -1587,7 +1587,7 @@ See `consult--read' for the CANDIDATES, KEYMAP, ADD-HISTORY, NARROW and PREVIEW-
   "Affixate CANDS with annotation function FUN."
   (mapcar (lambda (cand)
             (let ((ann (funcall fun cand)))
-              (if (consp ann) ann (list cand (or ann "")))))
+              (if (consp ann) ann (list cand "" (or ann "")))))
           cands))
 
 (cl-defun consult--read-1 (candidates &rest options &key
