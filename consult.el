@@ -2477,22 +2477,18 @@ These configuration options are supported:
     * :completion-styles - Use completion styles (def: `completion-styles')
     * :require-match - Require matches when completing (def: nil)
     * :prompt - The prompt string shown in the minibuffer"
-  (cl-letf* ((config (alist-get #'consult-completion-in-region consult-config))
-             ;; Overwrite both the local and global value of `completion-styles', such that the
-             ;; `completing-read' minibuffer sees the overwritten value in any case. This is
-             ;; necessary if `completion-styles' is buffer-local.
-             (cs (or (plist-get config :completion-styles) completion-styles))
-             (completion-styles cs)
-             ((default-value 'completion-styles) cs)
-             (prompt (or (plist-get config :prompt) "Completion: "))
-             (require-match (plist-get config :require-match))
-             (preview-key (if (plist-member config :preview-key)
-                              (plist-get config :preview-key)
-                            consult-preview-key))
-             (initial (buffer-substring-no-properties start end))
-             (metadata (completion-metadata initial collection predicate))
-             (threshold (or (plist-get config :cycle-threshold) (completion--cycle-threshold metadata)))
-             (all (completion-all-completions initial collection predicate (length initial))))
+  (let* ((config (alist-get #'consult-completion-in-region consult-config))
+         (cs (or (plist-get config :completion-styles) completion-styles))
+         (completion-styles cs)
+         (prompt (or (plist-get config :prompt) "Completion: "))
+         (require-match (plist-get config :require-match))
+         (preview-key (if (plist-member config :preview-key)
+                          (plist-get config :preview-key)
+                        consult-preview-key))
+         (initial (buffer-substring-no-properties start end))
+         (metadata (completion-metadata initial collection predicate))
+         (threshold (or (plist-get config :cycle-threshold) (completion--cycle-threshold metadata)))
+         (all (completion-all-completions initial collection predicate (length initial))))
     ;; error if `threshold' is t or the improper list `all' is too short
     (if (and threshold
 	     (or (not (consp (ignore-errors (nthcdr threshold all))))
@@ -2521,16 +2517,19 @@ These configuration options are supported:
                        ;; candidate function
                        (apply-partially #'run-hook-with-args-until-success
                                         'consult--completion-candidate-hook)
-                     (let ((enable-recursive-minibuffers t))
-                       (if (eq category 'file)
-                           ;; When completing files with consult-completion-in-region, the point in the
-                           ;; minibuffer gets placed initially at the beginning of the last path component.
-                           ;; By using the filename as DIR argument (second argument of read-file-name), it
-                           ;; starts at the end of minibuffer contents, as for other types of completion.
-                           ;; However this is undefined behavior since initial does not only contain the
-                           ;; directory, but also the filename.
-                           (read-file-name prompt initial initial require-match nil predicate)
-                         (completing-read prompt collection predicate require-match initial)))))))))
+                     ;; Ensure that the minibuffer sees the modified `completion-styles'.
+                     (consult--minibuffer-with-setup-hook
+                         (lambda () (setq-local completion-styles cs))
+                       (let ((enable-recursive-minibuffers t))
+                         (if (eq category 'file)
+                             ;; When completing files with consult-completion-in-region, the point in the
+                             ;; minibuffer gets placed initially at the beginning of the last path component.
+                             ;; By using the filename as DIR argument (second argument of read-file-name), it
+                             ;; starts at the end of minibuffer contents, as for other types of completion.
+                             ;; However this is undefined behavior since initial does not only contain the
+                             ;; directory, but also the filename.
+                             (read-file-name prompt initial initial require-match nil predicate)
+                           (completing-read prompt collection predicate require-match initial))))))))))
         (if completion
             (progn
               (delete-region start end)
