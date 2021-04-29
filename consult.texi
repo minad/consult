@@ -1179,7 +1179,7 @@ depending on your personal preferences.
 @item
 @uref{https://github.com/justbur/emacs-which-key, which-key}: Helpful mode showing keybindings, also shows the Consult narrowing keys
 @item
-@uref{https://github.com/raxod502/prescient.el, prescient}: Sorts completion candidates according to frecency (Selectrum specific).
+@uref{https://github.com/raxod502/prescient.el, prescient}: Sorts completion candidates according to frequency (Selectrum specific).
 @end itemize
 
 Note that all packages are independent and can potentially be exchanged with
