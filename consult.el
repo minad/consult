@@ -1268,7 +1268,7 @@ the comma is passed to ASYNC, the second part is used for filtering."
 ASYNC is the async function which receives the candidates.
 CMD is the command argument list.
 PROPS are optional properties passed to `make-process'."
-  (let ((proc) (last-args) (indicator) (count))
+  (let ((proc) (last-args) (indicator) (count) (proc-filter))
     (lambda (action)
       (pcase action
         ("" ;; If no input is provided kill current process
@@ -1299,17 +1299,18 @@ PROPS are optional properties passed to `make-process'."
                    :noquery t
                    :command args
                    :filter
-                   (lambda (_ out)
-                     (when flush
-                       (setq flush nil)
-                       (funcall async 'flush))
-                     (let ((lines (split-string out "\n")))
-                       (if (not (cdr lines))
-                           (setq rest (concat rest (car lines)))
-                         (setcar lines (concat rest (car lines)))
-                         (setq rest (car (last lines)))
-                         (setq count (+ count (length lines) -1))
-                         (funcall async (nbutlast lines)))))
+                   (setq proc-filter
+                         (lambda (_ out)
+                           (when flush
+                             (setq flush nil)
+                             (funcall async 'flush))
+                           (let ((lines (split-string out "\n")))
+                             (if (not (cdr lines))
+                                 (setq rest (concat rest (car lines)))
+                               (setcar lines (concat rest (car lines)))
+                               (setq rest (car (last lines)))
+                               (setq count (+ count (length lines) -1))
+                               (funcall async (nbutlast lines))))))
                    :sentinel
                    (lambda (_ event)
                      (when flush
@@ -1342,6 +1343,23 @@ PROPS are optional properties passed to `make-process'."
         ('setup
          (setq indicator (make-overlay (- (minibuffer-prompt-end) 2)
                                        (- (minibuffer-prompt-end) 1)))
+         (let ((setup-hook) (exit-hook)
+               (minibuffer-depth (minibuffer-depth)))
+           (setq setup-hook
+                 (lambda ()
+                   ;; Pause process when entering a recursive minibuffer
+                   (set-process-filter proc t)))
+           (setq exit-hook
+                 (lambda ()
+                   (cond
+                    ((<= (minibuffer-depth) minibuffer-depth)
+                     (remove-hook 'minibuffer-setup-hook setup-hook)
+                     (remove-hook 'minibuffer-exit-hook exit-hook))
+                    ((eql (minibuffer-depth) (1+ minibuffer-depth))
+                     ;; Resume process when returning to this minibuffer
+                     (set-process-filter proc proc-filter)))))
+           (add-hook 'minibuffer-exit-hook exit-hook)
+           (add-hook 'minibuffer-setup-hook setup-hook))
          (funcall async 'setup))
         (_ (funcall async action))))))
 
