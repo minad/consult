@@ -101,7 +101,7 @@ FETCHER and ALIST arguments."
                            ('nil #'switch-to-buffer)))
             (consult-xref--preview fun))
           :lookup #'consult--lookup-candidate)
-       (cdar candidates))
+       (get-text-property 0 'consult--candidate (car candidates)))
      display)))
 
 (provide 'consult-xref)
