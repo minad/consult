@@ -4,8 +4,8 @@
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2020
 ;; License: GPL-3.0-or-later
-;; Version: 0.6
-;; Package-Requires: ((consult "0.6") (flycheck "31") (emacs "26.1"))
+;; Version: 0.7
+;; Package-Requires: ((consult "0.7") (flycheck "31") (emacs "26.1"))
 ;; Homepage: https://github.com/minad/consult
 
 ;; This file is not part of GNU Emacs.

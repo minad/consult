@@ -2,7 +2,7 @@
 #+author: Daniel Mendler
 #+language: en
 
-* Development (main branch)
+* Version 0.7 (2021-04-29)
 
 - Bugfixes
 - =consult-buffer=: Respect =confirm-nonexistent-file-or-buffer=
