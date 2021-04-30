@@ -985,7 +985,7 @@ FACE is the cursor face."
 (defun consult--with-preview-1 (preview-key state transform candidate fun)
   "Add preview support for FUN.
 
-See consult--with-preview for the arguments PREVIEW-KEY, STATE, TRANSFORM and CANDIDATE."
+See `consult--with-preview' for the arguments PREVIEW-KEY, STATE, TRANSFORM and CANDIDATE."
   (let ((input "") (selected))
     (consult--minibuffer-with-setup-hook
         (if (and state preview-key)
@@ -1257,7 +1257,7 @@ the comma is passed to ASYNC, the second part is used for filtering."
       (_ (funcall async action)))))
 
 (defun consult--async-log (formatted &rest args)
-  "Log FORMATTED ARGS to `consult--async-log'."
+  "Log FORMATTED ARGS to `v/consult--async-log'."
   (with-current-buffer (get-buffer-create consult--async-log)
     (goto-char (point-max))
     (insert (apply #'format formatted args))))
