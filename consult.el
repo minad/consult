@@ -1195,19 +1195,17 @@ BIND is the asynchronous function binding."
 (defun consult--async-sink ()
   "Create ASYNC sink function.
 
-The async function should accept a single action argument.
-Only for the 'setup action, it is guaranteed that the call
-originates from the minibuffer. For the other actions no
-assumptions can be made.
-Depending on the argument, the caller context differ.
+An async function must accept a single action argument. For the 'setup action
+it is guaranteed that the call originates from the minibuffer. For the other
+actions no assumption about the context can be made.
 
-'setup   Setup the internal state.
-'destroy Destroy the internal state.
+'setup   Setup the internal closure state.
+'destroy Destroy the internal closure state.
 'flush   Flush the list of candidates.
 'refresh Request UI refresh.
-nil      Get the list of candidates.
-List     Append the list to the list of candidates.
-String   The input string, called when the user enters something."
+nil      Return the current list of candidates.
+list     Append the list to the already existing list of candidates.
+string   The input string. Called when the user enters something."
   (let ((candidates)
         (buffer))
     (lambda (action)
