@@ -177,7 +177,11 @@ for navigation commands like `consult-line'."
   :type 'integer)
 
 (defcustom consult-buffer-filter
-  '("\\` " "\\`\\*Completions\\*\\'" "\\`\\*tramp/.*\\*\\'")
+  '("\\` "
+    "\\`\\*Completions\\*\\'"
+    "\\`\\*Flymake log\\*\\'"
+    "\\`\\*Semantic SymRef\\*\\'"
+    "\\`\\*tramp/.*\\*\\'")
   "Filter regexps for `consult-buffer'.
 
 The default setting is to filter only ephemeral buffer names beginning
