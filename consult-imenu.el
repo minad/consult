@@ -82,9 +82,9 @@ TYPES is the mode-specific types configuration."
            (consult-imenu--flatten next-prefix next-face (cdr item) types))
        (let* ((name (car item))
               (key (if prefix (concat prefix " " (propertize name 'face face)) name))
-              (payload (cdr item)))
-         (list (cons key
-                     (pcase payload
+              (payload (cdr item))
+              marker)
+         (setq marker (pcase payload
                        ;; Simple marker item
                        ((pred markerp) payload)
                        ;; Simple integer item
@@ -96,7 +96,10 @@ TYPES is the mode-specific types configuration."
                         (nconc
                          (list pos #'consult-imenu--special (current-buffer) name fn)
                          args))
-                       (_ (error "Unknown imenu item: %S" item))))))))
+                       (_ (error "Unknown imenu item: %S" item))))
+         (setq key (propertize key 'marker marker))
+         (list (cons key
+                     payload)))))
    list))
 
 (defun consult-imenu--compute ()
@@ -185,10 +188,21 @@ The symbol at point is added to the future history."
            (eq (get-text-property 0 'consult--type (car cand)) consult--narrow))
          narrow))
       :category 'imenu
-      :lookup #'consult--lookup-cons
+      :lookup #'consult-imenu--lookup-cons
       :history 'consult-imenu--history
       :add-history (thing-at-point 'symbol)
       :sort nil))))
+
+(defun consult-imenu--lookup-testfn (a b)
+  (let ((am (get-text-property 0 'marker a))
+        (bm (get-text-property 0 'marker b)))
+    (and (equal a b)
+         (equal am bm))))
+
+(defun consult-imenu--lookup-cons (_ candidates cand)
+  "Lookup CAND in CANDIDATES alist, return cons."
+  (assoc cand candidates #'consult-imenu--lookup-testfn))
+
 
 ;;;###autoload
 (defun consult-imenu ()
