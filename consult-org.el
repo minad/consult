@@ -67,9 +67,9 @@ MATCH, SCOPE and SKIP are as in `org-map-entries'."
                    (cand (org-format-outline-path
                           (org-get-outline-path 'with-self 'use-cache)
                           most-positive-fixnum)))
-         (when prefix
-           (setq cand (concat buffer " " cand))
-           (put-text-property 0 (1+ (length buffer)) 'consult-org--buffer t cand))
+         (setq cand (if prefix
+                        (concat buffer " " cand (consult--tofu-encode (point)))
+                      (concat cand (consult--tofu-encode (point)))))
          (put-text-property 0 1 'consult-org--heading (list (point-marker) level todo prio) cand)
          cand))
      match scope skip)))
@@ -96,9 +96,10 @@ buffer are offered."
      :title
      (when prefix
        (lambda (cand transform)
-         (if transform
-             (substring cand (next-single-property-change 0 'consult-org--buffer cand))
-           (buffer-name (marker-buffer (car (get-text-property 0 'consult-org--heading cand)))))))
+         (let ((name (buffer-name
+                      (marker-buffer
+                       (car (get-text-property 0 'consult-org--heading cand))))))
+           (if transform (substring cand (1+ (length name))) name))))
      :lookup
      (lambda (_ candidates cand)
        (when-let (found (member cand candidates))
