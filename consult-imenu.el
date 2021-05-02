@@ -121,6 +121,16 @@ TYPES is the mode-specific types configuration."
      (mapcar (pcase-lambda (`(,x ,y ,z)) (list y x z))
              (plist-get config :types)))))
 
+(defun consult-imenu--deduplicate (items)
+  "Deduplicate imenu ITEMS by appending a counter."
+  ;; Some imenu backends generate duplicate items (e.g. for overloaded methods in java)
+  (let ((ht (make-hash-table :test #'equal :size (length items))))
+    (dolist (item items)
+      (if-let (count (gethash (car item) ht))
+          (setcar item (format "%s (%s)" (car item)
+                               (puthash (car item) (1+ count) ht)))
+        (puthash (car item) 0 ht)))))
+
 (defun consult-imenu--items ()
   "Return cached imenu candidates."
   (unless (equal (car consult-imenu--cache) (buffer-modified-tick))
@@ -160,6 +170,7 @@ The symbol at point is added to the future history."
                  (plist-get (cdr (seq-find (lambda (x) (derived-mode-p (car x)))
                                            consult-imenu-config))
                             :types))))
+    (consult-imenu--deduplicate items)
     (consult-imenu--jump
      (consult--read
       (or items (user-error "Imenu is empty"))
