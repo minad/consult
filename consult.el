@@ -433,7 +433,8 @@ Used by `consult-completion-in-region', `consult-yank' and `consult-history'.")
   (list #'consult--default-completion-candidate)
   "Get candidate from completion system.")
 
-(defvar consult--completion-refresh-hook nil
+(defvar consult--completion-refresh-hook
+  (list #'consult--default-completion-refresh)
   "Refresh completion system.")
 
 (defvar-local consult--preview-function nil
@@ -3559,6 +3560,11 @@ The completion category is used to find the completion style via
             str cands nil (length str)
             `(metadata (category . ,category)))
            nil)))
+
+(defun consult--default-completion-refresh ()
+  "Refresh *Completions* buffer."
+  (when (get-buffer-window "*Completions*")
+    (minibuffer-completion-help)))
 
 ;; Announce now that consult has been loaded
 (provide 'consult)
