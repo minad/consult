@@ -3457,21 +3457,22 @@ See `consult-grep' for more details."
 (defun consult--find (prompt cmd initial)
   "Run find CMD in current directory with INITIAL input.
 
+The function returns the selected file.
+The filename at point is added to the future history.
+
 PROMPT is the prompt.
-CMD is the find argument string.
-The filename at point is added to the future history."
-  (find-file
-   (consult--read
-    (consult--async-command cmd
-      (consult--async-map (lambda (x) (string-remove-prefix "./" x)))
-      :file-handler t) ;; allow tramp
-    :prompt prompt
-    :sort nil
-    :require-match t
-    :initial (concat consult-async-default-split initial)
-    :add-history (concat consult-async-default-split (thing-at-point 'filename))
-    :category 'file
-    :history '(:input consult--find-history))))
+CMD is the find argument string."
+  (consult--read
+   (consult--async-command cmd
+     (consult--async-map (lambda (x) (string-remove-prefix "./" x)))
+     :file-handler t) ;; allow tramp
+   :prompt prompt
+   :sort nil
+   :require-match t
+   :initial (concat consult-async-default-split initial)
+   :add-history (concat consult-async-default-split (thing-at-point 'filename))
+   :category 'file
+   :history '(:input consult--find-history)))
 
 ;;;###autoload
 (defun consult-find (&optional dir initial)
@@ -3482,7 +3483,7 @@ See `consult-grep' for more details regarding the asynchronous search."
   (interactive "P")
   (let* ((prompt-dir (consult--directory-prompt "Find" dir))
          (default-directory (cdr prompt-dir)))
-    (consult--find (car prompt-dir) consult-find-command initial)))
+    (find-file (consult--find (car prompt-dir) consult-find-command initial))))
 
 ;;;###autoload
 (defun consult-locate (&optional initial)
@@ -3491,7 +3492,7 @@ See `consult-grep' for more details regarding the asynchronous search."
 The locate process is started asynchronously, similar to `consult-grep'.
 See `consult-grep' for more details regarding the asynchronous search."
   (interactive)
-  (consult--find "Locate: " consult-locate-command initial))
+  (find-file (consult--find "Locate: " consult-locate-command initial)))
 
 ;;;;; Command: consult-man
 
