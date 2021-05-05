@@ -52,6 +52,10 @@
 (require 'recentf)
 (require 'seq)
 
+(autoload 'dom-attr "dom")
+(autoload 'dom-by-tag "dom")
+(autoload 'xdg-data-home "xdg")
+
 (defgroup consult nil
   "Consulting `completing-read'."
   :group 'convenience
@@ -298,6 +302,10 @@ command options."
 
 Each element of the list must have the form '(char name handler)."
   :type '(repeat (list character string function)))
+
+(defcustom consult-include-system-recent-files nil
+  "Whether to include files used by other programs in `consult-recent-file'."
+  :type 'boolean)
 
 (defcustom consult-config nil
   "Command configuration alist, which allows fine-grained configuration.
@@ -2409,13 +2417,86 @@ narrowing and the settings `consult-goto-line-numbers' and
             (funcall open))
         (funcall preview (and cand (funcall open cand)) nil)))))
 
+(defun consult--xdg-recent-file-list ()
+  "Get a list of recently used files on XDG-compliant systems.
+
+This function extracts a list of files from the file
+`recently-used.xbel' in the folder `xdg-data-home'.
+
+For more information on this specification, see
+https://www.freedesktop.org/wiki/Specifications/desktop-bookmark-spec/"
+  (let ((data-file (expand-file-name "recently-used.xbel" (xdg-data-home)))
+        (xml-parsing-func (if (libxml-available-p)
+                              #'libxml-parse-xml-region
+                            #'xml-parse-region)))
+    (if (file-readable-p data-file)
+        (delq nil
+              (mapcar (lambda (bookmark-node)
+                        (when-let ((local-path (string-remove-prefix
+                                                "file://"
+                                                (dom-attr bookmark-node 'href))))
+                          (let ((full-file-name (decode-coding-string
+                                                 (url-unhex-string local-path)
+                                                 'utf-8)))
+                            (when (file-exists-p full-file-name)
+                              full-file-name))))
+                      (nreverse (dom-by-tag (with-temp-buffer
+                                              (insert-file-contents data-file)
+                                              (funcall xml-parsing-func
+                                                       (point-min)
+                                                       (point-max)))
+                                            'bookmark))))
+      (message "consult: List of XDG recent files not found"))))
+
+(defun consult--recent-system-files ()
+  "Return a list of files recently used by the system."
+  (cl-case system-type
+        (gnu/linux
+         (consult--xdg-recent-file-list))
+        (t
+         (message "consult-recent-file: \"%s\" currently unsupported"
+                  system-type))))
+
+(defun consult--recent-files-sort (file-list)
+  "Sort the FILE-LIST by modification time, from most recent to least recent."
+  (thread-last
+      file-list
+    ;; Use modification time, since getting file access time seems to count as
+    ;; accessing the file, ruining future uses.
+    (mapcar (lambda (f)
+              (cons f (file-attribute-modification-time (file-attributes f)))))
+    (seq-sort (pcase-lambda (`(,f1 . ,t1) `(,f2 . ,t2))
+                ;; Want existing, most recent, local files first.
+                (cond ((or (not (file-exists-p f1))
+                           (file-remote-p f1))
+                       nil)
+                      ((or (not (file-exists-p f2))
+                           (file-remote-p f2))
+                       t)
+                      (t (time-less-p t2 t1)))))
+    (mapcar #'car)))
+
+(defun consult--recent-files-mixed-candidates ()
+  "Return a list of files recently used by Emacs and the system.
+
+These files are sorted by modification time, from most recent to least."
+  (thread-last
+      (consult--recent-system-files)
+    (seq-filter #'recentf-include-p)
+    (append (mapcar #'substring-no-properties recentf-list))
+    delete-dups
+    (consult--recent-files-sort)))
+
 ;;;###autoload
 (defun consult-recent-file ()
   "Find recent using `completing-read'."
   (interactive)
   (find-file
    (consult--read
-    (or (mapcar #'abbreviate-file-name recentf-list)
+    (or (mapcar #'abbreviate-file-name
+                (if consult-include-system-recent-files
+                    (consult--recent-files-mixed-candidates)
+                  recentf-list))
         (user-error "No recent files"))
     :prompt "Find recent file: "
     :sort nil
@@ -3231,8 +3312,41 @@ The command supports previewing the currently selected theme."
     ,(lambda ()
        (let ((ht (consult--cached-buffer-file-hash)))
          (mapcar #'abbreviate-file-name
-                 (seq-remove (lambda (x) (gethash x ht)) recentf-list)))))
+                 (seq-remove (lambda (x) (gethash x ht))
+                             (if consult-include-system-recent-files
+                                 (consult--recent-files-mixed-candidates)
+                               recentf-list))))))
   "Recent file candidate source for `consult-buffer'.")
+
+(defvar consult--source-system-file
+  `(:name     "System file"
+    :narrow   ?F
+    :category file
+    :face     consult-file
+    :history  file-name-history
+    :action   ,#'consult--file-action
+    :items
+    ,(lambda ()
+       (let ((ht (consult--cached-buffer-file-hash)))
+         (mapcar #'abbreviate-file-name
+                 (seq-remove (lambda (x) (gethash x ht))
+                             (consult--recent-system-files))))))
+  "Recent system file candidate source for `consult-buffer'.")
+
+(defvar consult--source-mixed-file
+  `(:name     "File"
+    :narrow   ?f
+    :category file
+    :face     consult-file
+    :history  file-name-history
+    :action   ,#'consult--file-action
+    :items
+    ,(lambda ()
+       (let ((ht (consult--cached-buffer-file-hash)))
+         (mapcar #'abbreviate-file-name
+                 (seq-remove (lambda (x) (gethash x ht))
+                             (consult--recent-files-mixed-candidates))))))
+  "File candidate source for `consult-buffer', including system files.")
 
 ;;;###autoload
 (defun consult-buffer ()
