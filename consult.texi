@@ -1262,10 +1262,14 @@ lexical closures.
 @chapter Contributions
 
 Consult is intended to be a community effort, please participate in the
-discussions. Contributions are welcome. If you have a proposal, take a look
-first at the @uref{https://github.com/consult/issues, Consult issue tracker} and the @uref{https://github.com/minad/consult/issues/6, Consult wishlist}. For small
-configuration or command snippets you may want to share, there is the @uref{https://github.com/minad/consult/wiki, Consult
-wiki}.
+discussions. Contributions are welcome, but it is recommended to discuss
+potential contributions first. Since it is planned to submit the package to GNU
+ELPA, copyright assigments to the FSF are a requirement for contributions.
+
+If you have a proposal, take a look at the @uref{https://github.com/consult/issues, Consult issue tracker} and the @uref{https://github.com/minad/consult/issues/6, Consult
+wishlist}. There exists a rich set of prior feature discussions. You can
+contribute to the @uref{https://github.com/minad/consult/wiki, Consult wiki}, in case you want to share small configuration or
+command snippets.
 
 @node Acknowledgements
 @chapter Acknowledgements
