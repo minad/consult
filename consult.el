@@ -184,8 +184,8 @@ for navigation commands like `consult-line'."
     "\\`\\*tramp/.*\\*\\'")
   "Filter regexps for `consult-buffer'.
 
-The default setting is to filter only ephemeral buffer names beginning
-with a space character."
+The default setting is to filter ephemeral buffer names beginning with a space
+character, the *Completions* buffer and a few log buffers."
   :type '(repeat regexp))
 
 (defcustom consult-buffer-sources

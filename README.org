@@ -92,7 +92,7 @@ variables and functions with their descriptions.
    of =switch-to-buffer= with support for virtual buffers. Supports live preview
    of buffers and narrowing to the virtual buffer types. You can type =f SPC= in
    order to narrow to recent files. Ephemeral buffers can be shown by pressing
-   =SPC= - it works the same way as =switch-buffer=. Supported narrowing keys:
+   =SPC=. Supported narrowing keys:
    - b Buffers
    - f Files (Requires =recentf-mode=)
    - m Bookmarks
@@ -457,18 +457,15 @@ variables and functions with their descriptions.
    must be longer than =consult-async-min-input= characters by default.
  - =#defun -- --invert-match#=: Pass argument =--invert-match= to grep.
 
- For asynchronous processes like =find= and =grep=, the prompt has a small
- indicator showing the process status:
+ For asynchronous processes like =find= and =grep=,
+ there is an error log buffer =_*consult-async*= (note the leading space).
+ The prompt has a small indicator showing the process status:
 
  - =:= the usual prompt colon, before input is provided.
  - =*= with warning face, the process is running.
  - =:= with success face, success, process exited with an error code of zero.
  - =!= with error face, failure, process exited with a nonzero error code.
  - =;= with error face, interrupted, for example if more input is provided.
-
- There is an ephemeral error log buffer =_*consult-async*= (note the leading space),
- you can access the buffer using =consult-buffer= and =switch-to-buffer= by first pressing =SPC=
- and then selecting the buffer.
 
 ** Multiple sources
    :properties:

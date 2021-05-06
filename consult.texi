@@ -155,7 +155,7 @@ variables and functions with their descriptions.
 of @samp{switch-to-buffer} with support for virtual buffers. Supports live preview
 of buffers and narrowing to the virtual buffer types. You can type @samp{f SPC} in
 order to narrow to recent files. Ephemeral buffers can be shown by pressing
-@samp{SPC} - it works the same way as @samp{switch-buffer}. Supported narrowing keys:
+@samp{SPC}. Supported narrowing keys:
 @itemize
 @item
 b Buffers
@@ -586,8 +586,9 @@ must be longer than @samp{consult-async-min-input} characters by default.
 @samp{#defun -- --invert-match#}: Pass argument @samp{--invert-match} to grep.
 @end itemize
 
-For asynchronous processes like @samp{find} and @samp{grep}, the prompt has a small
-indicator showing the process status:
+For asynchronous processes like @samp{find} and @samp{grep},
+there is an error log buffer @samp{_*consult-async*} (note the leading space).
+The prompt has a small indicator showing the process status:
 
 @itemize
 @item
@@ -601,10 +602,6 @@ indicator showing the process status:
 @item
 @samp{;} with error face, interrupted, for example if more input is provided.
 @end itemize
-
-There is an ephemeral error log buffer @samp{_*consult-async*} (note the leading space),
-you can access the buffer using @samp{consult-buffer} and @samp{switch-to-buffer} by first pressing @samp{SPC}
-and then selecting the buffer.
 
 @node Multiple sources
 @section Multiple sources
