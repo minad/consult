@@ -3570,7 +3570,4 @@ The completion category is used to find the completion style via
 (with-eval-after-load 'selectrum (require 'consult-selectrum))
 (with-eval-after-load 'vertico (require 'consult-vertico))
 
-;; Local Variables:
-;; outline-regexp: ";;;;* \\|(def\\(un\\|custom\\|var\\) consult-[a-z]"
-;; End:
 ;;; consult.el ends here
