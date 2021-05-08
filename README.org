@@ -72,10 +72,10 @@ Fig. 3: Command =consult-line=
 
 Most provided commands follow the meaningful naming scheme =consult-<thing>=.
 
-*TIP:* If you have [[https://github.com/minad/marginalia][Marginalia]] installed and heavy annotators enabled, type =M-x
-^consult= to see all Consult commands with their abbreviated description.
-Alternatively, type =C-h a ^consult= to get an overview of all Consult
-variables and functions with their descriptions.
+*TIP:* If you have [[https://github.com/minad/marginalia][Marginalia]] annotators activated, type =M-x ^consult= to see
+all Consult commands with their abbreviated description. Alternatively, type
+=C-h a ^consult= to get an overview of all Consult variables and functions with
+their descriptions.
 
 ** Virtual Buffers
    :properties:
