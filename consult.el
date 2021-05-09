@@ -2270,7 +2270,7 @@ INITIAL is the initial input."
 
 (defun consult--focus-lines-state (filter)
   "State function for `consult-focus-lines' with FILTER function."
-  (let ((lines) (overlays) (last-input))
+  (let ((lines) (overlays) (last-input) (point-orig (point)))
     (save-excursion
       (save-restriction
         (if (not (use-region-p))
@@ -2288,6 +2288,8 @@ INITIAL is the initial input."
         (consult--each-line beg end
           (push (buffer-substring-no-properties beg end) lines)
           (push (make-overlay beg (1+ end)) overlays))))
+    (unless (use-region-p)
+      (goto-char (point-min)))
     (lambda (input restore)
       ;; New input provided -> Update
       (when (and input (not (equal input last-input)))
@@ -2310,15 +2312,16 @@ INITIAL is the initial input."
                   (overlay-put (car ov) 'invisible (eq not (gethash (car li) ht)))
                   (setq li (cdr li) ov (cdr ov))))
               (setq last-input input)))))
-      ;; Sucessfully terminated -> Remember invisible overlays
-      (when (and input restore)
-        (dolist (ov overlays)
-          (if (overlay-get ov 'invisible)
-              (push ov consult--focus-lines-overlays)
-            (delete-overlay ov)))
-        (setq overlays nil))
-      ;; When terminating -> Destroy remaining overlays
       (when restore
+        (if (not input)
+            (goto-char point-orig)
+          ;; Sucessfully terminated -> Remember invisible overlays
+          (dolist (ov overlays)
+            (if (overlay-get ov 'invisible)
+                (push ov consult--focus-lines-overlays)
+              (delete-overlay ov)))
+          (setq overlays nil))
+        ;; Destroy remaining overlays
         (mapc #'delete-overlay overlays)))))
 
 ;;;###autoload
