@@ -26,7 +26,6 @@
 
 ;; NOTE: It is not guaranteed that Selectrum is available during compilation!
 (defvar selectrum-default-value-format)
-(defvar selectrum-fix-vertical-window-height)
 (defvar selectrum-highlight-candidates-function)
 (defvar selectrum-is-active)
 (defvar selectrum-refine-candidates-function)
@@ -62,12 +61,6 @@
       (kill-local-variable 'selectrum-default-value-format))
     (selectrum-exhibit 'keep-selected)))
 
-(defun consult-selectrum--read-setup-adv (candidates &rest _)
-  "Advice for `consult--read-setup' for Selectrum specific setup.
-See `consult--read' for the CANDIDATES argument."
-  ;; Fix selectrum height for async completion table
-  (when (functionp candidates) (setq-local selectrum-fix-vertical-window-height t)))
-
 (defun consult-selectrum--split-wrap (orig split)
   "Wrap candidates highlight/refinement ORIG function, splitting the input using SPLIT."
   (lambda (str cands)
@@ -88,7 +81,6 @@ SPLIT is the splitter function."
 (add-hook 'consult--completion-filter-hook #'consult-selectrum--filter)
 (add-hook 'consult--completion-candidate-hook #'consult-selectrum--candidate)
 (add-hook 'consult--completion-refresh-hook #'consult-selectrum--refresh)
-(advice-add #'consult--read-setup :before #'consult-selectrum--read-setup-adv)
 (advice-add #'consult--split-setup :around #'consult-selectrum--split-setup-adv)
 
 (provide 'consult-selectrum)
