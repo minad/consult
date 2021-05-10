@@ -769,7 +769,7 @@ contributed.
    (setq consult-narrow-key "<") ;; (kbd "C-+")
 
    ;; Optionally make narrowing help available in the minibuffer.
-   ;; Probably not needed if you are using which-key.
+   ;; You may want to use `embark-prefix-help-command' or which-key instead.
    ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
 
    ;; Optionally configure a function which returns the project root directory.
@@ -875,8 +875,8 @@ contributed.
  ;; and disable preview for `consult-theme' completely.
  ;; For `consult-line' specify multiple keybindings.
  ;; Note that you should bind <S-up> and <S-down> in the
- ;; `minibuffer-local-completion-map' or `selectrum-minibuffer-map'
- ;; to the commands which select the previous or next candidate.
+ ;; `minibuffer-local-completion-map', `selectrum-minibuffer-map' or
+ ;; `vertico-map' to the commands which select the previous or next candidate.
  (setf (alist-get 'consult-theme consult-config) '(:preview-key nil))
  (setf (alist-get 'consult-buffer consult-config) `(:preview-key ,(kbd "M-p")))
  (setf (alist-get 'consult-line consult-config) `(:preview-key (,(kbd "<S-down>") ,(kbd "<S-up>"))))
@@ -918,7 +918,6 @@ depending on your personal preferences.
 - [[https://github.com/minad/bookmark-view][bookmark-view]]: Store window configuration as bookmarks, integrates with =consult-buffer=
 - [[https://github.com/d12frosted/flyspell-correct][flyspell-correct]]: Apply spelling corrections by selecting via =completing-read=
 - [[https://github.com/mhayashi1120/Emacs-wgrep][wgrep]]: Editing of grep buffers, can be used together with =consult-grep= via Embark
-- [[https://github.com/justbur/emacs-which-key][which-key]]: Helpful mode showing keybindings, also shows the Consult narrowing keys
 - [[https://github.com/raxod502/prescient.el][prescient]]: Sorts completion candidates according to frecency (Selectrum specific).
 
 Note that all packages are independent and can potentially be exchanged with
@@ -942,7 +941,7 @@ out the following steps:
 1. Check first that *all the relevant packages are updated to the newest version*.
    This includes Consult, Selectrum, Vertico, Icomplete-vertical, Marginalia,
    Embark, Orderless and Prescient in case you are using any of those packages.
-2. Ensure that either =icomplete-mode= or =selectrum-mode= is enabled.
+2. Ensure that either =icomplete-mode=, =selectrum-mode= or =vertico-mode= is enabled.
    Furthermore =ivy-mode= and =helm-mode= must be disabled.
 3. Ensure that the =completion-styles= variable is properly configured. Try to set
    =completion-styles= to a list including =substring= or =orderless=.
@@ -952,8 +951,8 @@ out the following steps:
    settings. If other packages are relevant to reproduce the issue, include them
    in the minimal configuration snippet.
 
+Minimal setup with Selectrum for =emacs -Q=:
 #+begin_src emacs-lisp
-;; Minimal setup using Selectrum
 (package-initialize)
 (require 'consult)
 (require 'selectrum)
@@ -961,8 +960,17 @@ out the following steps:
 (setq completion-styles '(substring))
 #+end_src
 
+Minimal setup with Vertico for =emacs -Q=:
 #+begin_src emacs-lisp
-;; Minimal setup using the default completion system
+(package-initialize)
+(require 'consult)
+(require 'vertico)
+(vertico-mode)
+(setq completion-styles '(substring))
+#+end_src
+
+Minimal setup with the default completion system for =emacs -Q=:
+#+begin_src emacs-lisp
 (package-initialize)
 (require 'consult)
 (setq completion-styles '(substring))
