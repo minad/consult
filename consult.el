@@ -971,8 +971,11 @@ FACE is the cursor face."
                             (vend (progn (end-of-visual-line) (point)))
                             (end (line-end-position)))
                         (consult--overlay vbeg (if (= vend end) (1+ end) vend)
-                                          'face 'consult-preview-line)))
-                    (consult--overlay (point) (1+ (point)) 'face face))))
+                                          'face 'consult-preview-line
+                                          'window (selected-window))))
+                    (consult--overlay (point) (1+ (point))
+                                      'face face
+                                      'window (selected-window)))))
        ;; If position cannot be previewed, return to saved position
        (t (consult--jump-nomark saved-pos))))))
 
@@ -2455,7 +2458,9 @@ of functions and in `consult-completion-in-region'."
       (lambda (cand restore)
         (if restore
             (when ov (delete-overlay ov))
-          (unless ov (setq ov (consult--overlay start end 'invisible t)))
+          (unless ov (setq ov (consult--overlay start end
+                                                'invisible t
+                                                'window (selected-window))))
           ;; Use `add-face-text-property' on a copy of "cand in order to merge face properties
           (setq cand (copy-sequence cand))
           (add-face-text-property 0 (length cand) 'consult-preview-insertion t cand)
