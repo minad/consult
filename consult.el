@@ -2656,7 +2656,7 @@ If no MODES are specified, use currently active major and minor modes."
 ;;;;; Command: consult-yank
 
 (defun consult--read-from-kill-ring ()
-  "Open kill ring menu and return selected text."
+  "Open kill ring menu and return selected string."
   ;; Do not specify a :lookup function in order to preserve completion-styles
   ;; highlighting of the current candidate. We have to perform a final lookup
   ;; to obtain the original candidate which may be propertized with
@@ -2673,10 +2673,9 @@ If no MODES are specified, use currently active major and minor modes."
     :state
     (consult--insertion-preview
      (point)
-     ;; If previous command is yank, hide previously yanked text
+     ;; If previous command is yank, hide previously yanked string
      (or (and (eq last-command 'yank) (mark t)) (point))))))
 
-;; Insert selected text.
 ;; Adapted from the Emacs `yank-from-kill-ring' function.
 ;;;###autoload
 (defun consult-yank-from-kill-ring (string &optional arg)
@@ -2685,7 +2684,7 @@ With prefix ARG, put point at beginning, and mark at end, like `yank' does.
 
 This command behaves like `yank-from-kill-ring' in Emacs 28, which also offers
 a `completing-read' interface to the `kill-ring'. Additionally the Consult
-version supports preview of the selected text."
+version supports preview of the selected string."
   (interactive (list (consult--read-from-kill-ring) current-prefix-arg))
   (when string
     (setq yank-window-start (window-start))
@@ -2711,31 +2710,30 @@ version supports preview of the selected text."
 (defun consult-yank-pop (&optional arg)
   "If there is a recent yank act like `yank-pop'.
 
-Otherwise select text from the kill ring and insert it.
+Otherwise select string from the kill ring and insert it.
 See `yank-pop' for the meaning of ARG.
 
 This command behaves like `yank-pop' in Emacs 28, which also offers a
 `completing-read' interface to the `kill-ring'. Additionally the Consult
-version supports preview of the selected text."
+version supports preview of the selected string."
   (interactive "*p")
   (if (eq last-command 'yank)
       (yank-pop (or arg 1))
     (call-interactively #'consult-yank-from-kill-ring)))
 
-;; Replace just-yanked text with selected text.
 ;; Adapted from the Emacs yank-pop function.
 ;;;###autoload
-(defun consult-yank-replace ()
-  "Select text from the kill ring.
+(defun consult-yank-replace (string)
+  "Select STRING from the kill ring.
 
-If there was no recent yank, insert the text.
-Otherwise replace the just-yanked text with the selected text.
+If there was no recent yank, insert the string.
+Otherwise replace the just-yanked string with the selected string.
 
 There exists no equivalent of this command in Emacs 28."
-  (interactive)
-  (if (not (eq last-command 'yank))
-      (call-interactively #'consult-yank-from-kill-ring)
-    (when-let (string (consult--read-from-kill-ring))
+  (interactive (list (consult--read-from-kill-ring)))
+  (when string
+    (if (not (eq last-command 'yank))
+        (consult-yank-from-kill-ring string)
       (let ((inhibit-read-only t)
             (pt (point))
             (mk (mark t)))
