@@ -2655,7 +2655,7 @@ If no MODES are specified, use currently active major and minor modes."
 
 ;;;;; Command: consult-yank
 
-(defun consult--yank-read ()
+(defun consult--read-from-kill-ring ()
   "Open kill ring menu and return selected text."
   ;; Do not specify a :lookup function in order to preserve completion-styles
   ;; highlighting of the current candidate. We have to perform a final lookup
@@ -2682,7 +2682,7 @@ If no MODES are specified, use currently active major and minor modes."
 (defun consult-yank-from-kill-ring (string &optional arg)
   "Select STRING from the kill ring and insert it.
 With prefix ARG, put point at beginning, and mark at end, like `yank' does."
-  (interactive (list (consult--yank-read) current-prefix-arg))
+  (interactive (list (consult--read-from-kill-ring) current-prefix-arg))
   (when string
     (setq yank-window-start (window-start))
     (push-mark)
@@ -2720,7 +2720,7 @@ Otherwise replace the just-yanked text with the selected text."
   (interactive)
   (if (not (eq last-command 'yank))
       (call-interactively #'consult-yank-from-kill-ring)
-    (when-let (text (consult--yank-read))
+    (when-let (text (consult--read-from-kill-ring))
       (let ((inhibit-read-only t)
             (pt (point))
             (mk (mark t)))
