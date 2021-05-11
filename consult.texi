@@ -188,13 +188,14 @@ enabled in order to track recent files.
 
 @cindex editing
 
-@findex consult-yank
+@findex consult-yank-pop
+@findex consult-yank-from-kill-ring
 @findex consult-kmacro
 @itemize
 @item
-@samp{consult-yank}, @samp{consult-yank-pop}: Enhanced version of @samp{yank} and
-@samp{yank-pop} which allows selecting from the kill-ring. Live preview is
-supported when selecting from the kill-ring.
+@samp{consult-yank-from-kill-ring}, @samp{consult-yank-pop}: Enhanced version of
+@samp{yank} and @samp{yank-pop} which allows selecting from the kill-ring. The selected
+text previewed as overlay in the buffer.
 @item
 @samp{consult-kmacro}: Select macro from the macro ring and execute it.
 @end itemize

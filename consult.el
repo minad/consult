@@ -2665,7 +2665,7 @@ If no MODES are specified, use currently active major and minor modes."
    nil kill-ring
    (consult--read
     (consult--remove-dups kill-ring)
-    :prompt "Yank text: "
+    :prompt "Yank from kill-ring: "
     :history t ;; disable history
     :sort nil
     :category 'consult-yank
@@ -2677,9 +2677,9 @@ If no MODES are specified, use currently active major and minor modes."
      (or (and (eq last-command 'yank) (mark t)) (point))))))
 
 ;; Insert selected text.
-;; Adapted from the Emacs yank function.
+;; Adapted from the Emacs `yank-from-kill-ring' function.
 ;;;###autoload
-(defun consult-yank ()
+(defun consult-yank-from-kill-ring ()
   "Select text from the kill ring and insert it."
   (interactive)
   (when-let (text (consult--yank-read))
@@ -2688,6 +2688,11 @@ If no MODES are specified, use currently active major and minor modes."
     (insert-for-yank text)
     (setq this-command 'yank)
     nil))
+
+(define-obsolete-function-alias
+  'consult-yank
+  'consult-yank-from-kill-ring
+  "0.7")
 
 ;;;###autoload
 (defun consult-yank-pop (&optional arg)
@@ -2698,7 +2703,7 @@ See `yank-pop' for the meaning of ARG."
   (interactive "*p")
   (if (eq last-command 'yank)
       (yank-pop (or arg 1))
-    (consult-yank)))
+    (consult-yank-from-kill-ring)))
 
 ;; Replace just-yanked text with selected text.
 ;; Adapted from the Emacs yank-pop function.
@@ -2710,7 +2715,7 @@ If there was no recent yank, insert the text.
 Otherwise replace the just-yanked text with the selected text."
   (interactive)
   (if (not (eq last-command 'yank))
-      (consult-yank)
+      (consult-yank-from-kill-ring)
     (when-let (text (consult--yank-read))
       (let ((inhibit-read-only t)
             (pt (point))

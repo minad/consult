@@ -116,11 +116,12 @@ their descriptions.
    :end:
  #+cindex: editing
 
- #+findex: consult-yank
+ #+findex: consult-yank-pop
+ #+findex: consult-yank-from-kill-ring
  #+findex: consult-kmacro
- - =consult-yank=, =consult-yank-pop=: Enhanced version of =yank= and
-   =yank-pop= which allows selecting from the kill-ring. Live preview is
-   supported when selecting from the kill-ring.
+ - =consult-yank-from-kill-ring=, =consult-yank-pop=: Enhanced version of
+   =yank= and =yank-pop= which allows selecting from the kill-ring. The selected
+   text previewed as overlay in the buffer.
  - =consult-kmacro=: Select macro from the macro ring and execute it.
 
 ** Register
