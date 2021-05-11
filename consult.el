@@ -2681,7 +2681,11 @@ If no MODES are specified, use currently active major and minor modes."
 ;;;###autoload
 (defun consult-yank-from-kill-ring (string &optional arg)
   "Select STRING from the kill ring and insert it.
-With prefix ARG, put point at beginning, and mark at end, like `yank' does."
+With prefix ARG, put point at beginning, and mark at end, like `yank' does.
+
+This command behaves like `yank-from-kill-ring' in Emacs 28, which also offers
+a `completing-read' interface to the `kill-ring'. Additionally the Consult
+version supports preview of the selected text."
   (interactive (list (consult--read-from-kill-ring) current-prefix-arg))
   (when string
     (setq yank-window-start (window-start))
@@ -2703,7 +2707,11 @@ With prefix ARG, put point at beginning, and mark at end, like `yank' does."
   "If there is a recent yank act like `yank-pop'.
 
 Otherwise select text from the kill ring and insert it.
-See `yank-pop' for the meaning of ARG."
+See `yank-pop' for the meaning of ARG.
+
+This command behaves like `yank-pop' in Emacs 28, which also offers a
+`completing-read' interface to the `kill-ring'. Additionally the Consult
+version supports preview of the selected text."
   (interactive "*p")
   (if (eq last-command 'yank)
       (yank-pop (or arg 1))
@@ -2716,11 +2724,13 @@ See `yank-pop' for the meaning of ARG."
   "Select text from the kill ring.
 
 If there was no recent yank, insert the text.
-Otherwise replace the just-yanked text with the selected text."
+Otherwise replace the just-yanked text with the selected text.
+
+There exists no equivalent of this command in Emacs 28."
   (interactive)
   (if (not (eq last-command 'yank))
       (call-interactively #'consult-yank-from-kill-ring)
-    (when-let (text (consult--read-from-kill-ring))
+    (when-let (string (consult--read-from-kill-ring))
       (let ((inhibit-read-only t)
             (pt (point))
             (mk (mark t)))
@@ -2728,12 +2738,11 @@ Otherwise replace the just-yanked text with the selected text."
         (funcall (or yank-undo-function 'delete-region) (min pt mk) (max pt mk))
         (setq yank-undo-function nil)
         (set-marker (mark-marker) pt (current-buffer))
-        (insert-for-yank text)
+        (insert-for-yank string)
         (set-window-start (selected-window) yank-window-start t)
         (if (< pt mk)
             (goto-char (prog1 (mark t)
-                         (set-marker (mark-marker) (point) (current-buffer))))))))
-  nil)
+                         (set-marker (mark-marker) (point) (current-buffer)))))))))
 
 ;;;;; Command: consult-bookmark
 
