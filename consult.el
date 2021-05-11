@@ -2702,6 +2702,11 @@ version supports preview of the selected text."
   'consult-yank-from-kill-ring
   "0.7")
 
+(put 'consult-yank-replace 'delete-selection 'yank)
+(put 'consult-yank-pop 'delete-selection 'yank)
+(put 'consult-yank 'delete-selection 'yank)
+(put 'consult-yank-from-kill-ring 'delete-selection 'yank)
+
 ;;;###autoload
 (defun consult-yank-pop (&optional arg)
   "If there is a recent yank act like `yank-pop'.
