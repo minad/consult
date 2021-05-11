@@ -118,10 +118,13 @@ their descriptions.
 
  #+findex: consult-yank-pop
  #+findex: consult-yank-from-kill-ring
+ #+findex: consult-yank-replace
  #+findex: consult-kmacro
  - =consult-yank-from-kill-ring=, =consult-yank-pop=: Enhanced version of
    =yank= and =yank-pop= which allows selecting from the kill-ring. The selected
-   text previewed as overlay in the buffer.
+   text previewed as overlay in the buffer. There exists also
+   =consult-yank-replace= which replaces the recently yanked text with a string
+   selected from the =kill-ring=.
  - =consult-kmacro=: Select macro from the macro ring and execute it.
 
 ** Register

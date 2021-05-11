@@ -190,12 +190,15 @@ enabled in order to track recent files.
 
 @findex consult-yank-pop
 @findex consult-yank-from-kill-ring
+@findex consult-yank-replace
 @findex consult-kmacro
 @itemize
 @item
 @samp{consult-yank-from-kill-ring}, @samp{consult-yank-pop}: Enhanced version of
 @samp{yank} and @samp{yank-pop} which allows selecting from the kill-ring. The selected
-text previewed as overlay in the buffer.
+text previewed as overlay in the buffer. There exists also
+@samp{consult-yank-replace} which replaces the recently yanked text with a string
+selected from the @samp{kill-ring}.
 @item
 @samp{consult-kmacro}: Select macro from the macro ring and execute it.
 @end itemize
