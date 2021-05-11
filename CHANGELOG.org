@@ -2,6 +2,17 @@
 #+author: Daniel Mendler
 #+language: en
 
+* Development version
+
+- Async commands: Do not fix vertical height in Selectrum.
+- =consult-imenu=: Deduplicate items (some imenu backends generate duplicates).
+- =consult-org-heading=: Deduplicate items.
+- =consult-buffer-filter=: Hide more buffers.
+- =consult-line=: Matching line preview overlay only in the selected window.
+- =consult-yank/completion-in-region=: Insertion preview only in selected window.
+- =consult-yank=: Rename to =consult-yank-from-kill-ring= (Emacs 28 naming).
+- =consult-yank= commands: =delete-selection-mode= support, added properties.
+
 * Version 0.7 (2021-04-29)
 
 - Bugfixes
