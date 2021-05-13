@@ -375,21 +375,21 @@ command as described in the @uref{https://github.com/minad/consult/wiki, Consult
 @cindex compilation errors
 
 @findex consult-compile-error
-@findex consult-flycheck
 @findex consult-flymake
+@findex consult-flycheck
 @itemize
 @item
 @samp{consult-compile-error}: Jump to a compilation error. Supports live preview
 narrowing and and recursive editing.
 @item
-@samp{consult-flycheck}: Jump to flycheck error. Supports live preview and
-recursive editing. The command supports narrowing. Press @samp{e SPC},
-@samp{w SPC}, @samp{i SPC} to only show errors, warnings and infos respectively.
-This command requires to install the additional @samp{consult-flycheck.el}
-package since the main @samp{consult.el} package only depends on Emacs core
-components.
+@samp{consult-flymake}: Jump to flymake diagnostic. Supports live preview and
+recursive editing. The command supports narrowing. Press @samp{e SPC}, @samp{w SPC}, @samp{n
+  SPC} to only show errors, warnings and notes respectively.
 @item
-@samp{consult-flymake}: Jump to Flymake diagnostic, like @samp{consult-flycheck}.
+@samp{consult-flycheck}: Jump to flycheck error, similar to @samp{consult-flymake}.
+This command requires the installation of the additional @samp{consult-flycheck.el}
+package since the main @samp{consult} package only depends on Emacs core
+components.
 @end itemize
 
 @node Histories
@@ -875,6 +875,7 @@ contributed.
          ("<help> a" . consult-apropos)            ;; orig. apropos-command
          ;; M-g bindings (goto-map)
          ("M-g e" . consult-compile-error)
+         ("M-g f" . consult-flymake)               ;; Alternative: consult-flycheck
          ("M-g g" . consult-goto-line)             ;; orig. goto-line
          ("M-g M-g" . consult-goto-line)           ;; orig. goto-line
          ("M-g o" . consult-outline)
@@ -951,11 +952,6 @@ contributed.
   ;; (setq consult-project-root-function
   ;;       (lambda () (locate-dominating-file "." ".git")))
 )
-
-;; Optionally add the `consult-flycheck' command.
-(use-package consult-flycheck
-  :bind (:map flycheck-command-map
-              ("!" . consult-flycheck)))
 @end lisp
 
 @node Custom variables

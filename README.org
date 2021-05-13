@@ -273,17 +273,17 @@ their descriptions.
  #+cindex: compilation errors
 
 #+findex: consult-compile-error
-#+findex: consult-flycheck
 #+findex: consult-flymake
+#+findex: consult-flycheck
 - =consult-compile-error=: Jump to a compilation error. Supports live preview
   narrowing and and recursive editing.
-- =consult-flycheck=: Jump to flycheck error. Supports live preview and
-  recursive editing. The command supports narrowing. Press =e SPC=,
-  =w SPC=, =i SPC= to only show errors, warnings and infos respectively.
-  This command requires to install the additional =consult-flycheck.el=
-  package since the main =consult.el= package only depends on Emacs core
+- =consult-flymake=: Jump to flymake diagnostic. Supports live preview and
+  recursive editing. The command supports narrowing. Press =e SPC=, =w SPC=, =n
+  SPC= to only show errors, warnings and notes respectively.
+- =consult-flycheck=: Jump to flycheck error, similar to =consult-flymake=.
+  This command requires the installation of the additional =consult-flycheck.el=
+  package since the main =consult= package only depends on Emacs core
   components.
-- =consult-flymake=: Jump to Flymake diagnostic, like =consult-flycheck=.
 
 ** Histories
    :properties:
@@ -720,6 +720,7 @@ contributed.
           ("<help> a" . consult-apropos)            ;; orig. apropos-command
           ;; M-g bindings (goto-map)
           ("M-g e" . consult-compile-error)
+          ("M-g f" . consult-flymake)               ;; Alternative: consult-flycheck
           ("M-g g" . consult-goto-line)             ;; orig. goto-line
           ("M-g M-g" . consult-goto-line)           ;; orig. goto-line
           ("M-g o" . consult-outline)
@@ -796,11 +797,6 @@ contributed.
    ;; (setq consult-project-root-function
    ;;       (lambda () (locate-dominating-file "." ".git")))
  )
-
- ;; Optionally add the `consult-flycheck' command.
- (use-package consult-flycheck
-   :bind (:map flycheck-command-map
-               ("!" . consult-flycheck)))
  #+end_src
 
 ** Custom variables
