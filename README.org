@@ -907,7 +907,6 @@ contributed.
 It is highly recommended to install the following package combination:
 
 - consult: This package
-- consult-flycheck: Provides the =consult-flycheck= command
 - [[https://github.com/raxod502/selectrum][selectrum]], [[https://github.com/minad/vertico][vertico]] or [[https://github.com/oantolin/icomplete-vertical][icomplete-vertical]]: Vertical completion systems
   (Icomplete-vertical is only needed for Emacs 27, built-in on Emacs 28)
 - [[https://github.com/minad/marginalia][marginalia]]: Annotations for the completion candidates
@@ -918,10 +917,11 @@ There exist a few packages which integrate Consult with special programs or with
 other packages in the Emacs ecosystem. You may want to install some of them
 depending on your personal preferences.
 
+- consult-flycheck: Provides the =consult-flycheck= command (maintained in this repository).
+- [[https://github.com/gagbo/consult-lsp][consult-lsp]]: Integration with [[https://github.com/emacs-lsp/lsp-mode][LSP-Mode]] (Language Server Protocol).
 - [[https://codeberg.org/jao/consult-notmuch][consult-notmuch]]: Access the [[https://notmuchmail.org/][Notmuch]] email system using Consult.
 - [[https://codeberg.org/jao/consult-recoll][consult-recoll]]: Access the [[https://www.lesbonscomptes.com/recoll/][Recoll]] desktop full-text search using Consult.
 - [[https://codeberg.org/jao/espotify][consult-spotify]]: Access the Spotify API and control your local music player.
-- [[https://github.com/gagbo/consult-lsp][consult-lsp]]: Integration with [[https://github.com/emacs-lsp/lsp-mode][LSP-Mode]] (Language Server Protocol).
 
 Not directly related to Consult, but maybe still of interest are the following
 packages. These packages should work well with Consult, follow a similar spirit or
