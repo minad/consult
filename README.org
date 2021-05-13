@@ -70,7 +70,11 @@ Fig. 3: Command =consult-line=
   :end:
 #+cindex: commands
 
-Most provided commands follow the meaningful naming scheme =consult-<thing>=.
+Most Consult commands follow the meaningful naming scheme =consult-<thing>=.
+Many commands implement a little known but convenient Emacs feature called
+"future history", which guesses what input the user wants. At a command prompt
+type =M-n= and typically Consult will insert the symbol or thing at point into
+the input.
 
 *TIP:* If you have [[https://github.com/minad/marginalia][Marginalia]] annotators activated, type =M-x ^consult= to see
 all Consult commands with their abbreviated description. Alternatively, type
