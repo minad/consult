@@ -1614,7 +1614,7 @@ See `consult--read' for the CANDIDATES, KEYMAP, ADD-HISTORY, NARROW and PREVIEW-
       ;; interpreter which does a proper scope analyis.
       (let* ((metadata `(metadata
                          ,@(when category `((category . ,category)))
-                         ,@(when title `((x-title-function . ,title)))
+                         ,@(when title `((group-function . ,title)))
                          ,@(when annotate
                              `((affixation-function
                                 . ,(apply-partially #'consult--read-affixate annotate))
