@@ -904,39 +904,48 @@ contributed.
   :description: Related packages recommended for installation
   :end:
 
-It is recommended to install the following package combination:
+It is highly recommended to install the following package combination:
 
 - consult: This package
 - consult-flycheck: Provides the =consult-flycheck= command
-- [[https://github.com/raxod502/selectrum][selectrum]], [[https://github.com/minad/vertico][vertico]]: Vertical completion systems
-- [[https://github.com/oantolin/icomplete-vertical][icomplete-vertical]]: Vertical display for Icomplete (external package for Emacs 27, built-in on Emacs 28)
+- [[https://github.com/raxod502/selectrum][selectrum]], [[https://github.com/minad/vertico][vertico]] or [[https://github.com/oantolin/icomplete-vertical][icomplete-vertical]]: Vertical completion systems
+  (Icomplete-vertical is only needed for Emacs 27, built-in on Emacs 28)
 - [[https://github.com/minad/marginalia][marginalia]]: Annotations for the completion candidates
 - [[https://github.com/oantolin/embark][embark and embark-consult]]: Action commands, which can act on the completion candidates
 - [[https://github.com/oantolin/orderless][orderless]]: Completion style which offers flexible candidate filtering
 
-There exist more packages related to Consult which provide wider integration
-with the Emacs ecosystem. You may want to install some of these packages
+There exist a few packages which integrate Consult with special programs or with
+other packages in the Emacs ecosystem. You may want to install some of them
 depending on your personal preferences.
 
 - [[https://codeberg.org/jao/consult-notmuch][consult-notmuch]]: Access the [[https://notmuchmail.org/][Notmuch]] email system using Consult.
 - [[https://codeberg.org/jao/consult-recoll][consult-recoll]]: Access the [[https://www.lesbonscomptes.com/recoll/][Recoll]] desktop full-text search using Consult.
 - [[https://codeberg.org/jao/espotify][consult-spotify]]: Access the Spotify API and control your local music player.
 - [[https://github.com/gagbo/consult-lsp][consult-lsp]]: Integration with [[https://github.com/emacs-lsp/lsp-mode][LSP-Mode]] (Language Server Protocol).
-- [[https://github.com/minad/corfu][corfu]], [[https://github.com/company-mode/company-mode][company]]: Completion systems for =completion-at-point= using small popups
-- [[https://github.com/minad/bookmark-view][bookmark-view]]: Store window configuration as bookmarks, integrates with =consult-buffer=
-- [[https://github.com/d12frosted/flyspell-correct][flyspell-correct]]: Apply spelling corrections by selecting via =completing-read=
-- [[https://github.com/mhayashi1120/Emacs-wgrep][wgrep]]: Editing of grep buffers, can be used together with =consult-grep= via Embark
-- [[https://github.com/raxod502/prescient.el][prescient]]: Sorts completion candidates according to frecency (Selectrum specific).
+
+Not directly related to Consult, but maybe still of interest are the following
+packages. These packages should work well with Consult, follow a similar spirit or
+offer functionality based on ~completing-read~.
+
+- [[https://github.com/minad/corfu][corfu]], [[https://github.com/company-mode/company-mode][company]]: Completion systems for =completion-at-point= using small popups.
+- [[https://github.com/minad/bookmark-view][bookmark-view]]: Store window configuration as bookmarks, possible integration with =consult-buffer=.
+- [[https://github.com/d12frosted/flyspell-correct][flyspell-correct]]: Apply spelling corrections by selecting via =completing-read=.
+- [[https://github.com/mhayashi1120/Emacs-wgrep][wgrep]]: Editing of grep buffers, can be used together with =consult-grep= via =embark-export=.
+- [[https://github.com/raxod502/prescient.el][prescient]]: Sorts completion candidates according to frecency
+  (Selectrum-specific, Orderless is recommended instead).
 
 Note that all packages are independent and can potentially be exchanged with
 alternative components, since there exist no hard dependencies. Furthermore it
 is possible to get started with only default completion and Consult and add more
-components later to the mix, e.g., using Embark for actions.
+components later to the mix. For example Embark can be omitted if action support
+is not desired.
 
-The Selectrum repository provides a [[https://github.com/raxod502/selectrum/tree/master/test][set of scripts]] which allow testing multiple
-package combinations including various completion systems and Consult. After
-cloning the Selectrum repository, the scripts can be executed with
-=cd selectrum/test; ./run.sh <package-combo.el>=.
+The Selectrum repository provides a [[https://github.com/raxod502/selectrum/tree/master/test][set of scripts]] which allow experimenting
+with multiple package combinations including various completion systems and
+Consult. After cloning the Selectrum repository, the scripts can be executed
+with =cd selectrum/test; ./run.sh <package-combo.el>=. The scripts do not modify
+your existing Emacs configuration, but create a separate Emacs configuration in
+=/tmp=.
 
 * Bug reports
   :properties:
