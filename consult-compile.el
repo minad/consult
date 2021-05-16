@@ -26,6 +26,8 @@
 (require 'consult)
 (require 'compile)
 
+(defvar consult-compile--history nil)
+
 (defconst consult-compile--narrow
   '((?e . "Error")
     (?w . "Warning")
@@ -109,7 +111,7 @@ preview of the currently selected error."
    :lookup #'consult-compile--error-lookup
    :title (consult--type-title consult-compile--narrow)
    :narrow (consult--type-narrow consult-compile--narrow)
-   :history '(:input consult--error-history)
+   :history '(:input consult-compile--history)
    :state (consult--jump-state 'consult-preview-error)))
 
 (provide 'consult-compile)
