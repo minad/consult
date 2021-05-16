@@ -46,7 +46,7 @@ Available commands
 * Navigation::                   Mark rings, outlines and imenu
 * Search::                       Line search, grep and file search
 * Grep and Find::                Searching through the filesystem
-* Compilation errors::           Jumping to compilation errors
+* Compilation::                  Jumping to references and compilation errors
 * Histories::                    Navigating histories
 * Modes::                        Toggling minor modes and executing commands
 * Org Mode::                     Org-specific commands
@@ -136,7 +136,7 @@ their descriptions.
 * Navigation::                   Mark rings, outlines and imenu
 * Search::                       Line search, grep and file search
 * Grep and Find::                Searching through the filesystem
-* Compilation errors::           Jumping to compilation errors
+* Compilation::                  Jumping to references and compilation errors
 * Histories::                    Navigating histories
 * Modes::                        Toggling minor modes and executing commands
 * Org Mode::                     Org-specific commands
@@ -369,14 +369,15 @@ change the @samp{consult-find-command} configuration variable or define a small
 command as described in the @uref{https://github.com/minad/consult/wiki, Consult wiki}.
 @end itemize
 
-@node Compilation errors
-@section Compilation errors
+@node Compilation
+@section Compilation
 
 @cindex compilation errors
 
 @findex consult-compile-error
 @findex consult-flymake
 @findex consult-flycheck
+@findex consult-xref
 @itemize
 @item
 @samp{consult-compile-error}: Jump to a compilation error. Supports live preview
@@ -384,12 +385,15 @@ narrowing and and recursive editing.
 @item
 @samp{consult-flymake}: Jump to flymake diagnostic. Supports live preview and
 recursive editing. The command supports narrowing. Press @samp{e SPC}, @samp{w SPC}, @samp{n
-  SPC} to only show errors, warnings and notes respectively.
+   SPC} to only show errors, warnings and notes respectively.
 @item
 @samp{consult-flycheck}: Jump to flycheck error, similar to @samp{consult-flymake}.
 This command requires the installation of the additional @samp{consult-flycheck.el}
 package since the main @samp{consult} package only depends on Emacs core
 components.
+@item
+@samp{consult-xref}: Integration with xref. This function can be set as
+as @samp{xref-show-xrefs-function} and @samp{xref-show-definitions-function}.
 @end itemize
 
 @node Histories
@@ -454,7 +458,8 @@ live preview and recursive editing.
 @findex consult-completion-in-region
 @findex consult-theme
 @findex consult-man
-@findex consult-xref
+@findex consult-preview-at-point
+@findex consult-preview-at-point-mode
 @itemize
 @item
 @samp{consult-apropos}: Replacement for @samp{apropos} with completion.
@@ -479,8 +484,10 @@ package.
 themes. Supports live preview of the theme while scrolling through the
 candidates.
 @item
-@samp{consult-xref}: Integration with xref. This function can be set as
-as @samp{xref-show-xrefs-function} and @samp{xref-show-definitions-function}.
+@samp{consult-preview-at-point} and @samp{consult-preview-at-point-mode}: Command and
+minor mode which allows preview at point in the @samp{*Completions*} buffer. This
+is mainly relevant if you use the default @samp{*Completions*} UI or if you want
+to enable preview in Embark Collect buffers.
 @end itemize
 
 @node Special features
@@ -899,6 +906,11 @@ contributed.
          ("M-e" . consult-isearch)                 ;; orig. isearch-edit-string
          ("M-s e" . consult-isearch)               ;; orig. isearch-edit-string
          ("M-s l" . consult-line))                 ;; required by consult-line to detect isearch
+
+  ;; Enable automatic preview at point in the *Completions* buffer.
+  ;; This is relevant when you use the default completion UI,
+  ;; and not necessary for Selectrum, Vertico etc.
+  :hook (completion-list-mode . consult-preview-at-point-mode)
 
   ;; The :init configuration is always executed (Not lazy)
   :init

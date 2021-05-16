@@ -12,6 +12,8 @@
 - =consult-yank/completion-in-region=: Insertion preview only in selected window.
 - =consult-yank=: Rename to =consult-yank-from-kill-ring= (Emacs 28 naming).
 - =consult-yank= commands: =delete-selection-mode= support, added properties.
+- =consult-preview-at-point=, =consult-preview-at-point-mode=: New command and
+  minor mode to preview candidate at point in =*Completions*= buffer.
 
 * Version 0.7 (2021-04-29)
 

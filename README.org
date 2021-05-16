@@ -266,24 +266,27 @@ their descriptions.
    change the =consult-find-command= configuration variable or define a small
    command as described in the [[https://github.com/minad/consult/wiki][Consult wiki]].
 
-** Compilation errors
+** Compilation
    :properties:
-   :description: Jumping to compilation errors
+   :description: Jumping to references and compilation errors
    :end:
- #+cindex: compilation errors
+  #+cindex: compilation errors
 
-#+findex: consult-compile-error
-#+findex: consult-flymake
-#+findex: consult-flycheck
-- =consult-compile-error=: Jump to a compilation error. Supports live preview
-  narrowing and and recursive editing.
-- =consult-flymake=: Jump to flymake diagnostic. Supports live preview and
-  recursive editing. The command supports narrowing. Press =e SPC=, =w SPC=, =n
-  SPC= to only show errors, warnings and notes respectively.
-- =consult-flycheck=: Jump to flycheck error, similar to =consult-flymake=.
-  This command requires the installation of the additional =consult-flycheck.el=
-  package since the main =consult= package only depends on Emacs core
-  components.
+ #+findex: consult-compile-error
+ #+findex: consult-flymake
+ #+findex: consult-flycheck
+ #+findex: consult-xref
+ - =consult-compile-error=: Jump to a compilation error. Supports live preview
+   narrowing and and recursive editing.
+ - =consult-flymake=: Jump to flymake diagnostic. Supports live preview and
+   recursive editing. The command supports narrowing. Press =e SPC=, =w SPC=, =n
+   SPC= to only show errors, warnings and notes respectively.
+ - =consult-flycheck=: Jump to flycheck error, similar to =consult-flymake=.
+   This command requires the installation of the additional =consult-flycheck.el=
+   package since the main =consult= package only depends on Emacs core
+   components.
+ - =consult-xref=: Integration with xref. This function can be set as
+   as =xref-show-xrefs-function= and =xref-show-definitions-function=.
 
 ** Histories
    :properties:
@@ -341,7 +344,8 @@ their descriptions.
  #+findex: consult-completion-in-region
  #+findex: consult-theme
  #+findex: consult-man
- #+findex: consult-xref
+ #+findex: consult-preview-at-point
+ #+findex: consult-preview-at-point-mode
  - =consult-apropos=: Replacement for =apropos= with completion.
  - =consult-man=: Find Unix man page, via Unix =apropos= or =man -k=.
    The selected man page is opened using the Emacs =man= command.
@@ -359,8 +363,10 @@ their descriptions.
  - =consult-theme=: Select a theme and disable all currently enabled
    themes. Supports live preview of the theme while scrolling through the
    candidates.
- - =consult-xref=: Integration with xref. This function can be set as
-   as =xref-show-xrefs-function= and =xref-show-definitions-function=.
+ - =consult-preview-at-point= and =consult-preview-at-point-mode=: Command and
+   minor mode which allows preview at point in the =*Completions*= buffer. This
+   is mainly relevant if you use the default =*Completions*= UI or if you want
+   to enable preview in Embark Collect buffers.
 
 * Special features
   :properties:
@@ -744,6 +750,11 @@ contributed.
             ("M-e" . consult-isearch)                 ;; orig. isearch-edit-string
             ("M-s e" . consult-isearch)               ;; orig. isearch-edit-string
             ("M-s l" . consult-line))                 ;; required by consult-line to detect isearch
+
+     ;; Enable automatic preview at point in the *Completions* buffer.
+     ;; This is relevant when you use the default completion UI,
+     ;; and not necessary for Selectrum, Vertico etc.
+     :hook (completion-list-mode . consult-preview-at-point-mode)
 
      ;; The :init configuration is always executed (Not lazy)
      :init

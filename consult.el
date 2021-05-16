@@ -430,7 +430,8 @@ Used by `consult-completion-in-region', `consult-yank' and `consult-history'.")
   "Obtain match function from completion system.")
 
 (defvar consult--completion-candidate-hook
-  (list #'consult--default-completion-candidate)
+  (list #'consult--default-completion-mb-candidate
+        #'consult--default-completion-list-candidate)
   "Get candidate from completion system.")
 
 (defvar consult--completion-refresh-hook nil
@@ -3560,11 +3561,32 @@ See `consult-grep' for more details regarding the asynchronous search."
         :add-history (concat consult-async-default-split (thing-at-point 'symbol))
         :history '(:input consult--man-history))))
 
+;;;; Preview at point in completions buffers
+
+(define-minor-mode consult-preview-at-point-mode
+  "Preview minor mode for *Completions* buffers.
+When moving around in the *Completions* buffer, the candidate at point is automatically previewed."
+  :init-value nil
+  (if consult-preview-at-point-mode
+      (add-hook 'post-command-hook #'consult-preview-at-point nil 'local)
+    (remove-hook 'post-command-hook #'consult-preview-at-point 'local)))
+
+(defun consult-preview-at-point ()
+  "Preview candidate at point in *Completions* buffer."
+  (interactive)
+  (when-let* ((cand (run-hook-with-args-until-success 'consult--completion-candidate-hook))
+              (win (active-minibuffer-window))
+              (buf (window-buffer win))
+              (fun (buffer-local-value 'consult--preview-function buf)))
+    (with-selected-window win
+      (funcall fun (minibuffer-contents-no-properties) cand))))
+
 ;;;; Integration with the default completion system
 
-(defun consult--default-completion-candidate ()
-  "Return current candidate from default completion system or icomplete."
-  (when (eq completing-read-function #'completing-read-default)
+(defun consult--default-completion-mb-candidate ()
+  "Return current minibuffer candidate from default completion system or Icomplete."
+  (when (and (minibufferp)
+             (eq completing-read-function #'completing-read-default))
     (let ((content (minibuffer-contents-no-properties)))
       ;; When the current minibuffer content matches a candidate, return it!
       (if (test-completion content
@@ -3576,6 +3598,22 @@ See `consult-grep' for more details regarding the asynchronous search."
           (concat
            (substring content 0 (or (cdr (last completions)) 0))
            (car completions)))))))
+
+(defun consult--default-completion-list-candidate ()
+  "Return current candidate at point from completions buffer."
+  (let (beg end)
+    (when (and
+           (derived-mode-p 'completion-list-mode)
+           ;; Logic taken from `choose-completion'.
+           ;; TODO Upstream a `completion-list-get-candidate' function.
+           (cond
+            ((and (not (eobp)) (get-text-property (point) 'mouse-face))
+             (setq end (point) beg (1+ (point))))
+            ((and (not (bobp)) (get-text-property (1- (point)) 'mouse-face))
+             (setq end (1- (point)) beg (point)))))
+        (setq beg (previous-single-property-change beg 'mouse-face))
+        (setq end (or (next-single-property-change end 'mouse-face) (point-max)))
+        (buffer-substring-no-properties beg end))))
 
 (defun consult--default-completion-filter (category _highlight)
   "Return default filter function given the completion CATEGORY.
