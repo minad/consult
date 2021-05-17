@@ -3372,11 +3372,15 @@ Macros containing mouse clicks are omitted."
 (defun consult--grep-matches (lines)
   "Find grep match for REGEXP in LINES."
   (save-match-data
-    (let ((candidates))
+    (let ((candidates)
+          (paths (make-hash-table :test #'equal)))
       (dolist (str lines (nreverse candidates))
         (when (string-match consult--grep-regexp str)
-          (let* ((file-path (expand-file-name (match-string 1 str)))
-                 (file-name (string-remove-prefix default-directory file-path))
+          (let* ((raw-path (match-string 1 str))
+                 (path (or (gethash raw-path paths)
+                           (let* ((expanded (expand-file-name raw-path))
+                                  (name (string-remove-prefix default-directory expanded)))
+                             (puthash raw-path (cons expanded name) paths))))
                  (line (string-to-number (match-string 2 str)))
                  (start (match-end 0))
                  (max-len (+ start (* 2 consult-grep-max-columns)))
@@ -3396,9 +3400,9 @@ Macros containing mouse clicks are omitted."
             (setq str (apply #'concat (nreverse matches)))
             (when (> (length str) consult-grep-max-columns)
               (setq str (substring str 0 consult-grep-max-columns)))
-            (setq str (consult--format-location file-name line str))
-            (put-text-property 0 1 'consult--grep-file file-name str)
-            (push `(,str ,file-path ,line . ,(or col 0)) candidates)))))))
+            (setq str (consult--format-location (cdr path) line str))
+            (put-text-property 0 1 'consult--grep-file (cdr path) str)
+            (push `(,str ,(car path) ,line . ,(or col 0)) candidates)))))))
 
 (defun consult--grep-state ()
   "Grep preview state function."
