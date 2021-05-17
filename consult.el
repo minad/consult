@@ -1311,8 +1311,8 @@ PROPS are optional properties passed to `make-process'."
                        (if (not (cdr lines))
                            (setq rest (concat rest (car lines)))
                          (setcar lines (concat rest (car lines)))
-                         (setq rest (car (last lines)))
-                         (setq count (+ count (length lines) -1))
+                         (setq rest (car (last lines))
+                               count (+ count (length lines) -1))
                          (funcall async (nbutlast lines)))))
                    :sentinel
                    (lambda (_ event)
@@ -3371,9 +3371,9 @@ Macros containing mouse clicks are omitted."
 
 (defun consult--grep-matches (lines)
   "Find grep match for REGEXP in LINES."
-  (let ((candidates))
-    (save-match-data
-      (dolist (str lines)
+  (save-match-data
+    (let ((candidates))
+      (dolist (str lines (nreverse candidates))
         (when (string-match consult--grep-regexp str)
           (let* ((file-path (expand-file-name (match-string 1 str)))
                  (file-name (string-remove-prefix default-directory file-path))
@@ -3397,8 +3397,7 @@ Macros containing mouse clicks are omitted."
               (setq str (substring str 0 consult-grep-max-columns)))
             (setq str (consult--format-location file-name line str))
             (put-text-property 0 1 'consult--grep-file file-name str)
-            (push `(,str ,file-path ,line . ,(or col 0)) candidates)))))
-    (nreverse candidates)))
+            (push `(,str ,file-path ,line . ,(or col 0)) candidates)))))))
 
 (defun consult--grep-state ()
   "Grep preview state function."
@@ -3609,9 +3608,9 @@ When moving around in the *Completions* buffer, the candidate at point is automa
              (setq end (point) beg (1+ (point))))
             ((and (not (bobp)) (get-text-property (1- (point)) 'mouse-face))
              (setq end (1- (point)) beg (point)))))
-        (setq beg (previous-single-property-change beg 'mouse-face))
-        (setq end (or (next-single-property-change end 'mouse-face) (point-max)))
-        (buffer-substring-no-properties beg end))))
+      (setq beg (previous-single-property-change beg 'mouse-face)
+            end (or (next-single-property-change end 'mouse-face) (point-max)))
+      (buffer-substring-no-properties beg end))))
 
 (defun consult--default-completion-filter (category _highlight)
   "Return default filter function given the completion CATEGORY.
