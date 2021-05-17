@@ -1016,11 +1016,11 @@ See `consult--with-preview' for the arguments PREVIEW-KEY, STATE, TRANSFORM and 
                                                 (list preview-key)))))
                           (when-let (cand (funcall candidate))
                             (funcall consult--preview-function input cand)))))
-                (add-hook 'post-command-hook post-command-sym nil t)))
+                (add-hook 'post-command-hook post-command-sym nil 'local)))
           (lambda ()
             (let ((post-command-sym (make-symbol "consult--preview-post-command")))
               (fset post-command-sym (lambda () (setq input (minibuffer-contents-no-properties))))
-              (add-hook 'post-command-hook post-command-sym nil t))))
+              (add-hook 'post-command-hook post-command-sym nil 'local))))
       (unwind-protect
           (cons (setq selected (when-let (result (funcall fun))
                                  (funcall transform input result)))
@@ -1188,7 +1188,7 @@ BIND is the asynchronous function binding."
                (let ((sym (make-symbol "consult--async-after-change")))
                  (fset sym (lambda (&rest _) (funcall ,async (minibuffer-contents-no-properties))))
                  (run-at-time 0 nil sym)
-                 (add-hook 'after-change-functions sym nil t))))
+                 (add-hook 'after-change-functions sym nil 'local))))
          (let ((,async (if (functionp ,async) ,async (lambda (_) ,async))))
            (unwind-protect
                ,(macroexp-progn body)
@@ -1576,7 +1576,7 @@ PREVIEW-KEY is the preview key."
   "Minibuffer setup for `consult--read'.
 
 See `consult--read' for the CANDIDATES, KEYMAP, ADD-HISTORY, NARROW and PREVIEW-KEY arguments."
-  (add-hook 'after-change-functions #'consult--fry-the-tofus nil t)
+  (add-hook 'after-change-functions #'consult--fry-the-tofus nil 'local)
   (consult--setup-keymap keymap (functionp candidates) narrow preview-key)
   (consult--add-history add-history))
 
