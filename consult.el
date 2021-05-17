@@ -1208,8 +1208,7 @@ actions no assumption about the context can be made.
 nil      Return the current list of candidates.
 list     Append the list to the already existing list of candidates.
 string   The input string. Called when the user enters something."
-  (let ((candidates)
-        (buffer))
+  (let ((candidates) (last) (buffer))
     (lambda (action)
       (pcase-exhaustive action
         ('nil candidates)
@@ -1217,7 +1216,7 @@ string   The input string. Called when the user enters something."
          (setq buffer (current-buffer))
          nil)
         ((or (pred stringp) 'destroy) nil)
-        ('flush (setq candidates nil))
+        ('flush (setq candidates nil last nil))
         ('refresh
          ;; Refresh the UI when the current minibuffer window belongs
          ;; to the current asynchronous completion session.
@@ -1225,7 +1224,9 @@ string   The input string. Called when the user enters something."
            (when (eq (window-buffer win) buffer)
              (with-selected-window win
                (run-hooks 'consult--completion-refresh-hook)))))
-        ((pred consp) (setq candidates (nconc candidates action)))))))
+        ((pred consp)
+         (setq last (last (if last (setcdr last action) (setq candidates action))))
+         candidates)))))
 
 (defun consult--async-split (async)
   "Create async function, which splits the input string.
