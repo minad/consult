@@ -3447,7 +3447,9 @@ The symbol at point is added to the future history."
      :lookup #'consult--lookup-cdr
      :state (consult--grep-state)
      :initial (concat consult-async-default-split initial)
-     :add-history (concat consult-async-default-split (thing-at-point 'symbol))
+     :add-history
+     (when-let (thing (thing-at-point 'symbol))
+       (concat consult-async-default-split thing))
      :require-match t
      :category 'consult-grep
      :title #'consult--grep-title
@@ -3510,7 +3512,9 @@ CMD is the find argument string."
    :sort nil
    :require-match t
    :initial (concat consult-async-default-split initial)
-   :add-history (concat consult-async-default-split (thing-at-point 'filename))
+   :add-history
+   (when-let (thing (thing-at-point 'filename))
+     (concat consult-async-default-split thing))
    :category 'file
    :history '(:input consult--find-history)))
 
@@ -3568,7 +3572,9 @@ See `consult-grep' for more details regarding the asynchronous search."
         :require-match t
         :lookup #'consult--lookup-cdr
         :initial (concat consult-async-default-split initial)
-        :add-history (concat consult-async-default-split (thing-at-point 'symbol))
+        :add-history
+        (when-let (thing (thing-at-point 'symbol))
+          (concat consult-async-default-split thing))
         :history '(:input consult--man-history))))
 
 ;;;; Preview at point in completions buffers
