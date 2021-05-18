@@ -671,10 +671,11 @@ Otherwise the `default-directory' is returned."
 
 (defun consult--format-location (file line &optional str)
   "Format location string 'FILE:LINE:STR'."
-  (setq line (number-to-string line))
-  (put-text-property 0 (length line) 'face 'consult-line-number line)
-  (setq str (concat file ":" line ":" str))
-  (put-text-property 0 (length file) 'face 'consult-file str)
+  (setq line (number-to-string line)
+        str (concat file ":" line ":" str)
+        file (length file))
+  (put-text-property 0 file 'face 'consult-file str)
+  (put-text-property (1+ file) (+ 1 file (length line)) 'face 'consult-line-number str)
   str)
 
 (defmacro consult--overlay (beg end &rest props)
