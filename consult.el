@@ -82,7 +82,7 @@ This is the key representation accepted by `define-key'."
 The root directory is used by `consult-buffer' and `consult-grep'."
   :type '(choice function (const nil)))
 
-(defcustom consult-async-refresh-delay 0.25
+(defcustom consult-async-refresh-delay 0.4
   "Refreshing delay of the completion ui for asynchronous commands.
 
 The completion ui is only updated every `consult-async-refresh-delay'
@@ -98,7 +98,7 @@ The asynchronous process is started only every
 commands, e.g., `consult-grep'."
   :type 'float)
 
-(defcustom consult-async-input-debounce 0.25
+(defcustom consult-async-input-debounce 0.2
   "Input debounce for asynchronous commands.
 
 The asynchronous process is started only when there has not been new
@@ -1397,20 +1397,20 @@ The refresh happens immediately when candidates are pushed."
   "Create async function from ASYNC, which refreshes the display.
 
 The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
-  (let ((timer) (refresh t) (delay (or delay consult-async-refresh-delay)))
+  (let ((timer) (refresh) (delay (or delay consult-async-refresh-delay)))
     (lambda (action)
-      (pcase action
-        ((or (pred consp) (pred stringp) 'refresh 'flush)
-         (setq refresh t))
-        ('destroy (cancel-timer timer))
-        ('setup
-         (setq timer (run-at-time
-                      delay delay
-                      (lambda ()
-                        (when refresh
-                          (setq refresh nil)
-                          (funcall async 'refresh)))))))
-      (funcall async action))))
+      (prog1 (funcall async action)
+        (pcase action
+          ((or (pred consp) (pred stringp) 'flush)
+           (setq refresh t)
+           (unless timer
+             (setq timer (run-at-time
+                          nil delay
+                          (lambda ()
+                            (when refresh
+                              (setq refresh nil)
+                              (funcall async 'refresh)))))))
+          ('destroy (when timer (cancel-timer timer))))))))
 
 (defmacro consult--async-transform (async &rest transform)
   "Use FUN to TRANSFORM candidates of ASYNC."
