@@ -1482,7 +1482,7 @@ Note that `consult-narrow-key' and `consult-widen-key' are bound dynamically.")
 
 (defun consult--add-history (async items)
   "Add ITEMS to the minibuffer history via `minibuffer-default-add-function'.
-ASYNC must be t for async."
+ASYNC must be non-nil for async completion functions."
   (setq-local minibuffer-default-add-function
               (lambda ()
                 (delete-dups
@@ -1508,7 +1508,7 @@ ASYNC must be t for async."
   "Setup minibuffer keymap.
 
 KEYMAP is a command-specific keymap.
-ASYNC must be t for async.
+ASYNC must be non-nil for async completion functions.
 NARROW are the narrow settings.
 PREVIEW-KEY is the preview key."
   (let ((old-map (current-local-map))
