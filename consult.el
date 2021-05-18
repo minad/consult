@@ -1480,8 +1480,9 @@ Note that `consult-narrow-key' and `consult-widen-key' are bound dynamically.")
 
 ;;;; Internal API: consult--read
 
-(defun consult--add-history (items)
-  "Add ITEMS to the minibuffer history via `minibuffer-default-add-function'."
+(defun consult--add-history (async items)
+  "Add ITEMS to the minibuffer history via `minibuffer-default-add-function'.
+ASYNC must be t for async."
   (setq-local minibuffer-default-add-function
               (lambda ()
                 (delete-dups
@@ -1494,10 +1495,14 @@ Note that `consult-narrow-key' and `consult-widen-key' are bound dynamically.")
                   (delete "" (delq nil (if (listp items)
                                            items
                                          (list items))))
-                  ;; then all the completions
-                  (all-completions ""
-                                   minibuffer-completion-table
-                                   minibuffer-completion-predicate))))))
+                  ;; Add all the completions for non-async commands. For async commands this feature
+                  ;; is not useful, since if one selects a completion candidate, the async search is
+                  ;; restarted using that candidate string. This usually does not yield a desired
+                  ;; result since the async input uses a special format, e.g., `#grep#filter'.
+                  (unless async
+                    (all-completions ""
+                                     minibuffer-completion-table
+                                     minibuffer-completion-predicate)))))))
 
 (defun consult--setup-keymap (keymap async narrow preview-key)
   "Setup minibuffer keymap.
@@ -1580,7 +1585,7 @@ PREVIEW-KEY is the preview key."
 See `consult--read' for the CANDIDATES, KEYMAP, ADD-HISTORY, NARROW and PREVIEW-KEY arguments."
   (add-hook 'after-change-functions #'consult--fry-the-tofus nil 'local)
   (consult--setup-keymap keymap (functionp candidates) narrow preview-key)
-  (consult--add-history add-history))
+  (consult--add-history (functionp candidates) add-history))
 
 (defun consult--read-annotate (fun cand)
   "Annotate CAND with annotation function FUN."
