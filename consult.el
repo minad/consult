@@ -227,7 +227,7 @@ substrings. ARG is replaced by the filter string and OPTS by the auxillary
 command options."
   :type 'string)
 
-(defcustom consult-grep-max-columns 250
+(defcustom consult-grep-max-columns 300
   "Maximal number of columns of grep output."
   :type 'integer)
 
@@ -3378,13 +3378,15 @@ Macros containing mouse clicks are omitted."
       (dolist (str lines (nreverse candidates))
         (when (string-match consult--grep-regexp str)
           (let* ((raw-path (match-string 1 str))
+                 (line (match-string 2 str))
+                 (start (match-end 0))
                  (path (or (gethash raw-path paths)
                            (let* ((expanded (expand-file-name raw-path))
-                                  (name (string-remove-prefix default-directory expanded)))
-                             (puthash raw-path (cons expanded name) paths))))
-                 (line (string-to-number (match-string 2 str)))
-                 (start (match-end 0))
-                 (max-len (+ start (* 2 consult-grep-max-columns)))
+                                  (file (string-remove-prefix default-directory expanded)))
+                             (puthash raw-path (cons expanded file) paths))))
+                 (file (cdr path))
+                 (file-len (length file))
+                 (max-len (+ start consult-grep-max-columns))
                  (matches)
                  (col) (pos))
             (when (> (length str) max-len)
@@ -3398,12 +3400,12 @@ Macros containing mouse clicks are omitted."
               (put-text-property 0 (length (car matches)) 'face 'consult-preview-match (car matches))
               (setq pos (match-end 0)))
             (push (substring str pos) matches)
-            (setq str (apply #'concat (nreverse matches)))
-            (when (> (length str) consult-grep-max-columns)
-              (setq str (substring str 0 consult-grep-max-columns)))
-            (setq str (consult--format-location (cdr path) line str))
-            (put-text-property 0 1 'consult--grep-file (cdr path) str)
-            (push `(,str ,(car path) ,line . ,(or col 0)) candidates)))))))
+            ;; XXX consult--format-location inlined here for performance and to reduce allocations
+            (setq str (apply #'concat file ":" line ":" (nreverse matches)))
+            (put-text-property 0 file-len 'face 'consult-file str)
+            (put-text-property (1+ file-len) (+ 1 file-len (length line)) 'face 'consult-line-number str)
+            (put-text-property 0 1 'consult--grep-file file str)
+            (push `(,str ,(car path) ,(string-to-number line) . ,(or col 0)) candidates)))))))
 
 (defun consult--grep-state ()
   "Grep preview state function."
