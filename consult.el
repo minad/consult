@@ -3402,9 +3402,8 @@ Macros containing mouse clicks are omitted."
             (push (substring str pos) matches)
             ;; XXX consult--format-location inlined here for performance and to reduce allocations
             (setq str (apply #'concat file ":" line ":" (nreverse matches)))
-            (put-text-property 0 file-len 'face 'consult-file str)
+            (add-text-properties 0 file-len `(face consult-file consult--grep-file ,file) str)
             (put-text-property (1+ file-len) (+ 1 file-len (length line)) 'face 'consult-line-number str)
-            (put-text-property 0 1 'consult--grep-file file str)
             (push `(,str ,(car path) ,(string-to-number line) . ,(or col 0)) candidates)))))))
 
 (defun consult--grep-state ()
