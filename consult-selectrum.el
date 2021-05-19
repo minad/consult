@@ -32,22 +32,23 @@
 (declare-function selectrum-exhibit "ext:selectrum")
 (declare-function selectrum-get-current-candidate "ext:selectrum")
 
-(defun consult-selectrum--filter (_category highlight)
-  "Return selectrum filter function with HIGHLIGHT."
+(defun consult-selectrum--filter-adv (orig pattern cands category highlight)
+  "Advice for ORIG `consult--completion-filter' function.
+See `consult--completion-filter' for arguments PATTERN, CANDS, CATEGORY and HIGHLIGHT."
   ;; Do not use selectrum-is-active here, since we want to always use
   ;; the Selectrum filtering when Selectrum is installed, even when
   ;; Selectrum is currently not active.
   ;; However if `selectrum-refine-candidates-function' is the default
   ;; function, which uses the completion styles, the Selectrum filtering
-  ;; is not used and `consult--default-completion-filter' takes over.
-  (when (and (eq completing-read-function 'selectrum-completing-read)
-             (not (eq selectrum-refine-candidates-function
-                      'selectrum-refine-candidates-using-completions-styles)))
-    (if highlight
-        (lambda (str cands)
-          (funcall selectrum-highlight-candidates-function str
-                   (funcall selectrum-refine-candidates-function str cands)))
-      selectrum-refine-candidates-function)))
+  ;; is not used and the original function is called.
+  (if (and (eq completing-read-function 'selectrum-completing-read)
+           (not (eq selectrum-refine-candidates-function
+                    'selectrum-refine-candidates-using-completions-styles)))
+      (if highlight
+          (funcall selectrum-highlight-candidates-function pattern
+                   (funcall selectrum-refine-candidates-function pattern cands))
+        (funcall selectrum-refine-candidates-function pattern cands))
+    (funcall orig pattern cands category highlight)))
 
 (defun consult-selectrum--candidate ()
   "Return current selectrum candidate."
@@ -78,9 +79,9 @@ SPLIT is the splitter function."
     (setq-local selectrum-highlight-candidates-function
 		(consult-selectrum--split-wrap selectrum-highlight-candidates-function split))))
 
-(add-hook 'consult--completion-filter-hook #'consult-selectrum--filter)
 (add-hook 'consult--completion-candidate-hook #'consult-selectrum--candidate)
 (add-hook 'consult--completion-refresh-hook #'consult-selectrum--refresh)
+(advice-add #'consult--completion-filter :around #'consult-selectrum--filter-adv)
 (advice-add #'consult--split-setup :around #'consult-selectrum--split-setup-adv)
 
 (provide 'consult-selectrum)
