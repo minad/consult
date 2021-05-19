@@ -518,42 +518,37 @@ FUN is the hook function and BODY opens the minibuffer."
            (setf (alist-get ',name consult--cache) ,(macroexp-progn body))
            (alist-get ',name consult--cache)))))
 
-(defun consult--completion-filter (category _highlight)
-  "Return filter function given the completion CATEGORY.
+(defun consult--completion-filter (pattern cands category _highlight)
+  "Filter CANDS with PATTERN.
 
-The completion category is used to find the completion style via
-`completion-category-defaults' and `completion-category-overrides'."
-  (lambda (str cands)
-    ;; completion-all-completions returns an improper list
-    ;; where the last link is not necessarily nil. Fix this!
-    (nconc (completion-all-completions
-            str cands nil (length str)
-            `(metadata (category . ,category)))
-           nil)))
+CATEGORY is the completion category, used to find the completion style via
+`completion-category-defaults' and `completion-category-overrides'.
+HIGHLIGHT must be non-nil if the resulting strings should be highlighted."
+  ;; completion-all-completions returns an improper list
+  ;; where the last link is not necessarily nil.
+  ;; TODO Implement support to disable highlighting as in Vertico deferred highlighting.
+  (nconc (completion-all-completions
+          pattern cands nil (length pattern)
+          `(metadata (category . ,category)))
+         nil))
 
-(defun consult--completion-filter-complement (category)
-  "Return complement of the filter function used by the completion system.
+(defun consult--completion-filter-complement (pattern cands category _highlight)
+  "Filter CANDS with complement of PATTERN.
+See `consult--completion-filter' for the arguments CATEGORY and HIGHLIGHT."
+  (let ((ht (consult--string-hash (consult--completion-filter pattern cands category nil))))
+    (seq-remove (lambda (x) (gethash x ht)) cands)))
 
-CATEGORY is the completion category."
-  (let ((filter (consult--completion-filter category nil)))
-    (lambda (input cands)
-      (let ((ht (consult--string-hash (funcall filter input cands))))
-        (seq-remove (lambda (x) (gethash x ht)) cands)))))
-
-(defun consult--completion-filter-dispatch (category highlight)
-  "Return dispatching filter function.
-
-Either dispatch to `consult--completion-filter' or to
-`consult--completion-filter-complement'.
-CATEGORY is the completion category.
-HIGHLIGHT must be t if highlighting is needed."
-  (let ((filter (consult--completion-filter category highlight))
-        (filter-not (consult--completion-filter-complement category)))
-    (lambda (input cands)
-      (cond
-       ((string-match-p "\\`!? ?\\'" input) cands) ;; empty input
-       ((string-prefix-p "! " input) (funcall filter-not (substring input 2) cands))
-       (t (funcall filter input cands))))))
+(defun consult--completion-filter-dispatch (pattern cands category highlight)
+  "Filter CANDS with PATTERN with optional complement.
+Either using `consult--completion-filter' or
+`consult--completion-filter-complement', depending on if the pattern starts
+with a bang. See `consult--completion-filter' for the arguments CATEGORY and
+HIGHLIGHT."
+  (cond
+   ((string-match-p "\\`!? ?\\'" pattern) cands) ;; empty pattern
+   ((string-prefix-p "! " pattern) (consult--completion-filter-complement
+                                    (substring pattern 2) cands category nil))
+   (t (consult--completion-filter pattern cands category highlight))))
 
 (defmacro consult--each-line (beg end &rest body)
   "Iterate over each line.
@@ -2113,8 +2108,6 @@ CAND is the currently selected candidate."
         pos
       (let ((beg 0)
             (end (length cand))
-            ;; Use consult-location completion category when filtering lines
-            (filter (consult--completion-filter 'consult-location nil))
             (high (+ consult--tofu-char consult--tofu-range -1)))
         ;; Ignore tofu-encoded unique line number suffix
         (while (and (> end 0) (<= consult--tofu-char (aref cand (- end 1)) high))
@@ -2124,7 +2117,14 @@ CAND is the currently selected candidate."
         (let ((step 16))
           (while (> step 0)
             (while (and (> (- end step) 0)
-                        (funcall filter input (list (substring cand 0 (- end step)))))
+                        ;; Use consult-location completion category when
+                        ;; filtering lines. Highlighting is not necessary here,
+                        ;; but it is actually cheaper to highlight a single
+                        ;; candidate, since setting up deferred highlighting is
+                        ;; costly.
+                        (consult--completion-filter input
+                                                    (list (substring cand 0 (- end step)))
+                                                    'consult-location 'highlight))
               (setq end (- end step)))
             (setq step (/ step 2))))
         ;; Find match beginning position, remove characters from line beginning
@@ -2133,7 +2133,10 @@ CAND is the currently selected candidate."
           (let ((step 16))
             (while (> step 0)
               (while (and (< (+ beg step) end)
-                          (funcall filter input (list (substring cand (+ beg step) end))))
+                          ;; See comment above, call to `consult--completion-filter'.
+                          (consult--completion-filter input
+                                                      (list (substring cand (+ beg step) end))
+                                                      'consult-location 'highlight))
                 (setq beg (+ beg step)))
               (setq step (/ step 2)))
             (setq end beg)))
@@ -2266,8 +2269,11 @@ command obeys narrowing.
 
 FILTER is the filter function.
 INITIAL is the initial input."
-  ;; Use consult-location completion category when filtering lines
-  (interactive (list (consult--completion-filter-dispatch 'consult-location 'highlight)))
+  (interactive
+   (list (lambda (pattern cands)
+           ;; Use consult-location completion category when filtering lines
+           (consult--completion-filter-dispatch
+            pattern cands 'consult-location 'highlight))))
   (consult--forbid-minibuffer)
   (barf-if-buffer-read-only)
   (consult--with-increased-gc
@@ -2348,8 +2354,11 @@ the filtering is performed by a FILTER function. This command obeys narrowing.
 FILTER is the filter function.
 INITIAL is the initial input."
   (interactive
-   ;; Use consult-location completion category when filtering lines
-   (list current-prefix-arg (consult--completion-filter 'consult-location nil)))
+   (list current-prefix-arg
+         (lambda (pattern cands)
+           ;; Use consult-location completion category when filtering lines
+           (consult--completion-filter-dispatch
+            pattern cands 'consult-location nil))))
   (consult--forbid-minibuffer)
   (if show
       (progn
