@@ -1868,7 +1868,7 @@ Optional source fields:
   (consult--minibuffer-with-setup-hook
       (:append (lambda ()
                  (consult--setup-keymap keymap nil nil preview-key)
-                 (consult--add-history add-history)))
+                 (consult--add-history nil add-history)))
     (car (consult--with-preview preview-key state
                                 (lambda (inp _) (funcall transform inp)) (lambda () t)
            (read-from-minibuffer prompt initial nil nil history default)))))
