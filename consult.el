@@ -423,10 +423,6 @@ Used by `consult-completion-in-region', `consult-yank' and `consult-history'.")
 (defvar consult--cache nil
   "Cached data populated by `consult--define-cache'.")
 
-(defvar consult--completion-filter-hook
-  (list #'consult--default-completion-filter)
-  "Obtain match function from completion system.")
-
 (defvar consult--completion-candidate-hook
   (list #'consult--default-completion-mb-candidate
         #'consult--default-completion-list-candidate)
@@ -522,12 +518,18 @@ FUN is the hook function and BODY opens the minibuffer."
            (setf (alist-get ',name consult--cache) ,(macroexp-progn body))
            (alist-get ',name consult--cache)))))
 
-(defun consult--completion-filter (category highlight)
-  "Return filter function used by completion system.
+(defun consult--completion-filter (category _highlight)
+  "Return filter function given the completion CATEGORY.
 
-CATEGORY is the completion category.
-HIGHLIGHT must be t if highlighting is needed."
-  (run-hook-with-args-until-success 'consult--completion-filter-hook category highlight))
+The completion category is used to find the completion style via
+`completion-category-defaults' and `completion-category-overrides'."
+  (lambda (str cands)
+    ;; completion-all-completions returns an improper list
+    ;; where the last link is not necessarily nil. Fix this!
+    (nconc (completion-all-completions
+            str cands nil (length str)
+            `(metadata (category . ,category)))
+           nil)))
 
 (defun consult--completion-filter-complement (category)
   "Return complement of the filter function used by the completion system.
@@ -3630,19 +3632,6 @@ When moving around in the *Completions* buffer, the candidate at point is automa
       (setq beg (previous-single-property-change beg 'mouse-face)
             end (or (next-single-property-change end 'mouse-face) (point-max)))
       (buffer-substring-no-properties beg end))))
-
-(defun consult--default-completion-filter (category _highlight)
-  "Return default filter function given the completion CATEGORY.
-
-The completion category is used to find the completion style via
-`completion-category-defaults' and `completion-category-overrides'."
-  (lambda (str cands)
-    ;; completion-all-completions returns an improper list
-    ;; where the last link is not necessarily nil. Fix this!
-    (nconc (completion-all-completions
-            str cands nil (length str)
-            `(metadata (category . ,category)))
-           nil)))
 
 ;; Announce now that consult has been loaded
 (provide 'consult)
