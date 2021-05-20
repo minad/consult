@@ -932,6 +932,7 @@ depending on your personal preferences.
 - [[https://codeberg.org/jao/consult-notmuch][consult-notmuch]]: Access the [[https://notmuchmail.org/][Notmuch]] email system using Consult.
 - [[https://codeberg.org/jao/consult-recoll][consult-recoll]]: Access the [[https://www.lesbonscomptes.com/recoll/][Recoll]] desktop full-text search using Consult.
 - [[https://codeberg.org/jao/espotify][consult-spotify]]: Access the Spotify API and control your local music player.
+- [[https://github.com/minad/affe][affe]]: Asynchronous Fuzzy Finder for Emacs (uses Consult under the hood).
 
 Not directly related to Consult, but maybe still of interest are the following
 packages. These packages should work well with Consult, follow a similar spirit or
