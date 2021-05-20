@@ -785,8 +785,10 @@ contributed.
      ;; configured on a per-command basis via `consult-config'. The default value
      ;; is 'any, such that any key triggers the preview.
      ;; (setq consult-preview-key 'any)
-     ;; (setq consult-preview-key (kbd "M-p"))
+     ;; (setq consult-preview-key (kbd "M-."))
      ;; (setq consult-preview-key (list (kbd "<S-down>") (kbd "<S-up>")))
+     (dolist (cmd '(consult-ripgrep consult-grep consult-bookmark consult-recent-file))
+       (setf (alist-get cmd consult-config) `(:preview-key ,(kbd "M-."))))
 
      ;; Optionally configure the narrowing key.
      ;; Both < and C-+ work reasonably well.
@@ -889,14 +891,14 @@ contributed.
  - =:title= set to nil in order to disable candidate grouping and titles.
 
  #+begin_src emacs-lisp
- ;; Set preview for `consult-buffer' to key `M-p'
+ ;; Set preview for `consult-buffer' to key `M-.'
  ;; and disable preview for `consult-theme' completely.
  ;; For `consult-line' specify multiple keybindings.
  ;; Note that you should bind <S-up> and <S-down> in the
  ;; `minibuffer-local-completion-map', `selectrum-minibuffer-map' or
  ;; `vertico-map' to the commands which select the previous or next candidate.
  (setf (alist-get 'consult-theme consult-config) '(:preview-key nil))
- (setf (alist-get 'consult-buffer consult-config) `(:preview-key ,(kbd "M-p")))
+ (setf (alist-get 'consult-buffer consult-config) `(:preview-key ,(kbd "M-.")))
  (setf (alist-get 'consult-line consult-config) `(:preview-key (,(kbd "<S-down>") ,(kbd "<S-up>"))))
  #+end_src
 
