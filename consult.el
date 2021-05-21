@@ -1310,9 +1310,12 @@ PROPS are optional properties passed to `make-process'."
                        (if (not (cdr lines))
                            (setq rest (concat rest (car lines)))
                          (setcar lines (concat rest (car lines)))
-                         (setq rest (car (last lines))
-                               count (+ count (length lines) -1))
-                         (funcall async (nbutlast lines)))))
+                         (let* ((len (length lines))
+                                (last (nthcdr (- len 2) lines)))
+                           (setq rest (cadr last)
+                                 count (+ count len -1))
+                           (setcdr last nil)
+                           (funcall async lines)))))
                    :sentinel
                    (lambda (_ event)
                      (when flush
