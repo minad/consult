@@ -1764,12 +1764,15 @@ KEYMAP is a command-specific keymap."
   "Return preview keys, used by `consult--multi'."
   (list :predicate
         (lambda (cand)
-          (or (plist-get (cdr cand) :preview-key) consult-preview-key))
+          (if (plist-member (cdr cand) :preview-key)
+              (plist-get (cdr cand) :preview-key)
+            consult-preview-key))
         :keys
         (delete-dups
          (seq-mapcat (lambda (src)
-                       (let ((key (or (plist-get src :preview-key)
-                                      consult-preview-key)))
+                       (let ((key (if (plist-member src :preview-key)
+                                      (plist-get src :preview-key)
+                                    consult-preview-key)))
                          (if (listp key) key (list key))))
                      consult--multi-sources))))
 
