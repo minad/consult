@@ -1646,7 +1646,15 @@ See `consult--read' for the CANDIDATES, KEYMAP, ADD-HISTORY, NARROW and PREVIEW-
   "Affixate CANDS with annotation function FUN."
   (mapcar (lambda (cand)
             (let ((ann (funcall fun cand)))
-              (if (consp ann) ann (list cand "" (or ann "")))))
+              (if (consp ann)
+                  ann
+                (setq ann (or ann ""))
+                (list cand ""
+                      ;; The default completion UI adds the `completions-annotations' face
+                      ;; if no other faces are present.
+                      (if (text-property-not-all 0 (length ann) 'face nil ann)
+                          ann
+                        (propertize ann 'face 'completions-annotations))))))
           cands))
 
 (cl-defun consult--read-1 (candidates &rest options &key
