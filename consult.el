@@ -914,7 +914,7 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
    (t
     ;; Switch to buffer if it is not visible
     (when (and (markerp pos) (not (eq (current-buffer) (marker-buffer pos))))
-      (funcall consult--buffer-display (marker-buffer pos)))
+      (consult--buffer-action (marker-buffer pos) 'norecord))
     ;; Widen if we cannot jump to the position (idea from flycheck-jump-to-error)
     (unless (= (goto-char pos) (point))
       (widen)
@@ -3197,8 +3197,8 @@ The command supports previewing the currently selected theme."
                  (or (eq consult--buffer-display #'switch-to-buffer)
                      (eq consult--buffer-display #'switch-to-buffer-other-window)))
         (cond
-         ((and cand (get-buffer cand)) (funcall consult--buffer-display cand 'norecord))
-         ((buffer-live-p orig-buf) (funcall consult--buffer-display orig-buf 'norecord)))))))
+         ((and cand (get-buffer cand)) (consult--buffer-action cand 'norecord))
+         ((buffer-live-p orig-buf) (consult--buffer-action orig-buf 'norecord)))))))
 
 (defun consult--buffer-state ()
   "Buffer state function."
@@ -3206,14 +3206,19 @@ The command supports previewing the currently selected theme."
     (lambda (cand restore)
       (funcall preview cand restore)
       (when (and cand restore)
-        (funcall consult--buffer-display cand)))))
+        (consult--buffer-action cand)))))
+
+(defun consult--buffer-action (buffer &optional norecord)
+  "Switch to BUFFER via `consult--buffer-display' function.
+If NORECORD is non-nil, do not record the buffer switch in the buffer list."
+  (funcall consult--buffer-display buffer norecord))
 
 (defun consult--file-action (file)
-  "Open FILE via `consult--buffer-display' function."
-  (funcall consult--buffer-display (find-file-noselect file)))
+  "Open FILE via `consult--buffer-action'."
+  (consult--buffer-action (find-file-noselect file)))
 
 (defun consult--bookmark-action (bm)
-  "Open BM via `consult--buffer-display' function."
+  "Open BM via `consult--buffer-action'."
   (bookmark-jump bm consult--buffer-display))
 
 (defvar consult--source-bookmark
@@ -3334,7 +3339,7 @@ order to determine the project-specific files and buffers, the
     ;; When the buffer does not belong to a source,
     ;; create a new buffer with the name.
     (unless (cdr buffer)
-      (funcall consult--buffer-display (car buffer)))))
+      (consult--buffer-action (car buffer)))))
 
 ;;;###autoload
 (defun consult-buffer-other-window ()
