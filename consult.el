@@ -1760,6 +1760,19 @@ KEYMAP is a command-specific keymap."
     (let ((src (consult--multi-source cand)))
       (or (plist-get src :name) (capitalize (symbol-name (plist-get src :category)))))))
 
+(defun consult--multi-preview-key ()
+  "Return preview keys, used by `consult--multi'."
+  (list :predicate
+        (lambda (cand)
+          (or (plist-get (cdr cand) :preview-key) consult-preview-key))
+        :keys
+        (delete-dups
+         (seq-mapcat (lambda (src)
+                       (let ((key (or (plist-get src :preview-key)
+                                      consult-preview-key)))
+                         (if (listp key) key (list key))))
+                     consult--multi-sources))))
+
 (defun consult--multi-lookup (_ candidates cand)
   "Lookup CAND in CANDIDATES, used by `consult--multi'."
   (if-let (found (member cand candidates))
@@ -1859,14 +1872,15 @@ Optional source fields:
                           (append
                            options
                            (list
-                            :default   (car candidates)
-                            :category  'consult-multi
-                            :predicate #'consult--multi-predicate
-                            :annotate  #'consult--multi-annotate
-                            :title     #'consult--multi-title
-                            :lookup    #'consult--multi-lookup
-                            :narrow    (consult--multi-narrow)
-                            :state     (consult--multi-state))))))
+                            :default     (car candidates)
+                            :category    'consult-multi
+                            :predicate   #'consult--multi-predicate
+                            :annotate    #'consult--multi-annotate
+                            :title       #'consult--multi-title
+                            :lookup      #'consult--multi-lookup
+                            :preview-key (consult--multi-preview-key)
+                            :narrow      (consult--multi-narrow)
+                            :state       (consult--multi-state))))))
     (when-let (history (plist-get (cdr selected) :history))
       (add-to-history history (car selected)))
     (when-let (action (plist-get (cdr selected) :action))

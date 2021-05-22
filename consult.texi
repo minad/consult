@@ -664,6 +664,8 @@ Optional source fields:
 @item
 @samp{:narrow} Narrowing character or @samp{(character . string)} pair.
 @item
+@samp{:preview-key} Preview key or keys which trigger preview.
+@item
 @samp{:enabled} Function which must return t if the source is enabled.
 @item
 @samp{:hidden} When t candidates of this source are hidden by default.

@@ -519,6 +519,7 @@ their descriptions.
   Optional source fields:
   - =:name= Name of the source, used for narrowing, group titles and annotations.
   - =:narrow= Narrowing character or =(character . string)= pair.
+  - =:preview-key= Preview key or keys which trigger preview.
   - =:enabled= Function which must return t if the source is enabled.
   - =:hidden= When t candidates of this source are hidden by default.
   - =:face= Face used for highlighting the candidates.
