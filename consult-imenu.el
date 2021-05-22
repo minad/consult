@@ -191,10 +191,10 @@ The symbol at point is added to the future history."
               (alist-get type narrow)))))
       :narrow
       (when narrow
-        (cons
-         (lambda (cand)
-           (eq (get-text-property 0 'consult--type (car cand)) consult--narrow))
-         narrow))
+        (list :predicate
+              (lambda (cand)
+                (eq (get-text-property 0 'consult--type (car cand)) consult--narrow))
+              :keys narrow))
       :category 'imenu
       :lookup #'consult--lookup-cons
       :history 'consult-imenu--history

@@ -36,13 +36,15 @@
                     (pcase-let ((`(,a ,b) (split-string s "(")))
                       (cons (downcase (string-to-char (or b a))) a)))
                   (apply #'append (mapcar #'cdr org-todo-keywords))))))
-    (cons (lambda (cand)
+    (list :predicate
+          (lambda (cand)
             (pcase-let ((`(_ ,level ,todo ,prio)
                          (get-text-property 0 'consult-org--heading cand)))
               (cond
                ((<= ?1 consult--narrow ?9) (<= level (- consult--narrow ?0)))
                ((<= ?A consult--narrow ?Z) (eq prio consult--narrow))
                (t (equal todo (alist-get consult--narrow todo-kws))))))
+          :keys
           (nconc (mapcar (lambda (c) (cons c (format "Level %c" c)))
                          (number-sequence ?1 ?9))
                  (mapcar (lambda (c) (cons c (format "Priority %c" c)))

@@ -703,9 +703,9 @@ Otherwise the `default-directory' is returned."
 
 (defun consult--type-narrow (types)
   "Return narrowing configuration from TYPES."
-  (cons
-   (lambda (cand) (eq (get-text-property 0 'consult--type cand) consult--narrow))
-   types))
+  (list :predicate
+        (lambda (cand) (eq (get-text-property 0 'consult--type cand) consult--narrow))
+        :keys types))
 
 (defun consult--lookup-member (_ candidates cand)
   "Lookup CAND in CANDIDATES list, return original element."
@@ -1118,11 +1118,17 @@ to make it available for commands with narrowing."
 
 (defun consult--narrow-setup (settings map)
   "Setup narrowing with SETTINGS and keymap MAP."
-  (if (functionp (car settings))
-      (setq consult--narrow-predicate (car settings)
-            consult--narrow-keys (cdr settings))
+  (cond
+   ((functionp (car settings))
+    (message "Deprecation: `%s' passed obsolete :narrow value to `consult--read'" this-command)
+    (setq consult--narrow-predicate (car settings)
+          consult--narrow-keys (cdr settings)))
+   ((memq :keys settings)
+    (setq consult--narrow-predicate (plist-get settings :predicate)
+          consult--narrow-keys (plist-get settings :keys)))
+   (t
     (setq consult--narrow-predicate nil
-          consult--narrow-keys settings))
+          consult--narrow-keys settings)))
   (when consult-narrow-key
     (dolist (pair consult--narrow-keys)
       (consult--define-key map
@@ -1962,10 +1968,10 @@ The symbol at point is added to the future history."
                                        (get-text-property 0 'consult--outline-level cand))
                                      cands))
                        ?1))
-         (narrow-fun (lambda (cand)
+         (narrow-pred (lambda (cand)
                        (<= (get-text-property 0 'consult--outline-level cand)
                            (+ consult--narrow min-level))))
-         (narrow-cats (mapcar (lambda (c) (cons c (format "Level %c" c)))
+         (narrow-keys (mapcar (lambda (c) (cons c (format "Level %c" c)))
                               (number-sequence ?1 ?9))))
     (consult--read
      cands
@@ -1975,7 +1981,7 @@ The symbol at point is added to the future history."
      :sort nil
      :require-match t
      :lookup #'consult--line-match
-     :narrow (cons narrow-fun narrow-cats)
+     :narrow `(:predicate ,narrow-pred :keys ,narrow-keys)
      :history '(:input consult--line-history)
      :add-history (thing-at-point 'symbol)
      :state (consult--jump-state))))
@@ -3045,9 +3051,9 @@ starts a new Isearch session otherwise."
                   (isearch-update-from-string-properties cand))
                 (isearch-update)))
             :narrow
-            (cons
-             (lambda (cand) (= (consult--tofu-get cand) consult--narrow))
-             consult--isearch-narrow))
+            (list :predicate
+                  (lambda (cand) (= (consult--tofu-get cand) consult--narrow))
+                  :keys consult--isearch-narrow))
            isearch-new-message
            (mapconcat 'isearch-text-char-description isearch-new-string "")))
     ;; Setting `isearch-regexp' etc only works outside of `with-isearch-suspended'.
@@ -3107,12 +3113,13 @@ This is an alternative to `minor-mode-menu-from-indicator'."
     (lambda (cand transform)
       (if transform cand (get-text-property 0 'consult--minor-mode-title cand)))
     :narrow
-    (cons
-     (lambda (cand)
-       (let ((narrow (get-text-property 0 'consult--minor-mode-narrow cand)))
-         (or (= (logand narrow 255) consult--narrow)
-             (= (lsh narrow -8) consult--narrow))))
-     consult--minor-mode-menu-narrow)
+    (list :predicate
+          (lambda (cand)
+            (let ((narrow (get-text-property 0 'consult--minor-mode-narrow cand)))
+              (or (= (logand narrow 255) consult--narrow)
+                  (= (lsh narrow -8) consult--narrow))))
+          :keys
+          consult--minor-mode-menu-narrow)
     :lookup #'consult--lookup-candidate
     :history 'consult--minor-mode-menu-history)))
 
