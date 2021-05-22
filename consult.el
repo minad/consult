@@ -985,6 +985,15 @@ FACE is the cursor face."
       (when (and cand restore)
         (consult--jump cand)))))
 
+(defmacro consult--define-state (type)
+  "Define state function for TYPE."
+  `(defun ,(intern (format "consult--%s-state" type)) ()
+     (let ((preview (,(intern (format "consult--%s-preview" type)))))
+       (lambda (cand restore)
+         (funcall preview cand restore)
+         (when (and cand restore)
+           (,(intern (format "consult--%s-action" type)) cand))))))
+
 (defun consult--preview-key-pressed-p (preview-key cand)
   "Return t if PREVIEW-KEY has been pressed given the current candidate CAND."
   (when (and (consp preview-key) (memq :keys preview-key))
@@ -2465,6 +2474,12 @@ narrowing and the settings `consult-goto-line-numbers' and
             (funcall open))
         (funcall preview (and cand (funcall open cand)) nil)))))
 
+(defun consult--file-action (file)
+  "Open FILE via `consult--buffer-action'."
+  (consult--buffer-action (find-file-noselect file)))
+
+(consult--define-state file)
+
 ;;;###autoload
 (defun consult-recent-file ()
   "Find recent using `completing-read'."
@@ -2823,6 +2838,12 @@ There exists no equivalent of this command in Emacs 28."
                (message "No preview for %s" handler)
                nil)))
          nil)))))
+
+(defun consult--bookmark-action (bm)
+  "Open BM via `consult--buffer-action'."
+  (bookmark-jump bm consult--buffer-display))
+
+(consult--define-state bookmark)
 
 (defun consult--bookmark-candidates ()
   "Return bookmark candidates."
@@ -3200,26 +3221,12 @@ The command supports previewing the currently selected theme."
          ((and cand (get-buffer cand)) (consult--buffer-action cand 'norecord))
          ((buffer-live-p orig-buf) (consult--buffer-action orig-buf 'norecord)))))))
 
-(defun consult--buffer-state ()
-  "Buffer state function."
-  (let ((preview (consult--buffer-preview)))
-    (lambda (cand restore)
-      (funcall preview cand restore)
-      (when (and cand restore)
-        (consult--buffer-action cand)))))
-
 (defun consult--buffer-action (buffer &optional norecord)
   "Switch to BUFFER via `consult--buffer-display' function.
 If NORECORD is non-nil, do not record the buffer switch in the buffer list."
   (funcall consult--buffer-display buffer norecord))
 
-(defun consult--file-action (file)
-  "Open FILE via `consult--buffer-action'."
-  (consult--buffer-action (find-file-noselect file)))
-
-(defun consult--bookmark-action (bm)
-  "Open BM via `consult--buffer-action'."
-  (bookmark-jump bm consult--buffer-display))
+(consult--define-state buffer)
 
 (defvar consult--source-bookmark
   `(:name     "Bookmark"
