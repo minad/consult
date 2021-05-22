@@ -986,6 +986,15 @@ FACE is the cursor face."
       (when (and cand restore)
         (consult--jump cand)))))
 
+(defun consult--preview-key-pressed-p (preview-key)
+  "Return t if PREVIEW-KEY has been pressed."
+  (or (eq preview-key 'any)
+      (let ((keys (this-single-command-keys)))
+        (seq-find (lambda (x) (equal (vconcat x) keys))
+                  (if (listp preview-key)
+                      preview-key
+                    (list preview-key))))))
+
 (defun consult--with-preview-1 (preview-key state transform candidate fun)
   "Add preview support for FUN.
 
@@ -1006,14 +1015,9 @@ See `consult--with-preview' for the arguments PREVIEW-KEY, STATE, TRANSFORM and 
                 (fset post-command-sym
                       (lambda ()
                         (setq input (minibuffer-contents-no-properties))
-                        (when (or (eq preview-key 'any)
-                                  (let ((keys (this-single-command-keys)))
-                                    (seq-find (lambda (x) (equal (vconcat x) keys))
-                                              (if (listp preview-key)
-                                                  preview-key
-                                                (list preview-key)))))
-                          (when-let (cand (funcall candidate))
-                            (funcall consult--preview-function input cand)))))
+                        (when-let (cand (and (consult--preview-key-pressed-p preview-key)
+                                             (funcall candidate)))
+                            (funcall consult--preview-function input cand))))
                 (add-hook 'post-command-hook post-command-sym nil 'local)))
           (lambda ()
             (let ((post-command-sym (make-symbol "consult--preview-post-command")))
