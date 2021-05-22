@@ -433,8 +433,7 @@ Used by `consult-completion-in-region', `consult-yank' and `consult-history'.")
 
 (defvar-local consult--preview-function nil
   "Minibuffer-local variable which exposes the current preview function.
-This function can be called by custom completion systems from outside the minibuffer.
-The preview function expects two arguments, the current input string and the candidate string.")
+This function can be called by custom completion systems from outside the minibuffer.")
 
 (defconst consult--tofu-char #x100000
   "Special character used to encode line prefixes for disambiguation.
@@ -1004,20 +1003,21 @@ See `consult--with-preview' for the arguments PREVIEW-KEY, STATE, TRANSFORM and 
         (if (and state preview-key)
             (lambda ()
               (setq consult--preview-function
-                    (let ((last-preview))
-                      (lambda (&rest args)
-                        (cl-assert (window-minibuffer-p))
-                        (unless (equal last-preview args)
-                          (with-selected-window (or (minibuffer-selected-window) (next-window))
-                            (funcall state (apply transform args) nil))
-                          (setq last-preview args)))))
-              (let ((post-command-sym (make-symbol "consult--preview-post-command")))
-                (fset post-command-sym
+                    (let ((last-cand) (last-input))
                       (lambda ()
-                        (setq input (minibuffer-contents-no-properties))
-                        (when-let (cand (and (consult--preview-key-pressed-p preview-key)
-                                             (funcall candidate)))
-                            (funcall consult--preview-function input cand))))
+                        (when-let (cand (funcall candidate))
+                          (with-selected-window (active-minibuffer-window)
+                            (let ((input (minibuffer-contents-no-properties)))
+                              (when (and (consult--preview-key-pressed-p preview-key)
+                                         (not (and (equal last-input input) (equal last-cand cand))))
+                                (with-selected-window (or (minibuffer-selected-window) (next-window))
+                                  (funcall state (funcall transform input cand) nil)
+                                  (setq last-input input
+                                        last-cand cand)))))))))
+              (let ((post-command-sym (make-symbol "consult--preview-post-command")))
+                (fset post-command-sym (lambda ()
+                                         (setq input (minibuffer-contents-no-properties))
+                                         (funcall consult--preview-function)))
                 (add-hook 'post-command-hook post-command-sym nil 'local)))
           (lambda ()
             (let ((post-command-sym (make-symbol "consult--preview-post-command")))
@@ -3615,12 +3615,10 @@ When moving around in the *Completions* buffer, the candidate at point is automa
 (defun consult-preview-at-point ()
   "Preview candidate at point in *Completions* buffer."
   (interactive)
-  (when-let* ((cand (run-hook-with-args-until-success 'consult--completion-candidate-hook))
-              (win (active-minibuffer-window))
+  (when-let* ((win (active-minibuffer-window))
               (buf (window-buffer win))
               (fun (buffer-local-value 'consult--preview-function buf)))
-    (with-selected-window win
-      (funcall fun (minibuffer-contents-no-properties) cand))))
+    (funcall fun)))
 
 ;;;; Integration with the default completion system
 
