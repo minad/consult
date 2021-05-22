@@ -985,14 +985,14 @@ FACE is the cursor face."
       (when (and cand restore)
         (consult--jump cand)))))
 
-(defun consult--preview-key-pressed-p (preview-key)
-  "Return t if PREVIEW-KEY has been pressed."
-  (or (eq preview-key 'any)
+(defun consult--preview-key-pressed-p (preview-key cand)
+  "Return t if PREVIEW-KEY has been pressed given the current candidate CAND."
+  (when (and (consp preview-key) (memq :keys preview-key))
+    (setq preview-key (funcall (plist-get preview-key :predicate) cand)))
+  (setq preview-key (if (listp preview-key) preview-key (list preview-key)))
+  (or (memq 'any preview-key)
       (let ((keys (this-single-command-keys)))
-        (seq-find (lambda (x) (equal (vconcat x) keys))
-                  (if (listp preview-key)
-                      preview-key
-                    (list preview-key))))))
+        (seq-find (lambda (x) (equal (vconcat x) keys)) preview-key))))
 
 (defun consult--with-preview-1 (preview-key state transform candidate fun)
   "Add preview support for FUN.
@@ -1003,17 +1003,18 @@ See `consult--with-preview' for the arguments PREVIEW-KEY, STATE, TRANSFORM and 
         (if (and state preview-key)
             (lambda ()
               (setq consult--preview-function
-                    (let ((last-cand) (last-input))
+                    (let ((last-preview))
                       (lambda ()
                         (when-let (cand (funcall candidate))
                           (with-selected-window (active-minibuffer-window)
-                            (let ((input (minibuffer-contents-no-properties)))
-                              (when (and (consult--preview-key-pressed-p preview-key)
-                                         (not (and (equal last-input input) (equal last-cand cand))))
+                            (let ((input (minibuffer-contents-no-properties))
+                                  (new-preview (cons input cand)))
+                              (unless (equal last-preview new-preview)
                                 (with-selected-window (or (minibuffer-selected-window) (next-window))
-                                  (funcall state (funcall transform input cand) nil)
-                                  (setq last-input input
-                                        last-cand cand)))))))))
+                                  (let ((transformed (funcall transform input cand)))
+                                    (when (consult--preview-key-pressed-p preview-key transformed)
+                                      (funcall state transformed nil)
+                                      (setq last-preview new-preview)))))))))))
               (let ((post-command-sym (make-symbol "consult--preview-post-command")))
                 (fset post-command-sym (lambda ()
                                          (setq input (minibuffer-contents-no-properties))
@@ -1536,11 +1537,13 @@ PREVIEW-KEY is the preview key."
       (consult--narrow-setup narrow map))
 
     ;; Preview trigger keys
-    (when (and preview-key (not (eq preview-key 'any)))
-      (let ((preview-key (if (listp preview-key) preview-key (list preview-key))))
-        (dolist (key preview-key)
-          (unless (lookup-key old-map key)
-            (define-key map key #'ignore)))))
+    (when (and (consp preview-key) (memq :keys preview-key))
+      (setq preview-key (plist-get preview-key :keys)))
+    (setq preview-key (if (listp preview-key) preview-key (list preview-key)))
+    (when preview-key
+      (dolist (key preview-key)
+        (unless (or (eq key 'any) (lookup-key old-map key))
+          (define-key map key #'ignore))))
 
     ;; Put the keymap together
     (use-local-map
