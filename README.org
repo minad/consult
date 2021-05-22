@@ -556,9 +556,8 @@ their descriptions.
   perform preview.
 
   #+begin_src emacs-lisp
-  (nconc consult--source-bookmark (list :state #'consult--bookmark-preview))
-  (nconc consult--source-file (list :state #'consult--file-preview))
-  (nconc consult--source-project-file (list :state #'consult--file-preview))
+  (dolist (src '(consult--source-file consult--source-project-file consult--source-bookmark))
+    (set src (plist-put (symbol-value src) :preview-key (kbd "M-."))))
   #+end_src
 
   Sources can be added directly to the =consult-buffer-source= list for
@@ -788,8 +787,10 @@ contributed.
      ;; (setq consult-preview-key 'any)
      ;; (setq consult-preview-key (kbd "M-."))
      ;; (setq consult-preview-key (list (kbd "<S-down>") (kbd "<S-up>")))
-     (dolist (cmd '(consult-ripgrep consult-grep consult-bookmark consult-recent-file))
+     (dolist (cmd '(consult-ripgrep consult-git-grep consult-grep consult-bookmark consult-recent-file))
        (setf (alist-get cmd consult-config) `(:preview-key ,(kbd "M-."))))
+     (dolist (src '(consult--source-file consult--source-project-file consult--source-bookmark))
+       (set src (plist-put (symbol-value src) :preview-key (kbd "M-."))))
 
      ;; Optionally configure the narrowing key.
      ;; Both < and C-+ work reasonably well.

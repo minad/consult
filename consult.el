@@ -3235,18 +3235,18 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
     :face     consult-bookmark
     :history  bookmark-history
     :items    ,#'bookmark-all-names
-    :action   ,#'consult--bookmark-action)
+    :state    ,#'consult--bookmark-state)
   "Bookmark candidate source for `consult-buffer'.")
 
 (defvar consult--source-project-buffer
-  `(:name      "Project Buffer"
-    :narrow    (?p . "Project")
-    :hidden    t
-    :category  buffer
-    :face      consult-buffer
-    :history   buffer-name-history
-    :state     ,#'consult--buffer-state
-    :enabled   ,(lambda () consult-project-root-function)
+  `(:name     "Project Buffer"
+    :narrow   (?p . "Project")
+    :hidden   t
+    :category buffer
+    :face     consult-buffer
+    :history  buffer-name-history
+    :state    ,#'consult--buffer-state
+    :enabled  ,(lambda () consult-project-root-function)
     :items
     ,(lambda ()
        (when-let (root (consult--project-root))
@@ -3258,14 +3258,14 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
   "Project buffer candidate source for `consult-buffer'.")
 
 (defvar consult--source-project-file
-  `(:name      "Project File"
-    :narrow    (?p . "Project")
-    :hidden    t
-    :category  file
-    :face      consult-file
-    :history   file-name-history
-    :action    ,#'consult--file-action
-    :enabled   ,(lambda () (and consult-project-root-function
+  `(:name     "Project File"
+    :narrow   (?p . "Project")
+    :hidden   t
+    :category file
+    :face     consult-file
+    :history  file-name-history
+    :state    ,#'consult--file-state
+    :enabled  ,(lambda () (and consult-project-root-function
                                 recentf-mode))
     :items
     ,(lambda ()
@@ -3317,8 +3317,8 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
     :category file
     :face     consult-file
     :history  file-name-history
-    :action   ,#'consult--file-action
-    :enabled   ,(lambda () recentf-mode)
+    :state    ,#'consult--file-state
+    :enabled  ,(lambda () recentf-mode)
     :items
     ,(lambda ()
        (let ((ht (consult--cached-buffer-file-hash)))
