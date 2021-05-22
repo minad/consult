@@ -447,7 +447,7 @@ Size of private unicode plane b.")
 (defvar-local consult--narrow nil
   "Current narrowing key.")
 
-(defvar-local consult--narrow-prefixes nil
+(defvar-local consult--narrow-keys nil
   "Narrowing prefixes of the current completion.")
 
 (defvar-local consult--narrow-predicate nil
@@ -1074,7 +1074,7 @@ This command is used internally by the narrowing system of `consult--read'."
            (- (minibuffer-prompt-end) 1) (minibuffer-prompt-end)
            'before-string
            (propertize (format " [%s]" (alist-get consult--narrow
-                                                  consult--narrow-prefixes))
+                                                  consult--narrow-keys))
                        'face 'consult-narrow-indicator))))
   (run-hooks 'consult--completion-refresh-hook))
 
@@ -1092,9 +1092,9 @@ This command is used internally by the narrowing system of `consult--read'."
     ,(lambda (&optional _)
        (let ((str (minibuffer-contents-no-properties)))
          (when-let (pair (or (and (= 1 (length str))
-                                  (assoc (aref str 0) consult--narrow-prefixes))
+                                  (assoc (aref str 0) consult--narrow-keys))
                              (and (string= str "")
-                                  (assoc 32 consult--narrow-prefixes))))
+                                  (assoc 32 consult--narrow-keys))))
            (delete-minibuffer-contents)
            (consult-narrow (car pair))
            #'ignore)))))
@@ -1113,18 +1113,18 @@ to make it available for commands with narrowing."
                    (propertize (char-to-string (car x)) 'face 'consult-key) " "
                    (propertize (cdr x) 'face 'consult-help)))
       (seq-filter (lambda (x) (/= (car x) 32))
-                  consult--narrow-prefixes)
+                  consult--narrow-keys)
       " "))))
 
 (defun consult--narrow-setup (settings map)
   "Setup narrowing with SETTINGS and keymap MAP."
   (if (functionp (car settings))
       (setq consult--narrow-predicate (car settings)
-            consult--narrow-prefixes (cdr settings))
+            consult--narrow-keys (cdr settings))
     (setq consult--narrow-predicate nil
-          consult--narrow-prefixes settings))
+          consult--narrow-keys settings))
   (when consult-narrow-key
-    (dolist (pair consult--narrow-prefixes)
+    (dolist (pair consult--narrow-keys)
       (consult--define-key map
                            (vconcat consult-narrow-key (vector (car pair)))
                            #'consult-narrow (cdr pair))))
