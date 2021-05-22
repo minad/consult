@@ -1639,7 +1639,6 @@ See `consult--read' for the CANDIDATES, KEYMAP, ADD-HISTORY, NARROW and PREVIEW-
 (defun consult--read-annotate (fun cand)
   "Annotate CAND with annotation function FUN."
   (pcase (funcall fun cand)
-    (`(,_ ,suffix) suffix)
     (`(,_ ,_ ,suffix) suffix)
     (ann ann)))
 
