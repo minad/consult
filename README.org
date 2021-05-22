@@ -421,8 +421,8 @@ their descriptions.
  is useful if the list of candidates consists of candidates of multiple types or
  candidates from [[#multiple-sources][multiple sources]], like the =consult-buffer= command, which
  shows both buffers and recently opened files. Note that the group titles can be
- disabled by setting the =:title= property of the corresponding command in the
- =consult-config= configuration alist to nil.
+ disabled by setting the =:title= property of the corresponding command to using
+ the =consult-customize= macro.
 
  By entering a narrowing prefix or by pressing a narrowing key it is possible to
  restrict the completion candidates to a certain candidate group. When you use
@@ -781,16 +781,17 @@ contributed.
      ;; after lazily loading the package.
      :config
 
-     ;; Optionally configure preview. Note that the preview-key can also be
-     ;; configured on a per-command basis via `consult-config'. The default value
+     ;; Optionally configure preview. The default value
      ;; is 'any, such that any key triggers the preview.
      ;; (setq consult-preview-key 'any)
      ;; (setq consult-preview-key (kbd "M-."))
      ;; (setq consult-preview-key (list (kbd "<S-down>") (kbd "<S-up>")))
-     (dolist (cmd '(consult-ripgrep consult-git-grep consult-grep consult-bookmark consult-recent-file))
-       (setf (alist-get cmd consult-config) `(:preview-key ,(kbd "M-."))))
-     (dolist (src '(consult--source-file consult--source-project-file consult--source-bookmark))
-       (set src (plist-put (symbol-value src) :preview-key (kbd "M-."))))
+     ;; For some commands and buffer sources it is useful to configure the
+     ;; :preview-key on a per-command basis using the `consult-customize' macro.
+     (consult-customize
+      consult-ripgrep consult-git-grep consult-grep consult-bookmark consult-recent-file
+      consult--source-file consult--source-project-file consult--source-bookmark
+      :preview-key (kbd "M-."))
 
      ;; Optionally configure the narrowing key.
      ;; Both < and C-+ work reasonably well.
@@ -875,9 +876,9 @@ contributed.
  configuration feature is made available for experienced users with special
  requirements.
 
- Commands allow flexible, individual customization by setting the
- =consult-config= list. You can override any option passed to the internal
- =consult--read= API. The [[https://github.com/minad/consult/wiki][Consult wiki]] already contains a few useful
+ Commands and buffer sources allow flexible, individual customization by using
+ the =consult-customize= macro. You can override any option passed to the
+ internal =consult--read= API. The [[https://github.com/minad/consult/wiki][Consult wiki]] already contains a few useful
  configuration examples. Note that since =consult--read= is part of the internal
  API, options could be removed, replaced or renamed in future versions of the
  package.
@@ -893,23 +894,25 @@ contributed.
  - =:title= set to nil in order to disable candidate grouping and titles.
 
  #+begin_src emacs-lisp
- ;; Set preview for `consult-buffer' to key `M-.'
- ;; and disable preview for `consult-theme' completely.
- ;; For `consult-line' specify multiple keybindings.
- ;; Note that you should bind <S-up> and <S-down> in the
- ;; `minibuffer-local-completion-map', `selectrum-minibuffer-map' or
- ;; `vertico-map' to the commands which select the previous or next candidate.
- (setf (alist-get 'consult-theme consult-config) '(:preview-key nil))
- (setf (alist-get 'consult-buffer consult-config) `(:preview-key ,(kbd "M-.")))
- (setf (alist-get 'consult-line consult-config) `(:preview-key (,(kbd "<S-down>") ,(kbd "<S-up>"))))
+   (consult-customize
+    ;; Disable preview for `consult-theme' completely.
+    consult-theme :preview-key nil
+    ;; Set preview for `consult-buffer' to key `M-.'
+    consult-buffer :preview-key (kbd "M-.")
+    ;; For `consult-line' change the prompt and specify multiple preview keybindings.
+    ;; Note that you should bind <S-up> and <S-down> in the
+    ;; `minibuffer-local-completion-map', `selectrum-minibuffer-map' or
+    ;; `vertico-map' to the commands which select the previous or next candidate.
+    consult-line :prompt "Search: "
+    :preview-key (list (kbd "<S-down>") (kbd "<S-up>")))
  #+end_src
 
  Generally it is possible to modify commands for your individual needs by the
  following techniques:
 
- 1. Create your own wrapper function which passes modified arguments to the Consult functions.
- 2. Create your own buffer [[#multiple-sources][multi sources]] for =consult-buffer=.
- 3. Modify =consult-config= in order to change the =consult--read= settings.
+ 1. Use =consult-customize= in order to change the command or source settings.
+ 2. Create your own wrapper function which passes modified arguments to the Consult functions.
+ 3. Create your own buffer [[#multiple-sources][multi sources]] for =consult-buffer=.
  4. Create advices to modify some internal behavior.
  5. Write or propose a patch.
 

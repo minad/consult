@@ -480,6 +480,33 @@ Size of private unicode plane b.")
 (defvar-local consult--focus-lines-overlays nil
   "Overlays used by `consult-focus-lines'.")
 
+;;;; Customization helper
+
+(defun consult--customize-set (cmds prop val)
+  "Set property PROP to VAL of commands CMDS."
+  (dolist (cmd cmds)
+    (cond
+     ((commandp cmd)
+      (setf (alist-get cmd consult-config)
+            (plist-put (alist-get cmd consult-config) prop val)))
+     ((boundp cmd)
+      (set cmd (plist-put (symbol-value cmd) prop val)))
+     (t (user-error "%s is neither a Consult command nor a Consult source"))))
+  nil)
+
+(defmacro consult-customize (&rest args)
+  "Set properties of commands or sources.
+ARGS is a list of commands or sources followed by the list of keyword-value pairs."
+  ;;(declare (indent 2))
+  (let ((setter))
+    (while args
+      (let ((cmds (seq-take-while (lambda (x) (not (keywordp x))) args)))
+        (setq args (seq-drop-while (lambda (x) (not (keywordp x))) args))
+        (while (keywordp (car args))
+          (push `(consult--customize-set ',cmds ,(car args) ,(cadr args)) setter)
+          (setq args (cddr args)))))
+    (macroexp-progn setter)))
+
 ;;;; Helper functions and macros
 
 ;; Upstream issue: https://debbugs.gnu.org/cgi/bugreport.cgi?bug=46326
@@ -2541,10 +2568,11 @@ The function is called with 4 arguments: START END COLLECTION PREDICATE.
 The arguments and expected return value are as specified for
 `completion-in-region'. Use as a value for `completion-in-region-function'.
 
-The function can be configured via `consult-config'.
+The function can be configured via `consult-customize'.
 
-    (setf (alist-get #'consult-completion-in-region consult-config)
-      '(:completion-styles (basic)))
+    (consult-customize consult-completion-in-region
+                       :completion-styles (basic)
+                       :cycle-threshold 3)
 
 These configuration options are supported:
 
