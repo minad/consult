@@ -1407,30 +1407,34 @@ PROPS are optional properties passed to `make-process'."
 
 The THROTTLE delay defaults to `consult-async-input-throttle'.
 The DEBOUNCE delay defaults to `consult-async-input-debounce'."
-  (let* ((throttle (or throttle consult-async-input-throttle))
-         (debounce (or debounce consult-async-input-debounce))
-         (input "")
-         (unlocked t)
-         (throttle-timer)
-         (debounce-timer))
+  (setq throttle (or throttle consult-async-input-throttle)
+        debounce (or debounce consult-async-input-debounce))
+  (let ((input "") (last) (timer))
     (lambda (action)
       (pcase action
         ('setup
-         (funcall async 'setup)
-         (setq throttle-timer (run-at-time throttle throttle (lambda () (setq unlocked t)))))
+         (funcall async 'setup))
         ((pred stringp)
-         (when debounce-timer
-           (cancel-timer debounce-timer))
          (unless (string= action input)
-           (funcall async (setq input "")) ;; cancel running process
+           (when timer
+             (cancel-timer timer)
+             (setq timer nil))
+           (funcall async "") ;; cancel running process
+           (setq input action)
            (unless (string= action "")
-             (setq debounce-timer (run-at-time
-                                   (+ debounce (if unlocked 0 throttle)) nil
-                                   (lambda () (funcall async (setq unlocked nil input action))))))))
+             (setq timer
+                   (run-at-time
+                    (+ debounce
+                       (if last
+                           (min (- (float-time) last)
+                                consult-async-input-throttle)
+                         0))
+                    nil
+                    (lambda ()
+                      (setq last (float-time))
+                      (funcall async action)))))))
         ('destroy
-         (cancel-timer throttle-timer)
-         (when debounce-timer
-           (cancel-timer debounce-timer))
+         (when timer (cancel-timer timer))
          (funcall async 'destroy))
         (_ (funcall async action))))))
 
