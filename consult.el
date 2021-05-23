@@ -112,12 +112,17 @@ asynchronous commands, e.g., `consult-grep'."
 This applies to asynchronous commands, e.g., `consult-grep'."
   :type 'integer)
 
-(defcustom consult-async-default-split "#"
-  "Default async input separator used for splitting.
+(defcustom consult-async-split-style '(punctuation "#")
+  "Async splitter style.
 
-Can also be nil in order to not automatically insert a separator. This
-applies to asynchronous commands, e.g., `consult-grep'."
-  :type 'string)
+Currently supported are `punctuation' and `space'."
+  :type '(choice (const :tag "Space" space)
+                 (const :tag "Punctuation" (punctuation "#"))
+                 (list (const punctuation) string)))
+
+(defvar consult-async-default-split "#")
+(make-obsolete-variable 'consult-async-default-split
+                        "Deprecated in favor of `consult-async-split-style'." "0.7")
 
 (defcustom consult-mode-histories
   '((eshell-mode . eshell-history-ring)
@@ -1202,7 +1207,21 @@ separator. Examples: \"/async/filter\", \"#async#filter\"."
             ;; List of highlights
             (0 . ,(match-beginning 1))
             ,@(and (match-end 2) `((,(match-beginning 2) . ,(match-end 2)))))))
-    (list str "" 0)))
+    `(,str "" 0)))
+
+(defun consult--split-space (str point)
+  "Split input STR in async input and filtering part at the first space.
+POINT is the point position."
+  (save-match-data
+    (if (string-match "^\\([^ ]+\\)\\( \\)?" str)
+        `(,(match-string 1 str)
+          ,(substring str (match-end 0))
+          ,(max 0 (- point (match-end 0)))
+          ;; Force update it space is entered.
+          ,(match-end 2)
+          ;; List of highlights
+          (0 . ,(match-end 1)))
+      `(,str "" 0))))
 
 (defun consult--split-setup (split)
   "Setup splitting completion style with splitter function SPLIT."
@@ -1285,16 +1304,33 @@ string   The input string. Called when the user enters something."
          (setq last (last (if last (setcdr last action) (setq candidates action))))
          candidates)))))
 
-(defun consult--async-split (async)
-  "Create async function, which splits the input string."
+(defun consult--async-split-style ()
+  "Return the async split style function and initial string."
+  (pcase consult-async-split-style
+    ('space (cons #'consult--split-space nil))
+    ('punctuation (cons #'consult--split-punctuation nil))
+    (`(punctuation ,initial) (cons #'consult--split-punctuation initial))
+    (_ (error "Invalid `consult-async-split-style': %S"
+              consult-async-split-style))))
+
+(defun consult--async-split-initial (initial)
+  "Return initial string for async command.
+INITIAL is the additional initial string."
+  (concat (cdr (consult--async-split-style)) initial))
+
+(defun consult--async-split (async &optional split)
+  "Create async function, which splits the input string.
+ASYNC is the async sink.
+SPLIT is the splitting function."
+  (setq split (or split (car (consult--async-split-style))))
   (lambda (action)
     (pcase action
       ('setup
-       (consult--split-setup #'consult--split-punctuation)
+       (consult--split-setup split)
        (funcall async 'setup))
       ((pred stringp)
        (pcase-let* ((`(,async-str ,_ ,_ ,force . ,highlights)
-                     (consult--split-punctuation action 0))
+                     (funcall split action 0))
                     (async-len (length async-str))
                     (input-len (length action))
                     (end (minibuffer-prompt-end)))
@@ -3550,10 +3586,10 @@ The symbol at point is added to the future history."
      :prompt (car prompt-dir)
      :lookup #'consult--lookup-cdr
      :state (consult--grep-state)
-     :initial (concat consult-async-default-split initial)
+     :initial (consult--async-split-initial initial)
      :add-history
      (when-let (thing (thing-at-point 'symbol))
-       (concat consult-async-default-split thing))
+       (consult--async-split-initial thing))
      :require-match t
      :category 'consult-grep
      :group #'consult--grep-group
@@ -3615,10 +3651,10 @@ CMD is the find argument string."
    :prompt prompt
    :sort nil
    :require-match t
-   :initial (concat consult-async-default-split initial)
+   :initial (consult--async-split-initial initial)
    :add-history
    (when-let (thing (thing-at-point 'filename))
-     (concat consult-async-default-split thing))
+     (consult--async-split-initial thing))
    :category 'file
    :history '(:input consult--find-history)))
 
@@ -3675,10 +3711,10 @@ See `consult-grep' for more details regarding the asynchronous search."
         :prompt "Manual entry: "
         :require-match t
         :lookup #'consult--lookup-cdr
-        :initial (concat consult-async-default-split initial)
+        :initial (consult--async-split-initial initial)
         :add-history
         (when-let (thing (thing-at-point 'symbol))
-          (concat consult-async-default-split thing))
+          (consult--async-split-initial thing))
         :history '(:input consult--man-history))))
 
 ;;;; Preview at point in completions buffers
