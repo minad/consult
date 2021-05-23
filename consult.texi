@@ -996,16 +996,13 @@ contributed.
 values and abbreviated description. Alternatively, type @samp{C-h a ^consult} to get
 an overview of all Consult variables and functions with their descriptions.
 
-@multitable {aaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+@multitable {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
 @headitem Variable
 @tab Default
 @tab Description
 @item consult-after-jump-hook
 @tab '(recenter)
 @tab Functions to call after jumping to a location
-@item consult-async-split-style
-@tab 'perl
-@tab Splitting style used for async commands
 @item consult-async-input-debounce
 @tab 0.25
 @tab Input debounce for asynchronous commands
@@ -1018,6 +1015,12 @@ an overview of all Consult variables and functions with their descriptions.
 @item consult-async-refresh-delay
 @tab 0.25
 @tab Refresh delay for asynchronous commands
+@item consult-async-split-style
+@tab 'perl
+@tab Splitting style used for async commands
+@item consult-async-split-styles-alist
+@tab @dots{}
+@tab Availabla splitting styles used for async commands
 @item consult-bookmark-narrow
 @tab @dots{}
 @tab Narrowing configuration for @samp{consult-bookmark}

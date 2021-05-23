@@ -14,6 +14,10 @@
 - =consult-yank= commands: =delete-selection-mode= support, added properties.
 - =consult-preview-at-point=, =consult-preview-at-point-mode=: New command and
   minor mode to preview candidate at point in =*Completions*= buffer.
+- Add =consult-async-split-style= and =consult-async-split-styles-alist=.
+- Deprecate =consult-config= in favor of new =consult-customize= macro.
+- =consult-buffer=: Enable previews for files and bookmarks by default.
+- =consult-buffer=/=consult--multi=: Add support for =:preview-key= per source.
 
 * Version 0.7 (2021-04-29)
 
