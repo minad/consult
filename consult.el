@@ -1194,12 +1194,15 @@ separator. Examples: \"/async/filter\", \"#async#filter\"."
       (save-match-data
         (let ((q (regexp-quote (substring str 0 1))))
           (string-match (concat "^" q "\\([^" q "]*\\)\\(" q "\\)?") str)
-          (list (match-string 1 str)
-                (substring str (match-end 0))
-                (max 0 (- point (match-end 0)))
-                ;; Force update it two punctuation characters are entered.
-                (match-end 2))))
-    (list str "" 0 nil)))
+          `(,(match-string 1 str)
+            ,(substring str (match-end 0))
+            ,(max 0 (- point (match-end 0)))
+            ;; Force update it two punctuation characters are entered.
+            ,(match-end 2)
+            ;; List of highlights
+            (0 . ,(match-beginning 1))
+            ,@(and (match-end 2) `((,(match-beginning 2) . ,(match-end 2)))))))
+    (list str "" 0)))
 
 (defun consult--split-setup (split)
   "Setup splitting completion style with splitter function SPLIT."
@@ -1290,19 +1293,16 @@ string   The input string. Called when the user enters something."
        (consult--split-setup #'consult--split-punctuation)
        (funcall async 'setup))
       ((pred stringp)
-       (pcase-let* ((`(,async-str ,_ ,_ ,force)
+       (pcase-let* ((`(,async-str ,_ ,_ ,force . ,highlights)
                      (consult--split-punctuation action 0))
                     (async-len (length async-str))
                     (input-len (length action))
                     (end (minibuffer-prompt-end)))
          ;; Highlight punctuation characters
          (remove-list-of-text-properties end (+ end input-len) '(face))
-         (when (> input-len async-len)
-           (put-text-property end (1+ end) 'face 'consult-async-split)
-           (when (> input-len (1+ async-len))
-             (put-text-property (+ 1 end async-len)
-                                (+ 2 end async-len)
-                                'face 'consult-async-split)))
+         (dolist (hl highlights)
+           (put-text-property (+ end (car hl)) (+ end (cdr hl))
+                              'face 'consult-async-split))
          (funcall async
                   ;; Pass through if the input is long enough!
                   (if (or force (>= async-len consult-async-min-input))
