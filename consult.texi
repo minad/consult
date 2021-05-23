@@ -1018,9 +1018,6 @@ an overview of all Consult variables and functions with their descriptions.
 @item consult-buffer-sources
 @tab @dots{}
 @tab List of virtual buffer sources
-@item consult-config
-@tab nil
-@tab Invididual command option configuration
 @item consult-find-command
 @tab "find @dots{}"
 @tab Command line arguments for find

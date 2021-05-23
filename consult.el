@@ -298,15 +298,6 @@ command options."
 Each element of the list must have the form '(char name handler)."
   :type '(repeat (list character string function)))
 
-(defcustom consult-config nil
-  "Command configuration alist, which allows fine-grained configuration.
-
-Each element of the list must have the form (command-name plist...). The options
-set here will be passed to `consult--read', when called from the corresponding
-command. Note that the options depend on the private `consult--read' API and
-should not be considered as stable as the public API."
-  :type '(alist :key-type symbol :value-type plist))
-
 ;;;; Faces
 
 (defgroup consult-faces nil
@@ -411,6 +402,17 @@ Used by `consult-completion-in-region', `consult-yank' and `consult-history'.")
 
 ;;;; Internal variables
 
+(defvaralias 'consult-config 'consult--read-config)
+(make-obsolete-variable 'consult-config "Deprecated in favor of `consult-customize'." "0.7")
+
+(defvar consult--read-config nil
+  "Command configuration alist, which allows fine-grained configuration.
+
+Each element of the list must have the form (command-name plist...). The options
+set here will be passed to `consult--read', when called from the corresponding
+command. Note that the options depend on the private `consult--read' API and
+should not be considered as stable as the public API.")
+
 (defvar consult--multi-sources nil
   "Vector of currently active `consult--multi' sources.")
 
@@ -487,8 +489,8 @@ Size of private unicode plane b.")
   (dolist (cmd cmds)
     (cond
      ((commandp cmd)
-      (setf (alist-get cmd consult-config)
-            (plist-put (alist-get cmd consult-config) prop val)))
+      (setf (alist-get cmd consult--read-config)
+            (plist-put (alist-get cmd consult--read-config) prop val)))
      ((boundp cmd)
       (set cmd (plist-put (symbol-value cmd) prop val)))
      (t (user-error "%s is neither a Consult command nor a Consult source"))))
@@ -1754,7 +1756,7 @@ KEYMAP is a command-specific keymap."
           keymap category initial narrow add-history annotate
           state preview-key sort lookup title)
   (apply #'consult--read-1 candidates
-         (append (alist-get this-command consult-config)
+         (append (alist-get this-command consult--read-config)
                  options
                  (list :prompt "Select: "
                        :preview-key consult-preview-key
@@ -1964,7 +1966,7 @@ KEYMAP is a command-specific keymap."
   (ignore prompt history add-history initial default
           keymap state preview-key transform)
   (apply #'consult--prompt-1
-         (append (alist-get this-command consult-config)
+         (append (alist-get this-command consult--read-config)
                  options
                  (list :prompt "Input: "
                        :preview-key consult-preview-key
@@ -2587,7 +2589,7 @@ These configuration options are supported:
     * :completion-styles - Use completion styles (def: `completion-styles')
     * :require-match - Require matches when completing (def: nil)
     * :prompt - The prompt string shown in the minibuffer"
-  (cl-letf* ((config (alist-get #'consult-completion-in-region consult-config))
+  (cl-letf* ((config (alist-get #'consult-completion-in-region consult--read-config))
              ;; Overwrite both the local and global value of `completion-styles', such that the
              ;; `completing-read' minibuffer sees the overwritten value in any case. This is
              ;; necessary if `completion-styles' is buffer-local.
