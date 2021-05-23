@@ -586,9 +586,9 @@ Emacs completion-style. This can be powerful if you are using for example the
 
 This two-level filtering is possible by splitting the input string. Part of the
 input string is treated as input to grep and part of the input is used for
-filtering. There are two multple splitting styles available, configured in
-@code{consult-async-split-styles-alist}, e.g., @samp{space}, @samp{comma}, @samp{semicolon} and
-@samp{perl}. The default splitting style is configured with the variable
+filtering. There are multiple splitting styles available, configured in
+@code{consult-async-split-styles-alist}: @samp{space}, @samp{comma}, @samp{semicolon} and @samp{perl}.
+The default splitting style is configured with the variable
 @code{consult-async-split-style}.
 
 For the @samp{space=/=comma=/=semicolon} splitting styles, the first word before the
