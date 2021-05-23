@@ -1671,7 +1671,7 @@ See `consult--read' for the CANDIDATES, KEYMAP, ADD-HISTORY, NARROW and PREVIEW-
   "See `consult--read' for documentation."
   (ignore narrow add-history keymap)
   (when title
-    (message "consult--read :title has been deprecated in favor of :group in accordance with Emacs 28")
+    (message "Deprecation: `%s' passed obsolete :title argument to `consult--read'" this-command)
     (setq group title))
   (consult--minibuffer-with-setup-hook
       (:append (lambda () (apply #'consult--read-setup candidates options)))
