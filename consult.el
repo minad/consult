@@ -1281,10 +1281,7 @@ string   The input string. Called when the user enters something."
          candidates)))))
 
 (defun consult--async-split (async)
-  "Create async function, which splits the input string.
-
-The input string is split at the first comma. The part before
-the comma is passed to ASYNC, the second part is used for filtering."
+  "Create async function, which splits the input string."
   (lambda (action)
     (pcase action
       ('setup
