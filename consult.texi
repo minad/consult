@@ -586,15 +586,17 @@ Emacs completion-style. This can be powerful if you are using for example the
 
 This two-level filtering is possible by splitting the input string. Part of the
 input string is treated as input to grep and part of the input is used for
-filtering. There are two splitting styles available: @samp{punctuation} and @samp{space}. It
-is possible to configure the splitting style with the variable
+filtering. There are two multple splitting styles available, configured in
+@code{consult-async-split-styles-alist}, e.g., @samp{space}, @samp{comma}, @samp{semicolon} and
+@samp{perl}. The default splitting style is configured with the variable
 @code{consult-async-split-style}.
 
-For the @samp{space} splitting style, the first word is passed to grep, the remaining
-string is used for filtering.
+For the @samp{space=/=comma=/=semicolon} splitting styles, the first word before the
+space/comma/semicolon is passed to grep, the remaining string is used for
+filtering.
 
-For the @samp{punctuation} splitting style, the input string is split at a
-punctuation character, using a similar syntax as Perl regular expressions.
+For the @samp{perl} splitting style, the input string is split at a punctuation
+character, using a similar syntax as Perl regular expressions.
 
 Examples:
 
@@ -994,7 +996,7 @@ contributed.
 values and abbreviated description. Alternatively, type @samp{C-h a ^consult} to get
 an overview of all Consult variables and functions with their descriptions.
 
-@multitable {aaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+@multitable {aaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
 @headitem Variable
 @tab Default
 @tab Description
@@ -1002,7 +1004,7 @@ an overview of all Consult variables and functions with their descriptions.
 @tab '(recenter)
 @tab Functions to call after jumping to a location
 @item consult-async-split-style
-@tab '(punctuation "#")
+@tab 'perl
 @tab Splitting style used for async commands
 @item consult-async-input-debounce
 @tab 0.25

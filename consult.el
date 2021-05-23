@@ -112,17 +112,20 @@ asynchronous commands, e.g., `consult-grep'."
 This applies to asynchronous commands, e.g., `consult-grep'."
   :type 'integer)
 
-(defcustom consult-async-split-style '(punctuation "#")
-  "Async splitter style.
-
-Currently supported are `punctuation' and `space'."
+(defcustom consult-async-split-style 'perl
+  "Async splitter style, see `consult-async-split-styles-alist'."
   :type '(choice (const :tag "Space" space)
-                 (const :tag "Punctuation" (punctuation "#"))
-                 (list (const punctuation) string)))
+                 (const :tag "Comma" comma)
+                 (const :tag "Semicolon" semicolon)
+                 (const :tag "Perl" perl)))
 
-(defvar consult-async-default-split "#")
-(make-obsolete-variable 'consult-async-default-split
-                        "Deprecated in favor of `consult-async-split-style'." "0.7")
+(defcustom consult-async-split-styles-alist
+  '((space :separator ?\s :type separator)
+    (comma :separator ?, :type separator)
+    (semicolon :separator ?\; :type separator)
+    (perl :initial "#" :type perl))
+  "Async splitter styles."
+  :type 'alist)
 
 (defcustom consult-mode-histories
   '((eshell-mode . eshell-history-ring)
@@ -406,6 +409,10 @@ Used by `consult-completion-in-region', `consult-yank' and `consult-history'.")
 (defvar consult--buffer-history nil)
 
 ;;;; Internal variables
+
+(defvar consult-async-default-split "#")
+(make-obsolete-variable 'consult-async-default-split
+                        "Deprecated in favor of `consult-async-split-style'." "0.7")
 
 (defvaralias 'consult-config 'consult--read-config)
 (make-obsolete-variable 'consult-config "Deprecated in favor of `consult-customize'." "0.7")
@@ -1188,7 +1195,7 @@ to make it available for commands with narrowing."
 
 ;;;; Splitting completion style
 
-(defun consult--split-punctuation (str point)
+(defun consult--split-perl (str point)
   "Split input STR in async input and filtering part.
 
 The function returns a list with four elements: The async string, the
@@ -1209,11 +1216,12 @@ separator. Examples: \"/async/filter\", \"#async#filter\"."
             ,@(and (match-end 2) `((,(match-beginning 2) . ,(match-end 2)))))))
     `(,str "" 0)))
 
-(defun consult--split-space (str point)
-  "Split input STR in async input and filtering part at the first space.
+(defun consult--split-separator (sep str point)
+  "Split input STR in async input and filtering part at the first separator SEP.
 POINT is the point position."
+  (setq sep (regexp-quote (char-to-string sep)))
   (save-match-data
-    (if (string-match "^\\([^ ]+\\)\\( \\)?" str)
+    (if (string-match (format "^\\([^%s]+\\)\\(%s\\)?" sep sep) str)
         `(,(match-string 1 str)
           ,(substring str (match-end 0))
           ,(max 0 (- point (match-end 0)))
@@ -1306,23 +1314,25 @@ string   The input string. Called when the user enters something."
 
 (defun consult--async-split-style ()
   "Return the async split style function and initial string."
-  (pcase consult-async-split-style
-    ('space (cons #'consult--split-space nil))
-    ('punctuation (cons #'consult--split-punctuation nil))
-    (`(punctuation ,initial) (cons #'consult--split-punctuation initial))
-    (_ (error "Invalid `consult-async-split-style': %S"
-              consult-async-split-style))))
+  (or (alist-get consult-async-split-style consult-async-split-styles-alist)
+      (user-error "Split style `%s' not found" consult-async-split-style)))
 
 (defun consult--async-split-initial (initial)
   "Return initial string for async command.
 INITIAL is the additional initial string."
-  (concat (cdr (consult--async-split-style)) initial))
+  (concat (plist-get (consult--async-split-style) :initial) initial))
 
 (defun consult--async-split (async &optional split)
   "Create async function, which splits the input string.
 ASYNC is the async sink.
 SPLIT is the splitting function."
-  (setq split (or split (car (consult--async-split-style))))
+  (unless split
+    (let ((style (consult--async-split-style)))
+      (setq split (pcase (plist-get style :type)
+                    ('separator (apply-partially #'consult--split-separator
+                                                 (plist-get style :separator)))
+                    ('perl #'consult--split-perl)
+                    (type (user-error "Invalid style type `%s'" type))))))
   (lambda (action)
     (pcase action
       ('setup
