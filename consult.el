@@ -1186,18 +1186,20 @@ to make it available for commands with narrowing."
 (defun consult--split-punctuation (str point)
   "Split input STR in async input and filtering part.
 
-The function returns a list with three elements: The async string, the
-completion filter string and the new point position computed from POINT.
-If the first character is a punctuation character it determines the separator.
-Examples: \"/async/filter\", \"#async#filter\"."
+The function returns a list with four elements: The async string, the
+completion filter string, the new point position computed from POINT and a
+force flag. If the first character is a punctuation character it determines the
+separator. Examples: \"/async/filter\", \"#async#filter\"."
   (if (string-match-p "^[[:punct:]]" str)
       (save-match-data
         (let ((q (regexp-quote (substring str 0 1))))
-          (string-match (concat "^" q "\\([^" q "]*\\)" q "?") str)
+          (string-match (concat "^" q "\\([^" q "]*\\)\\(" q "\\)?") str)
           (list (match-string 1 str)
                 (substring str (match-end 0))
-                (max 0 (- point (match-end 0))))))
-    (list str "" 0)))
+                (max 0 (- point (match-end 0)))
+                ;; Force update it two punctuation characters are entered.
+                (match-end 2))))
+    (list str "" 0 nil)))
 
 (defun consult--split-setup (split)
   "Setup splitting completion style with splitter function SPLIT."
@@ -1288,10 +1290,11 @@ string   The input string. Called when the user enters something."
        (consult--split-setup #'consult--split-punctuation)
        (funcall async 'setup))
       ((pred stringp)
-       (let* ((async-str (car (consult--split-punctuation action 0)))
-              (async-len (length async-str))
-              (input-len (length action))
-              (end (minibuffer-prompt-end)))
+       (pcase-let* ((`(,async-str ,_ ,_ ,force)
+                     (consult--split-punctuation action 0))
+                    (async-len (length async-str))
+                    (input-len (length action))
+                    (end (minibuffer-prompt-end)))
          ;; Highlight punctuation characters
          (remove-list-of-text-properties end (+ end input-len) '(face))
          (when (> input-len async-len)
@@ -1301,10 +1304,8 @@ string   The input string. Called when the user enters something."
                                 (+ 2 end async-len)
                                 'face 'consult-async-split)))
          (funcall async
-                  ;; Pass through if forced by two punctuation characters
-                  ;; or if the input is long enough!
-                  (if (or (>= input-len (+ 2 async-len))
-                          (>= async-len consult-async-min-input))
+                  ;; Pass through if the input is long enough!
+                  (if (or force (>= async-len consult-async-min-input))
                       async-str
                     ;; Pretend that there is no input
                     ""))))
