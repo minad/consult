@@ -421,7 +421,7 @@ their descriptions.
  is useful if the list of candidates consists of candidates of multiple types or
  candidates from [[#multiple-sources][multiple sources]], like the =consult-buffer= command, which
  shows both buffers and recently opened files. Note that the group titles can be
- disabled by setting the =:title= property of the corresponding command to using
+ disabled by setting the =:group= property of the corresponding command to using
  the =consult-customize= macro.
 
  By entering a narrowing prefix or by pressing a narrowing key it is possible to
@@ -890,7 +890,7 @@ contributed.
  - =:history= set the history variable symbol
  - =:add-history= add items to the future history, for example symbol at point
  - =:sort= enable or disable sorting
- - =:title= set to nil in order to disable candidate grouping and titles.
+ - =:group= set to nil in order to disable candidate grouping and titles.
 
  #+begin_src emacs-lisp
    (consult-customize

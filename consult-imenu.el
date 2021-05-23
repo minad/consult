@@ -182,7 +182,7 @@ The symbol at point is added to the future history."
           ;; in order to avoid any bad side effects.
           (funcall preview (and (markerp (cdr cand)) (cdr cand)) restore)))
       :require-match t
-      :title
+      :group
       (when narrow
         (lambda (cand transform)
           (when-let (type (get-text-property 0 'consult--type cand))

@@ -67,7 +67,7 @@
                     (t (message "No preview for %s" (type-of loc))))
                    nil)))))))
 
-(defun consult-xref--title (cand transform)
+(defun consult-xref--group (cand transform)
   "Return title for CAND or TRANSFORM the candidate."
   (if transform
       (substring cand (1+ (length (get-text-property 0 'consult-xref--group cand))))
@@ -92,7 +92,7 @@ FETCHER and ALIST arguments."
           :require-match t
           :sort nil
           :category 'xref-location
-          :title #'consult-xref--title
+          :group #'consult-xref--group
           :state
           ;; do not preview other frame
           (when-let (fun (pcase-exhaustive display

@@ -148,7 +148,7 @@ register access functions. The command supports narrowing, see
                    (when-let (reg (get-register cand))
                      (and (markerp reg) reg))
                    restore)))
-      :title (consult--type-title narrow)
+      :group (consult--type-group narrow)
       :narrow (consult--type-narrow narrow)
       :sort nil
       :require-match t

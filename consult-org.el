@@ -95,7 +95,7 @@ buffer are offered."
      :history '(:input consult-org--history)
      :narrow (consult-org--narrow)
      :state (consult--jump-state)
-     :title
+     :group
      (when prefix
        (lambda (cand transform)
          (let ((name (buffer-name

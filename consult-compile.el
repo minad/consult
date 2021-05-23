@@ -109,7 +109,7 @@ preview of the currently selected error."
    :require-match t
    :history t ;; disable history
    :lookup #'consult-compile--error-lookup
-   :title (consult--type-title consult-compile--narrow)
+   :group (consult--type-group consult-compile--narrow)
    :narrow (consult--type-narrow consult-compile--narrow)
    :history '(:input consult-compile--history)
    :state (consult--jump-state 'consult-preview-error)))

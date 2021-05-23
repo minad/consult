@@ -83,7 +83,7 @@
    :history t ;; disable history
    :require-match t
    :sort nil
-   :title (consult--type-title consult-flymake--narrow)
+   :group (consult--type-group consult-flymake--narrow)
    :narrow (consult--type-narrow consult-flymake--narrow)
    :lookup #'consult--lookup-candidate
    :state (consult--jump-state 'consult-preview-error)))

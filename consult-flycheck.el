@@ -103,7 +103,7 @@ In contrast to `flycheck-error-level-<' sort errors first."
    :history t ;; disable history
    :require-match t
    :sort nil
-   :title (consult--type-title consult-flycheck--narrow)
+   :group (consult--type-group consult-flycheck--narrow)
    :narrow (consult--type-narrow consult-flycheck--narrow)
    :lookup #'consult--lookup-candidate
    :state (consult--jump-state 'consult-preview-error)))
