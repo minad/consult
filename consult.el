@@ -2222,13 +2222,12 @@ The symbol at point is added to the future history."
         (setq line (1+ line))))
     (unless candidates
       (user-error "No lines"))
-    (cons (car default-cand)
-          (nreverse
-           (if top
-               candidates
-             (let ((before (cdr default-cand)))
-               (setcdr default-cand nil)
-               (nconc before candidates)))))))
+    (nreverse
+     (if top
+         candidates
+       (let ((before (cdr default-cand)))
+         (setcdr default-cand nil)
+         (nconc before candidates))))))
 
 (defun consult--line-match (input candidates cand)
   "Lookup position of match.
