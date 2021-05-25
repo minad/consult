@@ -1,5 +1,7 @@
 ;;; consult.el --- Consulting completing-read -*- lexical-binding: t -*-
 
+;; Copyright (C) 2021  Free Software Foundation, Inc.
+
 ;; Author: Daniel Mendler and Consult contributors
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2020
@@ -8,7 +10,7 @@
 ;; Package-Requires: ((emacs "26.1"))
 ;; Homepage: https://github.com/minad/consult
 
-;; This file is not part of GNU Emacs.
+;; This file is part of GNU Emacs.
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
