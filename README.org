@@ -286,7 +286,7 @@ their descriptions.
    recursive editing. The command supports narrowing. Press =e SPC=, =w SPC=, =n
    SPC= to only show errors, warnings and notes respectively.
  - =consult-flycheck=: Jump to flycheck error, similar to =consult-flymake=.
-   This command requires the installation of the additional =consult-flycheck.el=
+   This command requires the installation of the additional =consult-flycheck=
    package since the main =consult= package only depends on Emacs core
    components.
  - =consult-xref=: Integration with xref. This function can be set as
@@ -687,10 +687,6 @@ Consult can be installed from [[https://melpa.org/][MELPA]] via the Emacs built-
 Alternatively it can be directly installed from the development repository via
 other non-standard package managers.
 
-Note that there are two packages as of now: =consult= and =consult-flycheck=.
-=consult-flycheck= is a separate package such that the core =consult= package
-only depends on Emacs core components.
-
 There is the [[https://github.com/minad/consult/wiki][Consult wiki]], where additional configuration examples can be
 contributed.
 
@@ -943,7 +939,7 @@ There exist a few packages which integrate Consult with special programs or with
 other packages in the Emacs ecosystem. You may want to install some of them
 depending on your personal preferences.
 
-- consult-flycheck: Provides the =consult-flycheck= command (maintained in this repository).
+- [[https://github.com/minad/consult-flycheck][consult-flycheck]]: Provides the =consult-flycheck= command.
 - [[https://github.com/gagbo/consult-lsp][consult-lsp]]: Integration with [[https://github.com/emacs-lsp/lsp-mode][LSP-Mode]] (Language Server Protocol).
 - [[https://codeberg.org/jao/consult-notmuch][consult-notmuch]]: Access the [[https://notmuchmail.org/][Notmuch]] email system using Consult.
 - [[https://codeberg.org/jao/consult-recoll][consult-recoll]]: Access the [[https://www.lesbonscomptes.com/recoll/][Recoll]] desktop full-text search using Consult.
