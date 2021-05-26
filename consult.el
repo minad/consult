@@ -525,6 +525,30 @@ ARGS is a list of commands or sources followed by the list of keyword-value pair
 
 ;;;; Helper functions and macros
 
+(defvar consult-prefill-minibuffer-config
+  '()
+  "An alist of (COMMAND . STRING) pairs describing which commands gets prefilled with what string.
+If COMMAND prompts the user via the minibufer, the minibuffer
+gets the string STRING as initial input. See
+`consult--prefill-minibuffer' and
+`consult-with-prefilled-minibuffer'")
+
+(defun consult--prefill-minibuffer ()
+  (when-let (key (alist-get this-command consult-prefill-minibuffer-config))
+    (setq unread-command-events (append unread-command-events key ))))
+
+(add-hook 'minibuffer-setup-hook #'consult--prefill-minibuffer)
+
+
+(defmacro consult-with-prefilled-minibuffer (input &rest body)
+  "Run BODY with the minibuffer prefilled with INPUT.
+If BODY prompts the user with the minibuffer, the minibuffer gets
+INPUT as initial input."
+  `(let ((consult-prefill-minibuffer-config (list
+                                      (cons this-command
+                                            (string-to-list ,input)))) )
+     ,@body))
+
 ;; Upstream issue: https://debbugs.gnu.org/cgi/bugreport.cgi?bug=46326
 ;; Consult issue: https://github.com/minad/consult/issues/193
 (defmacro consult--minibuffer-with-setup-hook (fun &rest body)
