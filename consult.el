@@ -2291,7 +2291,7 @@ The symbol at point and the last `isearch-string' is added to the future history
                      (consult--line-candidates
                       (not (eq start consult-line-start-from-top))))))
     (consult--read
-     (cdr candidates)
+     candidates
      :prompt "Go to line: "
      :annotate (consult--line-prefix)
      :category 'consult-location
