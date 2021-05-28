@@ -810,7 +810,7 @@ Also create a which-key pseudo key to show the description."
   ;; would be to use `menu-item', but this is unfortunately not yet supported by which-key
   ;; and `describe-buffer-bindings'.
   ;; See https://github.com/justbur/emacs-which-key/issues/177
-  (let ((idx (- (length key) 1)))
+  (let ((idx (1- (length key))))
     (define-key map (vconcat (seq-take key idx) (vector 'which-key (elt key idx)))
       `(which-key (,(copy-sequence desc))))))
 
@@ -842,7 +842,7 @@ Also create a which-key pseudo key to show the description."
           (goto-char (point-min))
           ;; Location data might be invalid by now!
           (ignore-errors
-            (forward-line (- line 1))
+            (forward-line (1- line))
             (forward-char column))
           (point-marker))))))
 
@@ -1128,7 +1128,7 @@ This command is used internally by the narrowing system of `consult--read'."
   (when consult--narrow
     (setq consult--narrow-overlay
           (consult--overlay
-           (- (minibuffer-prompt-end) 1) (minibuffer-prompt-end)
+           (1- (minibuffer-prompt-end)) (minibuffer-prompt-end)
            'before-string
            (propertize (format " [%s]" (alist-get consult--narrow
                                                   consult--narrow-keys))
@@ -1654,7 +1654,7 @@ PREVIEW-KEY is the preview key."
          (pos max)
          (high (+ consult--tofu-char consult--tofu-range -1)))
     (while (and (> pos min) (<= consult--tofu-char (char-before pos) high))
-      (setq pos (- pos 1)))
+      (setq pos (1- pos)))
     (when (< pos max)
       (add-text-properties pos max '(invisible t rear-nonsticky t cursor-intangible t)))))
 
@@ -1666,7 +1666,7 @@ PREVIEW-KEY is the preview key."
 
 (defsubst consult--tofu-get (cand)
   "Extract tofu-encoded ID from CAND."
-  (- (aref cand (- (length cand) 1)) consult--tofu-char))
+  (- (aref cand (1- (length cand))) consult--tofu-char))
 
 ;; We must disambiguate the lines by adding a prefix such that two lines with
 ;; the same text can be distinguished. In order to avoid matching the line
@@ -2240,8 +2240,8 @@ CAND is the currently selected candidate."
             (end (length cand))
             (high (+ consult--tofu-char consult--tofu-range -1)))
         ;; Ignore tofu-encoded unique line number suffix
-        (while (and (> end 0) (<= consult--tofu-char (aref cand (- end 1)) high))
-          (setq end (- end 1)))
+        (while (and (> end 0) (<= consult--tofu-char (aref cand (1- end)) high))
+          (setq end (1- end)))
         ;; Find match end position, remove characters from line end until
         ;; matching fails
         (let ((step 16))
@@ -2514,7 +2514,7 @@ Print an error message with MSG function."
                      (when consult-line-numbers-widen
                        (widen))
                      (goto-char (point-min))
-                     (forward-line (- line 1))
+                     (forward-line (1- line))
                      (point)))))
         (if (consult--in-range-p pos)
             pos
@@ -3505,7 +3505,7 @@ Macros containing mouse clicks are omitted."
         ;; If the first element has been selected, just run the last macro.
         (kmacro-call-macro (or arg 1) t nil)
       ;; Otherwise, run a kmacro from the ring.
-      (let* ((selected (- selected 1))
+      (let* ((selected (1- selected))
              (kmacro (nth selected kmacro-ring))
              ;; Temporarily change the variables to retrieve the correct
              ;; settings.  Mainly, we want the macro counter to persist, which
