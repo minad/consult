@@ -1040,8 +1040,8 @@ lexical closures.
 
 Consult is intended to be a community effort, please participate in the
 discussions. Contributions are welcome, but it is recommended to discuss
-potential contributions first. Since it is planned to submit the package to GNU
-ELPA, copyright assigments to the FSF are a requirement for contributions.
+potential contributions first. Since this package is part of [[http://elpa.gnu.org/packages/consult.html][GNU ELPA]]
+contributions require a copyright assignment to the FSF.
 
 If you have a proposal, take a look at the [[https://github.com/consult/issues][Consult issue tracker]] and the [[https://github.com/minad/consult/issues/6][Consult
 wishlist]]. There exists a rich set of prior feature discussions. You can
