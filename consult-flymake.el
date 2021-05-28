@@ -38,7 +38,9 @@
   (consult--forbid-minibuffer)
   (let* ((raw-diags (or (flymake-diagnostics)
                         (user-error "No flymake errors (Status: %s)"
-                                    (if (flymake-is-running) 'running 'finished))))
+                                    (if (seq-difference (flymake-running-backends)
+                                                        (flymake-reporting-backends))
+                                        'running 'finished))))
          (diags
           (mapcar
            (lambda (diag)
