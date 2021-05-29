@@ -19,6 +19,9 @@
 - Deprecate =consult-config= in favor of new =consult-customize= macro.
 - =consult-buffer=: Enable previews for files and bookmarks by default.
 - =consult-buffer=/=consult--multi=: Add support for =:preview-key= per source.
+- =consult-buffer=: Push visible buffers down in the buffer list.
+- =consult-flycheck=: Moved to separate repository prior to ELPA submission.
+- Submitted Consult to ELPA.
 
 * Version 0.7 (2021-04-29)
 
