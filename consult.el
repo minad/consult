@@ -3289,7 +3289,11 @@ The command supports previewing the currently selected theme."
 ;;;;; Command: consult-buffer
 
 (consult--define-cache consult--cached-buffers
-  (nconc (delq (current-buffer) (buffer-list)) (list (current-buffer))))
+  (let ((buffers (delq (current-buffer) (buffer-list)))
+        (visible-p (lambda (x) (get-buffer-window x 'visible))))
+    (nconc (seq-remove visible-p buffers)
+           (seq-filter visible-p buffers)
+           (list (current-buffer)))))
 
 (consult--define-cache consult--cached-buffer-names
   (mapcar #'buffer-name (consult--cached-buffers)))
