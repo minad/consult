@@ -2,7 +2,7 @@
 #+author: Daniel Mendler
 #+language: en
 
-* Development version
+* Version 0.8 (2021-05-30)
 
 - Async commands: Do not fix vertical height in Selectrum.
 - =consult-imenu=: Deduplicate items (some imenu backends generate duplicates).
