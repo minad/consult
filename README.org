@@ -645,7 +645,7 @@ their descriptions.
    :end:
  #+cindex: embark
 
- *NOTE*: Install the =embark-consult= package from ELPA, which provides
+ *NOTE*: Install the =embark-consult= package from MELPA, which provides
  Consult-specific Embark actions and the Occur buffer export.
 
  Embark is a versatile package which offers context dependent actions,
