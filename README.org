@@ -645,7 +645,7 @@ their descriptions.
    :end:
  #+cindex: embark
 
- *NOTE*: Install the =embark-consult= package from MELPA, which provides
+ *NOTE*: Install the =embark-consult= package from ELPA, which provides
  Consult-specific Embark actions and the Occur buffer export.
 
  Embark is a versatile package which offers context dependent actions,
@@ -683,9 +683,9 @@ their descriptions.
   :description: Example configuration and customization variables
   :end:
 
-Consult can be installed from [[https://melpa.org/][MELPA]] via the Emacs built-in package manager.
-Alternatively it can be directly installed from the development repository via
-other non-standard package managers.
+Consult can be installed from [[http://elpa.gnu.org/packages/consult.html][ELPA]] or [[https://melpa.org/][MELPA]] via the Emacs built-in package
+manager. Alternatively it can be directly installed from the development
+repository via other non-standard package managers.
 
 There is the [[https://github.com/minad/consult/wiki][Consult wiki]], where additional configuration examples can be
 contributed.
