@@ -2220,7 +2220,7 @@ The symbol at point is added to the future history."
     (unless candidates
       (user-error "No lines"))
     (nreverse
-     (if top
+     (if (or top (not default-cand))
          candidates
        (let ((before (cdr default-cand)))
          (setcdr default-cand nil)
