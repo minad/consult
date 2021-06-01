@@ -501,11 +501,11 @@ Size of private unicode plane b.")
   "Set property PROP to VAL of commands CMDS."
   (dolist (cmd cmds)
     (cond
-     ((commandp cmd)
+     ((and (boundp cmd) (consp (symbol-value cmd)))
+      (set cmd (plist-put (symbol-value cmd) prop val)))
+     ((functionp cmd)
       (setf (alist-get cmd consult--read-config)
             (plist-put (alist-get cmd consult--read-config) prop val)))
-     ((boundp cmd)
-      (set cmd (plist-put (symbol-value cmd) prop val)))
      (t (user-error "%s is neither a Consult command nor a Consult source"
                     cmd))))
   nil)
