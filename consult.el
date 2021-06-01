@@ -506,7 +506,8 @@ Size of private unicode plane b.")
             (plist-put (alist-get cmd consult--read-config) prop val)))
      ((boundp cmd)
       (set cmd (plist-put (symbol-value cmd) prop val)))
-     (t (user-error "%s is neither a Consult command nor a Consult source"))))
+     (t (user-error "%s is neither a Consult command nor a Consult source"
+                    cmd))))
   nil)
 
 (defmacro consult-customize (&rest args)
