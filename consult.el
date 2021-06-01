@@ -1814,12 +1814,13 @@ KEYMAP is a command-specific keymap."
           keymap category initial narrow add-history annotate
           state preview-key sort lookup title group)
   (apply #'consult--read-1 candidates
-         (append (alist-get this-command consult--read-config)
-                 options
-                 (list :prompt "Select: "
-                       :preview-key consult-preview-key
-                       :sort t
-                       :lookup (lambda (_input _cands x) x)))))
+         (append
+          (alist-get this-command consult--read-config)
+          options
+          (list :prompt "Select: "
+                :preview-key consult-preview-key
+                :sort t
+                :lookup (lambda (_input _cands x) x)))))
 
 ;;;; Internal API: consult--multi
 
@@ -2024,11 +2025,12 @@ KEYMAP is a command-specific keymap."
   (ignore prompt history add-history initial default
           keymap state preview-key transform)
   (apply #'consult--prompt-1
-         (append (alist-get this-command consult--read-config)
-                 options
-                 (list :prompt "Input: "
-                       :preview-key consult-preview-key
-                       :transform #'identity))))
+         (append
+          (alist-get this-command consult--read-config)
+          options
+          (list :prompt "Input: "
+                :preview-key consult-preview-key
+                :transform #'identity))))
 
 ;;;; Commands
 
