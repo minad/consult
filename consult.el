@@ -294,7 +294,9 @@ command options."
   :type 'integer)
 
 (defcustom consult-preview-excluded-hooks
-  '(epa-file-find-file-hook recentf-track-opened-file)
+  '(epa-file-find-file-hook
+    recentf-track-opened-file
+    vc-refresh-state)
   "List of `find-file' hooks, which should not be executed during file preview.
 In particular we don't want to modify the list of recent files and we
 don't want to see epa password prompts."
