@@ -865,6 +865,7 @@ contributed.
  | consult-mode-histories           | ...              | Mode-specific history variables                       |
  | consult-narrow-key               | nil              | Narrowing prefix key during completion                |
  | consult-preview-key              | 'any             | Keys which triggers preview                           |
+ | consult-preview-excluded-hooks   | ...              | List of =find-file= hooks to avoid during preview     |
  | consult-preview-max-count        | 10               | Maximum number of files to keep open during preview   |
  | consult-preview-max-size         | 10485760         | Files larger than this size are not previewed         |
  | consult-preview-raw-size         | 102400           | Files larger than this size are previewed in raw form |

@@ -293,6 +293,13 @@ command options."
   "Number of files to keep open at once during preview."
   :type 'integer)
 
+(defcustom consult-preview-excluded-hooks
+  '(epa-file-find-file-hook recentf-track-opened-file)
+  "List of `find-file' hooks, which should not be executed during file preview.
+In particular we don't want to modify the list of recent files and we
+don't want to see epa password prompts."
+  :type '(repeat symbol))
+
 (defcustom consult-bookmark-narrow
   `((?f "File" ,#'bookmark-default-handler)
     (?h "Help" ,#'help-bookmark-jump)
@@ -901,9 +908,7 @@ MARKER is the cursor position."
 
 (defun consult--temporary-files ()
   "Return a function to open files temporarily."
-  (let* ((new-buffers)
-         (restore-recentf recentf-mode)
-         (saved-recentf (when restore-recentf (copy-sequence recentf-list))))
+  (let* ((new-buffers))
     (lambda (&optional name)
       (if name
           (or (get-file-buffer name)
@@ -913,21 +918,22 @@ MARKER is the cursor position."
                       (prog1 nil
                         (message "File `%s' (%s) is too large for preview"
                                  name (file-size-human-readable size)))
-                    (let* ((enable-dir-local-variables nil)
-                           (enable-local-variables (and enable-local-variables :safe))
-                           (inhibit-message t)
-                           (buf (find-file-noselect
-                                 name 'nowarn
-                                 (> size consult-preview-raw-size))))
+                    (cl-letf* (((default-value 'find-file-hook)
+                                (seq-remove (lambda (x) (memq x consult-preview-excluded-hooks))
+                                            (default-value 'find-file-hook)))
+                               (inhibit-message t)
+                               (enable-dir-local-variables nil)
+                               (enable-local-variables (and enable-local-variables :safe))
+                               (buf (find-file-noselect
+                                     name 'nowarn
+                                     (> size consult-preview-raw-size))))
                       (push buf new-buffers)
                       ;; Only keep a few buffers alive
                       (while (> (length new-buffers) consult-preview-max-count)
                         (consult--kill-clean-buffer (car (last new-buffers)))
                         (setq new-buffers (nbutlast new-buffers)))
                       buf)))))
-        (mapc #'consult--kill-clean-buffer new-buffers)
-        (when restore-recentf
-          (setq recentf-list saved-recentf))))))
+        (mapc #'consult--kill-clean-buffer new-buffers)))))
 
 (defun consult--invisible-open-permanently ()
   "Open overlays which hide the current line.
