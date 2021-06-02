@@ -924,6 +924,7 @@ MARKER is the cursor position."
                                 (seq-remove (lambda (x) (memq x consult-preview-excluded-hooks))
                                             (default-value 'find-file-hook)))
                                (inhibit-message t)
+                               (non-essential t)
                                (enable-dir-local-variables nil)
                                (enable-local-variables (and enable-local-variables :safe))
                                (buf (find-file-noselect
