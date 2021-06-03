@@ -410,6 +410,27 @@ their descriptions.
  =:preview-key=, such that preview can be manual for some commands, for some
  commands automatic and for some commands completely disabled.
 
+ A safe recommendation is to leave automatic previews enabled in general and
+ disable the automatic preview only for commands, where the preview may be
+ expensive due to file loading.
+
+ #+begin_src emacs-lisp
+   (consult-customize
+    consult-ripgrep consult-git-grep consult-grep
+    consult-bookmark consult-recent-file consult-xref
+    consult--source-file consult--source-project-file consult--source-bookmark
+    :preview-key (kbd "M-."))
+ #+end_src
+
+ In this case one may wonder what the difference is between using an Embark
+ action on the current candidate in comparison to a manually triggered preview.
+ The main difference is that the files opened by manual preview are closed again
+ after the completion session. Furthermore during preview some functionality is
+ disabled to improve the performance, see for example
+ =consult-preview-excluded-hooks=. Files larger than =consult-preview-raw-size=
+ are previewed literally without syntax highlighting and without changing the
+ major mode.
+
 ** Narrowing and grouping
    :properties:
    :description: Restricting the completion to a candidate group
