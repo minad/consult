@@ -562,8 +562,7 @@ FUN is the hook function and BODY opens the minibuffer."
   `(defun ,name ()
      (or (alist-get ',name consult--cache)
          (progn
-           ;; XXX Emacs bug 35546, fixed in Emacs 27.1
-           ;; https://debbugs.gnu.org/cgi/bugreport.cgi?bug=35546
+           ;; XXX Emacs bug#35546, fixed in Emacs 27.1
            ;; (setf (alist-get key list) val) should return val
            (setf (alist-get ',name consult--cache) ,(macroexp-progn body))
            (alist-get ',name consult--cache)))))
