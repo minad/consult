@@ -534,8 +534,7 @@ ARGS is a list of commands or sources followed by the list of keyword-value pair
 
 ;;;; Helper functions and macros
 
-;; Upstream issue: https://debbugs.gnu.org/cgi/bugreport.cgi?bug=46326
-;; Consult issue: https://github.com/minad/consult/issues/193
+;; Upstream bug#46326, Consult issue https://github.com/minad/consult/issues/193
 (defmacro consult--minibuffer-with-setup-hook (fun &rest body)
   "Variant of `minibuffer-with-setup-hook' using a symbol and `fset'.
 
