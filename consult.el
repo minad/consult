@@ -1603,7 +1603,7 @@ ASYNC must be non-nil for async completion functions."
                       minibuffer-default
                     (list minibuffer-default))
                   ;; then our custom items
-                  (delete "" (delq nil (if (listp items)
+                  (remove "" (remq nil (if (listp items)
                                            items
                                          (list items))))
                   ;; Add all the completions for non-async commands. For async commands this feature
