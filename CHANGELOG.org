@@ -2,6 +2,10 @@
 #+author: Daniel Mendler
 #+language: en
 
+* Development version
+
+- Add =consult-preview-excluded-hooks=
+
 * Version 0.8 (2021-05-30)
 
 - Async commands: Do not fix vertical height in Selectrum.
