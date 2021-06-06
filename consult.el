@@ -1756,25 +1756,9 @@ See `consult--read' for the CANDIDATES, KEYMAP, ADD-HISTORY, NARROW and PREVIEW-
                                                       'consult--completion-candidate-hook)
                 (completing-read prompt
                                  (lambda (str pred action)
-                                   (pcase action
-                                     ;; Return completion metadata
-                                     ('metadata metadata)
-                                     ;; Return completion boundaries; Currently unused by Consult.
-                                     ;; The boundaries specify the part of the input string which is
-                                     ;; supposed to be used for filtering. In the future we may want
-                                     ;; to use boundaries in order to implement async filtering.
-                                     (`(boundaries . ,_) nil)
-                                     ;; Try to complete `str' prefix and return completed string.
-                                     ;; This is feature is only used by prefix completion styles
-                                     ;; like `basic'.
-                                     ('nil (try-completion str (funcall async nil) pred))
-                                     ;; Return all candidates matching the prefix `str'.
-                                     ;; Usually this called with the empty string, except
-                                     ;; when using `basic' completion. For other completion
-                                     ;; styles the actual filtering takes place later.
-                                     ('t (all-completions str (funcall async nil) pred))
-                                     ;; Return t if the input `str' matches one of the candidates.
-                                     (_ (test-completion str (funcall async nil) pred))))
+                                   (if (eq action 'metadata)
+                                       metadata
+                                     (complete-with-action action (funcall async nil) str pred)))
                                  predicate require-match initial
                                  (if (symbolp history) history (cadr history))
                                  default))))
