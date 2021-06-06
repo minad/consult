@@ -1692,14 +1692,6 @@ PREVIEW-KEY is the preview key."
     (add-text-properties 0 (length str) '(invisible t consult-strip t) str)
     str))
 
-(cl-defun consult--read-setup (candidates &key keymap add-history narrow preview-key &allow-other-keys)
-  "Minibuffer setup for `consult--read'.
-
-See `consult--read' for the CANDIDATES, KEYMAP, ADD-HISTORY, NARROW and PREVIEW-KEY arguments."
-  (add-hook 'after-change-functions #'consult--fry-the-tofus nil 'local)
-  (consult--setup-keymap keymap (functionp candidates) narrow preview-key)
-  (consult--add-history (functionp candidates) add-history))
-
 (defun consult--read-annotate (fun cand)
   "Annotate CAND with annotation function FUN."
   (pcase (funcall fun cand)
@@ -1721,17 +1713,19 @@ See `consult--read' for the CANDIDATES, KEYMAP, ADD-HISTORY, NARROW and PREVIEW-
                         (propertize ann 'face 'completions-annotations))))))
           cands))
 
-(cl-defun consult--read-1 (candidates &rest options &key
+(cl-defun consult--read-1 (candidates &key
                                       prompt predicate require-match history default
                                       keymap category initial narrow add-history annotate
                                       state preview-key sort lookup title group)
-  "See `consult--read' for documentation."
-  (ignore narrow add-history keymap)
+  "See `consult--read' for the documentation of the arguments."
   (when title
     (message "Deprecation: `%s' passed obsolete :title argument to `consult--read'" this-command)
     (setq group title))
   (consult--minibuffer-with-setup-hook
-      (:append (lambda () (apply #'consult--read-setup candidates options)))
+      (:append (lambda ()
+                 (add-hook 'after-change-functions #'consult--fry-the-tofus nil 'local)
+                 (consult--setup-keymap keymap (functionp candidates) narrow preview-key)
+                 (consult--add-history (functionp candidates) add-history)))
     (consult--with-async (async candidates)
       ;; NOTE: Do not unnecessarily let-bind the lambdas to avoid
       ;; overcapturing in the interpreter. This will make closures and the
