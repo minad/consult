@@ -1049,20 +1049,37 @@ FACE is the cursor face."
          (when (and cand restore)
            (,(intern (format "consult--%s-action" type)) cand))))))
 
+(defun consult--preview-key-normalize (preview-key)
+  "Normalize PREVIEW-KEY, return alist of keys and debounce times."
+  (let ((keys)
+        (debounce 0))
+    (unless (listp preview-key)
+      (setq preview-key (list preview-key)))
+    (while preview-key
+      (if (eq (car preview-key) :debounce)
+          (setq debounce (cadr preview-key)
+                preview-key (cddr preview-key))
+        (push (cons (car preview-key) debounce) keys)
+        (pop preview-key)))
+    keys))
+
 (defun consult--preview-key-pressed-p (preview-key cand)
   "Return t if PREVIEW-KEY has been pressed given the current candidate CAND."
   (when (and (consp preview-key) (memq :keys preview-key))
     (setq preview-key (funcall (plist-get preview-key :predicate) cand)))
-  (setq preview-key (if (listp preview-key) preview-key (list preview-key)))
-  (or (memq 'any preview-key)
-      (let ((keys (this-single-command-keys)))
-        (seq-find (lambda (x) (equal (vconcat x) keys)) preview-key))))
+  (setq preview-key (consult--preview-key-normalize preview-key))
+  (let ((keys (this-single-command-keys)))
+    (cdr (or (seq-find (lambda (x)
+                         (and (not (eq (car x) 'any))
+                              (equal (vconcat (car x)) keys)))
+                       preview-key)
+             (assq 'any preview-key)))))
 
 (defun consult--with-preview-1 (preview-key state transform candidate fun)
   "Add preview support for FUN.
 
 See `consult--with-preview' for the arguments PREVIEW-KEY, STATE, TRANSFORM and CANDIDATE."
-  (let ((input "") (selected))
+  (let ((input "") (selected) (timer))
     (consult--minibuffer-with-setup-hook
         (if (and state preview-key)
             (lambda ()
@@ -1071,14 +1088,28 @@ See `consult--with-preview' for the arguments PREVIEW-KEY, STATE, TRANSFORM and 
                       (lambda ()
                         (when-let (cand (funcall candidate))
                           (with-selected-window (active-minibuffer-window)
-                            (let ((input (minibuffer-contents-no-properties))
-                                  (new-preview (cons input cand)))
-                              (unless (equal last-preview new-preview)
-                                (with-selected-window (or (minibuffer-selected-window) (next-window))
-                                  (let ((transformed (funcall transform input cand)))
-                                    (when (consult--preview-key-pressed-p preview-key transformed)
-                                      (funcall state transformed nil)
-                                      (setq last-preview new-preview)))))))))))
+                            (let ((input (minibuffer-contents-no-properties)))
+                              (with-selected-window (or (minibuffer-selected-window) (next-window))
+                                (let ((transformed (funcall transform input cand))
+                                      (new-preview (cons input cand)))
+                                  (when-let (debounce (consult--preview-key-pressed-p preview-key transformed))
+                                    (when timer
+                                      (cancel-timer timer)
+                                      (setq timer nil))
+                                    (unless (equal last-preview new-preview)
+                                      (if (> debounce 0)
+                                          (let ((win (selected-window)))
+                                            (setq timer
+                                                  (run-at-time
+                                                   debounce
+                                                   nil
+                                                   (lambda ()
+                                                     (when (window-live-p win)
+                                                       (with-selected-window win
+                                                         (funcall state transformed nil)
+                                                         (setq last-preview new-preview)))))))
+                                        (funcall state transformed nil)
+                                        (setq last-preview new-preview))))))))))))
               (let ((post-command-sym (make-symbol "consult--preview-post-command")))
                 (fset post-command-sym (lambda ()
                                          (setq input (minibuffer-contents-no-properties))
@@ -1092,6 +1123,8 @@ See `consult--with-preview' for the arguments PREVIEW-KEY, STATE, TRANSFORM and 
           (cons (setq selected (when-let (result (funcall fun))
                                  (funcall transform input result)))
                 input)
+        (when timer
+          (cancel-timer timer))
         ;; If there is a state function, always call restore!
         ;; The preview function should be seen as a stateful object,
         ;; and we call the destructor here.
@@ -1619,7 +1652,7 @@ ASYNC must be non-nil for async completion functions."
 KEYMAP is a command-specific keymap.
 ASYNC must be non-nil for async completion functions.
 NARROW are the narrow settings.
-PREVIEW-KEY is the preview key."
+PREVIEW-KEY are the preview keys."
   (let ((old-map (current-local-map))
         (map (make-sparse-keymap)))
 
@@ -1637,7 +1670,7 @@ PREVIEW-KEY is the preview key."
     ;; Preview trigger keys
     (when (and (consp preview-key) (memq :keys preview-key))
       (setq preview-key (plist-get preview-key :keys)))
-    (setq preview-key (if (listp preview-key) preview-key (list preview-key)))
+    (setq preview-key (mapcar #'car (consult--preview-key-normalize preview-key)))
     (when preview-key
       (dolist (key preview-key)
         (unless (or (eq key 'any) (lookup-key old-map key))
