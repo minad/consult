@@ -281,6 +281,10 @@ command options."
   "Preview trigger keys, can be nil, 'any, a single key or a list of keys."
   :type '(choice (const any) (const nil) key-sequence (repeat key-sequence)))
 
+(defcustom consult-preview-debounce 0.1
+  "Debounce delay for  previews."
+  :type 'float)
+
 (defcustom consult-preview-max-size 10485760
   "Files larger than this byte limit are not previewed."
   :type 'integer)
@@ -1058,11 +1062,12 @@ FACE is the cursor face."
       (let ((keys (this-single-command-keys)))
         (seq-find (lambda (x) (equal (vconcat x) keys)) preview-key))))
 
-(defun consult--with-preview-1 (preview-key state transform candidate fun)
+(defun consult--with-preview-1 (preview-key preview-debounce state transform candidate fun)
   "Add preview support for FUN.
 
-See `consult--with-preview' for the arguments PREVIEW-KEY, STATE, TRANSFORM and CANDIDATE."
-  (let ((input "") (selected))
+See `consult--with-preview' for the arguments
+PREVIEW-KEY, PREVIEW-DEBOUNCE, STATE, TRANSFORM and CANDIDATE."
+  (let ((input "") (selected) (timer))
     (consult--minibuffer-with-setup-hook
         (if (and state preview-key)
             (lambda ()
@@ -1077,7 +1082,20 @@ See `consult--with-preview' for the arguments PREVIEW-KEY, STATE, TRANSFORM and 
                                 (with-selected-window (or (minibuffer-selected-window) (next-window))
                                   (let ((transformed (funcall transform input cand)))
                                     (when (consult--preview-key-pressed-p preview-key transformed)
-                                      (funcall state transformed nil)
+                                      (when timer
+                                        (cancel-timer timer)
+                                        (setq timer nil))
+                                      (if (and preview-debounce (eq preview-key 'any))
+                                          (setq timer
+                                                (let ((win (selected-window)))
+                                                  (run-at-time
+                                                   preview-debounce
+                                                   nil
+                                                   (lambda ()
+                                                     (when (window-live-p win)
+                                                       (with-selected-window win
+                                                         (funcall state transformed nil)))))))
+                                        (funcall state transformed nil))
                                       (setq last-preview new-preview)))))))))))
               (let ((post-command-sym (make-symbol "consult--preview-post-command")))
                 (fset post-command-sym (lambda ()
@@ -1092,19 +1110,22 @@ See `consult--with-preview' for the arguments PREVIEW-KEY, STATE, TRANSFORM and 
           (cons (setq selected (when-let (result (funcall fun))
                                  (funcall transform input result)))
                 input)
+        (when timer
+          (cancel-timer timer))
         ;; If there is a state function, always call restore!
         ;; The preview function should be seen as a stateful object,
         ;; and we call the destructor here.
         (when state
           (funcall state selected t))))))
 
-(defmacro consult--with-preview (preview-key state transform candidate &rest body)
+(defmacro consult--with-preview (preview-key preview-debounce state transform candidate &rest body)
   "Add preview support to BODY.
 
 STATE is the state function.
 TRANSFORM is the transformation function.
 CANDIDATE is the function returning the current candidate.
 PREVIEW-KEY are the keys which triggers the preview.
+PREVIEW-DEBOUNCE is the debounce delay for the preview.
 
 The preview function takes two arguments, the selected candidate and a restore
 flag. It is called every time with restore=nil after a preview-key keypress, as
@@ -1112,7 +1133,7 @@ long as a new candidate is selected. Finally the preview function is called in
 any case with restore=t even if no preview has actually taken place. The
 candidate argument can be nil if the selection has been aborted."
   (declare (indent 4))
-  `(consult--with-preview-1 ,preview-key ,state ,transform ,candidate (lambda () ,@body)))
+  `(consult--with-preview-1 ,preview-key ,preview-debounce ,state ,transform ,candidate (lambda () ,@body)))
 
 ;;;; Narrowing support
 
@@ -1619,7 +1640,7 @@ ASYNC must be non-nil for async completion functions."
 KEYMAP is a command-specific keymap.
 ASYNC must be non-nil for async completion functions.
 NARROW are the narrow settings.
-PREVIEW-KEY is the preview key."
+PREVIEW-KEY are the preview keys."
   (let ((old-map (current-local-map))
         (map (make-sparse-keymap)))
 
@@ -1714,7 +1735,7 @@ PREVIEW-KEY is the preview key."
 (cl-defun consult--read-1 (candidates &key
                                       prompt predicate require-match history default
                                       keymap category initial narrow add-history annotate
-                                      state preview-key sort lookup title group)
+                                      state preview-key preview-debounce sort lookup title group)
   "See `consult--read' for the documentation of the arguments."
   (when title
     (message "Deprecation: `%s' passed obsolete :title argument to `consult--read'" this-command)
@@ -1742,7 +1763,7 @@ PREVIEW-KEY is the preview key."
                          ,@(unless sort '((cycle-sort-function . identity)
                                           (display-sort-function . identity)))))
              (result
-              (consult--with-preview preview-key state
+              (consult--with-preview preview-key preview-debounce state
                                      (lambda (input cand)
                                        (funcall lookup input (funcall async nil) cand))
                                      (apply-partially #'run-hook-with-args-until-success
@@ -1765,7 +1786,7 @@ PREVIEW-KEY is the preview key."
 (cl-defun consult--read (candidates &rest options &key
                                       prompt predicate require-match history default
                                       keymap category initial narrow add-history annotate
-                                      state preview-key sort lookup title group)
+                                      state preview-key preview-debounce sort lookup title group)
   "Enhanced completing read function selecting from CANDIDATES.
 
 Keyword OPTIONS:
@@ -1784,6 +1805,7 @@ INITIAL is the initial input.
 STATE is the state function, see `consult--with-preview'.
 GROUP is a completion metadata `group-function'.
 PREVIEW-KEY are the preview keys (nil, 'any, a single key or a list of keys).
+PREVIEW-DEBOUNCE is the debounce delay for the preview.
 NARROW is an alist of narrowing prefix strings and description.
 KEYMAP is a command-specific keymap."
   ;; supported types
@@ -1796,13 +1818,14 @@ KEYMAP is a command-specific keymap."
                  (and (consp (car candidates)) (symbolp (caar candidates))))) ;; symbol alist
   (ignore prompt predicate require-match history default
           keymap category initial narrow add-history annotate
-          state preview-key sort lookup title group)
+          state preview-key preview-debounce sort lookup title group)
   (apply #'consult--read-1 candidates
          (append
           (alist-get this-command consult--read-config)
           options
           (list :prompt "Select: "
                 :preview-key consult-preview-key
+                :preview-debounce consult-preview-debounce
                 :sort t
                 :lookup (lambda (_input _cands x) x)))))
 
@@ -1981,19 +2004,19 @@ Optional source fields:
 ;;;; Internal API: consult--prompt
 
 (cl-defun consult--prompt-1 (&key prompt history add-history initial default
-                                  keymap state preview-key transform)
+                                  keymap state preview-key preview-debounce transform)
   "See `consult--prompt' for documentation."
   (consult--minibuffer-with-setup-hook
       (:append (lambda ()
                  (consult--setup-keymap keymap nil nil preview-key)
                  (setq-local minibuffer-default-add-function
                              (apply-partially #'consult--add-history nil add-history))))
-    (car (consult--with-preview preview-key state
+    (car (consult--with-preview preview-key preview-debounce state
                                 (lambda (inp _) (funcall transform inp)) (lambda () t)
            (read-from-minibuffer prompt initial nil nil history default)))))
 
 (cl-defun consult--prompt (&rest options &key prompt history add-history initial default
-                                 keymap state preview-key transform)
+                                 keymap state preview-key preview-debounce transform)
   "Read from minibuffer.
 
 Keyword OPTIONS:
@@ -2006,15 +2029,17 @@ DEFAULT is the default selected value.
 ADD-HISTORY is a list of items to add to the history.
 STATE is the state function, see `consult--with-preview'.
 PREVIEW-KEY are the preview keys (nil, 'any, a single key or a list of keys).
+PREVIEW-DEBOUNCE is the debounce delay for the preview.
 KEYMAP is a command-specific keymap."
   (ignore prompt history add-history initial default
-          keymap state preview-key transform)
+          keymap state preview-key preview-debounce transform)
   (apply #'consult--prompt-1
          (append
           (alist-get this-command consult--read-config)
           options
           (list :prompt "Input: "
                 :preview-key consult-preview-key
+                :preview-debounce consult-preview-debounce
                 :transform #'identity))))
 
 ;;;; Commands
