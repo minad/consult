@@ -940,7 +940,8 @@ contributed.
  - =:history= set the history variable symbol
  - =:add-history= add items to the future history, for example symbol at point
  - =:sort= enable or disable sorting
- - =:group= set to nil in order to disable candidate grouping and titles.
+ - =:group= set to nil to disable candidate grouping and titles.
+ - =:inherit-input-method= set to non-nil to inherit the input method.
 
  #+begin_src emacs-lisp
    (consult-customize
