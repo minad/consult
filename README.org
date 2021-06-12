@@ -607,8 +607,9 @@ their descriptions.
   perform preview.
 
   #+begin_src emacs-lisp
-  (dolist (src '(consult--source-file consult--source-project-file consult--source-bookmark))
-    (set src (plist-put (symbol-value src) :preview-key (kbd "M-."))))
+    (consult-customize
+     consult--source-file consult--source-project-file consult--source-bookmark
+     :preview-key (kbd "M-."))
   #+end_src
 
   Sources can be added directly to the =consult-buffer-source= list for
