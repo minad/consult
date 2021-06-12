@@ -405,14 +405,19 @@ their descriptions.
  =consult-preview-key= variable. Furthermore it is possible to specify
  keybindings which trigger the preview manually as shown in the [[#use-package-example][example
  configuration]]. The default setting of =consult-preview-key= is =any= which
- means that the preview will be triggered on any keypress when the selected
- candidate changes. Each command can be configured individually with its own
- =:preview-key=, such that preview can be manual for some commands, for some
- commands automatic and for some commands completely disabled.
+ means that the preview will be triggered /immediately/ on any keypress when the
+ selected candidate changes. Each command can be configured individually with
+ its own =:preview-key=. The preview key can be configured to be:
 
- A safe recommendation is to leave automatic previews enabled in general and
- disable the automatic preview only for commands, where the preview may be
- expensive due to file loading.
+ - Automatic and immediate =any=
+ - Automatic and delayed =(:debounce 0.5 any)=
+ - Manual and immediate =(kbd "M-.")=
+ - Manual and delayed =(list :debounce 0.5 (kbd "M-."))=
+ - Disabled =nil=
+
+ A safe recommendation is to leave automatic immediate previews enabled in
+ general and disable the automatic preview only for commands, where the preview
+ may be expensive due to file loading.
 
  #+begin_src emacs-lisp
    (consult-customize
@@ -430,6 +435,20 @@ their descriptions.
  =consult-preview-excluded-hooks=. Files larger than =consult-preview-raw-size=
  are previewed literally without syntax highlighting and without changing the
  major mode.
+
+ Delaying the preview is particularily useful for =consult-theme=, since the theme
+ preview is a little bit slow. The delay can result in a smoother UI.
+
+ #+begin_src emacs-lisp
+   ;; Preview on any key press, but delay 0.5s
+   (consult-customize consult-theme :preview-key '(:debounce 0.5 any))
+   ;; Preview immediately on M-., on up/down after 0.5s, on any other key after 1s
+   (consult-customize consult-theme
+                      :preview-key
+                      (list (kbd "M-.")
+                            :debounce 0.5 (kbd "<up>") (kbd "<down>")
+                            :debounce 1 any))
+ #+end_src
 
 ** Narrowing and grouping
    :properties:

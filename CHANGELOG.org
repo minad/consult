@@ -5,6 +5,8 @@
 * Development version
 
 - Add =consult-preview-excluded-hooks=
+- =consult--read/consult--prompt=: Add =:inherit-input-method= argument
+- Add debouncing support for preview
 
 * Version 0.8 (2021-05-30)
 
