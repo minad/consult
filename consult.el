@@ -1714,7 +1714,7 @@ PREVIEW-KEY is the preview key."
 (cl-defun consult--read-1 (candidates &key
                                       prompt predicate require-match history default
                                       keymap category initial narrow add-history annotate
-                                      state preview-key sort lookup title group)
+                                      state preview-key sort lookup title group inherit-input-method)
   "See `consult--read' for the documentation of the arguments."
   (when title
     (message "Deprecation: `%s' passed obsolete :title argument to `consult--read'" this-command)
@@ -1754,7 +1754,8 @@ PREVIEW-KEY is the preview key."
                                      (complete-with-action action (funcall async nil) str pred)))
                                  predicate require-match initial
                                  (if (symbolp history) history (cadr history))
-                                 default))))
+                                 default
+                                 inherit-input-method))))
         (pcase-exhaustive history
           (`(:input ,var)
            (set var (cdr (symbol-value var)))
@@ -1765,7 +1766,7 @@ PREVIEW-KEY is the preview key."
 (cl-defun consult--read (candidates &rest options &key
                                       prompt predicate require-match history default
                                       keymap category initial narrow add-history annotate
-                                      state preview-key sort lookup title group)
+                                      state preview-key sort lookup title group inherit-input-method)
   "Enhanced completing read function selecting from CANDIDATES.
 
 Keyword OPTIONS:
@@ -1785,7 +1786,8 @@ STATE is the state function, see `consult--with-preview'.
 GROUP is a completion metadata `group-function'.
 PREVIEW-KEY are the preview keys (nil, 'any, a single key or a list of keys).
 NARROW is an alist of narrowing prefix strings and description.
-KEYMAP is a command-specific keymap."
+KEYMAP is a command-specific keymap.
+INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
   ;; supported types
   (cl-assert (or (functionp candidates)     ;; async table
                  (obarrayp candidates)      ;; obarray
@@ -1796,7 +1798,7 @@ KEYMAP is a command-specific keymap."
                  (and (consp (car candidates)) (symbolp (caar candidates))))) ;; symbol alist
   (ignore prompt predicate require-match history default
           keymap category initial narrow add-history annotate
-          state preview-key sort lookup title group)
+          state preview-key sort lookup title group inherit-input-method)
   (apply #'consult--read-1 candidates
          (append
           (alist-get this-command consult--read-config)
@@ -1981,7 +1983,7 @@ Optional source fields:
 ;;;; Internal API: consult--prompt
 
 (cl-defun consult--prompt-1 (&key prompt history add-history initial default
-                                  keymap state preview-key transform)
+                                  keymap state preview-key transform inherit-input-method)
   "See `consult--prompt' for documentation."
   (consult--minibuffer-with-setup-hook
       (:append (lambda ()
@@ -1990,10 +1992,10 @@ Optional source fields:
                              (apply-partially #'consult--add-history nil add-history))))
     (car (consult--with-preview preview-key state
                                 (lambda (inp _) (funcall transform inp)) (lambda () t)
-           (read-from-minibuffer prompt initial nil nil history default)))))
+           (read-from-minibuffer prompt initial nil nil history default inherit-input-method)))))
 
 (cl-defun consult--prompt (&rest options &key prompt history add-history initial default
-                                 keymap state preview-key transform)
+                                 keymap state preview-key transform inherit-input-method)
   "Read from minibuffer.
 
 Keyword OPTIONS:
@@ -2008,7 +2010,7 @@ STATE is the state function, see `consult--with-preview'.
 PREVIEW-KEY are the preview keys (nil, 'any, a single key or a list of keys).
 KEYMAP is a command-specific keymap."
   (ignore prompt history add-history initial default
-          keymap state preview-key transform)
+          keymap state preview-key transform inherit-input-method)
   (apply #'consult--prompt-1
          (append
           (alist-get this-command consult--read-config)
