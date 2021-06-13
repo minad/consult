@@ -362,10 +362,10 @@ their descriptions.
    be used for =completion-at-point=. This function is particularily useful in
    combination with Vertico or Icomplete, since these UIs do not provide their
    own =completion-in-region-function=. Selectrum already comes with its own
-   function. However you may not want to transfer the completion at point into
-   the minibuffer and prefer to see the completions directly in the buffer as a
-   small popup. In that case you can either use the [[https://github.com/minad/corfu][Corfu]] or the [[https://github.com/company-mode/company-mode][Company]]
-   package.
+   function, which is similar to =consult-completion-in-region=. However you may
+   not want to transfer the completion at point into the minibuffer and prefer
+   to see the completions directly in the buffer as a small popup. In that case
+   you can either use the [[https://github.com/minad/corfu][Corfu]] or the [[https://github.com/company-mode/company-mode][Company]] package.
  - =consult-theme=: Select a theme and disable all currently enabled
    themes. Supports live preview of the theme while scrolling through the
    candidates.
@@ -1013,9 +1013,9 @@ is not desired.
 
 The Selectrum repository provides a [[https://github.com/raxod502/selectrum/tree/master/test][set of scripts]] which allow experimenting
 with multiple package combinations including various completion systems and
-Consult. After cloning the Selectrum repository, the scripts can be executed
-with =cd selectrum/test; ./run.sh <package-combo.el>=. The scripts do not modify
-your existing Emacs configuration, but create a separate Emacs configuration in
+Consult. After cloning the repository, the scripts can be executed with =cd
+selectrum/test; ./run.sh <package-combo.el>=. The scripts do not modify your
+existing Emacs configuration, but create a separate Emacs configuration in
 =/tmp=.
 
 * Bug reports
@@ -1104,9 +1104,7 @@ command snippets.
 You probably guessed from the name that this package took inspiration from
 [[https://github.com/abo-abo/swiper#counsel][Counsel]] by Oleh Krehel. Some of the Consult commands originated in the Counsel
 package or the [[https://github.com/raxod502/selectrum/wiki/Useful-Commands][Selectrum wiki]]. The commands have been rewritten and greatly
-enhanced in comparison to the original versions. In particular all
-Selectrum-specific code has been removed, such that the commands are compatible
-with the =completing-read= API.
+enhanced in comparison to the original versions.
 
 Code contributions:
 - [[https://github.com/oantolin/][Omar Antolín Camarena]]
