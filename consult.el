@@ -344,11 +344,6 @@ Each element of the list must have the form '(char name handler)."
   "Face used to for previews of text to be inserted.
 Used by `consult-completion-in-region', `consult-yank' and `consult-history'.")
 
-(define-obsolete-face-alias 'consult-preview-yank
-  'consult-preview-insertion "0.6")
-(define-obsolete-face-alias 'consult-preview-region
-  'consult-preview-insertion "0.6")
-
 (defface consult-narrow-indicator
   '((t :inherit warning))
   "Face used for the narrowing indicator.")
