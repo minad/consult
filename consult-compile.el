@@ -98,23 +98,23 @@ This command collects entries from compilation buffers and grep
 buffers related to the current buffer.  The command supports
 preview of the currently selected error."
   (interactive)
-  (consult--read
-   (consult--with-increased-gc
+  (consult--with-increased-gc
+   (consult--read
     (or (mapcan #'consult-compile--error-candidates
                 (or (consult-compile--compilation-buffers
                      default-directory)
                     (user-error "No compilation buffers found for the current buffer")))
-        (user-error "No compilation errors found")))
-   :prompt "Go to error: "
-   :category 'consult-compile-error
-   :sort nil
-   :require-match t
-   :history t ;; disable history
-   :lookup #'consult-compile--error-lookup
-   :group (consult--type-group consult-compile--narrow)
-   :narrow (consult--type-narrow consult-compile--narrow)
-   :history '(:input consult-compile--history)
-   :state (consult--jump-state 'consult-preview-error)))
+        (user-error "No compilation errors found"))
+    :prompt "Go to error: "
+    :category 'consult-compile-error
+    :sort nil
+    :require-match t
+    :history t ;; disable history
+    :lookup #'consult-compile--error-lookup
+    :group (consult--type-group consult-compile--narrow)
+    :narrow (consult--type-narrow consult-compile--narrow)
+    :history '(:input consult-compile--history)
+    :state (consult--jump-state 'consult-preview-error))))
 
 (provide 'consult-compile)
 ;;; consult-compile.el ends here

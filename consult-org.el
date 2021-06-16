@@ -87,27 +87,28 @@ entries are offered.  By default, all entries of the current
 buffer are offered."
   (interactive (unless (derived-mode-p 'org-mode)
                  (user-error "Must be called from an Org buffer")))
-  (let ((prefix (not (memq scope '(nil tree region region-start-level file)))))
-    (consult--read
-     (consult--with-increased-gc (consult-org--headings prefix match scope))
-     :prompt "Go to heading: "
-     :category 'consult-org-heading
-     :sort nil
-     :require-match t
-     :history '(:input consult-org--history)
-     :narrow (consult-org--narrow)
-     :state (consult--jump-state)
-     :group
-     (when prefix
-       (lambda (cand transform)
-         (let ((name (buffer-name
-                      (marker-buffer
-                       (car (get-text-property 0 'consult-org--heading cand))))))
-           (if transform (substring cand (1+ (length name))) name))))
-     :lookup
-     (lambda (_ candidates cand)
-       (when-let (found (member cand candidates))
-         (car (get-text-property 0 'consult-org--heading (car found))))))))
+  (consult--with-increased-gc
+   (let ((prefix (not (memq scope '(nil tree region region-start-level file)))))
+     (consult--read
+      (consult-org--headings prefix match scope)
+      :prompt "Go to heading: "
+      :category 'consult-org-heading
+      :sort nil
+      :require-match t
+      :history '(:input consult-org--history)
+      :narrow (consult-org--narrow)
+      :state (consult--jump-state)
+      :group
+      (when prefix
+        (lambda (cand transform)
+          (let ((name (buffer-name
+                       (marker-buffer
+                        (car (get-text-property 0 'consult-org--heading cand))))))
+            (if transform (substring cand (1+ (length name))) name))))
+      :lookup
+      (lambda (_ candidates cand)
+        (when-let (found (member cand candidates))
+          (car (get-text-property 0 'consult-org--heading (car found)))))))))
 
 ;;;###autoload
 (defun consult-org-agenda (&optional match)

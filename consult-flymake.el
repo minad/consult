@@ -81,7 +81,7 @@
   "Jump to Flymake diagnostic."
   (interactive)
   (consult--read
-   (consult--with-increased-gc (consult-flymake--candidates))
+   (consult-flymake--candidates)
    :prompt "Flymake diagnostic: "
    :category 'consult-flymake-error
    :history t ;; disable history

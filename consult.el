@@ -474,11 +474,17 @@ Size of private unicode plane b.")
 (defvar-local consult--narrow-overlay nil
   "Narrowing indicator overlay.")
 
-(defvar consult--gc-threshold 67108864
+(defvar consult--gc-threshold (+ (* 128 1024 1024) (random (* 1024 1024)))
   "Large gc threshold for temporary increase.")
 
-(defvar consult--gc-percentage 0.5
+(defvar consult--gc-percentage 0.502718281828459045
   "Large gc percentage for temporary increase.")
+
+(defvar consult--gc-idle 1
+  "If non-nil, reduce gc values after the given idle time.")
+
+(defvar consult--gc-idle-timer nil
+  "Idle gc timer.")
 
 (defvar consult--async-log
   " *consult-async*"
@@ -819,11 +825,41 @@ Also create a which-key pseudo key to show the description."
 
 (defmacro consult--with-increased-gc (&rest body)
   "Temporarily increase the gc limit in BODY to optimize for throughput."
-  (let ((overwrite (make-symbol "overwrite")))
-    `(let* ((,overwrite (> consult--gc-threshold gc-cons-threshold))
-            (gc-cons-threshold (if ,overwrite consult--gc-threshold gc-cons-threshold))
-            (gc-cons-percentage (if ,overwrite consult--gc-percentage gc-cons-percentage)))
-       ,@body)))
+  `(consult--with-increased-gc-1 (lambda () ,@body)))
+
+(defun consult--with-increased-gc-1 (body)
+  "Temporarily increase the gc limit in BODY to optimize for throughput."
+  (cond
+   (consult--gc-idle-timer
+    (let ((decrease (timer--function consult--gc-idle-timer)))
+      (cancel-timer consult--gc-idle-timer)
+      (setq consult--gc-idle-timer nil)
+      (unwind-protect
+          (funcall body)
+        (setq consult--gc-idle-timer (run-with-idle-timer consult--gc-idle nil decrease)))))
+   ((and (> consult--gc-threshold gc-cons-threshold) consult--gc-idle)
+    (let ((new-threshold consult--gc-threshold)
+          (new-percentage consult--gc-percentage)
+          (old-threshold gc-cons-threshold)
+          (old-percentage gc-cons-percentage))
+      (setq gc-cons-threshold new-threshold
+            gc-cons-percentage new-percentage)
+      (unwind-protect
+          (funcall body)
+        (setq consult--gc-idle-timer
+              (run-with-idle-timer
+               consult--gc-idle nil
+               (lambda ()
+                 (setq consult--gc-idle-timer nil)
+                 (when (eq gc-cons-percentage new-percentage)
+                   (setq gc-cons-percentage old-percentage))
+                 (when (eq gc-cons-threshold new-threshold)
+                   (setq gc-cons-threshold old-threshold))))))))
+   ((> consult--gc-threshold gc-cons-threshold)
+    (let ((gc-cons-threshold consult--gc-threshold)
+          (gc-cons-percentage consult--gc-percentage))
+      (funcall body)))
+   (t (funcall body))))
 
 (defun consult--count-lines (pos)
   "Move to position POS and return number of lines."
@@ -1981,32 +2017,32 @@ Optional source fields:
 * :action - Action function called with the selected candidate.
 * :state - State constructor for the source, must return the state function.
 * Other source fields can be added specifically to the use case."
-  (let* ((consult--multi-sources (consult--multi-preprocess sources))
-         (candidates (consult--with-increased-gc
-                      (let ((consult--cache))
-                        (consult--multi-candidates))))
-         (consult--multi-align (propertize
-                                " " 'display
-                                `(space :align-to (+ left ,(cadr candidates)))))
-         (selected (apply #'consult--read
-                          (caddr candidates)
-                          (append
-                           options
-                           (list
-                            :default     (car candidates)
-                            :category    'consult-multi
-                            :predicate   #'consult--multi-predicate
-                            :annotate    #'consult--multi-annotate
-                            :group       #'consult--multi-group
-                            :lookup      #'consult--multi-lookup
-                            :preview-key (consult--multi-preview-key)
-                            :narrow      (consult--multi-narrow)
-                            :state       (consult--multi-state))))))
-    (when-let (history (plist-get (cdr selected) :history))
-      (add-to-history history (car selected)))
-    (when-let (action (plist-get (cdr selected) :action))
-      (funcall action (car selected)))
-    selected))
+  (consult--with-increased-gc
+   (let* ((consult--multi-sources (consult--multi-preprocess sources))
+          (candidates (let ((consult--cache))
+                        (consult--multi-candidates)))
+          (consult--multi-align (propertize
+                                 " " 'display
+                                 `(space :align-to (+ left ,(cadr candidates)))))
+          (selected (apply #'consult--read
+                           (caddr candidates)
+                           (append
+                            options
+                            (list
+                             :default     (car candidates)
+                             :category    'consult-multi
+                             :predicate   #'consult--multi-predicate
+                             :annotate    #'consult--multi-annotate
+                             :group       #'consult--multi-group
+                             :lookup      #'consult--multi-lookup
+                             :preview-key (consult--multi-preview-key)
+                             :narrow      (consult--multi-narrow)
+                             :state       (consult--multi-state))))))
+     (when-let (history (plist-get (cdr selected) :history))
+       (add-to-history history (car selected)))
+     (when-let (action (plist-get (cdr selected) :action))
+       (funcall action (car selected)))
+     selected)))
 
 ;;;; Internal API: consult--prompt
 
@@ -2102,29 +2138,30 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
 This command supports narrowing to a heading level and candidate preview.
 The symbol at point is added to the future history."
   (interactive)
-  (let* ((cands (consult--with-increased-gc (consult--outline-candidates)))
-         (min-level (- (apply #'min (mapcar
-                                     (lambda (cand)
-                                       (get-text-property 0 'consult--outline-level cand))
-                                     cands))
-                       ?1))
-         (narrow-pred (lambda (cand)
-                       (<= (get-text-property 0 'consult--outline-level cand)
-                           (+ consult--narrow min-level))))
-         (narrow-keys (mapcar (lambda (c) (cons c (format "Level %c" c)))
-                              (number-sequence ?1 ?9))))
-    (consult--read
-     cands
-     :prompt "Go to heading: "
-     :annotate (consult--line-prefix)
-     :category 'consult-location
-     :sort nil
-     :require-match t
-     :lookup #'consult--line-match
-     :narrow `(:predicate ,narrow-pred :keys ,narrow-keys)
-     :history '(:input consult--line-history)
-     :add-history (thing-at-point 'symbol)
-     :state (consult--jump-state))))
+  (consult--with-increased-gc
+   (let* ((cands (consult--outline-candidates))
+          (min-level (- (apply #'min (mapcar
+                                      (lambda (cand)
+                                        (get-text-property 0 'consult--outline-level cand))
+                                      cands))
+                        ?1))
+          (narrow-pred (lambda (cand)
+                         (<= (get-text-property 0 'consult--outline-level cand)
+                             (+ consult--narrow min-level))))
+          (narrow-keys (mapcar (lambda (c) (cons c (format "Level %c" c)))
+                               (number-sequence ?1 ?9))))
+     (consult--read
+      cands
+      :prompt "Go to heading: "
+      :annotate (consult--line-prefix)
+      :category 'consult-location
+      :sort nil
+      :require-match t
+      :lookup #'consult--line-match
+      :narrow `(:predicate ,narrow-pred :keys ,narrow-keys)
+      :history '(:input consult--line-history)
+      :add-history (thing-at-point 'symbol)
+      :state (consult--jump-state)))))
 
 ;;;;; Command: consult-mark
 
@@ -2157,7 +2194,7 @@ The command supports preview of the currently selected marker position.
 The symbol at point is added to the future history."
   (interactive)
   (consult--read
-   (consult--with-increased-gc (consult--mark-candidates))
+   (consult--mark-candidates)
    :prompt "Go to mark: "
    :annotate (consult--line-prefix)
    :category 'consult-location
@@ -2205,7 +2242,7 @@ The command supports preview of the currently selected marker position.
 The symbol at point is added to the future history."
   (interactive)
   (consult--read
-   (consult--with-increased-gc (consult--global-mark-candidates))
+   (consult--global-mark-candidates)
    :prompt "Go to global mark: "
    ;; Despite `consult-global-mark' formating the candidates in grep-like
    ;; style, we are not using the 'consult-grep category, since the candidates
@@ -2300,25 +2337,25 @@ This command obeys narrowing. Optional INITIAL input can be provided.
 The search starting point is changed if the START prefix argument is set.
 The symbol at point and the last `isearch-string' is added to the future history."
   (interactive (list nil (not (not current-prefix-arg))))
-  (let ((candidates (consult--with-increased-gc
-                     (consult--line-candidates
-                      (not (eq start consult-line-start-from-top))))))
-    (consult--read
-     candidates
-     :prompt "Go to line: "
-     :annotate (consult--line-prefix)
-     :category 'consult-location
-     :sort nil
-     :require-match t
-     ;; Always add last isearch string to future history
-     :add-history (list (thing-at-point 'symbol) isearch-string)
-     :history '(:input consult--line-history)
-     :lookup #'consult--line-match
-     :default (car candidates)
-     ;; Add isearch-string as initial input if starting from isearch
-     :initial (or initial
-                  (and isearch-mode (prog1 isearch-string (isearch-done))))
-     :state (consult--jump-state))))
+  (consult--with-increased-gc
+   (let ((candidates (consult--line-candidates
+                      (not (eq start consult-line-start-from-top)))))
+     (consult--read
+      candidates
+      :prompt "Go to line: "
+      :annotate (consult--line-prefix)
+      :category 'consult-location
+      :sort nil
+      :require-match t
+      ;; Always add last isearch string to future history
+      :add-history (list (thing-at-point 'symbol) isearch-string)
+      :history '(:input consult--line-history)
+      :lookup #'consult--line-match
+      :default (car candidates)
+      ;; Add isearch-string as initial input if starting from isearch
+      :initial (or initial
+                   (and isearch-mode (prog1 isearch-string (isearch-done))))
+      :state (consult--jump-state)))))
 
 ;;;;; Command: consult-keep-lines
 
@@ -3605,24 +3642,25 @@ Macros containing mouse clicks are omitted."
 
 PROMPT is the prompt string.
 The symbol at point is added to the future history."
-  (let* ((prompt-dir (consult--directory-prompt prompt dir))
-         (default-directory (cdr prompt-dir)))
-    (consult--read
-     (consult--async-command cmd
-       (consult--async-transform consult--grep-matches)
-       :file-handler t) ;; allow tramp
-     :prompt (car prompt-dir)
-     :lookup #'consult--lookup-cdr
-     :state (consult--grep-state)
-     :initial (consult--async-split-initial initial)
-     :add-history
-     (when-let (thing (thing-at-point 'symbol))
-       (consult--async-split-initial thing))
-     :require-match t
-     :category 'consult-grep
-     :group #'consult--grep-group
-     :history '(:input consult--grep-history)
-     :sort nil)))
+  (consult--with-increased-gc
+   (let* ((prompt-dir (consult--directory-prompt prompt dir))
+          (default-directory (cdr prompt-dir)))
+     (consult--read
+      (consult--async-command cmd
+        (consult--async-transform consult--grep-matches)
+        :file-handler t) ;; allow tramp
+      :prompt (car prompt-dir)
+      :lookup #'consult--lookup-cdr
+      :state (consult--grep-state)
+      :initial (consult--async-split-initial initial)
+      :add-history
+      (when-let (thing (thing-at-point 'symbol))
+        (consult--async-split-initial thing))
+      :require-match t
+      :category 'consult-grep
+      :group #'consult--grep-group
+      :history '(:input consult--grep-history)
+      :sort nil))))
 
 ;;;###autoload
 (defun consult-grep (&optional dir initial)
@@ -3672,19 +3710,20 @@ The filename at point is added to the future history.
 
 PROMPT is the prompt.
 CMD is the find argument string."
-  (consult--read
-   (consult--async-command cmd
-     (consult--async-map (lambda (x) (string-remove-prefix "./" x)))
-     :file-handler t) ;; allow tramp
-   :prompt prompt
-   :sort nil
-   :require-match t
-   :initial (consult--async-split-initial initial)
-   :add-history
-   (when-let (thing (thing-at-point 'filename))
-     (consult--async-split-initial thing))
-   :category 'file
-   :history '(:input consult--find-history)))
+  (consult--with-increased-gc
+   (consult--read
+    (consult--async-command cmd
+      (consult--async-map (lambda (x) (string-remove-prefix "./" x)))
+      :file-handler t) ;; allow tramp
+    :prompt prompt
+    :sort nil
+    :require-match t
+    :initial (consult--async-split-initial initial)
+    :add-history
+    (when-let (thing (thing-at-point 'filename))
+      (consult--async-split-initial thing))
+    :category 'file
+    :history '(:input consult--find-history))))
 
 ;;;###autoload
 (defun consult-find (&optional dir initial)
