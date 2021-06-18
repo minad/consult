@@ -796,8 +796,11 @@ contributed.
             ("M-s m" . consult-multi-occur)
             ("M-s k" . consult-keep-lines)
             ("M-s u" . consult-focus-lines)
-            ;; Isearch integration
             ("M-s e" . consult-isearch)
+            ;; Overwrite consult-outline for org-mode
+            :map org-mode-map
+            ("M-g o" . consult-org-heading)
+            ;; Isearch integration
             :map isearch-mode-map
             ("M-e" . consult-isearch)                 ;; orig. isearch-edit-string
             ("M-s e" . consult-isearch)               ;; orig. isearch-edit-string
