@@ -781,7 +781,7 @@ contributed.
             ("M-g f" . consult-flymake)               ;; Alternative: consult-flycheck
             ("M-g g" . consult-goto-line)             ;; orig. goto-line
             ("M-g M-g" . consult-goto-line)           ;; orig. goto-line
-            ("M-g o" . consult-outline)
+            ("M-g o" . consult-outline)               ;; Alternative: consult-org-heading
             ("M-g m" . consult-mark)
             ("M-g k" . consult-global-mark)
             ("M-g i" . consult-imenu)
@@ -796,15 +796,12 @@ contributed.
             ("M-s m" . consult-multi-occur)
             ("M-s k" . consult-keep-lines)
             ("M-s u" . consult-focus-lines)
-            ("M-s e" . consult-isearch)
-            ;; Overwrite consult-outline for org-mode
-            :map org-mode-map
-            ("M-g o" . consult-org-heading)
             ;; Isearch integration
+            ("M-s e" . consult-isearch)
             :map isearch-mode-map
             ("M-e" . consult-isearch)                 ;; orig. isearch-edit-string
             ("M-s e" . consult-isearch)               ;; orig. isearch-edit-string
-            ("M-s l" . consult-line))                 ;; required by consult-line to detect isearch
+            ("M-s l" . consult-line))                 ;; needed by consult-line to detect isearch
 
      ;; Enable automatic preview at point in the *Completions* buffer.
      ;; This is relevant when you use the default completion UI,
