@@ -508,12 +508,12 @@ their descriptions.
  The default splitting style is configured with the variable
  ~consult-async-split-style~.
 
- For the =space=, =comma= and =semicolon= splitting styles, the first word
+ With the =space=, =comma= and =semicolon= splitting styles, the first word
  before the space/comma/semicolon is passed to grep, the remaining string is
  used for filtering.
 
- For the =perl= splitting style, the input string is split at a punctuation
- character, using a similar syntax as Perl regular expressions.
+ The =perl= splitting style splits the input string at a punctuation character,
+ using a similar syntax as Perl regular expressions.
 
  Examples:
 
@@ -526,9 +526,9 @@ their descriptions.
    must be longer than =consult-async-min-input= characters by default.
  - =#defun -- --invert-match#=: Pass argument =--invert-match= to grep.
 
- For asynchronous processes like =find= and =grep=,
- there is an error log buffer =_*consult-async*= (note the leading space).
- The prompt has a small indicator showing the process status:
+ Asynchronous processes like =find= and =grep= create an error log buffer
+ =_*consult-async*= (note the leading space), which is useful for
+ troubleshooting. The prompt has a small indicator showing the process status:
 
  - =:= the usual prompt colon, before input is provided.
  - =*= with warning face, the process is running.
