@@ -508,9 +508,9 @@ their descriptions.
  The default splitting style is configured with the variable
  ~consult-async-split-style~.
 
- For the =space=/=comma=/=semicolon= splitting styles, the first word before the
- space/comma/semicolon is passed to grep, the remaining string is used for
- filtering.
+ For the =space=, =comma= and =semicolon= splitting styles, the first word
+ before the space/comma/semicolon is passed to grep, the remaining string is
+ used for filtering.
 
  For the =perl= splitting style, the input string is split at a punctuation
  character, using a similar syntax as Perl regular expressions.
