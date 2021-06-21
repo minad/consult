@@ -7,6 +7,9 @@
 - Add =consult-preview-excluded-hooks=
 - =consult--read/consult--prompt=: Add =:inherit-input-method= argument
 - Add debouncing support for preview
+- =consult--read=: Removed obsolete =:title= argument
+- =consult-yank=, =consult-config=, =consult-async-default-split=: Removed obsolete
+  symbols.
 
 * Version 0.8 (2021-05-30)
 
