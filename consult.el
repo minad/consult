@@ -452,7 +452,8 @@ should not be considered as stable as the public API.")
 
 (defvar-local consult--preview-function nil
   "Minibuffer-local variable which exposes the current preview function.
-This function can be called by custom completion systems from outside the minibuffer.")
+This function can be called by custom completion systems from
+outside the minibuffer.")
 
 (defconst consult--tofu-char #x100000
   "Special character used to encode line prefixes for disambiguation.
