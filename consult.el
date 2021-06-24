@@ -739,13 +739,8 @@ Otherwise the `default-directory' is returned."
   "Return t if position POS lies in range `point-min' to `point-max'."
   (<= (point-min) pos (point-max)))
 
-(define-obsolete-function-alias
-  'consult--type-title
-  'consult--type-group
-  "0.7")
-
 (defun consult--type-group (types)
-  "Return title function for TYPES."
+  "Return group function for TYPES."
   (lambda (cand transform)
     (if transform
         cand
@@ -1199,17 +1194,11 @@ to make it available for commands with narrowing."
 
 (defun consult--narrow-setup (settings map)
   "Setup narrowing with SETTINGS and keymap MAP."
-  (cond
-   ((functionp (car settings))
-    (message "Deprecation: `%s' passed obsolete :narrow value to `consult--read'" this-command)
-    (setq consult--narrow-predicate (car settings)
-          consult--narrow-keys (cdr settings)))
-   ((memq :keys settings)
-    (setq consult--narrow-predicate (plist-get settings :predicate)
-          consult--narrow-keys (plist-get settings :keys)))
-   (t
+  (if (memq :keys settings)
+      (setq consult--narrow-predicate (plist-get settings :predicate)
+            consult--narrow-keys (plist-get settings :keys))
     (setq consult--narrow-predicate nil
-          consult--narrow-keys settings)))
+          consult--narrow-keys settings))
   (when consult-narrow-key
     (dolist (pair consult--narrow-keys)
       (define-key map
@@ -1730,11 +1719,8 @@ PREVIEW-KEY are the preview keys."
 (cl-defun consult--read-1 (candidates &key
                                       prompt predicate require-match history default
                                       keymap category initial narrow add-history annotate
-                                      state preview-key sort lookup title group inherit-input-method)
+                                      state preview-key sort lookup group inherit-input-method)
   "See `consult--read' for the documentation of the arguments."
-  (when title
-    (message "Deprecation: `%s' passed obsolete :title argument to `consult--read'" this-command)
-    (setq group title))
   (consult--minibuffer-with-setup-hook
       (:append (lambda ()
                  (add-hook 'after-change-functions #'consult--fry-the-tofus nil 'local)
@@ -1782,7 +1768,7 @@ PREVIEW-KEY are the preview keys."
 (cl-defun consult--read (candidates &rest options &key
                                       prompt predicate require-match history default
                                       keymap category initial narrow add-history annotate
-                                      state preview-key sort lookup title group inherit-input-method)
+                                      state preview-key sort lookup group inherit-input-method)
   "Enhanced completing read function selecting from CANDIDATES.
 
 Keyword OPTIONS:
@@ -1814,7 +1800,7 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
                  (and (consp (car candidates)) (symbolp (caar candidates))))) ;; symbol alist
   (ignore prompt predicate require-match history default
           keymap category initial narrow add-history annotate
-          state preview-key sort lookup title group inherit-input-method)
+          state preview-key sort lookup group inherit-input-method)
   (apply #'consult--read-1 candidates
          (append
           (alist-get this-command consult--read-config)
