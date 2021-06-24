@@ -1766,9 +1766,9 @@ PREVIEW-KEY are the preview keys."
         (car result)))))
 
 (cl-defun consult--read (candidates &rest options &key
-                                      prompt predicate require-match history default
-                                      keymap category initial narrow add-history annotate
-                                      state preview-key sort lookup group inherit-input-method)
+                                    prompt predicate require-match history default
+                                    keymap category initial narrow add-history annotate
+                                    state preview-key sort lookup group inherit-input-method)
   "Enhanced completing read function selecting from CANDIDATES.
 
 Keyword OPTIONS:
@@ -2083,8 +2083,8 @@ The symbol at point is added to the future history."
                                      cands))
                        ?1))
          (narrow-pred (lambda (cand)
-                       (<= (get-text-property 0 'consult--outline-level cand)
-                           (+ consult--narrow min-level))))
+                        (<= (get-text-property 0 'consult--outline-level cand)
+                            (+ consult--narrow min-level))))
          (narrow-keys (mapcar (lambda (c) (cons c (format "Level %c" c)))
                               (number-sequence ?1 ?9))))
     (consult--read
