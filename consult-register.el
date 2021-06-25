@@ -200,7 +200,7 @@ This function is derived from `register-read-with-preview'."
                       action-list "  "))
                     (fit-window-to-buffer)))))))
 	 (timer (when (numberp register-preview-delay)
-	          (run-with-timer register-preview-delay nil preview)))
+	          (run-at-time register-preview-delay nil preview)))
 	 (help-chars (seq-remove #'get-register (cons help-char help-event-list))))
     (unwind-protect
         (while (not reg)
