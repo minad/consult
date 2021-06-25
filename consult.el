@@ -2808,7 +2808,8 @@ If no MODES are specified, use currently active major and minor modes."
   (consult--lookup-member
    nil kill-ring
    (consult--read
-    (consult--remove-dups kill-ring)
+    (consult--remove-dups
+     (or kill-ring (user-error "Kill ring is empty")))
     :prompt "Yank from kill-ring: "
     :history t ;; disable history
     :sort nil
