@@ -1372,7 +1372,7 @@ SPLIT is the splitting function."
       (_ (funcall async action)))))
 
 (defun consult--async-log (formatted &rest args)
-  "Log FORMATTED ARGS to `v/consult--async-log'."
+  "Log FORMATTED ARGS to variable `consult--async-log'."
   (with-current-buffer (get-buffer-create consult--async-log)
     (goto-char (point-max))
     (insert (apply #'format formatted args))))
