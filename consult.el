@@ -1473,8 +1473,6 @@ The DEBOUNCE delay defaults to `consult-async-input-debounce'."
   (let ((input "") (last) (timer))
     (lambda (action)
       (pcase action
-        ('setup
-         (funcall async 'setup))
         ((pred stringp)
          (unless (string= action input)
            (when timer
