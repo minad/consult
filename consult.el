@@ -1387,7 +1387,9 @@ PROPS are optional properties passed to `make-process'."
     (lambda (action)
       (pcase action
         ("" ;; If no input is provided kill current process
-         (ignore-errors (delete-process proc))
+         (when proc
+           (delete-process proc)
+           (setq proc nil))
          (setq last-args nil))
         ((pred stringp)
          (let ((args (funcall cmd action))
@@ -1396,7 +1398,9 @@ PROPS are optional properties passed to `make-process'."
                (rest ""))
            (unless (equal args last-args)
              (setq last-args args)
-             (ignore-errors (delete-process proc))
+             (when proc
+               (delete-process proc)
+               (setq proc nil))
              (when args
                (overlay-put indicator 'display #("*" 0 1 (face consult-async-running)))
                (consult--async-log "consult--async-process started %S\n" args)
@@ -1454,7 +1458,9 @@ PROPS are optional properties passed to `make-process'."
                        (insert "<<<<< stderr <<<<<\n")
                        (kill-buffer stderr-buffer)))))))))))
         ('destroy
-         (ignore-errors (delete-process proc))
+         (when proc
+           (delete-process proc)
+           (setq proc nil))
          (delete-overlay indicator)
          (funcall async 'destroy))
         ('setup
