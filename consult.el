@@ -2106,17 +2106,17 @@ The symbol at point is added to the future history."
 
 ;;;;; Command: consult-mark
 
-(defun consult--mark-candidates ()
-  "Return alist of lines containing markers.
-The alist contains (string . position) pairs."
+(defun consult--mark-candidates (markers)
+  "Return list of candidates strings for MARKERS."
   (consult--forbid-minibuffer)
-  (unless (marker-position (mark-marker))
-    (user-error "No marks"))
-  (let ((candidates))
+  (let ((candidates)
+        (current-buf (current-buffer)))
     (save-excursion
-      (dolist (marker (cons (mark-marker) mark-ring))
-        (let ((pos (marker-position marker)))
-          (when (consult--in-range-p pos)
+      (dolist (marker markers)
+        (when-let ((pos (marker-position marker))
+                   (buf (marker-buffer marker)))
+          (when (and (eq buf current-buf)
+                     (consult--in-range-p pos))
             (goto-char pos)
             ;; `line-number-at-pos' is a very slow function, which should be replaced everywhere.
             ;; However in this case the slow line-number-at-pos does not hurt much, since
@@ -2125,17 +2125,21 @@ The alist contains (string . position) pairs."
                    (consult--line-with-cursor marker) marker
                    (line-number-at-pos pos consult-line-numbers-widen))
                   candidates)))))
+    (unless candidates
+      (user-error "No marks"))
     (nreverse (delete-dups candidates))))
 
 ;;;###autoload
-(defun consult-mark ()
-  "Jump to a marker in the buffer-local `mark-ring'.
+(defun consult-mark (&optional markers)
+  "Jump to a marker in MARKERS list (defaults to buffer-local `mark-ring').
 
 The command supports preview of the currently selected marker position.
 The symbol at point is added to the future history."
   (interactive)
   (consult--read
-   (consult--with-increased-gc (consult--mark-candidates))
+   (consult--with-increased-gc
+    (consult--mark-candidates
+     (or markers (cons (mark-marker) mark-ring))))
    :prompt "Go to mark: "
    :annotate (consult--line-prefix)
    :category 'consult-location
@@ -2148,17 +2152,15 @@ The symbol at point is added to the future history."
 
 ;;;;; Command: consult-global-mark
 
-(defun consult--global-mark-candidates ()
-  "Return alist of lines containing markers.
-
-The alist contains (string . position) pairs."
+(defun consult--global-mark-candidates (markers)
+  "Return list of candidates strings for MARKERS."
   (consult--forbid-minibuffer)
   (let ((candidates))
     (save-excursion
-      (dolist (marker global-mark-ring)
-        (let ((pos (marker-position marker))
-              (buf (marker-buffer marker)))
-          (when (and pos (buffer-live-p buf) (not (minibufferp buf)))
+      (dolist (marker markers)
+        (when-let ((pos (marker-position marker))
+                   (buf (marker-buffer marker)))
+          (unless (minibufferp buf)
             (with-current-buffer buf
               (when (consult--in-range-p pos)
                 (goto-char pos)
@@ -2176,14 +2178,16 @@ The alist contains (string . position) pairs."
     (nreverse (delete-dups candidates))))
 
 ;;;###autoload
-(defun consult-global-mark ()
-  "Jump to a marker in `global-mark-ring'.
+(defun consult-global-mark (&optional markers)
+  "Jump to a marker in MARKERS list (defaults to `global-mark-ring').
 
 The command supports preview of the currently selected marker position.
 The symbol at point is added to the future history."
   (interactive)
   (consult--read
-   (consult--with-increased-gc (consult--global-mark-candidates))
+   (consult--with-increased-gc
+    (consult--global-mark-candidates
+     (or markers global-mark-ring)))
    :prompt "Go to global mark: "
    ;; Despite `consult-global-mark' formating the candidates in grep-like
    ;; style, we are not using the 'consult-grep category, since the candidates
