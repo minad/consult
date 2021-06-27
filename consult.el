@@ -518,7 +518,6 @@ Size of private unicode plane b.")
 (defmacro consult-customize (&rest args)
   "Set properties of commands or sources.
 ARGS is a list of commands or sources followed by the list of keyword-value pairs."
-  ;;(declare (indent 2))
   (let ((setter))
     (while args
       (let ((cmds (seq-take-while (lambda (x) (not (keywordp x))) args)))
