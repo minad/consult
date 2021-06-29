@@ -2665,6 +2665,7 @@ These configuration options are supported:
       (let* ((limit (car (completion-boundaries initial collection predicate "")))
              (category (completion-metadata-get metadata 'category))
              (exit-status 'finished)
+             (buffer (current-buffer))
              (completion
               (cond
                ((atom all) nil)
@@ -2694,7 +2695,14 @@ These configuration options are supported:
                            ;; However this is undefined behavior since initial does not only contain the
                            ;; directory, but also the filename.
                            (read-file-name prompt initial initial require-match nil predicate)
-                         (completing-read prompt collection predicate require-match initial)))))))))
+                         (completing-read prompt
+                                          ;; Evaluate completion table in the original buffer
+                                          (if (functionp collection)
+                                              (lambda (&rest args)
+                                                (with-current-buffer buffer
+                                                  (apply collection args)))
+                                            collection)
+                                          predicate require-match initial)))))))))
         (if completion
             (progn
               (delete-region start end)
