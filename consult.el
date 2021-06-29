@@ -2696,7 +2696,10 @@ These configuration options are supported:
                            ;; directory, but also the filename.
                            (read-file-name prompt initial initial require-match nil predicate)
                          (completing-read prompt
-                                          ;; Evaluate completion table in the original buffer
+                                          ;; Evaluate completion table in the original buffer.
+                                          ;; This is a reasonable thing to do and required
+                                          ;; by some completion tables in particular by lsp-mode.
+                                          ;; See https://github.com/minad/vertico/issues/61.
                                           (if (functionp collection)
                                               (lambda (&rest args)
                                                 (with-current-buffer buffer
