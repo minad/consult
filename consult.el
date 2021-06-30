@@ -1269,6 +1269,10 @@ POINT is the point position."
 
 ;;;; Async support
 
+(defun consult--async-p (table)
+  "Return t if TABLE is an asynchronous completion table."
+  (and (functionp table) (equal (func-arity table) '(1 . 1))))
+
 (defmacro consult--with-async (bind &rest body)
   "Setup asynchronous completion in BODY.
 
@@ -1278,7 +1282,7 @@ BIND is the asynchronous function binding."
     `(let ((,async ,@(cdr bind)))
        (consult--minibuffer-with-setup-hook
            (lambda ()
-             (when (functionp ,async)
+             (when (consult--async-p ,async)
                (funcall ,async 'setup)
                ;; Push input string to request refresh.
                ;; We use a symbol in order to avoid adding lambdas to the hook variable.
@@ -1286,7 +1290,7 @@ BIND is the asynchronous function binding."
                  (fset sym (lambda (&rest _) (funcall ,async (minibuffer-contents-no-properties))))
                  (run-at-time 0 nil sym)
                  (add-hook 'after-change-functions sym nil 'local))))
-         (let ((,async (if (functionp ,async) ,async (lambda (_) ,async))))
+         (let ((,async (if (consult--async-p ,async) ,async (lambda (_) ,async))))
            (unwind-protect
                ,(macroexp-progn body)
              (funcall ,async 'destroy)))))))
@@ -1727,9 +1731,9 @@ PREVIEW-KEY are the preview keys."
   (consult--minibuffer-with-setup-hook
       (:append (lambda ()
                  (add-hook 'after-change-functions #'consult--fry-the-tofus nil 'local)
-                 (consult--setup-keymap keymap (functionp candidates) narrow preview-key)
+                 (consult--setup-keymap keymap (consult--async-p candidates) narrow preview-key)
                  (setq-local minibuffer-default-add-function
-                             (apply-partially #'consult--add-history (functionp candidates) add-history))))
+                             (apply-partially #'consult--add-history (consult--async-p candidates) add-history))))
     (consult--with-async (async candidates)
       ;; NOTE: Do not unnecessarily let-bind the lambdas to avoid
       ;; overcapturing in the interpreter. This will make closures and the
@@ -1794,7 +1798,7 @@ NARROW is an alist of narrowing prefix strings and description.
 KEYMAP is a command-specific keymap.
 INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
   ;; supported types
-  (cl-assert (or (functionp candidates)     ;; async table
+  (cl-assert (or (functionp candidates)     ;; dynamic or async table
                  (obarrayp candidates)      ;; obarray
                  (hash-table-p candidates)  ;; hash table
                  (not candidates)           ;; empty list
