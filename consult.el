@@ -433,9 +433,6 @@ should not be considered as stable as the public API.")
 (defvar consult--multi-sources nil
   "Vector of currently active `consult--multi' sources.")
 
-(defvar consult--multi-align nil
-  "Alignment string for annotations for `consult--multi-annotate'.")
-
 (defvar consult--buffer-display #'switch-to-buffer
   "Buffer display function.")
 
@@ -1843,14 +1840,15 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
     (delq nil)
     (delete-dups)))
 
-(defun consult--multi-annotate (cand)
-  "Annotate candidate CAND, used by `consult--multi'."
+(defun consult--multi-annotate (align cand)
+  "Annotate candidate CAND with `consult--multi' type.
+ALIGN is the alignment string."
   (let* ((src (consult--multi-source cand))
          (annotate (plist-get src :annotate))
          (ann (if annotate
                   (funcall annotate (cdr (get-text-property 0 'consult-multi cand)))
                 (plist-get src :name))))
-    (and ann (concat consult--multi-align ann))))
+    (and ann (concat align ann))))
 
 (defun consult--multi-group (cand transform)
   "Return title of candidate CAND or TRANSFORM the candidate."
@@ -1966,9 +1964,9 @@ Optional source fields:
          (candidates (consult--with-increased-gc
                       (let ((consult--cache))
                         (consult--multi-candidates))))
-         (consult--multi-align (propertize
-                                " " 'display
-                                `(space :align-to (+ left ,(cadr candidates)))))
+         (align (propertize
+                 " " 'display
+                 `(space :align-to (+ left ,(cadr candidates)))))
          (selected (apply #'consult--read
                           (caddr candidates)
                           (append
@@ -1977,7 +1975,7 @@ Optional source fields:
                             :default     (car candidates)
                             :category    'consult-multi
                             :predicate   #'consult--multi-predicate
-                            :annotate    #'consult--multi-annotate
+                            :annotate    (apply-partially #'consult--multi-annotate align)
                             :group       #'consult--multi-group
                             :lookup      #'consult--multi-lookup
                             :preview-key (consult--multi-preview-key)
