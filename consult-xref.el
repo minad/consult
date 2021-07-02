@@ -34,7 +34,6 @@
   "Return candidate list from XREFS."
   (mapcar (lambda (xref)
             (let* ((loc (xref-item-location xref))
-                   (xref-file-name-display 'nondirectory)
                    (group (xref-location-group loc))
                    (cand (consult--format-location group
                                                    (or (xref-location-line loc) 0)
