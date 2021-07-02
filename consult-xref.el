@@ -57,15 +57,15 @@
               (consult--buffer-display display))
           (funcall preview
                    ;; Only preview file and buffer markers
-                   (cond
-                    ((xref-buffer-location-p loc)
-                     (xref-location-marker loc))
-                    ((xref-file-location-p loc)
-                     (consult--position-marker
-                      (funcall open (oref loc file))
-                      (oref loc line)
-                      (oref loc column)))
-                    (t (message "No preview for %s" (type-of loc))))
+                   (cl-typecase loc
+                     (xref-buffer-location
+                      (xref-location-marker loc))
+                     (xref-file-location
+                      (consult--position-marker
+                       (funcall open (oref loc file))
+                       (oref loc line)
+                       (oref loc column)))
+                     (t (message "No preview for %s" (type-of loc))))
                    nil)))))))
 
 (defun consult-xref--group (cand transform)
