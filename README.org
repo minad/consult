@@ -357,6 +357,13 @@ their descriptions.
    The selected man page is opened using the Emacs =man= command.
  - =consult-file-externally=: Select a file and open it externally,
    e.g. using =xdg-open= on Linux.
+ - =consult-theme=: Select a theme and disable all currently enabled
+   themes. Supports live preview of the theme while scrolling through the
+   candidates.
+ - =consult-preview-at-point= and =consult-preview-at-point-mode=: Command and
+   minor mode which allows preview at point in the =*Completions*= buffer. This
+   is mainly relevant if you use the default =*Completions*= UI or if you want
+   to enable preview in Embark Collect buffers.
  - =consult-completion-in-region=: This function can be set as
    =completion-in-region-function=. Then the minibuffer completion UI will be used
    for =completion-at-point=. This function is particularily useful in combination
@@ -376,13 +383,6 @@ their descriptions.
    Instead of =consult-completion-in-region=, you may prefer to see the
    completions directly in the buffer as a small popup. In that case, I recommed
    either the [[https://github.com/minad/corfu][Corfu]] or the [[https://github.com/company-mode/company-mode][Company]] package.
- - =consult-theme=: Select a theme and disable all currently enabled
-   themes. Supports live preview of the theme while scrolling through the
-   candidates.
- - =consult-preview-at-point= and =consult-preview-at-point-mode=: Command and
-   minor mode which allows preview at point in the =*Completions*= buffer. This
-   is mainly relevant if you use the default =*Completions*= UI or if you want
-   to enable preview in Embark Collect buffers.
 
 * Special features
   :properties:
