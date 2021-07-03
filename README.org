@@ -364,9 +364,18 @@ their descriptions.
    =completion-in-region-function=. Selectrum already comes with its own function
    similar to =consult-completion-in-region=. Note that
    =consult-completion-in-region= is not useful if the default =*Completions*=
-   UI is used. Furthermore you may prefer to see the completions directly in the
-   buffer as a small popup. In that case you can either use the [[https://github.com/minad/corfu][Corfu]] or the
-   [[https://github.com/company-mode/company-mode][Company]] package.
+   UI is used.
+   #+begin_src emacs-lisp
+     ;; Use `consult-completion-in-region' if Vertico is enabled.
+     (add-hook 'vertico-mode-hook (lambda ()
+                                    (setq completion-in-region-function
+                                          (if vertico-mode
+                                              #'consult-completion-in-region
+                                            #'completion--in-region))))
+   #+end_src
+   Instead of =consult-completion-in-region=, you may prefer to see the
+   completions directly in the buffer as a small popup. In that case, I recommed
+   either the [[https://github.com/minad/corfu][Corfu]] or the [[https://github.com/company-mode/company-mode][Company]] package.
  - =consult-theme=: Select a theme and disable all currently enabled
    themes. Supports live preview of the theme while scrolling through the
    candidates.
