@@ -27,14 +27,14 @@
 (require 'consult)
 (require 'icomplete)
 
-(defun consult-icomplete--refresh ()
-  "Refresh icomplete view, keep current candidate selected if possible."
+(defun consult-icomplete--refresh (&optional reset)
+  "Refresh icomplete view, keep current candidate unless RESET is non-nil."
   (when icomplete-mode
     (let ((top (car completion-all-sorted-completions)))
       (completion--flush-all-sorted-completions)
       ;; force flushing, otherwise narrowing is broken!
       (setq completion-all-sorted-completions nil)
-      (when top
+      (when (and top (not reset))
         (let* ((completions (completion-all-sorted-completions))
                (last (last completions))
                (before)) ;; completions before top

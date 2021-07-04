@@ -31,6 +31,7 @@
 (defvar selectrum-highlight-candidates-function)
 (defvar selectrum-is-active)
 (defvar selectrum-refine-candidates-function)
+(defvar selectrum--history-hash)
 (declare-function selectrum-exhibit "ext:selectrum")
 (declare-function selectrum-get-current-candidate "ext:selectrum")
 
@@ -56,13 +57,15 @@ See `consult--completion-filter' for arguments PATTERN, CANDS, CATEGORY and HIGH
   "Return current selectrum candidate."
   (and selectrum-is-active (selectrum-get-current-candidate)))
 
-(defun consult-selectrum--refresh ()
-  "Refresh selectrum view."
+(defun consult-selectrum--refresh (&optional reset)
+  "Refresh completion UI, keep current candidate unless RESET is non-nil."
   (when selectrum-is-active
     (if consult--narrow
         (setq-local selectrum-default-value-format nil)
       (kill-local-variable 'selectrum-default-value-format))
-    (selectrum-exhibit 'keep-selected)))
+    (when reset
+      (setq selectrum--history-hash nil))
+    (selectrum-exhibit (not reset))))
 
 (defun consult-selectrum--split-wrap (orig split)
   "Wrap candidates highlight/refinement ORIG function, splitting the input using SPLIT."
