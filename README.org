@@ -22,24 +22,21 @@ function [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Minibuffer-
 candidates with completion. Consult offers in particular an advanced buffer
 switching command =consult-buffer= to switch between buffers and recently opened
 files. Multiple search commands are provided, an asynchronous =consult-grep= and
-=consult-ripgrep=, and =consult-line=, which resembles [[https://github.com/abo-abo/swiper#swiper][Swiper]]. Some of the
-Consult commands are enhanced versions of built-in Emacs commands. For example
-the command =consult-imenu= presents a flat list of the Imenu with [[#live-previews][live preview]]
-and [[#narrowing-and-grouping][narrowing support]]. Please take a look at the [[#available-commands][full list of commands]].
+=consult-ripgrep=, and =consult-line=, which resembles [[https://github.com/abo-abo/swiper#swiper][Swiper]]. Some of the Consult
+commands are enhanced versions of built-in Emacs commands. For example the
+command =consult-imenu= presents a flat list of the Imenu with [[#live-previews][live preview]],
+[[#narrowing-and-grouping][grouping and narrowing]]. Please take a look at the [[#available-commands][full list of commands]].
 
 Consult is fully compatible with completion systems based on the standard Emacs
-=completing-read= API, notably the default completion system, [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html][Icomplete]],
-[[https://github.com/raxod502/selectrum][Selectrum]], [[https://github.com/minad/vertico][Vertico]] and [[https://github.com/oantolin/embark/][Embark]]. In case you like to use Icomplete, it is
-recommended to enable a vertical display mode. recommended. On Emacs 28,
-Icomplete offers the built-in =icomplete-vertical-mode= and on earlier Emacs
-versions you can install the external [[https://github.com/oantolin/icomplete-vertical][Icomplete-vertical]] package.
+=completing-read= API, notably the default completion system, [[https://github.com/minad/vertico][Vertico]],
+[[https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html][Icomplete]]/[[https://github.com/oantolin/icomplete-vertical][Icomplete-vertical]], [[https://github.com/raxod502/selectrum][Selectrum]] and [[https://github.com/oantolin/embark/][Embark]].
 
 The completion system specifics in this package are kept to a minimum. The
 ability of the Consult commands to work well with arbitrary completion systems
 is one of the main advantages of the package. Consult fits well into existing
 setups and it helps you to create a full completion environment out of small and
 independent components. Note that, if you use [[https://github.com/abo-abo/swiper#ivy][Ivy]] or [[https://github.com/emacs-helm/helm][Helm]], you probably don't
-need Consult, since both packages come with their own set of commands.
+need Consult, since both packages bring their own Consult-like functionality.
 
 There are the [[https://github.com/minad/marginalia/][Marginalia]] and [[https://github.com/oantolin/embark/][Embark]] packages, which can be combined with
 Consult. Marginalia enriches the completion display with annotations, e.g.,
@@ -104,9 +101,7 @@ their descriptions.
    - m Bookmarks
    - p Project (only available if =consult-project-root-function= is
      configured as shown in the [[#use-package-example][example configuration]]).
-   - Arbitrary [[#multiple-sources][other sources]] can be configured via =consult-buffer-sources=.
-   By default only buffers are preview in order to ensure that =consult-buffer=
-   is fast, but it is possible to [[#multiple-sources][configure]] file and bookmark preview.
+   - Arbitrary [[#multiple-sources][other sources]] can be configured via =consult-buffer-sources=.x
  - =consult-bookmark=: Select or create bookmark. You might use the
    powerful =consult-buffer= as an alternative, which can include a bookmark
    virtual buffer source. But note that =consult-bookmark= supports preview of
@@ -469,7 +464,7 @@ their descriptions.
 
  Consult has special support for candidate groups which are separated by
  separator lines with titles if supported by the completion system. As of now,
- Selectrum, Vertico and [[https://github.com/oantolin/icomplete-vertical][Icomplete-vertical]] provide support. This functionality
+ Vertico, Selectrum and Icomplete-vertical provide support. This functionality
  is useful if the list of candidates consists of candidates of multiple types or
  candidates from [[#multiple-sources][multiple sources]], like the =consult-buffer= command, which
  shows both buffers and recently opened files. Note that the group titles can be
@@ -815,7 +810,7 @@ contributed.
 
      ;; Enable automatic preview at point in the *Completions* buffer.
      ;; This is relevant when you use the default completion UI,
-     ;; and not necessary for Selectrum, Vertico etc.
+     ;; and not necessary for Vertico, Selectrum, etc.
      :hook (completion-list-mode . consult-preview-at-point-mode)
 
      ;; The :init configuration is always executed (Not lazy)
@@ -962,10 +957,10 @@ contributed.
     consult-theme :preview-key nil
     ;; Set preview for `consult-buffer' to key `M-.'
     consult-buffer :preview-key (kbd "M-.")
-    ;; For `consult-line' change the prompt and specify multiple preview keybindings.
-    ;; Note that you should bind <S-up> and <S-down> in the
-    ;; `minibuffer-local-completion-map', `selectrum-minibuffer-map' or
-    ;; `vertico-map' to the commands which select the previous or next candidate.
+    ;; For `consult-line' change the prompt and specify multiple preview
+    ;; keybindings. Note that you should bind <S-up> and <S-down> in the
+    ;; `minibuffer-local-completion-map' or `vertico-map' to the commands which
+    ;; select the previous or next candidate.
     consult-line :prompt "Search: "
     :preview-key (list (kbd "<S-down>") (kbd "<S-up>")))
  #+end_src
@@ -987,7 +982,7 @@ contributed.
 It is highly recommended to install the following package combination:
 
 - consult: This package
-- [[https://github.com/raxod502/selectrum][selectrum]], [[https://github.com/minad/vertico][vertico]] or [[https://github.com/oantolin/icomplete-vertical][icomplete-vertical]]: Vertical completion systems
+- [[https://github.com/minad/vertico][vertico]], [[https://github.com/raxod502/selectrum][selectrum]] or [[https://github.com/oantolin/icomplete-vertical][icomplete-vertical]]: Vertical completion systems
   (Icomplete-vertical is only needed for Emacs 27, built-in on Emacs 28)
 - [[https://github.com/minad/marginalia][marginalia]]: Annotations for the completion candidates
 - [[https://github.com/oantolin/embark][embark and embark-consult]]: Action commands, which can act on the completion candidates
@@ -1012,8 +1007,6 @@ offer functionality based on ~completing-read~.
 - [[https://github.com/minad/bookmark-view][bookmark-view]]: Store window configuration as bookmarks, possible integration with =consult-buffer=.
 - [[https://github.com/d12frosted/flyspell-correct][flyspell-correct]]: Apply spelling corrections by selecting via =completing-read=.
 - [[https://github.com/mhayashi1120/Emacs-wgrep][wgrep]]: Editing of grep buffers, can be used together with =consult-grep= via =embark-export=.
-- [[https://github.com/raxod502/prescient.el][prescient]]: Sorts completion candidates according to frecency
-  (Selectrum-specific, Orderless is recommended instead).
 
 Note that all packages are independent and can potentially be exchanged with
 alternative components, since there exist no hard dependencies. Furthermore it
@@ -1037,10 +1030,10 @@ If you find a bug or suspect that there is a problem with Consult, please carry
 out the following steps:
 
 1. Check first that *all the relevant packages are updated to the newest version*.
-   This includes Consult, Selectrum, Vertico, Icomplete-vertical, Marginalia,
+   This includes Consult, Vertico, Selectrum, Icomplete-vertical, Marginalia,
    Embark, Orderless and Prescient in case you are using any of those packages.
-2. Ensure that either =icomplete-mode=, =selectrum-mode= or =vertico-mode= is enabled.
-   Furthermore =ivy-mode= and =helm-mode= must be disabled.
+2. Ensure that one of =vertico-mode=, =selectrum-mode= or =icomplete-mode= is enabled.
+   Furthermore both =ivy-mode= and =helm-mode= must be disabled.
 3. Ensure that the =completion-styles= variable is properly configured. Try to set
    =completion-styles= to a list including =substring= or =orderless=.
 4. Try to reproduce the issue by starting a barebone Emacs instance with =emacs -Q=
@@ -1048,15 +1041,6 @@ out the following steps:
    scratch buffer. This way we can exclude side effects due to configuration
    settings. If other packages are relevant to reproduce the issue, include them
    in the minimal configuration snippet.
-
-Minimal setup with Selectrum for =emacs -Q=:
-#+begin_src emacs-lisp
-(package-initialize)
-(require 'consult)
-(require 'selectrum)
-(selectrum-mode)
-(setq completion-styles '(substring))
-#+end_src
 
 Minimal setup with Vertico for =emacs -Q=:
 #+begin_src emacs-lisp
@@ -1082,10 +1066,9 @@ Please provide the necessary important information with your bug report:
 - Your operating system, since Emacs builds vary between Linux, Mac and
   Windows.
 - The package manager, e.g., straight.el or package.el, used to install
-  the Emacs packages. This information is helpful to exclude update issues.
-- If you are using Evil or other special packages which change Emacs on a
-  fundamental level. There have been Evil-related problems before, which are
-  fixed now.
+  the Emacs packages, in order to exclude update issues.
+- If you are using Evil or other packages which change Emacs significantly,
+  since Consult does not provide Evil integration out of the box.
 
 When evaluating Consult-related code snippets it is required to enable [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Lexical-Binding.html][lexical
 binding]]. Consult uses a functional programming style, relying on lambdas and
