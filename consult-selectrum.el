@@ -31,6 +31,7 @@
 (defvar selectrum-highlight-candidates-function)
 (defvar selectrum-is-active)
 (defvar selectrum-refine-candidates-function)
+(defvar selectrum--current-candidate-index)
 (declare-function selectrum-exhibit "ext:selectrum")
 (declare-function selectrum-get-current-candidate "ext:selectrum")
 
@@ -81,8 +82,32 @@ SPLIT is the splitter function."
     (setq-local selectrum-highlight-candidates-function
 		(consult-selectrum--split-wrap selectrum-highlight-candidates-function split))))
 
+(defun consult-selectrum--crm-select ()
+  "Select/deselect current candidate."
+  (interactive)
+  (when (or (>= selectrum--current-candidate-index 0)
+            (not (equal "" (minibuffer-contents-no-properties))))
+    (selectrum-select-current-candidate)))
+
+(defun consult-selectrum--crm-exit ()
+  "Exit with selected candidates."
+  (interactive)
+  (when (>= selectrum--current-candidate-index 0)
+    (run-at-time 0 nil #'exit-minibuffer))
+  (selectrum-select-current-candidate))
+
+(defun consult-selectrum--crm-setup ()
+  "Setup crm for Selectrum."
+  (when selectrum-is-active
+    (setq-local selectrum-default-value-format nil)
+    (let ((map (make-sparse-keymap)))
+      (define-key map [remap selectrum-insert-current-candidate] #'consult-selectrum--crm-select)
+      (define-key map [remap selectrum-select-current-candidate] #'consult-selectrum--crm-exit)
+      (use-local-map (make-composed-keymap (list map) (current-local-map))))))
+
 (add-hook 'consult--completion-candidate-hook #'consult-selectrum--candidate)
 (add-hook 'consult--completion-refresh-hook #'consult-selectrum--refresh)
+(add-hook 'consult--crm-setup-hook #'consult-selectrum--crm-setup)
 (advice-add #'consult--completion-filter :around #'consult-selectrum--filter-adv)
 (advice-add #'consult--split-setup :around #'consult-selectrum--split-setup-adv)
 

@@ -28,6 +28,7 @@
 
 ;; NOTE: It is not guaranteed that Vertico is available during compilation!
 (defvar vertico--input)
+(defvar vertico--index)
 (declare-function vertico--exhibit "ext:vertico")
 (declare-function vertico--candidate "ext:vertico")
 
@@ -41,8 +42,31 @@
     (setq vertico--input t)
     (vertico--exhibit)))
 
+(defun consult-vertico--crm-select ()
+  "Select/deselect current candidate."
+  (interactive)
+  (when (or (>= vertico--index 0)
+            (not (equal "" (minibuffer-contents-no-properties))))
+    (vertico-exit)))
+
+(defun consult-vertico--crm-exit ()
+  "Exit with selected candidates."
+  (interactive)
+  (when (>= vertico--index 0)
+    (run-at-time 0 nil #'exit-minibuffer))
+  (vertico-exit))
+
+(defun consult-vertico--crm-setup ()
+  "Setup crm for Vertico."
+  (when vertico--input
+    (let ((map (make-sparse-keymap)))
+      (define-key map [remap vertico-insert] #'consult-vertico--crm-select)
+      (define-key map [remap exit-minibuffer] #'consult-vertico--crm-exit)
+      (use-local-map (make-composed-keymap (list map) (current-local-map))))))
+
 (add-hook 'consult--completion-candidate-hook #'consult-vertico--candidate)
 (add-hook 'consult--completion-refresh-hook #'consult-vertico--refresh)
+(add-hook 'consult--crm-setup-hook #'consult-vertico--crm-setup)
 
 (provide 'consult-vertico)
 ;;; consult-vertico.el ends here
