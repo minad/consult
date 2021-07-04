@@ -931,7 +931,8 @@ contributed.
 
  *NOTE:* Consult allows fine-grained customization of individual commands. This
  configuration feature is made available for experienced users with special
- requirements.
+ requirements. There is the [[https://github.com/minad/consult/wiki][Consult wiki]], where configuration examples can be
+ found.
 
  Commands and buffer sources allow flexible, individual customization by using
  the =consult-customize= macro. You can override any option passed to the
