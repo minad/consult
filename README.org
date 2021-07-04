@@ -38,8 +38,8 @@ setups and it helps you to create a full completion environment out of small and
 independent components. Note that, if you use [[https://github.com/abo-abo/swiper#ivy][Ivy]] or [[https://github.com/emacs-helm/helm][Helm]], you probably don't
 need Consult, since both packages bring their own Consult-like functionality.
 
-There are the [[https://github.com/minad/marginalia/][Marginalia]] and [[https://github.com/oantolin/embark/][Embark]] packages, which can be combined with
-Consult. Marginalia enriches the completion display with annotations, e.g.,
+There are the [[https://github.com/minad/marginalia/][Marginalia]], [[https://github.com/oantolin/embark/][Embark]] and [[https://github.com/oantolin/orderless][Orderless]] packages, which can be combined
+with Consult. Marginalia enriches the completion display with annotations, e.g.,
 documentation strings or file information. The versatile Embark package provides
 local actions, comparable to a context menu. These actions can be executed on
 the selected candidate in the minibuffer or in other contexts. For example, when
