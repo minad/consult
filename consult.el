@@ -2197,6 +2197,7 @@ See `completing-read-multiple' for the documentation of the arguments."
                                        (seq-remove (lambda (x) (member x selected))
                                                    orig-candidates))))))
          (orig-md (and (functionp table) (cdr (funcall table "" nil 'metadata))))
+         (group-fun (alist-get 'group-function orig-md))
          (sort-fun
           (lambda (sort)
             (pcase (alist-get sort orig-md)
@@ -2213,9 +2214,8 @@ See `completing-read-multiple' for the documentation of the arguments."
              . ,(lambda (cand transform)
                   (if (get-text-property 0 'consult--crm-selected cand)
                       (if transform cand "Selected")
-                    (or (when-let (group-fun (alist-get 'group-function orig-md))
-                          (funcall group-fun cand transform))
-                        (if transform cand "Select multiple")))))
+                    (or (and group-fun (funcall group-fun cand transform)))
+                        (if transform cand "Select multiple"))))
             ,@(funcall sort-fun 'cycle-sort-function)
             ,@(funcall sort-fun 'display-sort-function)
             ,@(seq-filter (lambda (x) (memq (car x) '(annotation-function

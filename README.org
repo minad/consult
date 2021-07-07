@@ -385,8 +385,12 @@ their descriptions.
    buffer to the minibuffer, the server does not receive the updated input. Lsp
    completion should work with Corfu or Company though, which perform the
    completion directly in the original buffer.
-  - =consult-completing-read-multiple=: Enhanced drop-in replacement for
-    =completing-read-multiple= which works better for long candidates.
+ - =consult-completing-read-multiple=: Enhanced drop-in replacement for
+   =completing-read-multiple= which works better for long candidates. Multiple
+   candidates can be selected/deselected by pressing ~RET~ in the default
+   completions UI. In the end the selections are confirmed by pressing ~RET~
+   again. In Vertico and Selectrum, candidates are selected/deselected by
+   pressing ~TAB~, while ~RET~ selects/deselects and exits immediately.
 
 * Special features
   :properties:
