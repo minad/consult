@@ -376,9 +376,14 @@ their descriptions.
                                             #'completion--in-region))))
    #+end_src
    Instead of =consult-completion-in-region=, you may prefer to see the
-   completions directly in the buffer as a small popup. In that case, I recommed
-   either the [[https://github.com/minad/corfu][Corfu]] or the [[https://github.com/company-mode/company-mode][Company]] package.
-
+   completions directly in the buffer as a small popup. In that case, I
+   recommend either the [[https://github.com/minad/corfu][Corfu]] or the [[https://github.com/company-mode/company-mode][Company]] package. There is a technical
+   caveat of =consult-completion-in-region= in combination with Lsp-mode or Eglot.
+   The Lsp server relies on the input at point, in order to generate refined
+   candidate strings. Since the completion is transferred from the original
+   buffer to the minibuffer, the server does not receive the updated input. Lsp
+   completion should work with Corfu or Company though, which perform the
+   completion directly in the original buffer.
 * Special features
   :properties:
   :description: Enhancements over built-in `completing-read'
