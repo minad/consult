@@ -2230,6 +2230,7 @@ See `completing-read-multiple' for the documentation of the arguments."
                            (when selected
                              (format " (%s selected): " (length selected)))))))
          (command)
+         (depth (1+ (recursion-depth)))
          (hook (make-symbol "consult--crm-post-command-hook"))
          (wrapper (make-symbol "consult--crm-command-wrapper")))
     (fset wrapper
@@ -2240,38 +2241,42 @@ See `completing-read-multiple' for the documentation of the arguments."
                      (call-interactively command)
                      'continue)
               ('nil
-               (let ((item (minibuffer-contents-no-properties)))
-                 (when (equal item "")
-                   (throw 'exit nil))
-                 (delete-minibuffer-contents)
-                 (funcall select-item item)
-                 (funcall update-overlay)
-                 (run-hook-with-args 'consult--completion-refresh-hook 'reset)))
+               (with-selected-window (active-minibuffer-window)
+                 (let ((item (minibuffer-contents-no-properties)))
+                   (when (equal item "")
+                     (throw 'exit nil))
+                   (delete-minibuffer-contents)
+                   (funcall select-item item)
+                   (funcall update-overlay)
+                   (run-hook-with-args 'consult--completion-refresh-hook 'reset))))
               ('t (throw 'exit t)))))
     (fset hook (lambda ()
-                 (setq command this-command
-                       this-command wrapper)))
-    (consult--minibuffer-with-setup-hook
+                 (when (= depth (recursion-depth))
+                   (setq command this-command
+                         this-command wrapper))))
+    (unwind-protect
+      (consult--minibuffer-with-setup-hook
         (:append
          (lambda ()
            (when-let (pos (string-match-p "\\(?: (default[^)]+)\\)?: \\'" prompt))
              (setq overlay (make-overlay (+ (point-min) pos) (+ (point-min) (length prompt))))
              (funcall update-overlay))
-           (add-hook 'pre-command-hook hook nil 'local)
            (run-hooks 'consult--crm-setup-hook)))
-      (funcall select-item
-               (completing-read
-                prompt
-                (lambda (str pred action)
-                  (if (eq action 'metadata)
-                      md
-                    (complete-with-action action candidates str pred)))
-                nil ;; predicate
-                require-match
-                initial-input
-                'consult--crm-history
-                "" ;; default
-                inherit-input-method)))
+        (add-hook 'pre-command-hook hook 90)
+        (funcall select-item
+                 (completing-read
+                  prompt
+                  (lambda (str pred action)
+                    (if (eq action 'metadata)
+                        md
+                      (complete-with-action action candidates str pred)))
+                  nil ;; predicate
+                  require-match
+                  initial-input
+                  'consult--crm-history
+                  "" ;; default
+                  inherit-input-method)))
+      (remove-hook 'pre-command-hook hook))
     (set hist-sym consult--crm-history)
     (when (consp def)
       (setq def (car def)))
