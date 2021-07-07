@@ -2251,7 +2251,7 @@ See `completing-read-multiple' for the documentation of the arguments."
                    (run-hook-with-args 'consult--completion-refresh-hook 'reset))))
               ('t (throw 'exit t)))))
     (fset hook (lambda ()
-                 (when (= depth (recursion-depth))
+                 (when (and this-command (= depth (recursion-depth)))
                    (setq command this-command
                          this-command wrapper))))
     (unwind-protect
