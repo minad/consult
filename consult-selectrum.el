@@ -60,11 +60,10 @@ See `consult--completion-filter' for arguments PATTERN, CANDS, CATEGORY and HIGH
 (defun consult-selectrum--refresh (&optional reset)
   "Refresh completion UI, keep current candidate unless RESET is non-nil."
   (when selectrum-is-active
-    (if consult--narrow
-        (setq-local selectrum-default-value-format nil)
-      (kill-local-variable 'selectrum-default-value-format))
+    (when consult--narrow
+      (setq-local selectrum-default-value-format nil))
     (when reset
-      (setq selectrum--history-hash nil))
+      (setq-local selectrum--history-hash nil))
     (selectrum-exhibit (not reset))))
 
 (defun consult-selectrum--split-wrap (orig split)
@@ -84,8 +83,14 @@ SPLIT is the splitter function."
     (setq-local selectrum-highlight-candidates-function
 		(consult-selectrum--split-wrap selectrum-highlight-candidates-function split))))
 
+(defun consult-selectrum--crm-setup ()
+  "Setup crm for Selectrum."
+  (when selectrum-is-active
+    (setq-local selectrum-default-value-format nil)))
+
 (add-hook 'consult--completion-candidate-hook #'consult-selectrum--candidate)
 (add-hook 'consult--completion-refresh-hook #'consult-selectrum--refresh)
+(add-hook 'consult--crm-setup-hook #'consult-selectrum--crm-setup)
 (advice-add #'consult--completion-filter :around #'consult-selectrum--filter-adv)
 (advice-add #'consult--split-setup :around #'consult-selectrum--split-setup-adv)
 
