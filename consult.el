@@ -316,6 +316,11 @@ don't want to see epa password prompts."
 Each element of the list must have the form '(char name handler)."
   :type '(repeat (list character string function)))
 
+(defcustom consult-crm-prefix
+  (cons "  " (propertize "✓ " 'face 'success))
+  "Prefix for `consult-completing-read-multiple' candidates."
+  :type '(cons string string))
+
 ;;;; Faces
 
 (defgroup consult-faces nil
@@ -2154,13 +2159,19 @@ These configuration options are supported:
                                                 hist def inherit-input-method)
   "Enhanced replacement for `completing-read-multiple'.
 See `completing-read-multiple' for the documentation of the arguments."
-  (let* ((orig-candidates (all-completions "" table pred))
+  (let* ((orig-items
+          (funcall
+           (if-let (prefix (car consult-crm-prefix))
+               (apply-partially #'mapcar (lambda (item) (propertize item 'line-prefix prefix)))
+             #'identity)
+           (all-completions "" table pred)))
          (format-item
           (lambda (item)
             ;; Restore original candidate in order to preserve formatting
-            (setq item (substring (or (car (member item orig-candidates)) item)))
+            (setq item (propertize (or (car (member item orig-items)) item)
+                                   'consult--crm-selected t
+                                   'line-prefix (cdr consult-crm-prefix)))
             (add-face-text-property 0 (length item) 'consult-crm-selected 'append item)
-            (put-text-property 0 (length item) 'consult--crm-selected t item)
             item))
          (separator (or (bound-and-true-p crm-separator) "[ \t]*,[ \t]*"))
          (hist-sym (pcase hist
@@ -2172,18 +2183,18 @@ See `completing-read-multiple' for the documentation of the arguments."
          (selected
           (and initial-input
                (or
-                ;; initial-input is multiple candidates
+                ;; initial-input is multiple items
                 (string-match-p separator initial-input)
                 ;; initial-input is a single candidate
-                (member initial-input orig-candidates))
+                (member initial-input orig-items))
                (prog1
                    (mapcar format-item
                            (split-string initial-input separator 'omit-nulls))
                  (setq initial-input nil))))
          (consult--crm-history (append (mapcar #'substring-no-properties selected) hist-val))
-         (candidates (append selected
-                             (seq-remove (lambda (x) (member x selected))
-                                         orig-candidates)))
+         (items (append selected
+                        (seq-remove (lambda (x) (member x selected))
+                                    orig-items)))
          (select-item
           (lambda (item)
             (unless (equal item "")
@@ -2193,9 +2204,9 @@ See `completing-read-multiple' for the documentation of the arguments."
                                  (delete item selected)
                                (nconc selected (list (funcall format-item item))))
                     consult--crm-history (append (mapcar #'substring-no-properties selected) hist-val)
-                    candidates (append selected
-                                       (seq-remove (lambda (x) (member x selected))
-                                                   orig-candidates))))))
+                    items (append selected
+                                  (seq-remove (lambda (x) (member x selected))
+                                              orig-items))))))
          (orig-md (and (functionp table) (cdr (funcall table "" nil 'metadata))))
          (group-fun (alist-get 'group-function orig-md))
          (sort-fun
@@ -2215,7 +2226,7 @@ See `completing-read-multiple' for the documentation of the arguments."
                   (if (get-text-property 0 'consult--crm-selected cand)
                       (if transform cand "Selected")
                     (or (and group-fun (funcall group-fun cand transform)))
-                        (if transform cand "Select multiple"))))
+                    (if transform cand "Select multiple"))))
             ,@(funcall sort-fun 'cycle-sort-function)
             ,@(funcall sort-fun 'display-sort-function)
             ,@(seq-filter (lambda (x) (memq (car x) '(annotation-function
@@ -2255,27 +2266,27 @@ See `completing-read-multiple' for the documentation of the arguments."
                    (setq command this-command
                          this-command wrapper))))
     (unwind-protect
-      (consult--minibuffer-with-setup-hook
-        (:append
-         (lambda ()
-           (when-let (pos (string-match-p "\\(?: (default[^)]+)\\)?: \\'" prompt))
-             (setq overlay (make-overlay (+ (point-min) pos) (+ (point-min) (length prompt))))
-             (funcall update-overlay))
-           (run-hooks 'consult--crm-setup-hook)))
-        (add-hook 'pre-command-hook hook 90)
-        (funcall select-item
-                 (completing-read
-                  prompt
-                  (lambda (str pred action)
-                    (if (eq action 'metadata)
-                        md
-                      (complete-with-action action candidates str pred)))
-                  nil ;; predicate
-                  require-match
-                  initial-input
-                  'consult--crm-history
-                  "" ;; default
-                  inherit-input-method)))
+        (consult--minibuffer-with-setup-hook
+            (:append
+             (lambda ()
+               (when-let (pos (string-match-p "\\(?: (default[^)]+)\\)?: \\'" prompt))
+                 (setq overlay (make-overlay (+ (point-min) pos) (+ (point-min) (length prompt))))
+                 (funcall update-overlay))
+               (run-hooks 'consult--crm-setup-hook)))
+          (add-hook 'pre-command-hook hook 90)
+          (funcall select-item
+                   (completing-read
+                    prompt
+                    (lambda (str pred action)
+                      (if (eq action 'metadata)
+                          md
+                        (complete-with-action action items str pred)))
+                    nil ;; predicate
+                    require-match
+                    initial-input
+                    'consult--crm-history
+                    "" ;; default
+                    inherit-input-method)))
       (remove-hook 'pre-command-hook hook))
     (set hist-sym consult--crm-history)
     (when (consp def)
