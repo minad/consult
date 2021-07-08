@@ -83,14 +83,17 @@ SPLIT is the splitter function."
     (setq-local selectrum-highlight-candidates-function
 		(consult-selectrum--split-wrap selectrum-highlight-candidates-function split))))
 
-(defun consult-selectrum--crm-setup ()
-  "Setup crm for Selectrum."
-  (when selectrum-is-active
-    (setq-local selectrum-default-value-format nil)))
+(defun consult-selectrum--crm-adv (&rest args)
+  "Setup crm for Selectrum given ARGS."
+  (consult--minibuffer-with-setup-hook
+      (lambda ()
+        (when selectrum-is-active
+          (setq-local selectrum-default-value-format nil)))
+    (apply args)))
 
 (add-hook 'consult--completion-candidate-hook #'consult-selectrum--candidate)
 (add-hook 'consult--completion-refresh-hook #'consult-selectrum--refresh)
-(add-hook 'consult--crm-setup-hook #'consult-selectrum--crm-setup)
+(advice-add #'consult-completing-read-multiple :around #'consult-selectrum--crm-adv)
 (advice-add #'consult--completion-filter :around #'consult-selectrum--filter-adv)
 (advice-add #'consult--split-setup :around #'consult-selectrum--split-setup-adv)
 (define-key consult-async-map [remap selectrum-insert-current-candidate] #'selectrum-next-page)

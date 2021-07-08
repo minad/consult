@@ -446,9 +446,6 @@ should not be considered as stable as the public API.")
 (defvar consult--cache nil
   "Cached data populated by `consult--define-cache'.")
 
-(defvar consult--crm-setup-hook nil
-  "Hook executed in `consult-completing-read-multiple' minibuffer.")
-
 (defvar consult--completion-candidate-hook
   (list #'consult--default-completion-mb-candidate
         #'consult--default-completion-list-candidate)
@@ -2256,13 +2253,11 @@ See `completing-read-multiple' for the documentation of the arguments."
                    (setq command this-command this-command wrapper))))
     (unwind-protect
         (consult--minibuffer-with-setup-hook
-            (:append
-             (lambda ()
-               (when-let (pos (string-match-p "\\(?: (default[^)]+)\\)?: \\'" prompt))
-                 (setq overlay (make-overlay (+ (point-min) pos) (+ (point-min) (length prompt))))
-                 (when selected
-                   (overlay-put overlay 'display (format " (%s selected): " (length selected)))))
-               (run-hooks 'consult--crm-setup-hook)))
+            (lambda ()
+              (when-let (pos (string-match-p "\\(?: (default[^)]+)\\)?: \\'" prompt))
+                (setq overlay (make-overlay (+ (point-min) pos) (+ (point-min) (length prompt))))
+                (when selected
+                  (overlay-put overlay 'display (format " (%s selected): " (length selected))))))
           (add-hook 'pre-command-hook hook 90)
           (let ((result
                  (completing-read
