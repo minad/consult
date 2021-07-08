@@ -3440,15 +3440,17 @@ The command supports previewing the currently selected theme."
 
 ;;;;; Command: consult-buffer
 
-(consult--define-cache consult--cached-buffers
+(consult--define-cache consult--cached-all-buffers
   (let ((buffers (delq (current-buffer) (buffer-list)))
         (visible-p (lambda (x) (get-buffer-window x 'visible))))
     (nconc (seq-remove visible-p buffers)
            (seq-filter visible-p buffers)
            (list (current-buffer)))))
 
-(consult--define-cache consult--cached-buffer-names
-  (mapcar #'buffer-name (consult--cached-buffers)))
+(consult--define-cache consult--cached-buffers
+  (let ((filter (consult--regexp-filter consult-buffer-filter)))
+    (seq-remove (lambda (x) (string-match-p filter (buffer-name x)))
+                (consult--cached-all-buffers))))
 
 (consult--define-cache consult--cached-buffer-file-hash
   (consult--string-hash (delq nil (mapcar #'buffer-file-name (consult--cached-buffers)))))
@@ -3538,7 +3540,7 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
     ,(lambda ()
        (let ((filter (consult--regexp-filter consult-buffer-filter)))
          (seq-filter (lambda (x) (string-match-p filter x))
-                     (consult--cached-buffer-names)))))
+                     (mapcar #'buffer-name (consult--cached-all-buffers))))))
   "Hidden buffer candidate source for `consult-buffer'.")
 
 (defvar consult--source-buffer
@@ -3551,9 +3553,7 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
     :default  t
     :items
     ,(lambda ()
-       (let ((filter (consult--regexp-filter consult-buffer-filter)))
-         (seq-remove (lambda (x) (string-match-p filter x))
-                     (consult--cached-buffer-names)))))
+       (mapcar #'buffer-name (consult--cached-buffers))))
   "Buffer candidate source for `consult-buffer'.")
 
 (defvar consult--source-file
