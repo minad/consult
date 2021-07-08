@@ -388,7 +388,7 @@ their descriptions.
  - =consult-completing-read-multiple=: Enhanced drop-in replacement for
    =completing-read-multiple= which works better for long candidates. Multiple
    candidates can be selected/deselected by pressing ~RET~. The selections are
-   confirmed by pressing ~RET~ in the end.
+   confirmed by pressing ~RET~ again.
 
 * Special features
   :properties:
@@ -837,12 +837,12 @@ contributed.
      ;; This adds thin lines, sorting and hides the mode line of the window.
      (advice-add #'register-preview :override #'consult-register-window)
 
+     ;; Optionally replace `completing-read-multiple' with an enhanced version.
+     (advice-add #'completing-read-multiple :override #'consult-completing-read-multiple)
+
      ;; Use Consult to select xref locations with preview
      (setq xref-show-xrefs-function #'consult-xref
            xref-show-definitions-function #'consult-xref)
-
-     ;; Optionally replace `completing-read-multiple' with an enhanced version.
-     (advice-add #'completing-read-multiple :override #'consult-completing-read-multiple)
 
      ;; Configure other variables and modes in the :config section,
      ;; after lazily loading the package.
