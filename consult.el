@@ -2218,7 +2218,7 @@ See `completing-read-multiple' for the documentation of the arguments."
          (overlay)
          (command)
          (depth (1+ (recursion-depth)))
-         (hook (make-symbol "consult--crm-post-command-hook"))
+         (hook (make-symbol "consult--crm-pre-command-hook"))
          (wrapper (make-symbol "consult--crm-command-wrapper")))
     (fset wrapper
           (lambda ()
@@ -2250,37 +2250,38 @@ See `completing-read-multiple' for the documentation of the arguments."
     (fset hook (lambda ()
                  (when (and this-command (= depth (recursion-depth)))
                    (setq command this-command this-command wrapper))))
-    (unwind-protect
-        (consult--minibuffer-with-setup-hook
-            (lambda ()
-              (when-let (pos (string-match-p "\\(?: (default[^)]+)\\)?: \\'" prompt))
-                (setq overlay (make-overlay (+ (point-min) pos) (+ (point-min) (length prompt))))
-                (when selected
-                  (overlay-put overlay 'display (format " (%s selected): " (length selected))))))
-          (add-hook 'pre-command-hook hook 90)
-          (let ((result
-                 (completing-read
-                  prompt
-                  (lambda (str pred action)
-                    (if (eq action 'metadata)
-                        md
-                      (complete-with-action action items str pred)))
-                  nil ;; predicate
-                  require-match
-                  initial-input
-                  'consult--crm-history
-                  "" ;; default
-                  inherit-input-method)))
-            (unless (or (equal result "") selected)
-              (setq selected (list result)))))
-      (remove-hook 'pre-command-hook hook))
-    (setq selected (mapcar #'substring-no-properties selected))
-    (set hist-sym (append selected hist-val))
+    (consult--minibuffer-with-setup-hook
+        (lambda ()
+          (when-let (pos (string-match-p "\\(?: (default[^)]+)\\)?: \\'" prompt))
+            (setq overlay (make-overlay (+ (point-min) pos) (+ (point-min) (length prompt))))
+            (when selected
+              (overlay-put overlay 'display (format " (%s selected): " (length selected))))))
+      (unwind-protect
+          (progn
+            (add-hook 'pre-command-hook hook 90)
+            (let ((result
+                   (completing-read
+                    prompt
+                    (lambda (str pred action)
+                      (if (eq action 'metadata)
+                          md
+                        (complete-with-action action items str pred)))
+                    nil ;; predicate
+                    require-match
+                    initial-input
+                    'consult--crm-history
+                    "" ;; default
+                    inherit-input-method)))
+              (unless (or (equal result "") selected)
+                (setq selected (list result)
+                      consult--crm-history (cons result hist-val)))))
+        (remove-hook 'pre-command-hook hook)))
+    (set hist-sym consult--crm-history)
     (when (consp def)
       (setq def (car def)))
     (if (and def (not (equal "" def)) (not selected))
         (split-string def separator 'omit-nulls)
-      selected)))
+      (mapcar #'substring-no-properties selected))))
 
 ;;;; Commands
 
