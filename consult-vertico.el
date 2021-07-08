@@ -30,8 +30,10 @@
 (defvar vertico--input)
 (defvar vertico--history-hash)
 (defvar vertico--lock-candidate)
+(declare-function vertico-exit "ext:vertico")
 (declare-function vertico--exhibit "ext:vertico")
 (declare-function vertico--candidate "ext:vertico")
+(declare-function vertico--match-p "ext:vertico")
 
 (defun consult-vertico--candidate ()
   "Return current candidate for Consult preview."
@@ -46,8 +48,50 @@
     (setq vertico--input t)
     (vertico--exhibit)))
 
+(defun consult-vertico--crm-select ()
+  "Select/deselect current candidate."
+  (interactive)
+  (let ((cand (vertico--candidate))
+        (content (minibuffer-contents)))
+    (when (and (not (equal cand "")) (vertico--match-p cand))
+      (setq consult--crm-reset (lambda ()
+                                 (setq vertico--history-hash nil
+                                       vertico--input t)
+                                 (delete-minibuffer-contents)
+                                 (insert content)
+                                 (vertico-next)
+                                 (vertico--exhibit)))
+      (vertico-exit))))
+
+(defun consult-vertico--crm-select-erase ()
+  "Select/deselect candidate."
+  (interactive)
+  (when (let ((cand (vertico--candidate)))
+          (and (vertico--match-p cand) (not (equal cand ""))))
+    (vertico-exit)))
+
+(defun consult-vertico--crm-exit ()
+  "Select/deselect candidate and exit."
+  (interactive)
+  (setq consult--crm-reset 'exit)
+  (vertico-exit))
+
+(defvar consult-vertico--crm-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map [remap vertico-insert] #'consult-vertico--crm-select-erase)
+    (define-key map [remap exit-minibuffer] #'consult-vertico--crm-exit)
+    (define-key map [backtab] #'consult-vertico--crm-select)
+    map))
+
+(defun consult-vertico--crm-setup ()
+  "Setup crm for Vertico."
+  (message "SETUP")
+  (when vertico--input
+    (use-local-map (make-composed-keymap (list consult-vertico--crm-map) (current-local-map)))))
+
 (add-hook 'consult--completion-candidate-hook #'consult-vertico--candidate)
 (add-hook 'consult--completion-refresh-hook #'consult-vertico--refresh)
+(add-hook 'consult--crm-setup-hook #'consult-vertico--crm-setup)
 (define-key consult-async-map [remap vertico-insert] 'vertico-next-group)
 
 (provide 'consult-vertico)
