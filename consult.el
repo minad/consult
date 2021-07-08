@@ -1601,7 +1601,7 @@ ARGS is a list of `make-process' properties and transforms."
 (defvar consult-narrow-map
   (let ((map (make-sparse-keymap)))
     (define-key map " " consult--narrow-space)
-    (define-key map [127] consult--narrow-delete)
+    (define-key map "\d" consult--narrow-delete)
     map)
   "Narrowing keymap which is added to the local minibuffer map.
 Note that `consult-narrow-key' and `consult-widen-key' are bound dynamically.")
