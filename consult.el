@@ -2925,11 +2925,6 @@ From these files, the commands are extracted."
                                       'consult--type key)
                           commands)))))))))))
 
-(defconst consult--mode-command-narrow
-  '((?m . "Major")
-    (?l . "Local Minor")
-    (?g . "Global Minor")))
-
 ;;;###autoload
 (defun consult-mode-command (&rest modes)
   "Run a command from any of the given MODES.
@@ -2941,22 +2936,25 @@ If no MODES are specified, use currently active major and minor modes."
                       (seq-filter (lambda (m)
                                     (and (boundp m) (symbol-value m)))
                                   minor-mode-list))))
-  (command-execute
-   (consult--read
-    (consult--mode-command-candidates modes)
-    :prompt "Mode command: "
-    :predicate
-    (lambda (cand)
-      (let ((key (get-text-property 0 'consult--type cand)))
-        (if consult--narrow
-            (= key consult--narrow)
-          (/= key ?g))))
-    :lookup #'consult--lookup-candidate
-    :group (consult--type-group consult--mode-command-narrow)
-    :narrow consult--mode-command-narrow
-    :require-match t
-    :history 'consult--mode-command-history
-    :category 'command)))
+  (let ((narrow `((?m . ,(format "Major: %s" major-mode))
+                  (?l . "Local Minor")
+                  (?g . "Global Minor"))))
+    (command-execute
+     (consult--read
+      (consult--mode-command-candidates modes)
+      :prompt "Mode command: "
+      :predicate
+      (lambda (cand)
+        (let ((key (get-text-property 0 'consult--type cand)))
+          (if consult--narrow
+              (= key consult--narrow)
+            (/= key ?g))))
+      :lookup #'consult--lookup-candidate
+      :group (consult--type-group narrow)
+      :narrow narrow
+      :require-match t
+      :history 'consult--mode-command-history
+      :category 'command))))
 
 ;;;;; Command: consult-yank
 
