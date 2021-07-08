@@ -3533,7 +3533,7 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
     :category buffer
     :face     consult-buffer
     :history  buffer-name-history
-    :state    ,#'consult--buffer-state
+    :action   ,#'consult--buffer-action
     :items
     ,(lambda ()
        (let ((filter (consult--regexp-filter consult-buffer-filter)))
