@@ -37,13 +37,13 @@
   "Return current candidate for Consult preview."
   (and vertico--input (vertico--candidate 'highlight)))
 
-(defun consult-vertico--refresh (&optional reset)
-  "Refresh completion UI, keep current candidate unless RESET is non-nil."
+(defun consult-vertico--refresh ()
+  "Refresh completion UI."
   (when vertico--input
-    (setq vertico--input t)
-    (when reset
+    (when consult--crm-reset
       (setq vertico--history-hash nil
             vertico--lock-candidate nil))
+    (setq vertico--input t)
     (vertico--exhibit)))
 
 (add-hook 'consult--completion-candidate-hook #'consult-vertico--candidate)

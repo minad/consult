@@ -57,14 +57,14 @@ See `consult--completion-filter' for arguments PATTERN, CANDS, CATEGORY and HIGH
   "Return current selectrum candidate."
   (and selectrum-is-active (selectrum-get-current-candidate)))
 
-(defun consult-selectrum--refresh (&optional reset)
-  "Refresh completion UI, keep current candidate unless RESET is non-nil."
+(defun consult-selectrum--refresh ()
+  "Refresh completion UI."
   (when selectrum-is-active
     (when consult--narrow
       (setq-local selectrum-default-value-format nil))
-    (when reset
+    (when consult--crm-reset
       (setq-local selectrum--history-hash nil))
-    (selectrum-exhibit (not reset))))
+    (selectrum-exhibit (not consult--crm-reset))))
 
 (defun consult-selectrum--split-wrap (orig split)
   "Wrap candidates highlight/refinement ORIG function, splitting the input using SPLIT."

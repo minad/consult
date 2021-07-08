@@ -446,6 +446,12 @@ should not be considered as stable as the public API.")
 (defvar consult--cache nil
   "Cached data populated by `consult--define-cache'.")
 
+(defvar-local consult--crm-reset nil
+  "Reset function for `consult-completing-read-multiple'.")
+
+(defvar consult--crm-setup-hook nil
+  "Setup hook for `consult-completing-read-multiple'.")
+
 (defvar consult--completion-candidate-hook
   (list #'consult--default-completion-mb-candidate
         #'consult--default-completion-list-candidate)
@@ -2225,14 +2231,16 @@ See `completing-read-multiple' for the documentation of the arguments."
           (lambda ()
             (interactive)
             (pcase (catch 'exit
+                     (setq consult--crm-reset
+                           (apply-partially #'run-hooks 'consult--completion-refresh-hook))
                      (call-interactively (setq this-command command))
                      'continue)
+              ('t (throw 'exit t))
               ('nil
                (with-selected-window (active-minibuffer-window)
                  (let ((item (minibuffer-contents-no-properties)))
-                   (when (equal item "")
+                   (when (or (equal item "") (eq consult--crm-reset 'exit))
                      (throw 'exit nil))
-                   (delete-minibuffer-contents)
                    (setq selected (if (member item selected)
                                       ;; Multi selections are not possible.
                                       ;; This is probably no problem, since this is rarely desired.
@@ -2246,18 +2254,20 @@ See `completing-read-multiple' for the documentation of the arguments."
                      (overlay-put overlay 'display
                                   (when selected
                                     (format " (%s selected): " (length selected)))))
-                   (run-hook-with-args 'consult--completion-refresh-hook 'reset))))
-              ('t (throw 'exit t)))))
+                   (delete-minibuffer-contents)
+                   (funcall consult--crm-reset)))))))
     (fset hook (lambda ()
                  (when (and this-command (= depth (recursion-depth)))
                    (setq command this-command this-command wrapper))))
     (unwind-protect
         (consult--minibuffer-with-setup-hook
-            (lambda ()
-              (when-let (pos (string-match-p "\\(?: (default[^)]+)\\)?: \\'" prompt))
-                (setq overlay (make-overlay (+ (point-min) pos) (+ (point-min) (length prompt))))
-                (when selected
-                  (overlay-put overlay 'display (format " (%s selected): " (length selected))))))
+            (:append
+             (lambda ()
+               (when-let (pos (string-match-p "\\(?: (default[^)]+)\\)?: \\'" prompt))
+                 (setq overlay (make-overlay (+ (point-min) pos) (+ (point-min) (length prompt))))
+                 (when selected
+                   (overlay-put overlay 'display (format " (%s selected): " (length selected)))))
+               (run-hooks 'consult--crm-setup-hook)))
           (add-hook 'pre-command-hook hook 90)
           (let ((result
                  (completing-read
