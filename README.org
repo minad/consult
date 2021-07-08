@@ -387,10 +387,8 @@ their descriptions.
    completion directly in the original buffer.
  - =consult-completing-read-multiple=: Enhanced drop-in replacement for
    =completing-read-multiple= which works better for long candidates. Multiple
-   candidates can be selected/deselected by pressing ~RET~ in the default
-   completions UI. In the end the selections are confirmed by pressing ~RET~
-   again. In Vertico and Selectrum, candidates are selected/deselected by
-   pressing ~TAB~, while ~RET~ selects/deselects and exits immediately.
+   candidates can be selected/deselected by pressing ~RET~. The selections are
+   confirmed by pressing ~RET~ in the end.
 
 * Special features
   :properties:
