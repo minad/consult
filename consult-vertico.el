@@ -48,7 +48,7 @@
 
 (add-hook 'consult--completion-candidate-hook #'consult-vertico--candidate)
 (add-hook 'consult--completion-refresh-hook #'consult-vertico--refresh)
-(define-key consult-async-map [remap vertico-insert] #'vertico-next-group)
+(define-key consult-async-map [remap vertico-insert] 'vertico-next-group)
 
 (provide 'consult-vertico)
 ;;; consult-vertico.el ends here
