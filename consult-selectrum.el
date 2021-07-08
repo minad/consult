@@ -31,7 +31,6 @@
 (defvar selectrum-highlight-candidates-function)
 (defvar selectrum-is-active)
 (defvar selectrum-refine-candidates-function)
-(defvar selectrum--history-hash)
 (declare-function selectrum-exhibit "ext:selectrum")
 (declare-function selectrum-get-current-candidate "ext:selectrum")
 
@@ -57,14 +56,13 @@ See `consult--completion-filter' for arguments PATTERN, CANDS, CATEGORY and HIGH
   "Return current selectrum candidate."
   (and selectrum-is-active (selectrum-get-current-candidate)))
 
-(defun consult-selectrum--refresh (&optional reset)
-  "Refresh completion UI, keep current candidate unless RESET is non-nil."
+(defun consult-selectrum--refresh ()
+  "Refresh selectrum view."
   (when selectrum-is-active
-    (when consult--narrow
-      (setq-local selectrum-default-value-format nil))
-    (when reset
-      (setq-local selectrum--history-hash nil))
-    (selectrum-exhibit (not reset))))
+    (if consult--narrow
+        (setq-local selectrum-default-value-format nil)
+      (kill-local-variable 'selectrum-default-value-format))
+    (selectrum-exhibit 'keep-selected)))
 
 (defun consult-selectrum--split-wrap (orig split)
   "Wrap candidates highlight/refinement ORIG function, splitting the input using SPLIT."
@@ -83,17 +81,8 @@ SPLIT is the splitter function."
     (setq-local selectrum-highlight-candidates-function
 		(consult-selectrum--split-wrap selectrum-highlight-candidates-function split))))
 
-(defun consult-selectrum--crm-adv (&rest args)
-  "Setup crm for Selectrum given ARGS."
-  (consult--minibuffer-with-setup-hook
-      (lambda ()
-        (when selectrum-is-active
-          (setq-local selectrum-default-value-format nil)))
-    (apply args)))
-
 (add-hook 'consult--completion-candidate-hook #'consult-selectrum--candidate)
 (add-hook 'consult--completion-refresh-hook #'consult-selectrum--refresh)
-(advice-add #'consult-completing-read-multiple :around #'consult-selectrum--crm-adv)
 (advice-add #'consult--completion-filter :around #'consult-selectrum--filter-adv)
 (advice-add #'consult--split-setup :around #'consult-selectrum--split-setup-adv)
 (define-key consult-async-map [remap selectrum-insert-current-candidate] 'selectrum-next-page)

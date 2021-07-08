@@ -343,7 +343,6 @@ their descriptions.
  #+findex: consult-apropos
  #+findex: consult-file-externally
  #+findex: consult-completion-in-region
- #+findex: consult-completing-read-multiple
  #+findex: consult-theme
  #+findex: consult-man
  #+findex: consult-preview-at-point
@@ -385,11 +384,6 @@ their descriptions.
    buffer to the minibuffer, the server does not receive the updated input. Lsp
    completion should work with Corfu or Company though, which perform the
    completion directly in the original buffer.
- - =consult-completing-read-multiple=: Enhanced drop-in replacement for
-   =completing-read-multiple= which works better for long candidates. Multiple
-   candidates can be selected/deselected by pressing ~RET~. The selections are
-   confirmed by pressing ~RET~ in the end.
-
 * Special features
   :properties:
   :description: Enhancements over built-in `completing-read'
@@ -841,9 +835,6 @@ contributed.
      (setq xref-show-xrefs-function #'consult-xref
            xref-show-definitions-function #'consult-xref)
 
-     ;; Optionally replace `completing-read-multiple' with an enhanced version.
-     (advice-add #'completing-read-multiple :override #'consult-completing-read-multiple)
-
      ;; Configure other variables and modes in the :config section,
      ;; after lazily loading the package.
      :config
@@ -911,7 +902,6 @@ contributed.
  | consult-bookmark-narrow          | ...              | Narrowing configuration for =consult-bookmark=          |
  | consult-buffer-filter            | ...              | Filter for =consult-buffer=                             |
  | consult-buffer-sources           | ...              | List of virtual buffer sources                        |
- | consult-crm-prefix               | ("  " . "✓ ")    | Prefix string for CRM candidates                      |
  | consult-find-command             | "find ..."       | Command line arguments for find                       |
  | consult-fontify-max-size         | 1048576          | Buffers larger than this limit are not fontified      |
  | consult-fontify-preserve         | t                | Preserve fontification for line-based commands.       |
