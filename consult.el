@@ -2049,10 +2049,9 @@ of functions and in `consult-completion-in-region'."
           ;; Use the `before-string' property since the overlay might be empty.
           (overlay-put ov 'before-string cand))))))
 
-;; Use minibuffer completion as the UI for completion-at-point
 ;;;###autoload
 (defun consult-completion-in-region (start end collection &optional predicate)
-  "Prompt for completion of region in the minibuffer if non-unique.
+  "Use minibuffer completion as the UI for `completion-at-point'.
 
 The function is called with 4 arguments: START END COLLECTION PREDICATE.
 The arguments and expected return value are as specified for
