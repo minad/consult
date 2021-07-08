@@ -2232,7 +2232,6 @@ See `completing-read-multiple' for the documentation of the arguments."
                  (let ((item (minibuffer-contents-no-properties)))
                    (when (equal item "")
                      (throw 'exit nil))
-                   (delete-minibuffer-contents)
                    (setq selected (if (member item selected)
                                       ;; Multi selections are not possible.
                                       ;; This is probably no problem, since this is rarely desired.
@@ -2246,6 +2245,7 @@ See `completing-read-multiple' for the documentation of the arguments."
                      (overlay-put overlay 'display
                                   (when selected
                                     (format " (%s selected): " (length selected)))))
+                   (delete-minibuffer-contents)
                    (run-hook-with-args 'consult--completion-refresh-hook 'reset))))
               ('t (throw 'exit t)))))
     (fset hook (lambda ()
