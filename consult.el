@@ -1590,7 +1590,12 @@ ARGS is a list of `make-process' properties and transforms."
 
 ;;;; Special keymaps
 
-(defvar consult-async-map (make-sparse-keymap)
+(defvar consult-async-map
+  (let ((map (make-sparse-keymap)))
+    ;; Async keys overwriting some unusable defaults for the default completion
+    (define-key map [remap minibuffer-complete-word] #'self-insert-command)
+    (define-key map [remap minibuffer-complete] #'minibuffer-completion-help)
+    map)
   "Keymap added for commands with asynchronous candidates.")
 
 (defvar consult-preview-map (make-sparse-keymap)
@@ -1637,13 +1642,6 @@ NARROW are the narrow settings.
 PREVIEW-KEY are the preview keys."
   (let ((old-map (current-local-map))
         (map (make-sparse-keymap)))
-
-    ;; Async keys overwriting some unusable defaults for the default completion
-    (when async
-      (when (eq (lookup-key old-map " ") #'minibuffer-complete-word)
-        (define-key map " " #'self-insert-command))
-      (when (eq (lookup-key old-map "\t") #'minibuffer-complete)
-        (define-key map "\t" #'minibuffer-completion-help)))
 
     ;; Add narrow keys
     (when narrow

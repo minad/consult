@@ -93,6 +93,7 @@ SPLIT is the splitter function."
 (add-hook 'consult--crm-setup-hook #'consult-selectrum--crm-setup)
 (advice-add #'consult--completion-filter :around #'consult-selectrum--filter-adv)
 (advice-add #'consult--split-setup :around #'consult-selectrum--split-setup-adv)
+(define-key consult-async-map [remap selectrum-insert-current-candidate] #'selectrum-next-page)
 
 (provide 'consult-selectrum)
 ;;; consult-selectrum.el ends here
