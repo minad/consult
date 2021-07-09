@@ -2273,7 +2273,7 @@ See `completing-read-multiple' for the documentation of the arguments."
                     "" ;; default
                     inherit-input-method)))
               (unless (or (equal result "") selected)
-                (setq selected (list result)
+                (setq selected (split-string result separator 'omit-nulls)
                       consult--crm-history (cons result hist-val)))))
         (remove-hook 'pre-command-hook hook)))
     (set hist-sym consult--crm-history)
