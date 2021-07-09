@@ -2273,8 +2273,8 @@ See `completing-read-multiple' for the documentation of the arguments."
                     "" ;; default
                     inherit-input-method)))
               (unless (or (equal result "") selected)
-                (setq selected (split-string result separator 'omit-nulls)
-                      consult--crm-history (cons result hist-val)))))
+                (setq selected (split-string (substring-no-properties result) separator 'omit-nulls)
+                      consult--crm-history (append selected hist-val)))))
         (remove-hook 'pre-command-hook hook)))
     (set hist-sym consult--crm-history)
     (when (consp def)
