@@ -2108,9 +2108,20 @@ These configuration options are supported:
                        (consult--insertion-preview start end)
                        ;; transformation function
                        (if (eq category 'file)
-                           (if (file-name-absolute-p initial)
-                               (lambda (_inp cand) (substitute-in-file-name cand))
-                             (lambda (_inp cand) (file-relative-name (substitute-in-file-name cand))))
+                           (cond
+                            ;; Transform absolute file names
+                            ((file-name-absolute-p initial)
+                             (lambda (_inp cand)
+                               (substitute-in-file-name cand)))
+                            ;; Ensure that ./ prefix is kept for the shell (#356)
+                            ((string-prefix-p "./" initial)
+                             (lambda (_inp cand)
+                               (setq cand (file-relative-name (substitute-in-file-name cand)))
+                               (if (string-match-p "\\`\\.\\.?/" cand) cand (concat "./" cand))))
+                            ;; Simplify relative file names
+                            (t
+                             (lambda (_inp cand)
+                               (file-relative-name (substitute-in-file-name cand)))))
                          (lambda (_inp cand) cand))
                        ;; candidate function
                        (apply-partially #'run-hook-with-args-until-success
