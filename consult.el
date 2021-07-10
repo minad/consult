@@ -615,7 +615,7 @@ The line beginning/ending BEG/END is bound in BODY."
 (defmacro consult--static-if (cond then &rest else)
   "If COND yields non-nil at compile time, do THEN, else do ELSE."
   (declare (indent 2))
-  (if (eval cond) then (macroexp-progn else)))
+  (if (eval cond 'lexical) then (macroexp-progn else)))
 
 (defun consult--display-width (string)
   "Compute width of STRING taking display and invisible properties into account."
