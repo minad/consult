@@ -2114,7 +2114,7 @@ These configuration options are supported:
                              (lambda (_inp cand)
                                (substitute-in-file-name cand)))
                             ;; Ensure that ./ prefix is kept for the shell (#356)
-                            ((string-prefix-p "./" initial)
+                            ((string-match-p "\\`\\.\\.?/" initial)
                              (lambda (_inp cand)
                                (setq cand (file-relative-name (substitute-in-file-name cand)))
                                (if (string-match-p "\\`\\.\\.?/" cand) cand (concat "./" cand))))
