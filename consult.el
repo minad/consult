@@ -631,7 +631,7 @@ The line beginning/ending BEG/END is bound in BODY."
               (unless (get-text-property pos 'invisible string)
                 (setq width (+ width
                                ;; bug#47712: Emacs 28 can compute `string-width' of substrings
-                               (consult--static-if (= 3 (cdr (func-arity #'string-width)))
+                               (consult--static-if (eq 3 (cdr (func-arity #'string-width)))
                                    (string-width string pos nexti)
                                  (string-width
                                   ;; Avoid allocation for the full string.
