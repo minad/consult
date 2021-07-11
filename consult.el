@@ -3509,9 +3509,8 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
          (mapcar #'buffer-name
                  (seq-filter
                   (lambda (x)
-                    (string-prefix-p
-                     root
-                     (expand-file-name (buffer-local-value 'default-directory x))))
+                    (when-let (dir (buffer-local-value 'default-directory x))
+                      (string-prefix-p root (expand-file-name dir))))
                   (consult--cached-buffers))))))
   "Project buffer candidate source for `consult-buffer'.")
 
