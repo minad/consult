@@ -1928,8 +1928,9 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
                   (funcall last-fun nil t))
                 ;; Destruct all the sources, except the last and selected source
                 (dolist (state states)
-                  (unless (or (eq (cdr state) last-fun) (eq (cdr state) selected-fun))
-                    (funcall (cdr state) nil t)))
+                  (let ((fun (cdr state)))
+                    (unless (or (eq fun last-fun) (eq fun selected-fun))
+                      (funcall fun nil t))))
                 ;; Finally destruct the source with the selected candidate
                 (when selected-fun (funcall selected-fun cand t)))
             ;; If the candidate source changed during preview communicate to
