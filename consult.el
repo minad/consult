@@ -1919,20 +1919,26 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
                                       sources)))
     (let ((last-fun))
       (pcase-lambda (`(,cand . ,src) restore)
-        (if restore
-            ;; Restore all state functions
-            (dolist (state states)
-              (funcall (cdr state) (and (eq (car state) src) cand) t))
-          ;; Get state function to call for preview
-          (let ((fun (cdr (assq src states))))
+        ;; Get state function
+        (let ((selected-fun (cdr (assq src states))))
+          (if restore
+              (progn
+                ;; If the candidate source changed, destruct first the last source.
+                (when (and last-fun (not (eq last-fun selected-fun)))
+                  (funcall last-fun nil t))
+                ;; Destruct all the sources, except the last and selected source
+                (dolist (state states)
+                  (unless (or (eq (cdr state) last-fun) (eq (cdr state) selected-fun))
+                    (funcall (cdr state) nil t)))
+                ;; Finally destruct the source with the selected candidate
+                (when selected-fun (funcall selected-fun cand t)))
             ;; If the candidate source changed during preview communicate to
             ;; the last source, that none of its candidates is previewed anymore.
-            (when (and last-fun (not (eq last-fun fun)))
+            (when (and last-fun (not (eq last-fun selected-fun)))
               (funcall last-fun nil nil))
-            (setq last-fun fun)
+            (setq last-fun selected-fun)
             ;; Call the state function.
-            (when fun
-              (funcall fun cand nil))))))))
+            (when selected-fun (funcall selected-fun cand nil))))))))
 
 (defun consult--multi (sources &rest options)
   "Select from candidates taken from a list of SOURCES.
