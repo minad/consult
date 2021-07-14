@@ -2942,12 +2942,12 @@ From these files, the commands are extracted."
                            (if (bound-and-true-p read-extended-command-predicate)
                                (funcall read-extended-command-predicate sym buffer)
                              t))
-                (let ((name (symbol-name sym)))
-                  (unless (string-match-p command-filter name)
-                    (push (propertize name
-                                      'consult--candidate sym
-                                      'consult--type key)
-                          commands))))))))))))
+                  (let ((name (symbol-name sym)))
+                    (unless (string-match-p command-filter name)
+                      (push (propertize name
+                                        'consult--candidate sym
+                                        'consult--type key)
+                            commands))))))))))))
 
 ;;;###autoload
 (defun consult-mode-command (&rest modes)
