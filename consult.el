@@ -2092,7 +2092,17 @@ These configuration options are supported:
              (initial (buffer-substring-no-properties start end))
              (metadata (completion-metadata initial collection predicate))
              (threshold (or (plist-get config :cycle-threshold) (completion--cycle-threshold metadata)))
-             (all (completion-all-completions initial collection predicate (length initial))))
+             (all (completion-all-completions initial collection predicate (length initial)))
+             ;; Provide `:annotation-function' if `:company-docsig' is specified
+             (completion-extra-properties
+              (if-let (fun (and (not (plist-get completion-extra-properties :annotation-function))
+                                (plist-get completion-extra-properties :company-docsig)))
+                  `(:annotation-function
+                    ,(lambda (cand)
+                       (concat (propertize " " 'display '(space :align-to center))
+                               (funcall fun cand)))
+                    ,@completion-extra-properties)
+                completion-extra-properties)))
     ;; error if `threshold' is t or the improper list `all' is too short
     (if (and threshold
 	     (or (not (consp (ignore-errors (nthcdr threshold all))))
