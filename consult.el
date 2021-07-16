@@ -2746,14 +2746,18 @@ INITIAL is the initial input."
                   (setq li (cdr li) ov (cdr ov))))
               (setq last-input input)))))
       (when restore
-        (if (not input)
-            (goto-char point-orig)
+        (cond
+         ((not input)
+          (goto-char point-orig))
+         ((equal input "")
+          (consult-focus-lines 'show))
+         (t
           ;; Sucessfully terminated -> Remember invisible overlays
           (dolist (ov overlays)
             (if (overlay-get ov 'invisible)
                 (push ov consult--focus-lines-overlays)
               (delete-overlay ov)))
-          (setq overlays nil))
+          (setq overlays nil)))
         ;; Destroy remaining overlays
         (mapc #'delete-overlay overlays)))))
 
@@ -2764,8 +2768,9 @@ INITIAL is the initial input."
 The selected lines are shown and the other lines hidden. When called
 interactively, the lines selected are those that match the minibuffer input. In
 order to match the inverse of the input, prefix the input with `! '. With
-optional prefix argument SHOW reveal the hidden lines. When called from elisp,
-the filtering is performed by a FILTER function. This command obeys narrowing.
+optional prefix argument SHOW reveal the hidden lines. Alternatively the
+command can be restarted to reveal the lines. When called from elisp, the
+filtering is performed by a FILTER function. This command obeys narrowing.
 
 FILTER is the filter function.
 INITIAL is the initial input."
@@ -2775,14 +2780,18 @@ INITIAL is the initial input."
            ;; Use consult-location completion category when filtering lines
            (consult--completion-filter-dispatch
             pattern cands 'consult-location nil))))
-  (consult--forbid-minibuffer)
   (if show
       (progn
         (mapc #'delete-overlay consult--focus-lines-overlays)
-        (setq consult--focus-lines-overlays nil))
+        (setq consult--focus-lines-overlays nil)
+        (message "All lines revealed"))
+    (consult--forbid-minibuffer)
     (consult--with-increased-gc
      (consult--prompt
-      :prompt "Focus on lines: "
+      :prompt
+      (if consult--focus-lines-overlays
+          "Focus on lines (RET to reveal): "
+        "Focus on lines: ")
       :initial initial
       :history 'consult--keep-lines-history
       :state (consult--focus-lines-state filter)))))
