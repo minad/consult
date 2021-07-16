@@ -402,7 +402,7 @@ Used by `consult-completion-in-region', `consult-yank' and `consult-history'.")
   "Face used to highlight line number prefixes.")
 
 (defface consult-line-number-wrapped
-  '((t :inherit consult-line-number-prefix :slant italic))
+  '((t :inherit consult-line-number-prefix :inherit font-lock-warning-face))
   "Face used to highlight line number prefixes, if the line number wrapped around.")
 
 (defface consult-separator
