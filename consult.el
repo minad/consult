@@ -55,6 +55,7 @@
 (defgroup consult nil
   "Consulting `completing-read'."
   :group 'convenience
+  :group 'minibuffer
   :prefix "consult-")
 
 ;;;; Customization
