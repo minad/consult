@@ -1221,6 +1221,10 @@ to make it available for commands with narrowing."
   (when-let (widen (consult--widen-key))
     (define-key map widen (cons "All" #'consult-narrow))))
 
+;; Emacs 28: hide in M-X
+(put #'consult-narrow-help 'completion-predicate #'ignore)
+(put #'consult-narrow 'completion-predicate #'ignore)
+
 ;;;; Splitting completion style
 
 (defun consult--split-perl (str point)
@@ -3303,6 +3307,10 @@ In order to select from a specific HISTORY, pass the history variable as argumen
   "Continue isearch backward optionally in REVERSE."
   (interactive)
   (consult-isearch-forward (not reverse)))
+
+;; Emacs 28: hide in M-X
+(put #'consult-isearch-backward 'completion-predicate #'ignore)
+(put #'consult-isearch-forward 'completion-predicate #'ignore)
 
 (defvar consult-isearch-map
   (let ((map (make-sparse-keymap)))
