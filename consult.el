@@ -324,7 +324,7 @@ Each element of the list must have the form '(char name handler)."
 (defcustom consult-crm-prefix
   (cons "  " (propertize "✓ " 'face 'success))
   "Prefix for `consult-completing-read-multiple' candidates."
-  :type '(cons string string))
+  :type '(cons (string :tag "Not selected") (string :tag "Selected")))
 
 ;;;; Faces
 
