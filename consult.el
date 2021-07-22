@@ -127,7 +127,7 @@ This applies to asynchronous commands, e.g., `consult-grep'."
     (semicolon :separator ?\; :type separator)
     (perl :initial "#" :type perl))
   "Async splitter styles."
-  :type 'alist)
+  :type '(alist :key-type symbol :value-type plist))
 
 (defcustom consult-mode-histories
   '((eshell-mode . eshell-history-ring)
