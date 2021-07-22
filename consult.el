@@ -3299,15 +3299,15 @@ In order to select from a specific HISTORY, pass the history variable as argumen
   (setq isearch-new-forward (not reverse) isearch-new-nonincremental nil)
   (funcall (or (command-remapping #'exit-minibuffer) #'exit-minibuffer)))
 
-(defun consult-isearch-reverse (&optional reverse)
+(defun consult-isearch-backward (&optional reverse)
   "Continue isearch backward optionally in REVERSE."
   (interactive)
   (consult-isearch-forward (not reverse)))
 
 (defvar consult-isearch-map
   (let ((map (make-sparse-keymap)))
-    (define-key map "\C-s" #'consult-isearch-forward)
-    (define-key map "\C-r" #'consult-isearch-reverse)
+    (define-key map [remap isearch-forward] #'consult-isearch-forward)
+    (define-key map [remap isearch-backward] #'consult-isearch-backward)
     map)
   "Additional keymap used by `consult-isearch'.")
 
