@@ -77,10 +77,11 @@ This function can be used as `register-preview-function'."
 (defun consult-register--format (reg)
   "Format register REG for preview."
   (pcase-let ((`(,key . ,val) reg))
-    (let* ((key-str (single-key-description key))
-           (fmt (format "%%-%ds " (max 3 (length key-str)))))
+    (let* ((key-str (propertize (single-key-description key) 'face 'consult-key))
+           (len (max 3 (length key-str))))
       (concat
-       (format fmt (propertize key-str 'face 'consult-key))
+       key-str
+       (make-string (- len (length key-str)) ?\s)
        ;; Special printing for certain register types
        (cond
         ;; Display full string
@@ -89,7 +90,7 @@ This function can be used as `register-preview-function'."
            (setq val (mapconcat #'identity val "\n")))
          (mapconcat #'identity
                     (seq-take (split-string (string-trim val) "\n") 3)
-                    (format fmt "\n")))
+                    (concat "\n" (make-string len ?\s))))
         ;; Display 'file-query
         ((eq (car-safe val) 'file-query)
          (format "%s at position %d"
