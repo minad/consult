@@ -280,7 +280,10 @@ command options."
 
 (defcustom consult-preview-key 'any
   "Preview trigger keys, can be nil, 'any, a single key or a list of keys."
-  :type '(choice (const any) (const nil) key-sequence (repeat key-sequence)))
+  :type '(choice (const :tag "Any key" any)
+                 (const :tag "No preview" nil)
+                 (key-sequence :tag "Key")
+                 (repeat :tag "List of keys" key-sequence)))
 
 (defcustom consult-preview-max-size 10485760
   "Files larger than this byte limit are not previewed."
