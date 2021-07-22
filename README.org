@@ -251,7 +251,7 @@ their descriptions.
    For example =#grep-regexp#filter-string=, is split at the second =#=. The
    string =grep-regexp= is passed to Grep, the =filter-string= is passed to the
    /fast/ Emacs filtering to further narrow down the list of matches. This is
-   particularily useful if you are using an advanced completion style like
+   particularly useful if you are using an advanced completion style like
    orderless. =consult-grep= supports preview. If the
    =consult-project-root-function= is [[#use-package-example][configured]] and returns non-nil,
    =consult-grep= searches the current project directory. Otherwise the
@@ -362,7 +362,7 @@ their descriptions.
    to enable preview in Embark Collect buffers.
  - =consult-completion-in-region=: This function can be set as
    =completion-in-region-function=. Then the minibuffer completion UI will be used
-   for =completion-at-point=. This function is particularily useful in combination
+   for =completion-at-point=. This function is particularly useful in combination
    with Vertico or Icomplete, since these UIs do not provide their own
    =completion-in-region-function=. Selectrum already comes with its own function
    similar to =consult-completion-in-region=. Note that
@@ -421,7 +421,7 @@ their descriptions.
  =consult-preview-key= variable. Furthermore it is possible to specify
  keybindings which trigger the preview manually as shown in the [[#use-package-example][example
  configuration]]. The default setting of =consult-preview-key= is =any= which
- means that the preview will be triggered /immediately/ on any keypress when the
+ means that the preview will be triggered /immediately/ on any key press when the
  selected candidate changes. Each command can be configured individually with
  its own =:preview-key=. The preview key can be configured to be:
 
@@ -452,7 +452,7 @@ their descriptions.
  are previewed literally without syntax highlighting and without changing the
  major mode.
 
- Delaying the preview is particularily useful for =consult-theme=, since the theme
+ Delaying the preview is particularly useful for =consult-theme=, since the theme
  preview is a little bit slow. The delay can result in a smoother UI.
 
  #+begin_src emacs-lisp
@@ -723,10 +723,10 @@ their descriptions.
  a special type. For example in the case of file completion, a Dired buffer is
  opened.
 
- In the context of Consult, particularily exciting is the possibility to export
+ In the context of Consult, particularly exciting is the possibility to export
  the matching lines from =consult-line=, =consult-outline=, =consult-mark= and
  =consult-global-mark=. The matching lines are exported to an Occur buffer where
- they can be edited via the =occur-edit-mode= (press key =e=). Similarily,
+ they can be edited via the =occur-edit-mode= (press key =e=). Similarly,
  Embark supports exporting the matches found by =consult-grep=,
  =consult-ripgrep= and =consult-git-grep= to a Grep buffer, where the matches
  across files can be edited, if the [[https://github.com/mhayashi1120/Emacs-wgrep][wgrep]] package is installed. The two
@@ -907,7 +907,7 @@ contributed.
  | consult-async-min-input          | 3                | Minimum numbers of letters needed for async process   |
  | consult-async-refresh-delay      | 0.25             | Refresh delay for asynchronous commands               |
  | consult-async-split-style        | 'perl            | Splitting style used for async commands               |
- | consult-async-split-styles-alist | ...              | Availabla splitting styles used for async commands    |
+ | consult-async-split-styles-alist | ...              | Available splitting styles used for async commands    |
  | consult-bookmark-narrow          | ...              | Narrowing configuration for =consult-bookmark=          |
  | consult-buffer-filter            | ...              | Filter for =consult-buffer=                             |
  | consult-buffer-sources           | ...              | List of virtual buffer sources                        |
@@ -917,7 +917,7 @@ contributed.
  | consult-fontify-preserve         | t                | Preserve fontification for line-based commands.       |
  | consult-git-grep-command         | '(...)           | Command line arguments for git-grep                   |
  | consult-goto-line-numbers        | t                | Show line numbers for =consult-goto-line=               |
- | consult-grep-max-colums          | 250              | Maximal number of columns of the matching lines       |
+ | consult-grep-max-columns         | 250              | Maximal number of columns of the matching lines       |
  | consult-grep-command             | "grep ..."       | Command line arguments for grep                       |
  | consult-imenu-config             | ...              | Mode-specific configuration for =consult-imenu=         |
  | consult-line-numbers-widen       | t                | Show absolute line numbers when narrowing is active.  |
@@ -1052,7 +1052,7 @@ out the following steps:
    Furthermore both =ivy-mode= and =helm-mode= must be disabled.
 3. Ensure that the =completion-styles= variable is properly configured. Try to set
    =completion-styles= to a list including =substring= or =orderless=.
-4. Try to reproduce the issue by starting a barebone Emacs instance with =emacs -Q=
+4. Try to reproduce the issue by starting a bare bone Emacs instance with =emacs -Q=
    on the command line. Execute the following minimal code snippets in the
    scratch buffer. This way we can exclude side effects due to configuration
    settings. If other packages are relevant to reproduce the issue, include them
@@ -1078,7 +1078,7 @@ Please provide the necessary important information with your bug report:
 
 - The minimal configuration snippet used to reproduce the issue.
 - The full stack trace in case the bug triggers an exception.
-- Your Emacs version, since bugs are often version-dependant.
+- Your Emacs version, since bugs are often version-dependent.
 - Your operating system, since Emacs builds vary between Linux, Mac and
   Windows.
 - The package manager, e.g., straight.el or package.el, used to install
@@ -1105,7 +1105,7 @@ wishlist]]. There exists a rich set of prior feature discussions. You can
 contribute to the [[https://github.com/minad/consult/wiki][Consult wiki]], in case you want to share small configuration or
 command snippets.
 
-* Acknowledgements
+* Acknowledgments
   :properties:
   :description: Contributors and Sources of Inspiration
   :end:
