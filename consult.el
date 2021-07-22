@@ -281,6 +281,7 @@ command options."
 (defcustom consult-preview-key 'any
   "Preview trigger keys, can be nil, 'any, a single key or a list of keys."
   :type '(choice (const :tag "Any key" any)
+                 (list :tag "Debounced" (const :debounce) (float :tag "Seconds" 0.1) (const any))
                  (const :tag "No preview" nil)
                  (key-sequence :tag "Key")
                  (repeat :tag "List of keys" key-sequence)))
