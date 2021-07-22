@@ -3915,7 +3915,7 @@ See `consult-grep' for more details regarding the asynchronous search."
                 (desc (match-string 4 str)))
             (push (cons
                    (format "%s - %s"
-                           (propertize names 'face 'consult-key)
+                           (propertize names 'face 'consult-file)
                            desc)
                    (concat section " " name))
                   candidates)))))
