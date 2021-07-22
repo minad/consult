@@ -77,10 +77,10 @@ This function can be used as `register-preview-function'."
 (defun consult-register--format (reg)
   "Format register REG for preview."
   (pcase-let ((`(,key . ,val) reg))
-    (let ((key-str (propertize (single-key-description key) 'face 'consult-key)))
+    (let* ((key-str (single-key-description key))
+           (fmt (format "%%-%ds " (max 3 (length key-str)))))
       (concat
-       key-str
-       " "
+       (format fmt (propertize key-str 'face 'consult-key))
        ;; Special printing for certain register types
        (cond
         ;; Display full string
