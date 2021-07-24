@@ -3496,11 +3496,14 @@ The command supports previewing the currently selected theme."
        :category 'theme
        :history 'consult--theme-history
        :lookup (lambda (_input _cands x)
-                 (and x (not (equal x "default")) (intern-soft x)))
+                 (unless (equal x "default")
+                   (or (when-let (cand (and x (intern-soft x)))
+                         (car (memq cand avail-themes)))
+                       saved-theme)))
        :state (lambda (cand restore)
-                (cond
-                 ((and restore (not cand)) (consult-theme saved-theme))
-                 ((memq cand avail-themes) (consult-theme cand))))
+                (consult-theme (if (and restore (not cand))
+                                   saved-theme
+                                 cand)))
        :default (symbol-name (or saved-theme 'default))))))
   (unless (eq theme (car custom-enabled-themes))
     (mapc #'disable-theme custom-enabled-themes)
