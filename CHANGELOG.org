@@ -43,7 +43,7 @@
 - Added support for the Vertico completion system
 - Consult adds disambiguation suffixes as suffix instead of as prefix now
   for the commands =consult-line=, =consult-buffer=, etc.
-  This allows to use the =basic= completion style and TAB completion.
+  This enables support for the =basic= completion style and TAB completion.
 - =consult--read=: The =:title= function must accept two arguments now,
   the candidate string and a flag. If the flag is nil, the function should
   return the title of the candidate, otherwise the function should return the

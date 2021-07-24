@@ -442,7 +442,7 @@ Used by `consult-completion-in-region', `consult-yank' and `consult-history'.")
 (make-obsolete-variable 'consult-config "Deprecated in favor of `consult-customize'." "0.7")
 
 (defvar consult--read-config nil
-  "Command configuration alist, which allows fine-grained configuration.
+  "Command configuration alist for fine-grained configuration.
 
 Each element of the list must have the form (command-name plist...). The options
 set here will be passed to `consult--read', when called from the corresponding
