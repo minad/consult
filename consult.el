@@ -2896,7 +2896,8 @@ narrowing and the settings `consult-goto-line-numbers' and
   (find-file
    (consult--read
     (or (mapcar #'abbreviate-file-name recentf-list)
-        (user-error "No recent files"))
+        (user-error "No recent files, `recentf-mode' is %s"
+                    (if recentf-mode "on" "off")))
     :prompt "Find recent file: "
     :sort nil
     :require-match t
