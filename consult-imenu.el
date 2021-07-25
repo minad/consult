@@ -147,9 +147,9 @@ TYPES is the mode-specific types configuration."
   "Return project buffers with the same `major-mode' as the current buffer."
   (if-let (root (consult--project-root))
       (seq-filter (lambda (buf)
-                    (when-let (file (buffer-file-name buf))
+                    (when-let (dir (buffer-local-value 'default-directory buf))
                       (and (eq (buffer-local-value 'major-mode buf) major-mode)
-                           (string-prefix-p root file))))
+                           (string-prefix-p root (expand-file-name dir)))))
                   (buffer-list))
     (list (current-buffer))))
 
