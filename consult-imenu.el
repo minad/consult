@@ -210,12 +210,12 @@ The symbol at point is added to the future history."
 The command supports preview and narrowing. See the variable
 `consult-imenu-config', which configures the narrowing.
 
-See also `consult-project-imenu'."
+See also `consult-imenu-project'."
   (interactive)
   (consult-imenu--select (consult-imenu--items)))
 
 ;;;###autoload
-(defun consult-project-imenu ()
+(defun consult-imenu-project ()
   "Select item from the imenus of all buffers from the same project.
 
 In order to determine the buffers belonging to the same project, the
@@ -224,6 +224,11 @@ same major mode as the current buffer are used. See also
 `consult-imenu' for more details."
   (interactive)
   (consult-imenu--select (consult-imenu--all-items (consult-imenu--project-buffers))))
+
+(define-obsolete-function-alias
+  'consult-project-imenu
+  'consult-imenu-project
+  "0.9")
 
 (provide 'consult-imenu)
 ;;; consult-imenu.el ends here
