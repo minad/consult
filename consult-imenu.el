@@ -143,16 +143,6 @@ TYPES is the mode-specific types configuration."
   "Return all imenu items from each BUFFERS."
   (seq-mapcat (lambda (buf) (with-current-buffer buf (consult-imenu--items))) buffers))
 
-(defun consult-imenu--project-buffers ()
-  "Return project buffers with the same `major-mode' as the current buffer."
-  (if-let (root (consult--project-root))
-      (seq-filter (lambda (buf)
-                    (when-let (dir (buffer-local-value 'default-directory buf))
-                      (and (eq (buffer-local-value 'major-mode buf) major-mode)
-                           (string-prefix-p root (expand-file-name dir)))))
-                  (buffer-list))
-    (list (current-buffer))))
-
 (defun consult-imenu--jump (item)
   "Jump to imenu ITEM via `consult--jump'.
 
@@ -223,7 +213,12 @@ In order to determine the buffers belonging to the same project, the
 same major mode as the current buffer are used. See also
 `consult-imenu' for more details."
   (interactive)
-  (consult-imenu--select (consult-imenu--all-items (consult-imenu--project-buffers))))
+  (consult-imenu--select
+   (consult-imenu--all-items
+    (or (consult--buffer-query :project t
+                               :mode major-mode
+                               :sort 'alpha)
+        (list (current-buffer))))))
 
 (define-obsolete-function-alias
   'consult-project-imenu

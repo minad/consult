@@ -452,9 +452,6 @@ should not be considered as stable as the public API.")
 (defvar consult--buffer-display #'switch-to-buffer
   "Buffer display function.")
 
-(defvar consult--cache nil
-  "Cached data populated by `consult--define-cache'.")
-
 (defvar consult--completion-candidate-hook
   (list #'consult--default-completion-mb-candidate
         #'consult--default-completion-list-candidate)
@@ -545,6 +542,23 @@ ARGS is a list of commands or sources followed by the list of keyword-value pair
 
 ;;;; Helper functions and macros
 
+(defmacro consult--keep! (list form)
+  "Evaluate FORM for every element of LIST and keep the non-nil results."
+  (declare (indent 1))
+  (let ((head (make-symbol "head"))
+        (prev (make-symbol "prev"))
+        (result (make-symbol "result")))
+    `(let* ((,head (cons nil ,list))
+            (,prev ,head))
+       (while (cdr ,prev)
+         (if-let (,result (let ((it (cadr ,prev))) ,form))
+             (progn
+               (pop ,prev)
+               (setcar ,prev ,result))
+           (setcdr ,prev (cddr ,prev))))
+       (setq ,list (cdr ,head))
+       nil)))
+
 ;; Upstream bug#46326, Consult issue https://github.com/minad/consult/issues/193
 (defmacro consult--minibuffer-with-setup-hook (fun &rest body)
   "Variant of `minibuffer-with-setup-hook' using a symbol and `fset'.
@@ -566,17 +580,6 @@ FUN is the hook function and BODY opens the minibuffer."
              (add-hook 'minibuffer-setup-hook ,hook ,@append)
              ,@body)
          (remove-hook 'minibuffer-setup-hook ,hook)))))
-
-(defmacro consult--define-cache (name &rest body)
-  "Define cached value with NAME and BODY."
-  (declare (indent 1))
-  `(defun ,name ()
-     (or (alist-get ',name consult--cache)
-         (progn
-           ;; XXX Emacs bug#35546, fixed in Emacs 27.1
-           ;; (setf (alist-get key list) val) should return val
-           (setf (alist-get ',name consult--cache) ,(macroexp-progn body))
-           (alist-get ',name consult--cache)))))
 
 (defun consult--completion-filter (pattern cands category _highlight)
   "Filter CANDS with PATTERN.
@@ -1992,8 +1995,7 @@ Optional source fields:
 * Other source fields can be added specifically to the use case."
   (let* ((sources (consult--multi-enabled-sources sources))
          (candidates (consult--with-increased-gc
-                      (let ((consult--cache))
-                        (consult--multi-candidates sources))))
+                      (consult--multi-candidates sources)))
          (align (propertize
                  " " 'display
                  `(space :align-to (+ left ,(cadr candidates)))))
@@ -3515,20 +3517,66 @@ The command supports previewing the currently selected theme."
 
 ;;;;; Command: consult-buffer
 
-(consult--define-cache consult--cached-all-buffers
-  (let ((buffers (delq (current-buffer) (buffer-list)))
-        (visible-p (lambda (x) (get-buffer-window x 'visible))))
-    (nconc (seq-remove visible-p buffers)
-           (seq-filter visible-p buffers)
-           (list (current-buffer)))))
+(defun consult--buffer-sort-alpha (buffers)
+  "Sort BUFFERS alphabetically."
+  (sort buffers
+        (lambda (x y)
+          (string< (buffer-name x)
+                   (buffer-name y)))))
 
-(consult--define-cache consult--cached-buffers
-  (let ((filter (consult--regexp-filter consult-buffer-filter)))
-    (seq-remove (lambda (x) (string-match-p filter (buffer-name x)))
-                (consult--cached-all-buffers))))
+(defun consult--buffer-sort-visibility (buffers)
+  "Sort BUFFERS by visibility."
+  (let ((hidden)
+        (current (current-buffer)))
+    (consult--keep! buffers
+      (unless (eq it current)
+        (if (get-buffer-window it 'visible)
+            it
+          (push it hidden)
+          nil)))
+    (nconc (nreverse hidden) buffers (list (current-buffer)))))
 
-(consult--define-cache consult--cached-buffer-file-hash
-  (consult--string-hash (delq nil (mapcar #'buffer-file-name (consult--cached-buffers)))))
+(cl-defun consult--buffer-query (&key sort (filter t) project mode as)
+  "Buffer query function.
+PROJECT can be set to t to consider only project-specific buffers.
+SORT can be visibility, alpha or nil.
+FILTER can be t, hidden or nil.
+MODE can be a mode or a list of modes to restrict the returned buffers.
+AS is a conversion function."
+  ;; This function is quite messy but optimized to avoid unnecessary
+  ;; allocations. It is the backbone of most `consult-buffer' source. The
+  ;; function supports filtering by various criteria which are used throughout
+  ;; Consult.
+  (when-let (root (or (not project) (consult--project-root)))
+    (let ((buffers (buffer-list)))
+      (when sort
+        (setq buffers (funcall (intern (format "consult--buffer-sort-%s" sort)) buffers)))
+      (when (or filter mode project as)
+        (let ((mode (if (listp mode) mode (list mode)))
+              (re (consult--regexp-filter consult-buffer-filter)))
+          (consult--keep! buffers
+            (and
+             (or (not mode)
+                 (apply #'provided-mode-derived-p
+                        (buffer-local-value 'major-mode it) mode))
+             (pcase-exhaustive filter
+               ('nil t)
+               ('hidden (string-match-p re (buffer-name it)))
+               ('t (not (string-match-p re (buffer-name it)))))
+             (pcase-exhaustive project
+               ('nil t)
+               ('t
+                (when-let (dir (buffer-local-value 'default-directory it))
+                  (string-prefix-p root
+                                   (if (and (/= 0 (length dir)) (eq (aref dir 0) ?/))
+                                       dir
+                                     (expand-file-name dir))))))
+             (if as (funcall as it) it)))))
+      buffers)))
+
+(defun consult--buffer-file-hash ()
+  "Return hash table of all buffer file names."
+  (consult--string-hash (consult--buffer-query :as #'buffer-file-name)))
 
 (defun consult--buffer-preview ()
   "Buffer preview function."
@@ -3571,13 +3619,9 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
     :enabled  ,(lambda () consult-project-root-function)
     :items
     ,(lambda ()
-       (when-let (root (consult--project-root))
-         (mapcar #'buffer-name
-                 (seq-filter
-                  (lambda (x)
-                    (when-let (dir (buffer-local-value 'default-directory x))
-                      (string-prefix-p root (expand-file-name dir))))
-                  (consult--cached-buffers))))))
+       (consult--buffer-query :sort 'visibility
+                              :project t
+                              :as #'buffer-name)))
   "Project buffer candidate source for `consult-buffer'.")
 
 (defvar consult--source-project-file
@@ -3589,13 +3633,13 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
     :history  file-name-history
     :state    ,#'consult--file-state
     :enabled  ,(lambda () (and consult-project-root-function
-                                recentf-mode))
+                               recentf-mode))
     :items
     ,(lambda ()
       (when-let (root (consult--project-root))
         (let ((len (length root))
               (inv-root (propertize root 'invisible t))
-              (ht (consult--cached-buffer-file-hash)))
+              (ht (consult--buffer-file-hash)))
           (mapcar (lambda (x)
                     (concat inv-root (substring x len)))
                   (seq-filter (lambda (x)
@@ -3613,10 +3657,9 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
     :history  buffer-name-history
     :action   ,#'consult--buffer-action
     :items
-    ,(lambda ()
-       (let ((filter (consult--regexp-filter consult-buffer-filter)))
-         (seq-filter (lambda (x) (string-match-p filter x))
-                     (mapcar #'buffer-name (consult--cached-all-buffers))))))
+    ,(lambda () (consult--buffer-query :sort 'visibility
+                                       :filter 'hidden
+                                       :as #'buffer-name)))
   "Hidden buffer candidate source for `consult-buffer'.")
 
 (defvar consult--source-buffer
@@ -3628,8 +3671,8 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
     :state    ,#'consult--buffer-state
     :default  t
     :items
-    ,(lambda ()
-       (mapcar #'buffer-name (consult--cached-buffers))))
+    ,(lambda () (consult--buffer-query :sort 'visibility
+                                       :as #'buffer-name)))
   "Buffer candidate source for `consult-buffer'.")
 
 (defvar consult--source-file
@@ -3642,7 +3685,7 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
     :enabled  ,(lambda () recentf-mode)
     :items
     ,(lambda ()
-       (let ((ht (consult--cached-buffer-file-hash)))
+       (let ((ht (consult--buffer-file-hash)))
          (mapcar #'abbreviate-file-name
                  (seq-remove (lambda (x) (gethash x ht)) recentf-list)))))
   "Recent file candidate source for `consult-buffer'.")

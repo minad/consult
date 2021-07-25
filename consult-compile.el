@@ -84,11 +84,13 @@
 
 (defun consult-compile--compilation-buffers (file)
   "Return a list of compilation buffers relevant to FILE."
-  (seq-filter (lambda (buffer)
-                (with-current-buffer buffer
-                  (and (compilation-buffer-internal-p)
-                       (file-in-directory-p file default-directory))))
-              (buffer-list)))
+  (consult--buffer-query
+   :sort 'alpha :as
+   (lambda (buffer)
+     (with-current-buffer buffer
+       (and (compilation-buffer-internal-p)
+            (file-in-directory-p file default-directory)
+            buffer)))))
 
 ;;;###autoload
 (defun consult-compile-error ()
