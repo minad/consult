@@ -3517,12 +3517,6 @@ The command supports previewing the currently selected theme."
 
 ;;;;; Command: consult-buffer
 
-;; Used by consult-notmuch.el, will be removed.
-(defun consult--cached-buffers ()
-  "Obsolete function."
-  (consult--buffer-query :sort 'visibility))
-(make-obsolete 'consult--cached-buffers 'consult--buffer-query "0.9")
-
 (defun consult--buffer-sort-alpha (buffers)
   "Sort BUFFERS alphabetically."
   (sort buffers
