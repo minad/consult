@@ -1621,6 +1621,9 @@ ARGS is a list of `make-process' properties and transforms."
     map)
   "Keymap added for commands with asynchronous candidates.")
 
+(defvar consult-crm-map (make-sparse-keymap)
+  "Keymap added by `consult-completing-read-multiple'.")
+
 (defvar consult-preview-map (make-sparse-keymap)
   "Keymap added for commands with preview.")
 
@@ -2308,7 +2311,8 @@ See `completing-read-multiple' for the documentation of the arguments."
           (when-let (pos (string-match-p "\\(?: (default[^)]+)\\)?: \\'" prompt))
             (setq overlay (make-overlay (+ (point-min) pos) (+ (point-min) (length prompt))))
             (when selected
-              (overlay-put overlay 'display (format " (%s selected): " (length selected))))))
+              (overlay-put overlay 'display (format " (%s selected): " (length selected)))))
+          (use-local-map (make-composed-keymap (list consult-crm-map) (current-local-map))))
       (unwind-protect
           (progn
             (add-hook 'pre-command-hook hook 90)
