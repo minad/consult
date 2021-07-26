@@ -197,6 +197,7 @@ their descriptions.
  #+cindex: search
 
  #+findex: consult-line
+ #+findex: consult-line-multi
  #+findex: consult-multi-occur
  #+findex: consult-keep-lines
  #+findex: consult-focus-lines
@@ -206,6 +207,9 @@ their descriptions.
    recent Isearch string are added to the "future history" and can be accessed
    by pressing =M-n=. When =consult-line= is bound to the =isearch-mode-map= and
    is invoked during a running Isearch, it will use the current Isearch string.
+ - =consult-line-multi=: Search across multiple buffers. By default search across
+   project buffers. If invoked with a prefix argument search across all buffers.
+   Behaves like =consult-line=.
  - =consult-isearch=: During an Isearch session, this command picks a
    search string from history and continues the search with the newly selected
    string. Outside of Isearch, the command allows you to pick a string from the
@@ -800,11 +804,12 @@ configuration examples.
             ("M-g I" . consult-imenu-project)
             ;; M-s bindings (search-map)
             ("M-s f" . consult-find)
-            ("M-s L" . consult-locate)
+            ("M-s F" . consult-locate)
             ("M-s g" . consult-grep)
             ("M-s G" . consult-git-grep)
             ("M-s r" . consult-ripgrep)
             ("M-s l" . consult-line)
+            ("M-s L" . consult-line-multi)
             ("M-s m" . consult-multi-occur)
             ("M-s k" . consult-keep-lines)
             ("M-s u" . consult-focus-lines)
@@ -813,7 +818,8 @@ configuration examples.
             :map isearch-mode-map
             ("M-e" . consult-isearch)                 ;; orig. isearch-edit-string
             ("M-s e" . consult-isearch)               ;; orig. isearch-edit-string
-            ("M-s l" . consult-line))                 ;; needed by consult-line to detect isearch
+            ("M-s l" . consult-line)                  ;; needed by consult-line to detect isearch
+            ("M-s L" . consult-line-multi))           ;; needed by consult-line to detect isearch
 
      ;; Enable automatic preview at point in the *Completions* buffer.
      ;; This is relevant when you use the default completion UI,

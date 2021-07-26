@@ -4,9 +4,10 @@
 
 * Development
 
-- =consult-mark=, =consult-global-mark=: Added optional marker list argument
+- =consult-mark=, =consult-global-mark=: Add optional marker list argument
 - =consult-completing-read-multiple=: New function
-- Renamed =consult-project-imenu= to =consult-imenu-project=
+- Rename =consult-project-imenu= to =consult-imenu-project=
+- Add =consult-line-multi= to search multiple buffers
 
 * Version 0.9 (2021-06-22)
 
