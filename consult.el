@@ -2307,12 +2307,13 @@ See `completing-read-multiple' for the documentation of the arguments."
                  (when (and this-command (= depth (recursion-depth)))
                    (setq command this-command this-command wrapper))))
     (consult--minibuffer-with-setup-hook
-        (lambda ()
-          (when-let (pos (string-match-p "\\(?: (default[^)]+)\\)?: \\'" prompt))
-            (setq overlay (make-overlay (+ (point-min) pos) (+ (point-min) (length prompt))))
-            (when selected
-              (overlay-put overlay 'display (format " (%s selected): " (length selected)))))
-          (use-local-map (make-composed-keymap (list consult-crm-map) (current-local-map))))
+        (:append
+         (lambda ()
+           (when-let (pos (string-match-p "\\(?: (default[^)]+)\\)?: \\'" prompt))
+             (setq overlay (make-overlay (+ (point-min) pos) (+ (point-min) (length prompt))))
+             (when selected
+               (overlay-put overlay 'display (format " (%s selected): " (length selected)))))
+           (use-local-map (make-composed-keymap (list consult-crm-map) (current-local-map)))))
       (unwind-protect
           (progn
             (add-hook 'pre-command-hook hook 90)
