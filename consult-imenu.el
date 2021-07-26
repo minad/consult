@@ -215,7 +215,7 @@ same major mode as the current buffer are used. See also
   (interactive)
   (consult-imenu--select
    (consult-imenu--all-items
-    (or (consult--buffer-query :project t
+    (or (consult--buffer-query :directory 'project
                                :mode major-mode
                                :sort 'alpha)
         (list (current-buffer))))))

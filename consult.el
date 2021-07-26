@@ -3536,9 +3536,9 @@ The command supports previewing the currently selected theme."
           nil)))
     (nconc (nreverse hidden) buffers (list (current-buffer)))))
 
-(cl-defun consult--buffer-query (&key sort (filter t) project mode as)
+(cl-defun consult--buffer-query (&key sort (filter t) directory mode as)
   "Buffer query function.
-PROJECT can be set to t to consider only project-specific buffers.
+DIRECTORY can either be project or a path.
 SORT can be visibility, alpha or nil.
 FILTER can be t, hidden or nil.
 MODE can be a mode or a list of modes to restrict the returned buffers.
@@ -3547,11 +3547,14 @@ AS is a conversion function."
   ;; allocations. It is the backbone of most `consult-buffer' source. The
   ;; function supports filtering by various criteria which are used throughout
   ;; Consult.
-  (when-let (root (or (not project) (consult--project-root)))
+  (when-let (root (pcase-exhaustive directory
+                    ('project (consult--project-root))
+                    ('nil t)
+                    ((pred stringp) (expand-file-name directory))))
     (let ((buffers (buffer-list)))
       (when sort
         (setq buffers (funcall (intern (format "consult--buffer-sort-%s" sort)) buffers)))
-      (when (or filter mode project as)
+      (when (or filter mode as (stringp root))
         (let ((mode (if (listp mode) mode (list mode)))
               (re (consult--regexp-filter consult-buffer-filter)))
           (consult--keep! buffers
@@ -3563,14 +3566,12 @@ AS is a conversion function."
                ('nil t)
                ('hidden (string-match-p re (buffer-name it)))
                ('t (not (string-match-p re (buffer-name it)))))
-             (pcase-exhaustive project
-               ('nil t)
-               ('t
-                (when-let (dir (buffer-local-value 'default-directory it))
-                  (string-prefix-p root
-                                   (if (and (/= 0 (length dir)) (eq (aref dir 0) ?/))
-                                       dir
-                                     (expand-file-name dir))))))
+             (or (not (stringp root))
+                 (when-let (dir (buffer-local-value 'default-directory it))
+                   (string-prefix-p root
+                                    (if (and (/= 0 (length dir)) (eq (aref dir 0) ?/))
+                                        dir
+                                      (expand-file-name dir)))))
              (if as (funcall as it) it)))))
       buffers)))
 
@@ -3620,7 +3621,7 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
     :items
     ,(lambda ()
        (consult--buffer-query :sort 'visibility
-                              :project t
+                              :directory 'project
                               :as #'buffer-name)))
   "Project buffer candidate source for `consult-buffer'.")
 
