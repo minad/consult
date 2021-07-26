@@ -31,7 +31,7 @@ Consult is fully compatible with completion systems based on the standard Emacs
 =completing-read= API, notably the default completion system, [[https://github.com/minad/vertico][Vertico]],
 [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html][Icomplete]]/[[https://github.com/oantolin/icomplete-vertical][Icomplete-vertical]], [[https://github.com/raxod502/selectrum][Selectrum]] and [[https://github.com/oantolin/embark/][Embark]].
 
-This package keps the completion system specifics to a minimum. The ability of
+This package keeps the completion system specifics to a minimum. The ability of
 the Consult commands to work well with arbitrary completion systems is one of
 the main advantages of the package. Consult fits well into existing setups and
 it helps you to create a full completion environment out of small and
