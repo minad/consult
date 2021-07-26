@@ -686,7 +686,7 @@ The line beginning/ending BEG/END is bound in BODY."
   "Create filter regexp from REGEXPS."
   (mapconcat (lambda (x) (concat "\\(?:" x "\\)")) regexps "\\|"))
 
-(defun consult--format-directory-prompt (prompt dir)
+(defun consult--directory-prompt-1 (prompt dir)
   "Format PROMPT, expand directory DIR and return them as a pair."
   (save-match-data
     (let ((edir (file-name-as-directory (expand-file-name dir)))
@@ -715,14 +715,13 @@ If DIR is a true value, the user is asked.
 Then the `consult-project-root-function' is tried.
 Otherwise the `default-directory' is returned."
   (cond
-   ((stringp dir) (consult--format-directory-prompt prompt dir))
-   (dir (consult--format-directory-prompt prompt (read-directory-name "Directory: " nil nil t)))
+   ((stringp dir) (consult--directory-prompt-1 prompt dir))
+   (dir (consult--directory-prompt-1 prompt (read-directory-name "Directory: " nil nil t)))
    ((when-let (root (consult--project-root))
-      (save-match-data
-        (if (string-match "/\\([^/]+\\)/\\'" root)
-            (cons (format "%s in project %s: " prompt (match-string 1 root)) root)
-          (consult--format-directory-prompt prompt root)))))
-   (t (consult--format-directory-prompt prompt default-directory))))
+      (cons (format "%s in project %s: " prompt
+                    (file-name-base (directory-file-name root)))
+            root)))
+   (t (consult--directory-prompt-1 prompt default-directory))))
 
 (defun consult--project-root ()
   "Return project root as absolute path."
@@ -849,6 +848,15 @@ Otherwise the `default-directory' is returned."
             (forward-line (1- line))
             (forward-char column))
           (point-marker))))))
+
+(defun consult--line-group (cand transform)
+  "Group function used by `consult-line-all' and `consult-line-project'.
+If TRANSFORM non-nil, return transformed CAND, otherwise return title."
+  (if transform
+      cand
+    (buffer-name
+     (marker-buffer
+      (car (get-text-property 0 'consult-location cand))))))
 
 (defun consult--line-prefix (&optional curr-line)
   "Annotate `consult-location' candidates with line numbers given the current line CURR-LINE."
@@ -2534,14 +2542,13 @@ CURR-LINE is the current line number."
           (when (and (not default-cand) (>= line curr-line))
             (setq default-cand candidates)))
         (setq line (1+ line))))
-    (unless candidates
-      (user-error "No lines"))
-    (nreverse
-     (if (or top (not default-cand))
-         candidates
-       (let ((before (cdr default-cand)))
-         (setcdr default-cand nil)
-         (nconc before candidates))))))
+    (when candidates
+      (nreverse
+       (if (or top (not default-cand))
+           candidates
+         (let ((before (cdr default-cand)))
+           (setcdr default-cand nil)
+           (nconc before candidates)))))))
 
 (defun consult--line-match (input candidates cand)
   "Lookup position of match.
@@ -2587,39 +2594,89 @@ CAND is the currently selected candidate."
                 (setq beg (+ beg step)))
               (setq step (/ step 2)))
             (setq end beg)))
-        ;; Marker can be dead
-        (ignore-errors (+ pos end))))))
+        ;; Marker can be dead, therefore ignore errors. Create a new marker instead of an integer,
+        ;; since the location may be in another buffer, e.g., for `consult-line-all'.
+        (ignore-errors
+          (if (or (not (markerp pos)) (eq (marker-buffer pos) (current-buffer)))
+              (+ pos end)
+            ;; Only create a new marker when jumping across buffers, to avoid
+            ;; creating unnecessary markers, when scrolling through candidates.
+            ;; Creating markers is not free.
+            (move-marker
+             (make-marker)
+             (+ pos end)
+             (marker-buffer pos))))))))
+
+(cl-defun consult--line (candidates &key curr-line prompt initial group)
+  "Select from from line CANDIDATES and jump to the match.
+CURR-LINE is the current line. See `consult--read' for the arguments PROMPT,
+INITIAL and GROUP."
+  (consult--read
+   candidates
+   :prompt prompt
+   :annotate (consult--line-prefix curr-line)
+   :group group
+   :category 'consult-location
+   :sort nil
+   :require-match t
+   ;; Always add last isearch string to future history
+   :add-history (list (thing-at-point 'symbol) isearch-string)
+   :history '(:input consult--line-history)
+   :lookup #'consult--line-match
+   :default (car candidates)
+   ;; Add isearch-string as initial input if starting from isearch
+   :initial (or initial
+                (and isearch-mode
+                     (prog1 isearch-string (isearch-done))))
+   :state (consult--jump-state)))
 
 ;;;###autoload
 (defun consult-line (&optional initial start)
-  "Search for a matching line and jump to the line beginning.
+  "Search for a matching line.
 
-The default candidate is the non-empty line next to point.
-This command obeys narrowing. Optional INITIAL input can be provided.
-The search starting point is changed if the START prefix argument is set.
-The symbol at point and the last `isearch-string' is added to the future history."
+Depending on the setting `consult-line-point-placement' the command jumps to
+the beginning or the end of the first match on the line or the line beginning.
+The default candidate is the non-empty line next to point. This command obeys
+narrowing. Optional INITIAL input can be provided. The search starting point is
+changed if the START prefix argument is set. The symbol at point and the last
+`isearch-string' is added to the future history."
   (interactive (list nil (not (not current-prefix-arg))))
-  (let* ((curr-line (line-number-at-pos (point) consult-line-numbers-widen))
-         (candidates (consult--with-increased-gc
-                      (consult--line-candidates
-                       (not (eq start consult-line-start-from-top))
-                       curr-line))))
-    (consult--read
-     candidates
-     :prompt "Go to line: "
-     :annotate (consult--line-prefix curr-line)
-     :category 'consult-location
-     :sort nil
-     :require-match t
-     ;; Always add last isearch string to future history
-     :add-history (list (thing-at-point 'symbol) isearch-string)
-     :history '(:input consult--line-history)
-     :lookup #'consult--line-match
-     :default (car candidates)
-     ;; Add isearch-string as initial input if starting from isearch
-     :initial (or initial
-                  (and isearch-mode (prog1 isearch-string (isearch-done))))
-     :state (consult--jump-state))))
+  (let ((curr-line (line-number-at-pos (point) consult-line-numbers-widen))
+        (top (not (eq start consult-line-start-from-top))))
+    (consult--line
+     (or (consult--with-increased-gc
+          (consult--line-candidates top curr-line))
+         (user-error "No lines"))
+     :curr-line (and (not top) curr-line)
+     :prompt (if top "Go to line from top: " "Go to line: ")
+     :initial initial)))
+
+(defun consult--line-multi-candidates (&rest query)
+  "Collect the line candidates from multiple buffers.
+QUERY is passed to `consult--buffer-query'."
+  (or (apply #'nconc
+             (consult--buffer-map
+              (apply #'consult--buffer-query query)
+              #'consult--line-candidates 'top most-positive-fixnum))
+      (user-error "No lines")))
+
+;;;###autoload
+(defun consult-line-multi (all &optional initial)
+  "Search for a matching line in multiple buffers.
+
+By default search across all project buffers. If the prefix argument ALL is
+non-nil, all buffers are searched. Optional INITIAL input can be provided. See
+`consult-line' for more information."
+  (interactive "P")
+  (let ((project (and (not all) (consult--project-root))))
+    (consult--line
+     (consult--line-multi-candidates :sort 'alpha :directory project)
+     :prompt (if project
+                 (format "Go to line (Project %s): "
+                         (file-name-base (directory-file-name project)))
+               "Go to line (All buffers): ")
+     :initial initial
+     :group #'consult--line-group)))
 
 ;;;;; Command: consult-keep-lines
 
@@ -3579,6 +3636,21 @@ AS is a conversion function."
                                       (expand-file-name dir)))))
              (if as (funcall as it) it)))))
       buffers)))
+
+(defun consult--buffer-map (buffer &rest app)
+  "Run function application APP for each BUFFER.
+Report progress and return a list of the results"
+  (consult--with-increased-gc
+   (let* ((count (length buffer))
+          (reporter (make-progress-reporter "Collecting" 0 count)))
+     (prog1
+         (seq-map-indexed (lambda (buf idx)
+                            (with-current-buffer buf
+                              (prog1 (apply app)
+                                (progress-reporter-update
+                                 reporter (1+ idx) (buffer-name)))))
+                 buffer)
+       (progress-reporter-done reporter)))))
 
 (defun consult--buffer-file-hash ()
   "Return hash table of all buffer file names."

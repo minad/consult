@@ -141,7 +141,7 @@ TYPES is the mode-specific types configuration."
 
 (defun consult-imenu--all-items (buffers)
   "Return all imenu items from each BUFFERS."
-  (seq-mapcat (lambda (buf) (with-current-buffer buf (consult-imenu--items))) buffers))
+  (apply #'append (consult--buffer-map buffers #'consult-imenu--items)))
 
 (defun consult-imenu--jump (item)
   "Jump to imenu ITEM via `consult--jump'.
@@ -153,10 +153,8 @@ this function can jump across buffers."
     (`(,_ . ,pos) (consult--jump pos))
     (_ (error "Unknown imenu item: %S" item))))
 
-(defun consult-imenu--select (items)
-  "Select from imenu ITEMS with preview.
-
-The symbol at point is added to the future history."
+(defun consult-imenu--select (prompt items)
+  "Select from imenu ITEMS given PROMPT string."
   (let ((narrow
          (mapcar (lambda (x) (cons (car x) (cadr x)))
                  (plist-get (cdr (seq-find (lambda (x) (derived-mode-p (car x)))
@@ -166,7 +164,7 @@ The symbol at point is added to the future history."
     (consult-imenu--jump
      (consult--read
       (or items (user-error "Imenu is empty"))
-      :prompt "Go to item: "
+      :prompt prompt
       :state
       (let ((preview (consult--jump-preview)))
         (lambda (cand restore)
@@ -199,10 +197,11 @@ The symbol at point is added to the future history."
 
 The command supports preview and narrowing. See the variable
 `consult-imenu-config', which configures the narrowing.
+The symbol at point is added to the future history.
 
 See also `consult-imenu-project'."
   (interactive)
-  (consult-imenu--select (consult-imenu--items)))
+  (consult-imenu--select "Go to item: " (consult-imenu--items)))
 
 ;;;###autoload
 (defun consult-imenu-project ()
@@ -213,12 +212,15 @@ In order to determine the buffers belonging to the same project, the
 same major mode as the current buffer are used. See also
 `consult-imenu' for more details."
   (interactive)
-  (consult-imenu--select
-   (consult-imenu--all-items
-    (or (consult--buffer-query :directory 'project
-                               :mode major-mode
-                               :sort 'alpha)
-        (list (current-buffer))))))
+  (if-let* ((project (consult--project-root))
+            (buffers (consult--buffer-query :directory project
+                                            :mode major-mode
+                                            :sort 'alpha)))
+      (consult-imenu--select
+       (format "Go to item (Project %s): "
+               (file-name-base (directory-file-name project)))
+       (consult-imenu--all-items buffers))
+    (consult-imenu)))
 
 (define-obsolete-function-alias
   'consult-project-imenu
