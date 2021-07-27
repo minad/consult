@@ -218,7 +218,7 @@ same major mode as the current buffer are used. See also
                                             :sort 'alpha)))
       (consult-imenu--select
        (format "Go to item (Project %s): "
-               (file-name-base (directory-file-name project)))
+               (consult--project-name project))
        (consult-imenu--all-items buffers))
     (consult-imenu)))
 

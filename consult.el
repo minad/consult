@@ -718,8 +718,7 @@ Otherwise the `default-directory' is returned."
    ((stringp dir) (consult--directory-prompt-1 prompt dir))
    (dir (consult--directory-prompt-1 prompt (read-directory-name "Directory: " nil nil t)))
    ((when-let (root (consult--project-root))
-      (cons (format "%s in project %s: " prompt
-                    (file-name-base (directory-file-name root)))
+      (cons (format "%s in project %s: " prompt (consult--project-name root))
             root)))
    (t (consult--directory-prompt-1 prompt default-directory))))
 
@@ -727,6 +726,12 @@ Otherwise the `default-directory' is returned."
   "Return project root as absolute path."
   (when-let (root (and consult-project-root-function (funcall consult-project-root-function)))
     (expand-file-name root)))
+
+(defun consult--project-name (dir)
+  "Return the project name for DIR."
+  (if (string-match "/\\([^/]+\\)/\\'" dir)
+      (match-string 1 dir)
+    dir))
 
 (defun consult--format-location (file line &optional str)
   "Format location string 'FILE:LINE:STR'."
@@ -2672,8 +2677,7 @@ non-nil, all buffers are searched. Optional INITIAL input can be provided. See
     (consult--line
      (consult--line-multi-candidates :sort 'alpha :directory project)
      :prompt (if project
-                 (format "Go to line (Project %s): "
-                         (file-name-base (directory-file-name project)))
+                 (format "Go to line (Project %s): " (consult--project-name project))
                "Go to line (All buffers): ")
      :initial initial
      :group #'consult--line-group)))
