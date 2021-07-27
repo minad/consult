@@ -3590,10 +3590,11 @@ The command supports previewing the currently selected theme."
   (sort buffers
         (lambda (x y)
           (setq x (buffer-name x) y (buffer-name y))
-          (or
-           (and (> (length y) 0) (eq (aref y 0) ?*)
-                (not (and (> (length x) 0) (eq (aref x 0) ?*))))
-           (string< x y)))))
+          (let ((a (and (> (length x) 0) (eq (aref x 0) ?*)))
+                (b (and (> (length y) 0) (eq (aref y 0) ?*))))
+            (if (eq a b)
+                (string< x y)
+              (not a))))))
 
 (defun consult--buffer-sort-visibility (buffers)
   "Sort BUFFERS by visibility."
