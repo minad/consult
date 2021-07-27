@@ -3586,11 +3586,14 @@ The command supports previewing the currently selected theme."
 ;;;;; Command: consult-buffer
 
 (defun consult--buffer-sort-alpha (buffers)
-  "Sort BUFFERS alphabetically."
+  "Sort BUFFERS alphabetically, but push down starred buffers."
   (sort buffers
         (lambda (x y)
-          (string< (buffer-name x)
-                   (buffer-name y)))))
+          (setq x (buffer-name x) y (buffer-name y))
+          (or
+           (and (> (length y) 0) (eq (aref y 0) ?*)
+                (not (and (> (length x) 0) (eq (aref x 0) ?*))))
+           (string< x y)))))
 
 (defun consult--buffer-sort-visibility (buffers)
   "Sort BUFFERS by visibility."
