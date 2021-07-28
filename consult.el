@@ -1343,17 +1343,16 @@ An async function must accept a single action argument. For the 'setup action
 it is guaranteed that the call originates from the minibuffer. For the other
 actions no assumption about the context can be made.
 
-'setup   Setup the internal closure state.
-'destroy Destroy the internal closure state.
-'flush   Flush the list of candidates.
-'refresh Request UI refresh.
-nil      Return the current list of candidates.
-list     Append the list to the already existing list of candidates.
-string   The input string. Called when the user enters something."
+'setup   Setup the internal closure state. Return nil.
+'destroy Destroy the internal closure state. Return nil.
+'flush   Flush the list of candidates. Return nil.
+'refresh Request UI refresh. Return nil.
+nil      Return the list of candidates.
+list     Append the list to the already existing candidates list and return it.
+string   Update with the current user input string. Return nil."
   (let ((candidates) (last) (buffer))
     (lambda (action)
       (pcase-exhaustive action
-        ('nil candidates)
         ('setup
          (setq buffer (current-buffer))
          nil)
@@ -1365,7 +1364,9 @@ string   The input string. Called when the user enters something."
          (when-let (win (active-minibuffer-window))
            (when (eq (window-buffer win) buffer)
              (with-selected-window win
-               (run-hooks 'consult--completion-refresh-hook)))))
+               (run-hooks 'consult--completion-refresh-hook))))
+         nil)
+        ('nil candidates)
         ((pred consp)
          (setq last (last (if last (setcdr last action) (setq candidates action))))
          candidates)))))
@@ -1500,7 +1501,8 @@ PROPS are optional properties passed to `make-process'."
                        (insert ">>>>> stderr >>>>>\n")
                        (insert-buffer-substring stderr-buffer)
                        (insert "<<<<< stderr <<<<<\n")
-                       (kill-buffer stderr-buffer)))))))))))
+                       (kill-buffer stderr-buffer))))))))))
+         nil)
         ('destroy
          (when proc
            (delete-process proc)
@@ -1540,7 +1542,8 @@ The DEBOUNCE delay defaults to `consult-async-input-debounce'."
                     nil
                     (lambda ()
                       (setq last (float-time))
-                      (funcall async action)))))))
+                      (funcall async action))))))
+         nil)
         ('destroy
          (when timer (cancel-timer timer))
          (funcall async 'destroy))
