@@ -2658,7 +2658,7 @@ changed if the START prefix argument is set. The symbol at point and the last
      :prompt (if top "Go to line from top: " "Go to line: ")
      :initial initial)))
 
-(defun consult--line-multi-candidates (&rest query)
+(defun consult--line-multi-candidates (query)
   "Collect the line candidates from multiple buffers.
 QUERY is passed to `consult--buffer-query'."
   (or (apply #'nconc
@@ -2668,19 +2668,24 @@ QUERY is passed to `consult--buffer-query'."
       (user-error "No lines")))
 
 ;;;###autoload
-(defun consult-line-multi (all &optional initial)
+(defun consult-line-multi (query &optional initial)
   "Search for a matching line in multiple buffers.
 
-By default search across all project buffers. If the prefix argument ALL is
+By default search across all project buffers. If the prefix argument QUERY is
 non-nil, all buffers are searched. Optional INITIAL input can be provided. See
-`consult-line' for more information."
+`consult-line' for more information. In order to search a subset of filters,
+QUERY can be set to a plist according to `consult--buffer-query'."
   (interactive "P")
-  (let ((project (and (not all) (consult--project-root))))
+  (let ((scope "Multiple buffers"))
+    (unless (keywordp (car-safe query))
+      (let ((project (and (not query) (consult--project-root))))
+        (setq query `(:sort alpha :directory ,project)
+              scope (if project
+                        (format "Project %s" (consult--project-name project))
+                      "All buffers"))))
     (consult--line
-     (consult--line-multi-candidates :sort 'alpha :directory project)
-     :prompt (if project
-                 (format "Go to line (Project %s): " (consult--project-name project))
-               "Go to line (All buffers): ")
+     (consult--line-multi-candidates query)
+     :prompt (format "Go to line (%s): " scope)
      :initial initial
      :group #'consult--line-group)))
 

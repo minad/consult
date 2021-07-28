@@ -134,14 +134,24 @@ TYPES is the mode-specific types configuration."
         (puthash (car item) 0 ht)))))
 
 (defun consult-imenu--items ()
-  "Return cached imenu candidates."
+  "Return cached imenu candidates, may error."
   (unless (equal (car consult-imenu--cache) (buffer-modified-tick))
     (setq consult-imenu--cache (cons (buffer-modified-tick) (consult-imenu--compute))))
   (cdr consult-imenu--cache))
 
-(defun consult-imenu--all-items (buffers)
-  "Return all imenu items from each BUFFERS."
-  (apply #'append (consult--buffer-map buffers #'consult-imenu--items)))
+(defun consult-imenu--items-safe ()
+  "Return cached imenu candidates, will not error."
+  (condition-case err
+      (consult-imenu--items)
+    (t (message "Cannot create Imenu for buffer %s (%s)"
+                (buffer-name) (error-message-string err))
+       nil)))
+
+(defun consult-imenu--multi-items (query)
+  "Return all imenu items from buffers matching QUERY."
+  (apply #'append (consult--buffer-map
+                   (apply #'consult--buffer-query query)
+                   #'consult-imenu--items-safe)))
 
 (defun consult-imenu--jump (item)
   "Jump to imenu ITEM via `consult--jump'.
@@ -204,27 +214,29 @@ See also `consult-imenu-project'."
   (consult-imenu--select "Go to item: " (consult-imenu--items)))
 
 ;;;###autoload
-(defun consult-imenu-project ()
+(defun consult-imenu-multi (&optional query)
   "Select item from the imenus of all buffers from the same project.
 
 In order to determine the buffers belonging to the same project, the
 `consult-project-root-function' is used. Only the buffers with the
 same major mode as the current buffer are used. See also
-`consult-imenu' for more details."
+`consult-imenu' for more details. In order to search a subset of filters,
+QUERY can be set to a plist according to `consult--buffer-query'."
   (interactive)
-  (if-let* ((project (consult--project-root))
-            (buffers (consult--buffer-query :directory project
-                                            :mode major-mode
-                                            :sort 'alpha)))
-      (consult-imenu--select
-       (format "Go to item (Project %s): "
-               (consult--project-name project))
-       (consult-imenu--all-items buffers))
-    (consult-imenu)))
+  (let ((scope "Multiple buffers"))
+    (when-let (project (and (not (keywordp (car-safe query)))
+                            (consult--project-root)))
+      (setq scope (format "Project %s" (consult--project-name project))
+            query `(:directory ,project :mode ,major-mode :sort alpha)))
+    (if query
+        (consult-imenu--select
+         (format "Go to item (%s): " scope)
+         (consult-imenu--multi-items query))
+      (consult-imenu))))
 
 (define-obsolete-function-alias
   'consult-project-imenu
-  'consult-imenu-project
+  'consult-imenu-multi
   "0.9")
 
 (provide 'consult-imenu)

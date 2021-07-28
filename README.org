@@ -174,7 +174,7 @@ their descriptions.
  #+findex: consult-global-mark
  #+findex: consult-outline
  #+findex: consult-imenu
- #+findex: consult-imenu-project
+ #+findex: consult-imenu-multi
  - =consult-goto-line=: Jump to line number enhanced with live preview.
    This is a drop-in replacement for =goto-line=.
  - =consult-mark=: Jump to a marker in the =mark-ring=. Supports live
@@ -185,7 +185,7 @@ their descriptions.
    to a heading level, live preview and recursive editing.
  - =consult-imenu=: Jump to imenu item in the current buffer. Supports
    live preview, recursive editing and narrowing.
- - =consult-imenu-project=: Jump to imenu item in project buffers, with
+ - =consult-imenu-multi=: Jump to imenu item in project buffers, with
    the same major mode as the current buffer. Supports live preview,
    recursive editing and narrowing. This feature has been inspired by
    [[https://github.com/vspinu/imenu-anywhere][imenu-anywhere]].
@@ -801,7 +801,7 @@ configuration examples.
             ("M-g m" . consult-mark)
             ("M-g k" . consult-global-mark)
             ("M-g i" . consult-imenu)
-            ("M-g I" . consult-imenu-project)
+            ("M-g I" . consult-imenu-multi)
             ;; M-s bindings (search-map)
             ("M-s f" . consult-find)
             ("M-s F" . consult-locate)
