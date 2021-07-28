@@ -1427,7 +1427,8 @@ SPLIT is the splitting function."
 ASYNC is the async function which receives the candidates.
 CMD is the command argument list.
 PROPS are optional properties passed to `make-process'."
-  (let ((proc) (last-args) (indicator) (count))
+  (let ((proc) (last-args) (indicator) (count)
+        (proc-start) (proc-end) (state))
     (lambda (action)
       (pcase action
         ("" ;; If no input is provided kill current process
@@ -1446,10 +1447,12 @@ PROPS are optional properties passed to `make-process'."
                (delete-process proc)
                (setq proc nil))
              (when args
-               (overlay-put indicator 'display #("*" 0 1 (face consult-async-running)))
+               (funcall async (list 'status :state (setq state 'running)))
                (consult--async-log "consult--async-process started %S\n" args)
                (setq
                 count 0
+                proc-start (float-time)
+                proc-end nil
                 proc
                 (apply
                  #'make-process
@@ -1481,14 +1484,14 @@ PROPS are optional properties passed to `make-process'."
                      (when flush
                        (setq flush nil)
                        (funcall async 'flush))
-                     (overlay-put indicator 'display
-                                  (cond
-                                   ((string-prefix-p "killed" event)
-                                    #(";" 0 1 (face consult-async-failed)))
-                                   ((string-prefix-p "finished" event)
-                                    #(":" 0 1 (face consult-async-finished)))
-                                   (t
-                                    #("!" 0 1 (face consult-async-failed)))))
+                     (funcall async
+                              (list 'status :state
+                                    (setq state
+                                          (cond
+                                           ((string-prefix-p "killed" event) 'killed)
+                                           ((string-prefix-p "finished" event) 'finished)
+                                           (t 'failed)))))
+                     (setq proc-end (float-time))
                      (when (and (string-prefix-p "finished" event) (not (string= rest "")))
                        (setq count (+ count 1))
                        (funcall async (list rest)))
@@ -1505,12 +1508,30 @@ PROPS are optional properties passed to `make-process'."
          (when proc
            (delete-process proc)
            (setq proc nil))
-         (delete-overlay indicator)
          (funcall async 'destroy))
+        ((and (pred listp) l (guard (eq 'status (car l))))
+         (append l (list :state state
+                         :proc-time (and proc-start (- (or proc-end (float-time)) proc-start)))))
+        (_ (funcall async action))))))
+
+(defun consult--async-indicator (async)
+  (let ((indicator))
+    (lambda (action)
+      (pcase action
         ('setup
          (setq indicator (make-overlay (- (minibuffer-prompt-end) 2)
                                        (- (minibuffer-prompt-end) 1)))
          (funcall async 'setup))
+        ('destroy
+         (delete-overlay indicator))
+        ((and (pred listp) s (guard (eq 'status (car s))))
+         (overlay-put indicator 'display
+                      (pcase (plist-get (cdr s) :state)
+                        ('running  #("*" 0 1 (face consult-async-running)))
+                        ('killed   #(";" 0 1 (face consult-async-failed)))
+                        ('finished #(":" 0 1 (face consult-async-finished)))
+                        ('failed   #("!" 0 1 (face consult-async-failed)))
+                        (_         #("?" 0 1 (face highlight))))))
         (_ (funcall async action))))))
 
 (defun consult--async-throttle (async &optional throttle debounce)
@@ -1540,7 +1561,8 @@ The DEBOUNCE delay defaults to `consult-async-input-debounce'."
                     nil
                     (lambda ()
                       (setq last (float-time))
-                      (funcall async action)))))))
+                      (funcall async action)
+                      (funcall async '(status))))))))
         ('destroy
          (when timer (cancel-timer timer))
          (funcall async 'destroy))
@@ -1619,6 +1641,7 @@ ARGS is a list of `make-process' properties and transforms."
   `(thread-first (consult--async-sink)
      (consult--async-refresh-timer)
      ,@(seq-take-while (lambda (x) (not (keywordp x))) args)
+     (consult--async-indicator)
      (consult--async-process
       (consult--command-args ,cmd)
       ,@(seq-drop-while (lambda (x) (not (keywordp x))) args))
