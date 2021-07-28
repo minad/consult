@@ -1535,8 +1535,7 @@ The DEBOUNCE delay defaults to `consult-async-input-debounce'."
                    (run-at-time
                     (+ debounce
                        (if last
-                           (min (- (float-time) last)
-                                consult-async-input-throttle)
+                           (min (- (float-time) last) throttle)
                          0))
                     nil
                     (lambda ()
