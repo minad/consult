@@ -1422,6 +1422,16 @@ SPLIT is the splitting function."
     (goto-char (point-max))
     (insert (apply #'format formatted args))))
 
+(defun consult--process-indicator (event)
+  "Return the process indicator character for EVENT."
+  (cond
+   ((string-prefix-p "killed" event)
+    #(";" 0 1 (face consult-async-failed)))
+   ((string-prefix-p "finished" event)
+    #(":" 0 1 (face consult-async-finished)))
+   (t
+    #("!" 0 1 (face consult-async-failed)))))
+
 (defun consult--async-process (async cmd &rest props)
   "Create process source async function.
 
@@ -1437,10 +1447,43 @@ PROPS are optional properties passed to `make-process'."
            (setq proc nil))
          (setq last-args nil))
         ((pred stringp)
-         (let ((args (funcall cmd action))
-               (stderr-buffer (generate-new-buffer " *consult-async-stderr*"))
-               (flush t)
-               (rest ""))
+         (let* ((args (funcall cmd action))
+                (stderr-buffer (generate-new-buffer " *consult-async-stderr*"))
+                (flush t)
+                (rest "")
+                (proc-filter
+                 (lambda (_ out)
+                   (when flush
+                     (setq flush nil)
+                     (funcall async 'flush))
+                   (let ((lines (split-string out "\n")))
+                     (if (not (cdr lines))
+                         (setq rest (concat rest (car lines)))
+                       (setcar lines (concat rest (car lines)))
+                       (let* ((len (length lines))
+                              (last (nthcdr (- len 2) lines)))
+                         (setq rest (cadr last)
+                               count (+ count len -1))
+                         (setcdr last nil)
+                         (funcall async lines))))))
+                (proc-sentinel
+                 (lambda (_ event)
+                   (when flush
+                     (setq flush nil)
+                     (funcall async 'flush))
+                   (overlay-put indicator 'display (consult--process-indicator event))
+                   (when (and (string-prefix-p "finished" event) (not (string= rest "")))
+                     (setq count (+ count 1))
+                     (funcall async (list rest)))
+                   (consult--async-log
+                    "consult--async-process sentinel: event=%s lines=%d\n"
+                    (string-trim event) count)
+                   (with-current-buffer (get-buffer-create consult--async-log)
+                     (goto-char (point-max))
+                     (insert ">>>>> stderr >>>>>\n")
+                     (insert-buffer-substring stderr-buffer)
+                     (insert "<<<<< stderr <<<<<\n")
+                     (kill-buffer stderr-buffer)))))
            (unless (equal args last-args)
              (setq last-args args)
              (when proc
@@ -1449,59 +1492,17 @@ PROPS are optional properties passed to `make-process'."
              (when args
                (overlay-put indicator 'display #("*" 0 1 (face consult-async-running)))
                (consult--async-log "consult--async-process started %S\n" args)
-               (setq
-                count 0
-                proc
-                (apply
-                 #'make-process
-                 (append
-                  props
-                  (list
-                   :connection-type 'pipe
-                   :name (car args)
-                   :stderr stderr-buffer ;;; XXX tramp bug, the stderr buffer must be empty
-                   :noquery t
-                   :command args
-                   :filter
-                   (lambda (_ out)
-                     (when flush
-                       (setq flush nil)
-                       (funcall async 'flush))
-                     (let ((lines (split-string out "\n")))
-                       (if (not (cdr lines))
-                           (setq rest (concat rest (car lines)))
-                         (setcar lines (concat rest (car lines)))
-                         (let* ((len (length lines))
-                                (last (nthcdr (- len 2) lines)))
-                           (setq rest (cadr last)
-                                 count (+ count len -1))
-                           (setcdr last nil)
-                           (funcall async lines)))))
-                   :sentinel
-                   (lambda (_ event)
-                     (when flush
-                       (setq flush nil)
-                       (funcall async 'flush))
-                     (overlay-put indicator 'display
-                                  (cond
-                                   ((string-prefix-p "killed" event)
-                                    #(";" 0 1 (face consult-async-failed)))
-                                   ((string-prefix-p "finished" event)
-                                    #(":" 0 1 (face consult-async-finished)))
-                                   (t
-                                    #("!" 0 1 (face consult-async-failed)))))
-                     (when (and (string-prefix-p "finished" event) (not (string= rest "")))
-                       (setq count (+ count 1))
-                       (funcall async (list rest)))
-                     (consult--async-log
-                      "consult--async-process sentinel: event=%s lines=%d\n"
-                      (string-trim event) count)
-                     (with-current-buffer (get-buffer-create consult--async-log)
-                       (goto-char (point-max))
-                       (insert ">>>>> stderr >>>>>\n")
-                       (insert-buffer-substring stderr-buffer)
-                       (insert "<<<<< stderr <<<<<\n")
-                       (kill-buffer stderr-buffer))))))))))
+               (setq count 0
+                     proc (apply #'make-process
+                                 `(,@props
+                                   :connection-type pipe
+                                   :name ,(car args)
+                                   ;;; XXX tramp bug, the stderr buffer must be empty
+                                   :stderr ,stderr-buffer
+                                   :noquery t
+                                   :command ,args
+                                   :filter ,proc-filter
+                                   :sentinel ,proc-sentinel))))))
          nil)
         ('destroy
          (when proc
