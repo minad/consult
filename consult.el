@@ -3603,7 +3603,7 @@ The command supports previewing the currently selected theme."
           nil)))
     (nconc (nreverse hidden) buffers (list (current-buffer)))))
 
-(cl-defun consult--buffer-query (&key sort directory mode as (filter t)
+(cl-defun consult--buffer-query (&key sort directory mode as predicate (filter t)
                                       include (exclude consult-buffer-filter) )
   "Buffer query function.
 DIRECTORY can either be project or a path.
@@ -3612,6 +3612,7 @@ FILTER can be either t, nil or invert.
 EXCLUDE is a list of regexps.
 INCLUDE is a list of regexps.
 MODE can be a mode or a list of modes to restrict the returned buffers.
+PREDICATE is a predicate function.
 AS is a conversion function."
   ;; This function is the backbone of most `consult-buffer' source. The
   ;; function supports filtering by various criteria which are used throughout
@@ -3647,6 +3648,7 @@ AS is a conversion function."
                                     (if (and (/= 0 (length dir)) (eq (aref dir 0) ?/))
                                         dir
                                       (expand-file-name dir)))))
+             (or (not predicate) (funcall predicate it))
              (if as (funcall as it) it)))))
       buffers)))
 

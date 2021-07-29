@@ -85,12 +85,11 @@
 (defun consult-compile--compilation-buffers (file)
   "Return a list of compilation buffers relevant to FILE."
   (consult--buffer-query
-   :sort 'alpha :as
+   :sort 'alpha :predicate
    (lambda (buffer)
      (with-current-buffer buffer
        (and (compilation-buffer-internal-p)
-            (file-in-directory-p file default-directory)
-            buffer)))))
+            (file-in-directory-p file default-directory))))))
 
 ;;;###autoload
 (defun consult-compile-error ()
