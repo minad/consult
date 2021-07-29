@@ -434,13 +434,6 @@ Used by `consult-completion-in-region', `consult-yank' and `consult-history'.")
 
 ;;;; Internal variables
 
-(defvar consult-async-default-split "#")
-(make-obsolete-variable 'consult-async-default-split
-                        "Deprecated in favor of `consult-async-split-style'." "0.7")
-
-(defvaralias 'consult-config 'consult--read-config)
-(make-obsolete-variable 'consult-config "Deprecated in favor of `consult-customize'." "0.7")
-
 (defvar consult--read-config nil
   "Command configuration alist for fine-grained configuration.
 
@@ -3148,14 +3141,8 @@ version supports preview of the selected string."
       (goto-char (prog1 (mark t)
                    (set-marker (mark-marker) (point) (current-buffer)))))))
 
-(define-obsolete-function-alias
-  'consult-yank
-  'consult-yank-from-kill-ring
-  "0.7")
-
 (put 'consult-yank-replace 'delete-selection 'yank)
 (put 'consult-yank-pop 'delete-selection 'yank)
-(put 'consult-yank 'delete-selection 'yank)
 (put 'consult-yank-from-kill-ring 'delete-selection 'yank)
 
 ;;;###autoload
