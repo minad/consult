@@ -1894,8 +1894,7 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
   "Return title of candidate CAND or TRANSFORM the candidate given SOURCES."
   (if transform
       cand
-    (let ((src (consult--multi-source sources cand)))
-      (or (plist-get src :name) (capitalize (symbol-name (plist-get src :category)))))))
+    (plist-get (consult--multi-source sources cand) :name)))
 
 (defun consult--multi-preview-key (sources)
   "Return preview keys from SOURCES."
