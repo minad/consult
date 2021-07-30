@@ -552,7 +552,7 @@ ARGS is a list of commands or sources followed by the list of keyword-value pair
        (setq ,list (cdr ,head))
        nil)))
 
-;; Upstream bug#49776, Consult issue https://github.com/minad/consult/issues/193
+;; Upstream bug#46326, Consult issue https://github.com/minad/consult/issues/193
 (defmacro consult--minibuffer-with-setup-hook (fun &rest body)
   "Variant of `minibuffer-with-setup-hook' using a symbol and `fset'.
 
@@ -2094,7 +2094,8 @@ of functions and in `consult-completion-in-region'."
       (lambda (cand restore)
         (if restore
             (when ov (delete-overlay ov))
-          (unless ov (setq ov (consult--overlay start end 'invisible t
+          (unless ov (setq ov (consult--overlay start end
+                                                'invisible t
                                                 'window (selected-window))))
           ;; Use `add-face-text-property' on a copy of "cand in order to merge face properties
           (setq cand (copy-sequence cand))
