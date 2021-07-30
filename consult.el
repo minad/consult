@@ -552,7 +552,7 @@ ARGS is a list of commands or sources followed by the list of keyword-value pair
        (setq ,list (cdr ,head))
        nil)))
 
-;; Upstream bug#46326, Consult issue https://github.com/minad/consult/issues/193
+;; Upstream bug#49776, Consult issue https://github.com/minad/consult/issues/193
 (defmacro consult--minibuffer-with-setup-hook (fun &rest body)
   "Variant of `minibuffer-with-setup-hook' using a symbol and `fset'.
 
@@ -2081,13 +2081,20 @@ KEYMAP is a command-specific keymap."
 The candidates are previewed in the region from START to END. This function is
 used as the `:state' argument for `consult--read' in the `consult-yank' family
 of functions and in `consult-completion-in-region'."
-  (unless (minibufferp)
+  (unless (or (minibufferp)
+              ;; XXX Disable preview if anything odd is going on with the markers. Otherwise we get
+              ;; "Marker points into wrong buffer errors". See
+              ;; https://github.com/minad/consult/issues/375, where Org mode source blocks are
+              ;; completed in a different buffer than the original buffer. This completion is
+              ;; probably also problematic in my Corfu completion package.
+              (not (eq (window-buffer) (current-buffer)))
+	      (and (markerp start) (not (eq (marker-buffer start) (current-buffer))))
+	      (and (markerp end) (not (eq (marker-buffer end) (current-buffer)))))
     (let (ov)
       (lambda (cand restore)
         (if restore
             (when ov (delete-overlay ov))
-          (unless ov (setq ov (consult--overlay start end
-                                                'invisible t
+          (unless ov (setq ov (consult--overlay start end 'invisible t
                                                 'window (selected-window))))
           ;; Use `add-face-text-property' on a copy of "cand in order to merge face properties
           (setq cand (copy-sequence cand))
