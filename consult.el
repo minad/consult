@@ -758,6 +758,19 @@ Otherwise the `default-directory' is returned."
 
 (defun consult--type-group (types)
   "Return group function for TYPES."
+  (setq types (mapcar (pcase-lambda (`(,key . ,name))
+                        (cons key
+                              (let ((first t))
+                              (replace-regexp-in-string
+                               (regexp-quote (char-to-string key))
+                               (lambda (_)
+                                 (prog1
+                                     (if first
+                                         (format "(%c)" key)
+                                       (char-to-string key))
+                                    (setq first nil)))
+                               name))))
+                      types))
   (lambda (cand transform)
     (if transform
         cand
