@@ -200,6 +200,7 @@ character, the *Completions* buffer and a few log buffers."
 (defcustom consult-buffer-sources
   '(consult--source-hidden-buffer
     consult--source-buffer
+    consult--source-dired
     consult--source-file
     consult--source-bookmark
     consult--source-project-buffer
@@ -3765,8 +3766,25 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
     :default  t
     :items
     ,(lambda () (consult--buffer-query :sort 'visibility
-                                       :as #'buffer-name)))
+                                       :as #'buffer-name
+                                       :predicate
+                                       (lambda (buffer)
+                                         (with-current-buffer buffer
+                                           (not (eq major-mode 'dired-mode)))))))
   "Buffer candidate source for `consult-buffer'.")
+
+(defvar consult--source-dired
+  `(:name     "Dired"
+    :narrow   ?d
+    :hidden   t
+    :category buffer
+    :face     dired-header
+    :state    ,#'consult--buffer-state
+    :items
+    ,(lambda () (consult--buffer-query :mode 'dired-mode
+                                       :sort 'visibility
+                                       :as #'buffer-name)))
+  "Dired buffer candidate source for `consult-buffer'.")
 
 (defvar consult--source-file
   `(:name     "File"
