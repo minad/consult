@@ -209,7 +209,7 @@ The command supports preview and narrowing. See the variable
 `consult-imenu-config', which configures the narrowing.
 The symbol at point is added to the future history.
 
-See also `consult-imenu-project'."
+See also `consult-imenu-multi'."
   (interactive)
   (consult-imenu--select "Go to item: " (consult-imenu--items)))
 
