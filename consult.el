@@ -243,7 +243,7 @@ command options."
 
 (defcustom consult-ripgrep-command
   "rg --null --line-buffered --color=ansi --max-columns=1000\
-   --no-heading --line-number . -e ARG OPTS"
+   --smart-case --no-heading --line-number . -e ARG OPTS"
   "Command line string for ripgrep, see `consult-ripgrep'.
 
 The command string must have a specific format, including ARG and OPTS
