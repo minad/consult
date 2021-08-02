@@ -2989,6 +2989,47 @@ narrowing and the settings `consult-goto-line-numbers' and
     :state (consult--file-preview)
     :history 'file-name-history)))
 
+;;;;; Command: consult-recent-directory
+
+(defun consult--recent-directories ()
+  "Return a list of recent directories."
+  (let (dirs parents)
+    (dolist (file (mapcar #'expand-file-name recentf-list))
+      (let (parent)
+        (while (progn
+                 (setq file (file-name-directory file))
+                 (unless (member file '(nil "" "/"))
+                   (if parent
+                       (push file parents)
+                     (push file dirs))
+                   (when (string-suffix-p "/" file)
+                     (setq file (substring file 0 -1)
+                           parent t))
+                   t)))))
+    (mapcar #'abbreviate-file-name (delete-dups (nreverse (nconc parents dirs))))))
+
+;;;###autoload
+(defun consult-recent-directory ()
+  "Find recent directory using `completing-read'."
+  (interactive)
+  (let ((dir (consult--read
+              (consult--recent-directories)
+              :prompt "Recent directory: "
+              :sort nil
+              :require-match t
+              :category 'file
+              :state (consult--file-preview)
+              :history 'file-name-history)))
+    (if (minibufferp)
+        (progn
+          (delete-minibuffer-contents)
+          (insert dir))
+      (consult--minibuffer-with-setup-hook
+          (lambda ()
+            (delete-minibuffer-contents)
+            (insert dir))
+        (call-interactively #'find-file)))))
+
 ;;;;; Command: consult-file-externally
 
 ;;;###autoload
