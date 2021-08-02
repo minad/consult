@@ -9,6 +9,7 @@
 - Rename =consult-project-imenu= to =consult-imenu-multi=
 - Add =consult-line-multi= to search multiple buffers
 - Removed obsolete =consult-yank=, =consult-async-default-split=, =consult-config=
+- =consult-ripgrep=: Use =--smart-case=
 
 * Version 0.9 (2021-06-22)
 
