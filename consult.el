@@ -2975,7 +2975,7 @@ narrowing and the settings `consult-goto-line-numbers' and
 
 ;;;###autoload
 (defun consult-recent-file ()
-  "Find recent using `completing-read'."
+  "Find recent file using `completing-read'."
   (interactive)
   (find-file
    (consult--read
