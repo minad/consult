@@ -218,65 +218,65 @@ See `consult--multi' for a description of the source values."
   :type '(repeat (choice symbol regexp)))
 
 (defcustom consult-git-grep-command
-  '("git --no-pager grep --null --color=always --extended-regexp"
-    "--line-number -I -e"
-    (consult-regexp arg) opts)
-  "Command line arguments for git-grep, see `consult-git-grep'.
-See `consult-ripgrep-command' for details on the configuration."
-  :type 'sexp)
+  "git --no-pager grep --null --color=always --extended-regexp\
+   --line-number -I -e ARG OPTS"
+  "Command line string for git-grep, see `consult-git-grep'.
+
+The command string must have a specific format, including ARG and OPTS
+substrings. ARG is replaced by the filter string and OPTS by the auxillary
+command options."
+  :type 'string)
 
 (defcustom consult-grep-command
-  '("grep --null --line-buffered --color=always --extended-regexp"
-    "--exclude-dir=.git --line-number -I -r . -e"
-    (consult-regexp arg) opts)
-  "Command line arguments for grep, see `consult-grep'.
-See `consult-ripgrep-command' for details on the configuration."
-  :type 'sexp)
+  "grep --null --line-buffered --color=always --extended-regexp\
+   --exclude-dir=.git --line-number -I -r . -e ARG OPTS"
+  "Command line string for grep, see `consult-grep'.
+
+The command string must have a specific format, including ARG and OPTS
+substrings. ARG is replaced by the filter string and OPTS by the auxillary
+command options."
+  :type 'string)
 
 (defcustom consult-grep-max-columns 300
   "Maximal number of columns of grep output."
   :type 'integer)
 
 (defcustom consult-ripgrep-command
-  '("rg --null --line-buffered --color=ansi --max-columns=1000"
-    "--smart-case --no-heading --line-number . -e"
-    (consult-regexp arg) opts)
-  "Command line arguments for ripgrep, see `consult-ripgrep'.
+  "rg --null --line-buffered --color=ansi --max-columns=1000\
+   --smart-case --no-heading --line-number . -e ARG OPTS"
+  "Command line string for ripgrep, see `consult-ripgrep'.
 
-The command line arguments must be specified as a list of strings and
-expressions. The expressions which must evaluate to a string or a list of
-strings. Expressions are evaluated in a lexical context, where `arg' is the
-input argument and `opts' is a list of auxillary command line options."
-  :type 'sexp)
+The command string must have a specific format, including ARG and OPTS
+substrings. ARG is replaced by the filter string and OPTS by the auxillary
+command options."
+  :type 'string)
 
 (defcustom consult-find-command
-  '("find . -not ( -wholename */.* -prune ) -ipath"
-    (string-join `("" ,@(split-string arg nil t) "") "*") opts)
-  "Command line arguments for find, see `consult-find'.
-See `consult-ripgrep-command' for details on the configuration."
-  :type 'sexp)
+  "find . -not ( -wholename */.* -prune ) -ipath *ARG* OPTS"
+  "Command line string for find, see `consult-find'.
+
+The command string must have a specific format, including ARG and OPTS
+substrings. ARG is replaced by the filter string and OPTS by the auxillary
+command options. By default the ARG is wrapped in wildcards."
+  :type 'string)
 
 (defcustom consult-locate-command
-  '("locate --ignore-case --existing --regexp"
-    (consult-regexp arg) opts)
-  "Command line arguments for locate, see `consult-locate'.
-See `consult-ripgrep-command' for details on the configuration."
-  :type 'sexp)
+  "locate --ignore-case --existing --regexp ARG OPTS"
+  "Command line string for locate, see `consult-locate'.
+
+The command string must have a specific format, including ARG and OPTS
+substrings. ARG is replaced by the filter string and OPTS by the auxillary
+command options."
+  :type 'string)
 
 (defcustom consult-man-command
-  '("man -k" arg opts)
-  "Command line arguments for man, see `consult-man'.
-See `consult-ripgrep-command' for details on the configuration."
-  :type 'sexp)
+  "man -k ARG OPTS"
+  "Command line string for man, see `consult-man'.
 
-(defcustom consult-regexp-function
-  #'consult-spaced-regexp
-  "Function which transforms a string to a regular expression.
-By default, spaces in the input string are replaced by `.*'. In order to
-disable the regexp transformation, use the `identity' function."
-  :type '(choice (const :tag "Space separated" consult-spaced-regexp)
-                 (const :tag "No transformation" identity)
-                 (function :tag "Custom function")))
+The command string must have a specific format, including ARG and OPTS
+substrings. ARG is replaced by the filter string and OPTS by the auxillary
+command options."
+  :type 'string)
 
 (defcustom consult-preview-key 'any
   "Preview trigger keys, can be nil, 'any, a single key or a list of keys."
@@ -534,14 +534,6 @@ ARGS is a list of commands or sources followed by the list of keyword-value pair
     (macroexp-progn setter)))
 
 ;;;; Helper functions and macros
-
-(defun consult-spaced-regexp (str)
-  "Convert string STR to a regular expression, replace spaces by `.*'."
-  (string-join (split-string str nil t) ".*"))
-
-(defun consult-regexp (str)
-  "Convert string STR to a regular expression, call `consult-regexp-function'."
-  (funcall consult-regexp-function str))
 
 (defmacro consult--keep! (list form)
   "Evaluate FORM for every element of LIST and keep the non-nil results."
@@ -1074,7 +1066,8 @@ FACE is the cursor face."
   "Normalize PREVIEW-KEY, return alist of keys and debounce times."
   (let ((keys)
         (debounce 0))
-    (setq preview-key (consult--to-list preview-key))
+    (unless (listp preview-key)
+      (setq preview-key (list preview-key)))
     (while preview-key
       (if (eq (car preview-key) :debounce)
           (setq debounce (cadr preview-key)
@@ -1602,20 +1595,9 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
   "Filter candidates of ASYNC by FUN."
   (consult--async-transform async seq-filter fun))
 
-(defun consult--to-list (list)
-  "Ensure that LIST is a list."
-  (if (listp list) list (list list)))
-
 (defun consult--command-args (cmd)
   "Split command arguments and append to CMD."
-  (when (stringp cmd)
-    (message "`%s' used the deprecated command configuration %S" this-command cmd)
-    (setq cmd (list cmd)))
-  (setq cmd (seq-mapcat (lambda (x)
-                          (if (stringp x)
-                              (split-string-and-unquote x)
-                            (list x)))
-                        cmd))
+  (setq cmd (split-string-and-unquote cmd))
   (lambda (input)
     (save-match-data
       (let ((opts))
@@ -1626,14 +1608,11 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
                 input (substring input 0 (match-beginning 0))
                 opts (ignore-errors (split-string-and-unquote opts))))
         (unless (string-blank-p input)
-          (seq-mapcat
-           (lambda (x)
-             (cond
-              ;; TODO OPTS and ARG are deprecated
-              ((equal x "OPTS") opts)
-              ((stringp x) (list (replace-regexp-in-string "ARG" input x 'fixedcase 'literal)))
-              (t (consult--to-list (eval x `((opts . ,opts) (arg . ,input)))))))
-           cmd))))))
+          (mapcan (lambda (x)
+                    (if (string= x "OPTS")
+                        opts
+                      (list (replace-regexp-in-string "ARG" input x 'fixedcase 'literal))))
+                  cmd))))))
 
 (defmacro consult--async-command (cmd &rest args)
   "Asynchronous CMD pipeline.
@@ -1681,9 +1660,13 @@ ASYNC must be non-nil for async completion functions."
   (delete-dups
    (append
     ;; the defaults are at the beginning of the future history
-    (consult--to-list minibuffer-default)
+    (if (listp minibuffer-default)
+        minibuffer-default
+      (list minibuffer-default))
     ;; then our custom items
-    (remove "" (remq nil (consult--to-list items)))
+    (remove "" (remq nil (if (listp items)
+                             items
+                           (list items))))
     ;; Add all the completions for non-async commands. For async commands this feature
     ;; is not useful, since if one selects a completion candidate, the async search is
     ;; restarted using that candidate string. This usually does not yield a desired
@@ -1932,7 +1915,7 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
                        (let ((key (if (plist-member src :preview-key)
                                       (plist-get src :preview-key)
                                     consult-preview-key)))
-                         (consult--to-list key)))
+                         (if (listp key) key (list key))))
                      sources))))
 
 (defun consult--multi-lookup (sources _ candidates cand)
@@ -3655,7 +3638,7 @@ AS is a conversion function."
       (when sort
         (setq buffers (funcall (intern (format "consult--buffer-sort-%s" sort)) buffers)))
       (when (or filter mode as (stringp root))
-        (let ((mode (consult--to-list mode))
+        (let ((mode (if (listp mode) mode (list mode)))
               (exclude-re (consult--regexp-filter exclude))
               (include-re (consult--regexp-filter include)))
           (consult--keep! buffers
