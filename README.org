@@ -250,22 +250,19 @@ their descriptions.
    search gets started. Consult splits the input string into two parts, if the
    first character is a punctuation character, like =#=. For example
    =#grep-regexp#filter-string=, is split at the second =#=. The string =grep-regexp=
-   is passed to Grep, the =filter-string= is passed to the /fast/ Emacs filtering to
-   further narrow down the list of matches. This is particularly useful if you
-   are using an advanced completion style like orderless. =consult-grep= supports
-   preview. If the =consult-project-root-function= is [[#use-package-example][configured]] and returns
-   non-nil, =consult-grep= searches the current project directory. Otherwise the
-   =default-directory= is searched. If =consult-grep= is invoked with prefix
-   argument =C-u M-s g=, you can specify the directory manually.
+   is passed to Grep. By default, spaces are replaced by ~.*~. The =filter-string=
+   is passed to the /fast/ Emacs filtering to further narrow down the list of
+   matches. This is particularly useful if you are using an advanced completion
+   style like orderless. =consult-grep= supports preview. If the
+   =consult-project-root-function= is [[#use-package-example][configured]] and returns non-nil, =consult-grep=
+   searches the current project directory. Otherwise the =default-directory= is
+   searched. If =consult-grep= is invoked with prefix argument =C-u M-s g=, you can
+   specify the directory manually.
  - =consult-find=, =consult-locate=: Find file by
    matching the path against a regexp. Like for =consult-grep,= either the project
    root or the current directory is the root directory for the search. The input
    string is treated similarly to =consult-grep=, where the first part is passed
-   to find, and the second part is used for Emacs filtering. Note that the
-   standard =find= command uses wildcards in contrast to the popular =fd=, which
-   uses regular expressions. In case you want to use =fd=, you can either change
-   the =consult-find-command= configuration variable or define a small command as
-   described in the [[https://github.com/minad/consult/wiki][Consult wiki]].
+   to find, and the second part is used for Emacs filtering.
 
 ** Compilation
    :properties:
@@ -534,6 +531,9 @@ their descriptions.
  Examples:
 
  - =#defun=: Search for "defun" using grep.
+ - =#consult embark=: Search for "consult.*embark" using grep.
+   If the grep program has support for Perl-compatible regular expressions
+   (PCRE), the search includes both "consult.*embark" and "embark.*consult".
  - =#defun#consult=: Search for "defun" using grep, filter with the word
    "consult".
  - =/defun/consult=: It is also possible to use other punctuation
