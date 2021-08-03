@@ -272,7 +272,8 @@ See `consult-ripgrep-command' for details on the configuration."
 (defcustom consult-regexp-function
   #'consult-spaced-regexp
   "Function which transforms a string to a regular expression.
-The default value "
+By default, spaces in the input string are replaced by `.*'. In order to
+disable the regexp transformation, use the `identity' function."
   :type '(choice (const :tag "Space separated" consult-spaced-regexp)
                  (const :tag "No transformation" identity)
                  (function :tag "Custom function")))
