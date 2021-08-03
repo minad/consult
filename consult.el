@@ -218,65 +218,56 @@ See `consult--multi' for a description of the source values."
   :type '(repeat (choice symbol regexp)))
 
 (defcustom consult-git-grep-command
-  "git --no-pager grep --null --color=always --extended-regexp\
-   --line-number -I -e ARG OPTS"
-  "Command line string for git-grep, see `consult-git-grep'.
-
-The command string must have a specific format, including ARG and OPTS
-substrings. ARG is replaced by the filter string and OPTS by the auxillary
-command options."
-  :type 'string)
+  '("git --no-pager grep --null --color=always --extended-regexp"
+    "--line-number -I -e"
+    (string-join (split-string arg nil t) ".*") opts)
+  "Command line arguments for git-grep, see `consult-git-grep'.
+See `consult-ripgrep-command' for details on the configuration."
+  :type 'sexp)
 
 (defcustom consult-grep-command
-  "grep --null --line-buffered --color=always --extended-regexp\
-   --exclude-dir=.git --line-number -I -r . -e ARG OPTS"
-  "Command line string for grep, see `consult-grep'.
-
-The command string must have a specific format, including ARG and OPTS
-substrings. ARG is replaced by the filter string and OPTS by the auxillary
-command options."
-  :type 'string)
+  '("grep --null --line-buffered --color=always --extended-regexp"
+    "--exclude-dir=.git --line-number -I -r . -e"
+    (string-join (split-string arg nil t) ".*") opts)
+  "Command line arguments for grep, see `consult-grep'.
+See `consult-ripgrep-command' for details on the configuration."
+  :type 'sexp)
 
 (defcustom consult-grep-max-columns 300
   "Maximal number of columns of grep output."
   :type 'integer)
 
 (defcustom consult-ripgrep-command
-  "rg --null --line-buffered --color=ansi --max-columns=1000\
-   --smart-case --no-heading --line-number . -e ARG OPTS"
-  "Command line string for ripgrep, see `consult-ripgrep'.
+  '("rg --null --line-buffered --color=ansi --max-columns=1000"
+    "--smart-case --no-heading --line-number . -e"
+    (string-join (split-string arg nil t) ".*") opts)
+  "Command line arguments for ripgrep, see `consult-ripgrep'.
 
-The command string must have a specific format, including ARG and OPTS
-substrings. ARG is replaced by the filter string and OPTS by the auxillary
-command options."
-  :type 'string)
+The command line arguments must be specified as a list of strings and
+expressions. The expressions which must evaluate to a string or a list of
+strings. Expressions are evaluated in a lexical context, where `arg' is the
+input argument and `opts' is a list of auxillary command line options."
+  :type 'sexp)
 
 (defcustom consult-find-command
-  "find . -not ( -wholename */.* -prune ) -ipath *ARG* OPTS"
-  "Command line string for find, see `consult-find'.
-
-The command string must have a specific format, including ARG and OPTS
-substrings. ARG is replaced by the filter string and OPTS by the auxillary
-command options. By default the ARG is wrapped in wildcards."
-  :type 'string)
+  '("find . -not ( -wholename */.* -prune ) -ipath"
+    (string-join `("" ,@(split-string arg nil t) "") "*") opts)
+  "Command line arguments for find, see `consult-find'.
+See `consult-ripgrep-command' for details on the configuration."
+  :type 'sexp)
 
 (defcustom consult-locate-command
-  "locate --ignore-case --existing --regexp ARG OPTS"
-  "Command line string for locate, see `consult-locate'.
-
-The command string must have a specific format, including ARG and OPTS
-substrings. ARG is replaced by the filter string and OPTS by the auxillary
-command options."
-  :type 'string)
+  '("locate --ignore-case --existing --regexp"
+    (string-join (split-string arg nil t) ".*") opts)
+  "Command line arguments for locate, see `consult-locate'.
+See `consult-ripgrep-command' for details on the configuration."
+  :type 'sexp)
 
 (defcustom consult-man-command
-  "man -k ARG OPTS"
-  "Command line string for man, see `consult-man'.
-
-The command string must have a specific format, including ARG and OPTS
-substrings. ARG is replaced by the filter string and OPTS by the auxillary
-command options."
-  :type 'string)
+  '("man -k" arg opts)
+  "Command line arguments for man, see `consult-man'.
+See `consult-ripgrep-command' for details on the configuration."
+  :type 'sexp)
 
 (defcustom consult-preview-key 'any
   "Preview trigger keys, can be nil, 'any, a single key or a list of keys."
@@ -1600,7 +1591,14 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
 
 (defun consult--command-args (cmd)
   "Split command arguments and append to CMD."
-  (setq cmd (split-string-and-unquote cmd))
+  (when (stringp cmd)
+    (message "`%s' used the deprecated command configuration %S" this-command cmd)
+    (setq cmd (list cmd)))
+  (setq cmd (seq-mapcat (lambda (x)
+                          (if (stringp x)
+                              (split-string-and-unquote x)
+                            (list x)))
+                        cmd))
   (lambda (input)
     (save-match-data
       (let ((opts))
@@ -1611,11 +1609,14 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
                 input (substring input 0 (match-beginning 0))
                 opts (ignore-errors (split-string-and-unquote opts))))
         (unless (string-blank-p input)
-          (mapcan (lambda (x)
-                    (if (string= x "OPTS")
-                        opts
-                      (list (replace-regexp-in-string "ARG" input x 'fixedcase 'literal))))
-                  cmd))))))
+          (seq-mapcat
+           (lambda (x)
+             (cond
+              ;; TODO OPTS and ARG are deprecated
+              ((equal x "OPTS") opts)
+              ((stringp x) (list (replace-regexp-in-string "ARG" input x 'fixedcase 'literal)))
+              (t (consult--to-list (eval x `((opts . ,opts) (arg . ,input)))))))
+           cmd))))))
 
 (defmacro consult--async-command (cmd &rest args)
   "Asynchronous CMD pipeline.
