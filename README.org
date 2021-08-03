@@ -935,6 +935,7 @@ configuration examples.
  | consult-preview-max-size         | 10485760         | Files larger than this size are not previewed         |
  | consult-preview-raw-size         | 102400           | Files larger than this size are previewed in raw form |
  | consult-project-root-function    | nil              | Function which returns current project root           |
+ | consult-regexp-function          | ...              | Convert string to regular expression                  |
  | consult-register-narrow          | ...              | Narrowing configuration for =consult-register=          |
  | consult-ripgrep-command          | "rg ..."         | Command line arguments for ripgrep                    |
  | consult-themes                   | nil              | List of themes to be presented for selection          |
