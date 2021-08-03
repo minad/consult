@@ -221,47 +221,100 @@ See `consult--multi' for a description of the source values."
   "Maximal number of columns of grep output."
   :type 'integer)
 
-(defcustom consult-grep-command
-  "grep --null --line-buffered --color=always --extended-regexp\
-   --exclude-dir=.git --line-number -I -r . -e ARG OPTS"
-  "Command line string for grep, see `consult-grep'.
+(defconst consult--grep-match-regexp
+  "\\`\\(?:./\\)?\\([^\n:]+\\):\\([0-9]+\\):"
+  "Regexp used to match file and line of grep output.")
 
-The command string must have a specific format, including ARG and OPTS
-substrings. ARG is replaced by the filter string and OPTS by the auxillary
-command options."
-  :type 'string)
+(defcustom consult-grep-command
+  (list :args "grep --line-buffered --color=never --ignore-case\
+               --exclude-dir=.git --line-number -I -r ."
+        :command (let (type)
+                   (lambda (config input)
+                     (setq type (or type (consult--grep-supported-regexp "grep"))
+                           input (consult--command-split input))
+                     (append (split-string-and-unquote (plist-get config :args))
+                             (list (if (eq type 'lookahead) "--perl-regexp" "--extended-regexp")
+                                   "-e" (consult--join-regexp (car input) type))
+                             (cdr input))))
+        :match consult--grep-match-regexp
+        :highlight #'consult--command-highlight)
+  "Command configuration for grep, see `consult-grep'.
+
+The :command string must have a specific format, it can contain keyword
+placeholders. Each placeholder must be defined in the list as a function taking
+the input string as argument. The function can return a string or a list of
+strings. Furthermore a :hightlight function can be specified which transforms
+the input to a regexp or a list of regexps."
+  :type 'plist)
 
 (defcustom consult-git-grep-command
-  "git --no-pager grep --null --color=always --extended-regexp\
-   --line-number -I -e ARG OPTS"
-  "Command line string for git-grep, see `consult-git-grep'.
+  (list :args "git --no-pager grep --color=never --ignore-case\
+               --extended-regexp --line-number -I"
+        :command (lambda (config input)
+                   (setq input (consult--command-split input))
+                   (append (split-string-and-unquote (plist-get config :args))
+                           (cdr (mapcan (lambda (x) (list "--and" "-e" x))
+                                        (consult--compile-regexp (car input) 'extended)))
+                           (cdr input)))
+        :match consult--grep-match-regexp
+        :highlight #'consult--command-highlight)
+  "Command configuration for git-grep, see `consult-git-grep'.
 See `consult-grep-command' for more information."
-  :type 'string)
+  :type 'plist)
 
 (defcustom consult-ripgrep-command
-  "rg --null --line-buffered --color=ansi --max-columns=1000\
-   --smart-case --no-heading --line-number . -e ARG OPTS"
-  "Command line string for ripgrep, see `consult-ripgrep'.
+  (list :args "rg --line-buffered --color=never --max-columns=1000 --path-separator /\
+               --smart-case --no-heading --line-number ."
+        :command (let (type)
+                   (lambda (config input)
+                     (setq type (or type (consult--grep-supported-regexp "rg"))
+                           input (consult--command-split input))
+                     (append (split-string-and-unquote (plist-get config :args))
+                             (and (eq type 'lookahead) '("-P"))
+                             (list  "-e" (consult--join-regexp (car input) type))
+                             (cdr input))))
+        :match consult--grep-match-regexp
+        :highlight #'consult--command-highlight)
+  "Command configuration for ripgrep, see `consult-ripgrep'.
 See `consult-grep-command' for more information."
-  :type 'string)
+  :type 'plist)
 
 (defcustom consult-find-command
-  "find . -not ( -wholename */.* -prune ) -ipath *ARG* OPTS"
-  "Command line string for find, see `consult-find'.
+  (list :args "find . -not ( -wholename */.* -prune )"
+        :command (let (type)
+                   (lambda (config input)
+                     (setq type (or type (consult--find-supported-regexp))
+                           input (consult--command-split input))
+                     (append (split-string-and-unquote (plist-get config :args))
+                             (cdr (mapcan (lambda (x) `("-and" "-iregex" ,(format ".*%s.*" x)))
+                                          (consult--compile-regexp (car input) type)))
+                             (cdr input))))
+        :highlight #'consult--command-highlight)
+  "Command configuration for find, see `consult-find'.
 See `consult-grep-command' for more information."
-  :type 'string)
+  :type 'plist)
 
 (defcustom consult-locate-command
-  "locate --ignore-case --existing --regexp ARG OPTS"
-  "Command line string for locate, see `consult-locate'.
+  (list :args "locate --ignore-case --existing --regexp"
+        :command (lambda (config input)
+                   (setq input (consult--command-split input))
+                   (append (split-string-and-unquote (plist-get config :args))
+                           (list (consult--join-regexp (car input) 'basic))
+                           (cdr input)))
+        :highlight #'consult--command-highlight)
+  "Command configuration for locate, see `consult-locate'.
 See `consult-grep-command' for more information."
-  :type 'string)
+  :type 'plist)
 
 (defcustom consult-man-command
-  "man -k ARG OPTS"
-  "Command line string for man, see `consult-man'.
+  (list :args "man -k"
+        :command (lambda (config input)
+                   (append (split-string-and-unquote (plist-get config :args))
+                           (consult--command-split input)))
+        :highlight #'consult--command-highlight)
+  "Command configuration for man, see `consult-man'.
 See `consult-grep-command' for more information."
-  :type 'string)
+  :type 'plist)
 
 (defcustom consult-preview-key 'any
   "Preview trigger keys, can be nil, 'any, a single key or a list of keys."
@@ -476,18 +529,6 @@ Size of private unicode plane b.")
   " *consult-async*"
   "Buffer for async logging output used by `consult--async-process'.")
 
-(defconst consult--grep-regexp
-  (let ((esc "\\(?:\e\\[[0-9;]*[mK]\\)*")
-        (name "\\([^\0\n\e]+\\)")
-        (line "\\([0-9]+\\)")
-        (reset "\\(?:\e\\[[mK]\\)*"))
-    (concat esc name esc "\0" esc line esc "[:\0]" reset))
-  "Regexp used to match file and line of grep output.")
-
-(defconst consult--grep-match-regexp
-  "\e\\[[0-9;]+m\\(?:\e\\[K\\)?\\([^\e]*\\)\e\\[[0-9;]*m\\(?:\e\\[K\\)?"
-  "Regexp used to find matches in grep output.")
-
 (defvar-local consult--focus-lines-overlays nil
   "Overlays used by `consult-focus-lines'.")
 
@@ -519,6 +560,82 @@ ARGS is a list of commands or sources followed by the list of keyword-value pair
     (macroexp-progn setter)))
 
 ;;;; Helper functions and macros
+
+(defun consult--command-split (str)
+  "Return command argument and options list given input STR."
+  (save-match-data
+    (let ((opts (when (string-match " +--\\( +\\|\\'\\)" str)
+                  (prog1 (substring str (match-end 0))
+                    (setq str (substring str 0 (match-end 0)))))))
+      (unless (string-blank-p str)
+        (cons str (and opts (split-string opts nil 'omit-nulls)))))))
+
+(defun consult--command-highlight (_config input)
+  "Return list of regular expressions given command INPUT."
+  (consult--compile-regexp (or (car (consult--command-split input)) "") 'emacs))
+
+(defun consult--find-supported-regexp ()
+  "Return regexp type supported by find command."
+  (if (string-match-p "GNU findutils" (shell-command-to-string "find --version"))
+      'emacs
+    'basic))
+
+(defun consult--grep-supported-regexp (cmd)
+  "Return regexp type supported by grep CMD."
+  (with-temp-buffer
+    (insert "^(?=.*b)(?=.*a)")
+    (if (eq 0 (call-process-region (point-min) (point-max)
+                                   cmd nil nil nil "-P" "^(?=.*b)(?=.*a)"))
+        'lookahead
+      'extended)))
+
+(defun consult--emacs-to-extended-regexp (regexp)
+  "Convert Emacs REGEXP to extended regexp syntax (ERE).
+This function only changes the escaping of parentheses, braces and pipes."
+  (replace-regexp-in-string
+   "\\\\\\\\\\|\\\\?[(){}|]"
+   (lambda (x)
+     (cond
+      ((equal x "\\\\") x)
+      ((= 1 (length x)) (concat "\\\\" x))
+      (t (substring x 1))))
+   regexp))
+
+(defun consult--compile-regexp (str type)
+  "Compile STR to a list of regexps of TYPE."
+  (setq str (split-string str nil 'omit-nulls))
+  (pcase-exhaustive type
+    ((or 'basic 'emacs) str)
+    ((or 'lookahead 'extended)
+     (mapcar #'consult--emacs-to-extended-regexp str))))
+
+(defun consult--join-regexp (str type)
+  "Compile STR to a regexp joined from multiple regexps of TYPE."
+  (setq str (consult--compile-regexp str type))
+  (pcase-exhaustive type
+    ((or 'basic 'emacs 'extended) (string-join str ".*"))
+    ('lookahead (concat "^" (mapconcat
+                             (lambda (x) (format "(?=.*%s)" x))
+                             str "")))))
+
+(defun consult--valid-regexp-p (re)
+  "Return t if regexp RE is valid."
+  (condition-case nil
+      (progn (string-match-p re "") t)
+    (invalid-regexp nil)))
+
+(defun consult--highlight-regexps (regexps str start)
+  "Highlight REGEXPS in STR from START."
+  (save-match-data
+    (dolist (re regexps)
+      (when (string-match re str start)
+        (put-text-property (match-beginning 0) (match-end 0) 'face 'consult-preview-match str)))))
+
+(defun consult--regexp-filter (regexps)
+  "Create filter regexp from REGEXPS."
+  (if (stringp regexps)
+      regexps
+    (mapconcat (lambda (x) (concat "\\(?:" x "\\)")) regexps "\\|")))
 
 (defmacro consult--keep! (list form)
   "Evaluate FORM for every element of LIST and keep the non-nil results."
@@ -659,12 +776,6 @@ The line beginning/ending BEG/END is bound in BODY."
                          `(unless ,(car x)
                             (kill-local-variable ',(cdr x))))
                        local)))))))
-
-(defun consult--regexp-filter (regexps)
-  "Create filter regexp from REGEXPS."
-  (if (stringp regexps)
-      regexps
-    (mapconcat (lambda (x) (concat "\\(?:" x "\\)")) regexps "\\|")))
 
 (defun consult--directory-prompt-1 (prompt dir)
   "Format PROMPT, expand directory DIR and return them as a pair."
@@ -1500,6 +1611,25 @@ PROPS are optional properties passed to `make-process'."
          (funcall async 'setup))
         (_ (funcall async action))))))
 
+(defun consult--async-highlight (async config)
+  "Return ASYNC function which highlightes the candidates.
+CONFIG is the command configuration."
+  (if-let (fun (plist-get config :highlight))
+      (let ((regexps))
+        (lambda (action)
+          (cond
+           ((stringp action)
+            (setq regexps (seq-filter #'consult--valid-regexp-p
+                                      (consult--to-list
+                                       (funcall fun config action))))
+            (funcall async action))
+           ((and (consp action) regexps)
+            (dolist (str action)
+              (consult--highlight-regexps regexps str 0))
+            (funcall async action))
+           (t (funcall async action)))))
+    async))
+
 (defun consult--async-throttle (async &optional throttle debounce)
   "Create async function from ASYNC which throttles input.
 
@@ -1584,35 +1714,23 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
   "Ensure that LIST is a list."
   (if (listp list) list (list list)))
 
-(defun consult--command-args (cmd)
-  "Split command arguments and append to CMD."
-  (setq cmd (split-string-and-unquote cmd))
-  (lambda (input)
-    (save-match-data
-      (let ((opts))
-        (when (string-match " +--\\( +\\|\\'\\)" input)
-          ;; split-string-and-unquote modifies the match data
-          ;; and fails if the quotes are invalid. Ignore it.
-          (setq opts (substring input (match-end 0))
-                input (substring input 0 (match-beginning 0))
-                opts (ignore-errors (split-string-and-unquote opts))))
-        (unless (string-blank-p input)
-          (mapcan (lambda (x)
-                    (if (string= x "OPTS")
-                        opts
-                      (list (replace-regexp-in-string "ARG" input x 'fixedcase 'literal))))
-                  cmd))))))
+(defun consult--command-argument-builder (config)
+  "Build command line arguments given command CONFIG."
+  ;; TODO remove the deprecation error
+  (when (stringp config)
+    (error "`%s' uses a deprecated command configuration %S" this-command config))
+  (lambda (input) (funcall (plist-get config :command) config input)))
 
-(defmacro consult--async-command (cmd &rest args)
-  "Asynchronous CMD pipeline.
-
+(defmacro consult--async-command (config &rest args)
+  "Asynchronous command pipeline.
+CONFIG is the command configuration.
 ARGS is a list of `make-process' properties and transforms."
   (declare (indent 1))
   `(thread-first (consult--async-sink)
      (consult--async-refresh-timer)
      ,@(seq-take-while (lambda (x) (not (keywordp x))) args)
      (consult--async-process
-      (consult--command-args ,cmd)
+      (consult--command-argument-builder ,config)
       ,@(seq-drop-while (lambda (x) (not (keywordp x))) args))
      (consult--async-throttle)
      (consult--async-split)))
@@ -3888,44 +4006,44 @@ Macros containing mouse clicks are omitted."
 
 ;;;;; Command: consult-grep
 
-(defun consult--grep-matches (lines)
-  "Find grep match for REGEXP in LINES."
-  (save-match-data
-    (let ((candidates)
-          (paths (make-hash-table :test #'equal)))
-      (dolist (str lines (nreverse candidates))
-        (when (string-match consult--grep-regexp str)
-          (let* ((raw-path (match-string 1 str))
-                 (line (match-string 2 str))
-                 (start (match-end 0))
-                 (path (or (gethash raw-path paths)
-                           (let* ((expanded (expand-file-name raw-path))
-                                  (file (string-remove-prefix default-directory expanded)))
-                             (puthash raw-path (cons expanded file) paths))))
-                 (file (cdr path))
-                 (file-len (length file))
-                 (max-len (+ start consult-grep-max-columns))
-                 (matches)
-                 (col) (pos))
-            (when (> (length str) max-len)
-              (setq str (substring str start max-len)
-                    start 0))
-            (setq pos start)
-            (while (string-match consult--grep-match-regexp str pos)
-              (unless col (setq col (- (match-beginning 0) start)))
-              (push (substring str pos (match-beginning 0)) matches)
-              (push (match-string 1 str) matches)
-              (put-text-property 0 (length (car matches)) 'face 'consult-preview-match (car matches))
-              (setq pos (match-end 0)))
-            (push (substring str pos) matches)
-            ;; XXX consult--format-location inlined here for performance and to reduce allocations
-            (setq str (apply #'concat file ":" line ":" (nreverse matches)))
-            (add-text-properties 0 file-len `(face consult-file consult--grep-file ,file) str)
-            (put-text-property (1+ file-len) (+ 1 file-len (length line)) 'face 'consult-line-number str)
-            (push `(,str ,(car path) ,(string-to-number line) . ,(or col 0)) candidates)))))))
+(defun consult--grep-format (async config)
+  "Return ASYNC function highlighting grep match results.
+CONFIG is the command configuration."
+  (let ((regexps))
+    (lambda (action)
+      (cond
+       ((stringp action)
+        (when-let (fun (plist-get config :highlight))
+          (setq regexps (seq-filter #'consult--valid-regexp-p
+                                    (consult--to-list
+                                     (funcall fun config action)))))
+        (funcall async action))
+       ((consp action)
+        (let ((regexp (plist-get config :match)) (result))
+          (save-match-data
+            (dolist (str action)
+              (when (string-match regexp str)
+                (let* ((file (match-string 1 str))
+                       (file-beg (match-beginning 1))
+                       (file-len (length file))
+                       (line-len (- (match-end 2) (match-beginning 2)))
+                       (max-len (+ (match-end 0) consult-grep-max-columns)))
+                  (cond
+                   ((> (length str) max-len)
+                    (setq str (substring str file-beg max-len)))
+                   ((> file-beg 0)
+                    (setq str (substring str file-beg))))
+                  (consult--highlight-regexps regexps str (- (match-end 0) file-beg))
+                  ;; Store file name in order to avoid allocations in `consult--grep-group'
+                  (add-text-properties 0 file-len `(face consult-file consult--grep-file ,file) str)
+                  (put-text-property (1+ file-len) (+ 1 file-len line-len) 'face 'consult-line-number str)
+                  (push str result)))))
+          (funcall async result)))
+       (t (funcall async action))))))
 
-(defun consult--grep-state ()
-  "Grep preview state function."
+(defun consult--grep-state (config)
+  "Grep preview state function.
+CONFIG is the command configuration."
   (let ((open (consult--temporary-files))
         (jump (consult--jump-state)))
     (lambda (cand restore)
@@ -3933,9 +4051,13 @@ Macros containing mouse clicks are omitted."
         (funcall open))
       (funcall
        jump
-       (consult--position-marker
-        (and cand (funcall (if restore #'find-file open) (car cand)))
-        (cadr cand) (cddr cand))
+       (save-match-data
+         (when (and cand (string-match (plist-get config :match) cand))
+           (let ((file (match-string 1 cand))
+                 (line (string-to-number (match-string 2 cand)))
+                 (col (next-single-property-change (match-end 0) 'face cand)))
+             (setq col (if col (- col (match-end 0)) 0))
+             (consult--position-marker (funcall (if restore #'find-file open) file) line col))))
        restore))))
 
 (defun consult--grep-group (cand transform)
@@ -3944,21 +4066,22 @@ Macros containing mouse clicks are omitted."
       (substring cand (1+ (length (get-text-property 0 'consult--grep-file cand))))
     (get-text-property 0 'consult--grep-file cand)))
 
-(defun consult--grep (prompt cmd dir initial)
-  "Run grep CMD in DIR with INITIAL input.
+(defun consult--grep (prompt config dir initial)
+  "Run grep in DIR.
 
+CONFIG is the command configuration.
 PROMPT is the prompt string.
-The symbol at point is added to the future history."
+INITIAL is inital input."
   (let* ((prompt-dir (consult--directory-prompt prompt dir))
          (default-directory (cdr prompt-dir))
          (read-process-output-max (max read-process-output-max (* 1024 1024))))
     (consult--read
-     (consult--async-command cmd
-       (consult--async-transform consult--grep-matches)
+     (consult--async-command config
+       (consult--grep-format config)
        :file-handler t) ;; allow tramp
      :prompt (car prompt-dir)
-     :lookup #'consult--lookup-cdr
-     :state (consult--grep-state)
+     :lookup #'consult--lookup-member
+     :state (consult--grep-state config)
      :initial (consult--async-split-initial initial)
      :add-history
      (when-let (thing (thing-at-point 'symbol))
@@ -4009,16 +4132,18 @@ See `consult-grep' for more details."
 
 ;;;;; Command: consult-find
 
-(defun consult--find (prompt cmd initial)
-  "Run find CMD in current directory with INITIAL input.
+(defun consult--find (prompt config initial)
+  "Run find in current directory.
 
 The function returns the selected file.
 The filename at point is added to the future history.
 
+CONFIG is the command configuration.
 PROMPT is the prompt.
-CMD is the find argument string."
+INITIAL is inital input."
   (consult--read
-   (consult--async-command cmd
+   (consult--async-command config
+     (consult--async-highlight config)
      (consult--async-map (lambda (x) (string-remove-prefix "./" x)))
      :file-handler t) ;; allow tramp
    :prompt prompt
@@ -4063,10 +4188,9 @@ See `consult-grep' for more details regarding the asynchronous search."
                 (name (match-string 2 str))
                 (section (match-string 3 str))
                 (desc (match-string 4 str)))
+            (add-face-text-property 0 (length names) 'consult-file nil names)
             (push (cons
-                   (format "%s - %s"
-                           (propertize names 'face 'consult-file)
-                           desc)
+                   (format "%s - %s" names desc)
                    (concat section " " name))
                   candidates)))))
     (nreverse candidates)))
@@ -4080,7 +4204,8 @@ See `consult-grep' for more details regarding the asynchronous search."
   (interactive)
   (man (consult--read
         (consult--async-command consult-man-command
-          (consult--async-transform consult--man-format))
+          (consult--async-transform consult--man-format)
+          (consult--async-highlight consult-man-command))
         :prompt "Manual entry: "
         :require-match t
         :lookup #'consult--lookup-cdr
