@@ -220,7 +220,7 @@ See `consult--multi' for a description of the source values."
 (defcustom consult-git-grep-command
   '("git --no-pager grep --null --color=always --extended-regexp"
     "--line-number -I -e"
-    (string-join (split-string arg nil t) ".*") opts)
+    (consult-regexp arg) opts)
   "Command line arguments for git-grep, see `consult-git-grep'.
 See `consult-ripgrep-command' for details on the configuration."
   :type 'sexp)
@@ -228,7 +228,7 @@ See `consult-ripgrep-command' for details on the configuration."
 (defcustom consult-grep-command
   '("grep --null --line-buffered --color=always --extended-regexp"
     "--exclude-dir=.git --line-number -I -r . -e"
-    (string-join (split-string arg nil t) ".*") opts)
+    (consult-regexp arg) opts)
   "Command line arguments for grep, see `consult-grep'.
 See `consult-ripgrep-command' for details on the configuration."
   :type 'sexp)
@@ -240,7 +240,7 @@ See `consult-ripgrep-command' for details on the configuration."
 (defcustom consult-ripgrep-command
   '("rg --null --line-buffered --color=ansi --max-columns=1000"
     "--smart-case --no-heading --line-number . -e"
-    (string-join (split-string arg nil t) ".*") opts)
+    (consult-regexp arg) opts)
   "Command line arguments for ripgrep, see `consult-ripgrep'.
 
 The command line arguments must be specified as a list of strings and
@@ -258,7 +258,7 @@ See `consult-ripgrep-command' for details on the configuration."
 
 (defcustom consult-locate-command
   '("locate --ignore-case --existing --regexp"
-    (string-join (split-string arg nil t) ".*") opts)
+    (consult-regexp arg) opts)
   "Command line arguments for locate, see `consult-locate'.
 See `consult-ripgrep-command' for details on the configuration."
   :type 'sexp)
@@ -268,6 +268,14 @@ See `consult-ripgrep-command' for details on the configuration."
   "Command line arguments for man, see `consult-man'.
 See `consult-ripgrep-command' for details on the configuration."
   :type 'sexp)
+
+(defcustom consult-regexp-function
+  #'consult-spaced-regexp
+  "Function which transforms a string to a regular expression.
+The default value "
+  :type '(choice (const :tag "Space separated" consult-spaced-regexp)
+                 (const :tag "No transformation" identity)
+                 (function :tag "Custom function")))
 
 (defcustom consult-preview-key 'any
   "Preview trigger keys, can be nil, 'any, a single key or a list of keys."
@@ -525,6 +533,14 @@ ARGS is a list of commands or sources followed by the list of keyword-value pair
     (macroexp-progn setter)))
 
 ;;;; Helper functions and macros
+
+(defun consult-spaced-regexp (str)
+  "Convert string STR to a regular expression, replace spaces by `.*'."
+  (string-join (split-string str nil t) ".*"))
+
+(defun consult-regexp (str)
+  "Convert string STR to a regular expression, call `consult-regexp-function'."
+  (funcall consult-regexp-function str))
 
 (defmacro consult--keep! (list form)
   "Evaluate FORM for every element of LIST and keep the non-nil results."
