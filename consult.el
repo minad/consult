@@ -221,10 +221,7 @@ See `consult--multi' for a description of the source values."
   "git --no-pager grep --null --color=always --extended-regexp\
    --line-number -I -e ARG OPTS"
   "Command line string for git-grep, see `consult-git-grep'.
-
-The command string must have a specific format, including ARG and OPTS
-substrings. ARG is replaced by the filter string and OPTS by the auxillary
-command options."
+See `consult-grep-command' for more information."
   :type 'string)
 
 (defcustom consult-grep-command
@@ -245,37 +242,25 @@ command options."
   "rg --null --line-buffered --color=ansi --max-columns=1000\
    --smart-case --no-heading --line-number . -e ARG OPTS"
   "Command line string for ripgrep, see `consult-ripgrep'.
-
-The command string must have a specific format, including ARG and OPTS
-substrings. ARG is replaced by the filter string and OPTS by the auxillary
-command options."
+See `consult-grep-command' for more information."
   :type 'string)
 
 (defcustom consult-find-command
   "find . -not ( -wholename */.* -prune ) -ipath *ARG* OPTS"
   "Command line string for find, see `consult-find'.
-
-The command string must have a specific format, including ARG and OPTS
-substrings. ARG is replaced by the filter string and OPTS by the auxillary
-command options. By default the ARG is wrapped in wildcards."
+See `consult-grep-command' for more information."
   :type 'string)
 
 (defcustom consult-locate-command
   "locate --ignore-case --existing --regexp ARG OPTS"
   "Command line string for locate, see `consult-locate'.
-
-The command string must have a specific format, including ARG and OPTS
-substrings. ARG is replaced by the filter string and OPTS by the auxillary
-command options."
+See `consult-grep-command' for more information."
   :type 'string)
 
 (defcustom consult-man-command
   "man -k ARG OPTS"
   "Command line string for man, see `consult-man'.
-
-The command string must have a specific format, including ARG and OPTS
-substrings. ARG is replaced by the filter string and OPTS by the auxillary
-command options."
+See `consult-grep-command' for more information."
   :type 'string)
 
 (defcustom consult-preview-key 'any
