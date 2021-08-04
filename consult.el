@@ -217,12 +217,9 @@ See `consult--multi' for a description of the source values."
   "Filter commands for `consult-mode-command'."
   :type '(repeat (choice symbol regexp)))
 
-(defcustom consult-git-grep-command
-  "git --no-pager grep --null --color=always --extended-regexp\
-   --line-number -I -e ARG OPTS"
-  "Command line string for git-grep, see `consult-git-grep'.
-See `consult-grep-command' for more information."
-  :type 'string)
+(defcustom consult-grep-max-columns 300
+  "Maximal number of columns of grep output."
+  :type 'integer)
 
 (defcustom consult-grep-command
   "grep --null --line-buffered --color=always --extended-regexp\
@@ -234,9 +231,12 @@ substrings. ARG is replaced by the filter string and OPTS by the auxillary
 command options."
   :type 'string)
 
-(defcustom consult-grep-max-columns 300
-  "Maximal number of columns of grep output."
-  :type 'integer)
+(defcustom consult-git-grep-command
+  "git --no-pager grep --null --color=always --extended-regexp\
+   --line-number -I -e ARG OPTS"
+  "Command line string for git-grep, see `consult-git-grep'.
+See `consult-grep-command' for more information."
+  :type 'string)
 
 (defcustom consult-ripgrep-command
   "rg --null --line-buffered --color=ansi --max-columns=1000\
