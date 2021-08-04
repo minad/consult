@@ -84,7 +84,7 @@ This is the key representation accepted by `define-key'."
 The root directory is used by `consult-buffer' and `consult-grep'."
   :type '(choice function (const nil)))
 
-(defcustom consult-async-refresh-delay 0.4
+(defcustom consult-async-refresh-delay 0.2
   "Refreshing delay of the completion ui for asynchronous commands.
 
 The completion ui is only updated every `consult-async-refresh-delay'
@@ -92,7 +92,7 @@ seconds. This applies to asynchronous commands like for example
 `consult-grep'."
   :type 'float)
 
-(defcustom consult-async-input-throttle 0.5
+(defcustom consult-async-input-throttle 0.4
   "Input throttle for asynchronous commands.
 
 The asynchronous process is started only every
