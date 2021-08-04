@@ -901,44 +901,44 @@ configuration examples.
  values and abbreviated description. Alternatively, type =C-h a ^consult= to get
  an overview of all Consult variables and functions with their descriptions.
 
- | Variable                         | Default          | Description                                           |
- |----------------------------------+------------------+-------------------------------------------------------|
- | consult-after-jump-hook          | '(recenter)      | Functions to call after jumping to a location         |
- | consult-async-input-debounce     | 0.25             | Input debounce for asynchronous commands              |
- | consult-async-input-throttle     | 0.5              | Input throttle for asynchronous commands              |
- | consult-async-min-input          | 3                | Minimum numbers of letters needed for async process   |
- | consult-async-refresh-delay      | 0.25             | Refresh delay for asynchronous commands               |
- | consult-async-split-style        | 'perl            | Splitting style used for async commands               |
- | consult-async-split-styles-alist | ...              | Available splitting styles used for async commands    |
- | consult-bookmark-narrow          | ...              | Narrowing configuration for =consult-bookmark=          |
- | consult-buffer-filter            | ...              | Filter for =consult-buffer=                             |
- | consult-buffer-sources           | ...              | List of virtual buffer sources                        |
- | consult-crm-prefix               | ("  " . "✓ ")    | Prefix string for CRM candidates                      |
- | consult-find-command             | "find ..."       | Command line arguments for find                       |
- | consult-fontify-max-size         | 1048576          | Buffers larger than this limit are not fontified      |
- | consult-fontify-preserve         | t                | Preserve fontification for line-based commands.       |
- | consult-git-grep-command         | '(...)           | Command line arguments for git-grep                   |
- | consult-goto-line-numbers        | t                | Show line numbers for =consult-goto-line=               |
- | consult-grep-max-columns         | 250              | Maximal number of columns of the matching lines       |
- | consult-grep-command             | "grep ..."       | Command line arguments for grep                       |
- | consult-imenu-config             | ...              | Mode-specific configuration for =consult-imenu=         |
- | consult-line-numbers-widen       | t                | Show absolute line numbers when narrowing is active.  |
- | consult-line-point-placement     | 'match-beginning | Placement of the point used by =consult-line=           |
- | consult-line-start-from-top      | nil              | Start the =consult-line= search from the top            |
- | consult-locate-command           | "locate ..."     | Command line arguments for locate                     |
- | consult-mode-command-filter      | ...              | Filter for =consult-mode-command=                       |
- | consult-mode-histories           | ...              | Mode-specific history variables                       |
- | consult-narrow-key               | nil              | Narrowing prefix key during completion                |
- | consult-preview-key              | 'any             | Keys which triggers preview                           |
- | consult-preview-excluded-hooks   | ...              | List of =find-file= hooks to avoid during preview       |
- | consult-preview-max-count        | 10               | Maximum number of files to keep open during preview   |
- | consult-preview-max-size         | 10485760         | Files larger than this size are not previewed         |
- | consult-preview-raw-size         | 102400           | Files larger than this size are previewed in raw form |
- | consult-project-root-function    | nil              | Function which returns current project root           |
- | consult-register-narrow          | ...              | Narrowing configuration for =consult-register=          |
- | consult-ripgrep-command          | "rg ..."         | Command line arguments for ripgrep                    |
- | consult-themes                   | nil              | List of themes to be presented for selection          |
- | consult-widen-key                | nil              | Widening key during completion                        |
+ | Variable                         | Description                                           |
+ |----------------------------------+-------------------------------------------------------|
+ | consult-after-jump-hook          | Functions to call after jumping to a location         |
+ | consult-async-input-debounce     | Input debounce for asynchronous commands              |
+ | consult-async-input-throttle     | Input throttle for asynchronous commands              |
+ | consult-async-min-input          | Minimum numbers of letters needed for async process   |
+ | consult-async-refresh-delay      | Refresh delay for asynchronous commands               |
+ | consult-async-split-style        | Splitting style used for async commands               |
+ | consult-async-split-styles-alist | Available splitting styles used for async commands    |
+ | consult-bookmark-narrow          | Narrowing configuration for =consult-bookmark=          |
+ | consult-buffer-filter            | Filter for =consult-buffer=                             |
+ | consult-buffer-sources           | List of virtual buffer sources                        |
+ | consult-crm-prefix               | Prefix string for CRM candidates                      |
+ | consult-find-command             | Command line arguments for find                       |
+ | consult-fontify-max-size         | Buffers larger than this limit are not fontified      |
+ | consult-fontify-preserve         | Preserve fontification for line-based commands.       |
+ | consult-git-grep-command         | Command line arguments for git-grep                   |
+ | consult-goto-line-numbers        | Show line numbers for =consult-goto-line=               |
+ | consult-grep-max-columns         | Maximal number of columns of the matching lines       |
+ | consult-grep-command             | Command line arguments for grep                       |
+ | consult-imenu-config             | Mode-specific configuration for =consult-imenu=         |
+ | consult-line-numbers-widen       | Show absolute line numbers when narrowing is active.  |
+ | consult-line-point-placement     | Placement of the point used by =consult-line=           |
+ | consult-line-start-from-top      | Start the =consult-line= search from the top            |
+ | consult-locate-command           | Command line arguments for locate                     |
+ | consult-mode-command-filter      | Filter for =consult-mode-command=                       |
+ | consult-mode-histories           | Mode-specific history variables                       |
+ | consult-narrow-key               | Narrowing prefix key during completion                |
+ | consult-preview-key              | Keys which triggers preview                           |
+ | consult-preview-excluded-hooks   | List of =find-file= hooks to avoid during preview       |
+ | consult-preview-max-count        | Maximum number of files to keep open during preview   |
+ | consult-preview-max-size         | Files larger than this size are not previewed         |
+ | consult-preview-raw-size         | Files larger than this size are previewed in raw form |
+ | consult-project-root-function    | Function which returns current project root           |
+ | consult-register-narrow          | Narrowing configuration for =consult-register=          |
+ | consult-ripgrep-command          | Command line arguments for ripgrep                    |
+ | consult-themes                   | List of themes to be presented for selection          |
+ | consult-widen-key                | Widening key during completion                        |
 
 ** Fine-tuning of individual commands
  :properties:
