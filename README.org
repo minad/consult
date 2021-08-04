@@ -926,6 +926,7 @@ configuration examples.
  | consult-line-point-placement     | Placement of the point used by =consult-line=           |
  | consult-line-start-from-top      | Start the =consult-line= search from the top            |
  | consult-locate-command           | Command line arguments for locate                     |
+ | consult-man-command              | Command line arguments for man                        |
  | consult-mode-command-filter      | Filter for =consult-mode-command=                       |
  | consult-mode-histories           | Mode-specific history variables                       |
  | consult-narrow-key               | Narrowing prefix key during completion                |
