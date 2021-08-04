@@ -1430,6 +1430,7 @@ PROPS are optional properties passed to `make-process'."
            (setq proc nil))
          (setq last-args nil))
         ((pred stringp)
+         (funcall async action)
          (let* ((args (funcall cmd action))
                 (stderr-buffer (generate-new-buffer " *consult-async-stderr*"))
                 (flush t)
@@ -1539,7 +1540,7 @@ The DEBOUNCE delay defaults to `consult-async-input-debounce'."
 The refresh happens immediately when candidates are pushed."
   (lambda (action)
     (pcase action
-      ((or (pred consp) (pred stringp) 'flush)
+      ((or (pred consp) 'flush)
        (prog1 (funcall async action)
          (funcall async 'refresh)))
       (_ (funcall async action)))))
@@ -1552,7 +1553,7 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
     (lambda (action)
       (prog1 (funcall async action)
         (pcase action
-          ((or (pred consp) (pred stringp) 'flush)
+          ((or (pred consp) 'flush)
            (setq refresh t)
            (unless timer
              (setq timer (run-at-time
