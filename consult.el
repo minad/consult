@@ -581,10 +581,11 @@ This function only changes the escaping of parentheses, braces and pipes."
 (defun consult--join-regexp (str type)
   "Compile STR to a regexp joined from multiple regexps of TYPE."
   (setq str (consult--compile-regexp str type))
-  (pcase-exhaustive type
-    ((or 'basic 'emacs 'extended) (string-join str ".*"))
-    ('pcre (concat "^" (mapconcat (lambda (x) (format "(?=.*%s)" x))
-                                  str "")))))
+  ;; Add lookahead wrapper only if there is more than one regular expression
+  (if (and (eq type 'pcre) (cdr str))
+      (concat "^" (mapconcat (lambda (x) (format "(?=.*%s)" x))
+                             str ""))
+    (string-join str ".*")))
 
 (defun consult--valid-regexp-p (re)
   "Return t if regexp RE is valid."
