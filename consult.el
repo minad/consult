@@ -581,14 +581,12 @@ This function only changes the escaping of parentheses, braces and pipes."
                   ("\\_<" . "\\b") ("\\_>" . "\\b"))
               '(("\\_<" . "\\<") ("\\_>" . "\\>"))))))
       (replace-regexp-in-string
-       (string-join
-        '("\\\\\\(?:(\\|(\\?:\\||\\)[+*]" ;; (+ or (?:* etc
-          "\\`[+*]"                       ;; + or * at the beginning
-          "\\\\\\\\"                      ;; backslash
-          "\\\\?[(){}|]"                  ;; parentheses/braces/pipe, escaped and unescaped
-          "\\\\[`'<>]"                    ;; special escapes
-          "\\\\_[<>]")                    ;; beginning/end of symbol
-        "\\|")
+       (rx (or (seq "\\" (or "(?:" "(" "|") (any "*+")) ;; (+ or (?:* etc
+               (seq bos (any "*+"))                     ;; + or * at the beginning
+               "\\\\"                                   ;; backslash
+               (seq (opt "\\") (any "(){|}"))           ;; parens/braces/pipe
+               (seq "\\" (any "'<>`"))                  ;; special escapes
+               (seq "\\_" (any "<>"))))                 ;; beginning/end of symbol
        (lambda (x) (or (cdr (assoc x subst)) x))
        regexp 'fixedcase 'literal))))
 
