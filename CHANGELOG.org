@@ -12,6 +12,7 @@
 - =consult-ripgrep=: Use =--smart-case=
 - =consult-grep/git-grep=: Use =--ignore-case=
 - Deprecate =consult-<cmd>-command= in favor of =consult-<cmd>-config.=
+- =consult-find=: Use regular expressions instead of globbing/wildcards by default.
 - =consult-grep/git-grep/ripgrep/find/locate=: Add support for multiple patterns.
   + =consult-git-grep= and =consult-find= support unordered patterns out of the box.
     For example: "first second third" is transformed to "first -and second -and third".
