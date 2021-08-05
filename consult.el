@@ -553,36 +553,40 @@ ARGS is a list of commands or sources followed by the list of keyword-value pair
 This function only changes the escaping of parentheses, braces and pipes."
   (if (memq type '(emacs basic))
       regexp
-    ;; See https://stackoverflow.com/questions/1946352/comparison-table-for-emacs-regexp-and-perl-compatible-regular-expression-pcre
     ;; XXX Unsupported Emacs regexp features:
     ;; - \= point matching
     ;; - Syntax classes \sx \Sx
     ;; - Character classes \cx \Cx
     (let ((subst
            (append
-            ;; Different escaping
-            (mapcan (lambda (x) `(,x (,(cdr x) . ,(car x))))
-                    '(("\\|" . "|")
-                      ("\\(" . "(") ("\\)" . ")")
-                      ("\\{" . "{") ("\\}" . "}")))
-            ;; Treat \` and \' as beginning and end of line. This is more
-            ;; widely supported and makes sense for line-based commands.
-            '(("\\`" . "^") ("\\'" . "$"))
-            ;; Star and plus at beginning is supported by Emacs regexps
-            (mapcan (lambda (x)
-                      (mapcar (lambda (y)
-                                (cons (concat x y)
-                                      (concat (string-remove-prefix "\\" x) "\\" y)))
-                              '("*" "+")))
-                    '("" "\\(" "\\(?:" "\\|"))
             ;; Word beginning/end replacements
             (if (memq type '(pcre rust))
                 '(("\\<" . "\\b") ("\\>" . "\\b")
                   ("\\_<" . "\\b") ("\\_>" . "\\b"))
-              '(("\\_<" . "\\<") ("\\_>" . "\\>"))))))
+              '(("\\_<" . "\\<") ("\\_>" . "\\>")))
+            (eval-when-compile
+              (append
+               ;; Treat \` and \' as beginning and end of line. This is more
+               ;; widely supported and makes sense for line-based commands.
+               '(("\\`" . "^") ("\\'" . "$"))
+               ;; Question mark at the beginning is supported by Emacs regexps
+               '(("?" . "\\?") ("\\|?" . "|\\?"))
+               ;; Star and plus at beginning is supported by Emacs regexps
+               (mapcan (lambda (x)
+                         (mapcar (lambda (y)
+                                   (cons (concat x y)
+                                         (concat (string-remove-prefix "\\" x) "\\" y)))
+                                 '("*" "+")))
+                       '("" "\\(" "\\(?:" "\\|"))
+               ;; Different escaping
+               (mapcan (lambda (x) `(,x (,(cdr x) . ,(car x))))
+                       '(("\\|" . "|")
+                         ("\\(" . "(") ("\\)" . ")")
+                         ("\\{" . "{") ("\\}" . "}"))))))))
       (replace-regexp-in-string
-       (rx (or (seq "\\" (or "(?:" "(" "|") (any "*+")) ;; (+ or (?:* etc
+       (rx (or (seq "\\" (or "(?:" "(" "|") (any "*+")) ;; \(+ or \(?:* etc
                (seq bos (any "*+"))                     ;; + or * at the beginning
+               (seq bos "?") "\\|?"                     ;; \|? or ? at the beginning
                "\\\\"                                   ;; backslash
                (seq (opt "\\") (any "(){|}"))           ;; parens/braces/pipe
                (seq "\\" (any "'<>`"))                  ;; special escapes
