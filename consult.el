@@ -562,12 +562,14 @@ This function only changes the escaping of parentheses, braces and pipes."
     (let ((swap '(("\\|" . "|")
                     ("\\(" . "(") ("\\)" . ")")
                     ("\\{" . "{") ("\\}" . "}")))
-          (subst (if (memq type '(pcre rust))
-                     ;; \z matches at the end, \Z matches at the end and before the last \n
-                     '(("\\`" . "\\A") ("\\'" . "\\z")
-                       ("\\<" . "\\b") ("\\>" . "\\b")
-                       ("\\_<" . "\\b") ("\\_>" . "\\b"))
-                   '(("\\_<" . "\\<") ("\\_>" . "\\>")))))
+          (subst (append
+                  ;; Treat \` and \' as beginning and end of line. This is more
+                  ;; widely supported and makes sense for line-based commands.
+                  '(("\\`" . "^") ("\\'" . "$"))
+                  (if (memq type '(pcre rust))
+                      '(("\\<" . "\\b") ("\\>" . "\\b")
+                        ("\\_<" . "\\b") ("\\_>" . "\\b"))
+                    '(("\\_<" . "\\<") ("\\_>" . "\\>"))))))
       (replace-regexp-in-string
        "\\\\\\\\\\|\\\\?[(){}|]\\|\\\\[`'<>]\\|\\\\_[<>]"
        (lambda (x)
@@ -4069,7 +4071,7 @@ INITIAL is inital input."
   (with-temp-buffer
     (insert "xaxbx")
     (eq 0 (apply #'call-process-region (point-min) (point-max)
-                 (car cmd) nil nil nil `(,@cmd "^(?=.*b)(?=.*a)")))))
+                 (car cmd) nil nil nil `(,@(cdr cmd) "^(?=.*b)(?=.*a)")))))
 
 (defvar consult--grep-regexp-type nil)
 (defun consult--grep-regexp-type ()
