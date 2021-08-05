@@ -568,7 +568,8 @@ ARGS is a list of commands or sources followed by the list of keyword-value pair
                   (prog1 (substring str (match-end 0))
                     (setq str (substring str 0 (match-end 0)))))))
       (unless (string-blank-p str)
-        (cons str (and opts (split-string opts nil 'omit-nulls)))))))
+        ;; split-string-and-unquote fails if the quotes are invalid. Ignore it.
+        (cons str (and opts (ignore-errors (split-string-and-unquote opts))))))))
 
 (defun consult--command-highlight (_config input)
   "Return list of regular expressions given command INPUT."
@@ -1530,7 +1531,7 @@ SPLIT is the splitting function."
   "Create process source async function.
 
 ASYNC is the async function which receives the candidates.
-CMD is the command argument list.
+CMD is the command line builder function.
 PROPS are optional properties passed to `make-process'."
   (let ((proc) (last-args) (indicator) (count))
     (lambda (action)
@@ -1714,23 +1715,25 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
   "Ensure that LIST is a list."
   (if (listp list) list (list list)))
 
-(defun consult--command-argument-builder (config)
-  "Build command line arguments given command CONFIG."
-  ;; TODO remove the deprecation error
-  (when (stringp config)
-    (error "`%s' uses a deprecated command configuration %S" this-command config))
-  (lambda (input) (funcall (plist-get config :command) config input)))
+(defun consult--command-builder (cmd)
+  "Return command line builder given CMD.
+CMD is the command line builder function or command configuration."
+  (when (stringp cmd)
+    (error "`%s' uses a deprecated command configuration %S" this-command cmd))
+  (if (functionp cmd)
+      cmd
+    (lambda (input) (funcall (plist-get cmd :command) cmd input))))
 
-(defmacro consult--async-command (config &rest args)
+(defmacro consult--async-command (cmd &rest args)
   "Asynchronous command pipeline.
-CONFIG is the command configuration.
+CMD is the command line builder function or command configuration.
 ARGS is a list of `make-process' properties and transforms."
   (declare (indent 1))
   `(thread-first (consult--async-sink)
      (consult--async-refresh-timer)
      ,@(seq-take-while (lambda (x) (not (keywordp x))) args)
      (consult--async-process
-      (consult--command-argument-builder ,config)
+      (consult--command-builder ,cmd)
       ,@(seq-drop-while (lambda (x) (not (keywordp x))) args))
      (consult--async-throttle)
      (consult--async-split)))
