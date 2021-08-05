@@ -558,25 +558,28 @@ This function only changes the escaping of parentheses, braces and pipes."
     ;; - \= point matching
     ;; - Syntax classes \sx \Sx
     ;; - Character classes \cx \Cx
-    (let ((swap '(("\\|" . "|")
-                  ("\\(" . "(") ("\\)" . ")")
-                  ("\\{" . "{") ("\\}" . "}")))
-          (subst (append
-                  ;; Treat \` and \' as beginning and end of line. This is more
-                  ;; widely supported and makes sense for line-based commands.
-                  '(("\\`" . "^") ("\\'" . "$"))
-                  ;; Star and plus at beginning is supported by Emacs regexps
-                  (mapcan (lambda (x)
-                            (mapcar (lambda (y)
-                                      (cons (concat x y)
-                                            (concat (string-remove-prefix "\\" x) "\\" y)))
-                                    '("*" "+")))
-                          '("" "\\(" "\\(?:" "\\|"))
-                  ;; Word beginning/end replacements
-                  (if (memq type '(pcre rust))
-                      '(("\\<" . "\\b") ("\\>" . "\\b")
-                        ("\\_<" . "\\b") ("\\_>" . "\\b"))
-                    '(("\\_<" . "\\<") ("\\_>" . "\\>"))))))
+    (let ((subst
+           (append
+            ;; Different escaping
+            (mapcan (lambda (x) `(,x (,(cdr x) . ,(car x))))
+                    '(("\\|" . "|")
+                      ("\\(" . "(") ("\\)" . ")")
+                      ("\\{" . "{") ("\\}" . "}")))
+            ;; Treat \` and \' as beginning and end of line. This is more
+            ;; widely supported and makes sense for line-based commands.
+            '(("\\`" . "^") ("\\'" . "$"))
+            ;; Star and plus at beginning is supported by Emacs regexps
+            (mapcan (lambda (x)
+                      (mapcar (lambda (y)
+                                (cons (concat x y)
+                                      (concat (string-remove-prefix "\\" x) "\\" y)))
+                              '("*" "+")))
+                    '("" "\\(" "\\(?:" "\\|"))
+            ;; Word beginning/end replacements
+            (if (memq type '(pcre rust))
+                '(("\\<" . "\\b") ("\\>" . "\\b")
+                  ("\\_<" . "\\b") ("\\_>" . "\\b"))
+              '(("\\_<" . "\\<") ("\\_>" . "\\>"))))))
       (replace-regexp-in-string
        (string-join
         '("\\\\\\(?:(\\|(\\?:\\||\\)[+*]" ;; (+ or (?:* etc
@@ -586,8 +589,7 @@ This function only changes the escaping of parentheses, braces and pipes."
           "\\\\[`'<>]"                    ;; special escapes
           "\\\\_[<>]")                    ;; beginning/end of symbol
         "\\|")
-       (lambda (x)
-         (or (cdr (assoc x subst)) (cdr (assoc x swap)) (car (rassoc x swap)) x))
+       (lambda (x) (or (cdr (assoc x subst)) x))
        regexp 'fixedcase 'literal))))
 
 (defun consult--compile-regexp (str type)
