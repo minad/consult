@@ -563,7 +563,8 @@ This function only changes the escaping of parentheses, braces and pipes."
                     ("\\(" . "(") ("\\)" . ")")
                     ("\\{" . "{") ("\\}" . "}")))
           (subst (if (eq type 'pcre)
-                     '(("\\`" . "\\A") ("\\'" . "\\Z")
+                     ;; \z matches at the end, \Z matches at the end and before the last \n
+                     '(("\\`" . "\\A") ("\\'" . "\\z")
                        ("\\<" . "\\b") ("\\>" . "\\b")
                        ("\\_<" . "\\b") ("\\_>" . "\\b"))
                    '(("\\_<" . "\\<") ("\\_>" . "\\>")))))
