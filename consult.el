@@ -569,28 +569,26 @@ This function only changes the escaping of parentheses, braces and pipes."
                ;; Treat \` and \' as beginning and end of line. This is more
                ;; widely supported and makes sense for line-based commands.
                '(("\\`" . "^") ("\\'" . "$"))
-               ;; Question mark at the beginning is supported by Emacs regexps
-               '(("?" . "\\?") ("\\|?" . "|\\?"))
-               ;; Star and plus at beginning is supported by Emacs regexps
+               ;; Historical: Unescaped *, +, ? are supported at the beginning
                (mapcan (lambda (x)
                          (mapcar (lambda (y)
                                    (cons (concat x y)
                                          (concat (string-remove-prefix "\\" x) "\\" y)))
-                                 '("*" "+")))
-                       '("" "\\(" "\\(?:" "\\|"))
+                                 '("*" "+" "?")))
+                       '("" "\\(" "\\(?:" "\\|" "^"))
                ;; Different escaping
                (mapcan (lambda (x) `(,x (,(cdr x) . ,(car x))))
                        '(("\\|" . "|")
                          ("\\(" . "(") ("\\)" . ")")
                          ("\\{" . "{") ("\\}" . "}"))))))))
       (replace-regexp-in-string
-       (rx (or (seq "\\" (or "(?:" "(" "|") (any "*+")) ;; \(+ or \(?:* etc
-               (seq bos (any "*+"))                     ;; + or * at the beginning
-               (seq bos "?") "\\|?"                     ;; \|? or ? at the beginning
-               "\\\\"                                   ;; backslash
-               (seq (opt "\\") (any "(){|}"))           ;; parens/braces/pipe
-               (seq "\\" (any "'<>`"))                  ;; special escapes
-               (seq "\\_" (any "<>"))))                 ;; beginning/end of symbol
+       (rx (or "\\\\" "\\^"                         ;; Pass through
+               (seq (or "\\(?:" "\\|") (any "*+?")) ;; Historical: \|+ or \(?:* etc
+               (seq "\\(" (any "*+"))               ;; Historical: \(* or \(+
+               (seq (or bos "^") (any "*+?"))       ;; Historical: + or * at the beginning
+               (seq (opt "\\") (any "(){|}"))       ;; Escape parens/braces/pipe
+               (seq "\\" (any "'<>`"))              ;; Special escapes
+               (seq "\\_" (any "<>"))))             ;; Beginning or end of symbol
        (lambda (x) (or (cdr (assoc x subst)) x))
        regexp 'fixedcase 'literal))))
 
