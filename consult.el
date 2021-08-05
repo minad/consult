@@ -555,23 +555,37 @@ This function only changes the escaping of parentheses, braces and pipes."
       regexp
     ;; See https://stackoverflow.com/questions/1946352/comparison-table-for-emacs-regexp-and-perl-compatible-regular-expression-pcre
     ;; XXX Unsupported Emacs regexp features:
-    ;; - * or + at the beginning of a choice, e.g, \(?:* or \|+
     ;; - \= point matching
     ;; - Syntax classes \sx \Sx
     ;; - Character classes \cx \Cx
     (let ((swap '(("\\|" . "|")
-                    ("\\(" . "(") ("\\)" . ")")
-                    ("\\{" . "{") ("\\}" . "}")))
+                  ("\\(" . "(") ("\\)" . ")")
+                  ("\\{" . "{") ("\\}" . "}")))
           (subst (append
                   ;; Treat \` and \' as beginning and end of line. This is more
                   ;; widely supported and makes sense for line-based commands.
                   '(("\\`" . "^") ("\\'" . "$"))
+                  ;; Star and plus at beginning is supported by Emacs regexps
+                  (mapcan (lambda (x)
+                            (mapcar (lambda (y)
+                                      (cons (concat x y)
+                                            (concat (string-remove-prefix "\\" x) "\\" y)))
+                                    '("*" "+")))
+                          '("" "\\(" "\\(?:" "\\|"))
+                  ;; Word beginning/end replacements
                   (if (memq type '(pcre rust))
                       '(("\\<" . "\\b") ("\\>" . "\\b")
                         ("\\_<" . "\\b") ("\\_>" . "\\b"))
                     '(("\\_<" . "\\<") ("\\_>" . "\\>"))))))
       (replace-regexp-in-string
-       "\\\\\\\\\\|\\\\?[(){}|]\\|\\\\[`'<>]\\|\\\\_[<>]"
+       (string-join
+        '("\\\\\\(?:(\\|(\\?:\\||\\)[+*]" ;; (+ or (?:* etc
+          "\\`[+*]"                       ;; + or * at the beginning
+          "\\\\\\\\"                      ;; backslash
+          "\\\\?[(){}|]"                  ;; parentheses/braces/pipe, escaped and unescaped
+          "\\\\[`'<>]"                    ;; special escapes
+          "\\\\_[<>]")                    ;; beginning/end of symbol
+        "\\|")
        (lambda (x)
          (or (cdr (assoc x subst)) (cdr (assoc x swap)) (car (rassoc x swap)) x))
        regexp 'fixedcase 'literal))))
