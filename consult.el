@@ -548,32 +548,44 @@ ARGS is a list of commands or sources followed by the list of keyword-value pair
   "Return list of regular expressions given command INPUT."
   (consult--compile-regexp (or (car (consult--command-split input)) "") 'emacs))
 
-(defun consult--emacs-to-extended-regexp (regexp)
-  "Convert Emacs REGEXP to extended regexp syntax (ERE).
+(defun consult--convert-regexp (regexp type)
+  "Convert Emacs REGEXP to regexp syntax TYPE.
 This function only changes the escaping of parentheses, braces and pipes."
+  ;; See https://stackoverflow.com/questions/1946352/comparison-table-for-emacs-regexp-and-perl-compatible-regular-expression-pcre
+  ;; XXX Unsupported Emacs regexp features:
+  ;; * "*" at the beginning of a choice, e.g, "\(?:*" or "\|*"
+  ;; * Backslash constructs \= \sx \Sx \cx \Cx
+  (let ((subst `(("\\\\" . "\\\\")
+                 ,@(if (eq type 'pcre)
+                       '(("\\`" . "\\\\A") ("\\'" . "\\\\Z")
+                         ("\\<" . "\\\\b") ("\\>" . "\\\\b")
+                         ("\\_<" . "\\\\b") ("\\_>" . "\\\\b"))
+                     '(("\\`" . "\\\\`") ("\\'" . "\\\\'")
+                       ("\\<" . "\\\\<") ("\\>" . "\\\\>")
+                       ("\\_<" . "\\\\<") ("\\_>" . "\\\\>"))))))
   (replace-regexp-in-string
-   "\\\\\\\\\\|\\\\?[(){}|]"
+   "\\\\\\\\\\|\\\\?[(){}|]\\|\\\\[`'<>]\\|\\\\_[<>]"
    (lambda (x)
      (cond
-      ((equal x "\\\\") x)
+      ((cdr (assoc x subst)))
       ((= 1 (length x)) (concat "\\\\" x))
       (t (substring x 1))))
-   regexp))
+   regexp)))
 
 (defun consult--compile-regexp (str type)
   "Compile STR to a list of regexps of TYPE."
   (setq str (split-string str nil 'omit-nulls))
   (pcase-exhaustive type
     ((or 'basic 'emacs) str)
-    ((or 'lookahead 'extended)
-     (mapcar #'consult--emacs-to-extended-regexp str))))
+    ((or 'pcre 'extended)
+     (mapcar (lambda (x) (consult--convert-regexp x type)) str))))
 
 (defun consult--join-regexp (str type)
   "Compile STR to a regexp joined from multiple regexps of TYPE."
   (setq str (consult--compile-regexp str type))
   (pcase-exhaustive type
     ((or 'basic 'emacs 'extended) (string-join str ".*"))
-    ('lookahead (concat "^" (mapconcat
+    ('pcre (concat "^" (mapconcat
                              (lambda (x) (format "(?=.*%s)" x))
                              str "")))))
 
@@ -4061,7 +4073,7 @@ INITIAL is inital input."
                          (insert "^(?=.*b)(?=.*a)")
                          (if (eq 0 (call-process-region (point-min) (point-max)
                                                         (symbol-name cmd) nil nil nil "-P" "^(?=.*b)(?=.*a)"))
-                             'lookahead
+                             'pcre
                            'extended))))
         ;; XXX On Emacs 26 does not return the value from setf, this has been fixed in 27.
         (setf (alist-get cmd consult--grep-supported-regexp) supported)
@@ -4072,7 +4084,7 @@ INITIAL is inital input."
   (let ((type (consult--grep-supported-regexp 'grep)))
     (setq input (consult--command-split input))
     (append (split-string-and-unquote (plist-get config :args))
-            (list (if (eq type 'lookahead) "--perl-regexp" "--extended-regexp")
+            (list (if (eq type 'pcre) "--perl-regexp" "--extended-regexp")
                   "-e" (consult--join-regexp (car input) type))
             (cdr input))))
 
@@ -4119,7 +4131,7 @@ See `consult-grep' for more details."
   (let ((type (consult--grep-supported-regexp 'rg)))
     (setq input (consult--command-split input))
     (append (split-string-and-unquote (plist-get config :args))
-            (and (eq type 'lookahead) '("-P"))
+            (and (eq type 'pcre) '("-P"))
             (list  "-e" (consult--join-regexp (car input) type))
             (cdr input))))
 
