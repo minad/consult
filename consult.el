@@ -233,11 +233,16 @@ See `consult--multi' for a description of the source values."
         :highlight #'consult--command-highlight)
   "Command configuration for grep, see `consult-grep'.
 
-The :command string must have a specific format, it can contain keyword
-placeholders. Each placeholder must be defined in the list as a function taking
-the input string as argument. The function can return a string or a list of
-strings. Furthermore a :hightlight function can be specified which transforms
-the input to a regexp or a list of regexps."
+The command configuration must be a plist, where :command is a function taking
+two arguments, the configuation plist itself and the current input string. The
+function should return a list of command line arguments. Furthermore a
+:hightlight function can be specified, which takes the same arguments as the
+:command function transforms the input to a regexp or a list of regexps.
+
+For ease of use the function `consult--grep-command-builder' (the default
+command line builder for Grep) supports specifying command line arguments via
+the :args string. The dynamically computed arguments are appended to these
+static arguments."
   :type 'plist)
 
 (defcustom consult-git-grep-command
