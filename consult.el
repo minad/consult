@@ -551,34 +551,33 @@ ARGS is a list of commands or sources followed by the list of keyword-value pair
 (defun consult--convert-regexp (regexp type)
   "Convert Emacs REGEXP to regexp syntax TYPE.
 This function only changes the escaping of parentheses, braces and pipes."
-  ;; See https://stackoverflow.com/questions/1946352/comparison-table-for-emacs-regexp-and-perl-compatible-regular-expression-pcre
-  ;; XXX Unsupported Emacs regexp features:
-  ;; * "*" at the beginning of a choice, e.g, "\(?:*" or "\|*"
-  ;; * Backslash constructs \= \sx \Sx \cx \Cx
-  (let ((subst `(("\\\\" . "\\\\")
-                 ,@(if (eq type 'pcre)
-                       '(("\\`" . "\\\\A") ("\\'" . "\\\\Z")
-                         ("\\<" . "\\\\b") ("\\>" . "\\\\b")
-                         ("\\_<" . "\\\\b") ("\\_>" . "\\\\b"))
-                     '(("\\`" . "\\\\`") ("\\'" . "\\\\'")
-                       ("\\<" . "\\\\<") ("\\>" . "\\\\>")
-                       ("\\_<" . "\\\\<") ("\\_>" . "\\\\>"))))))
-  (replace-regexp-in-string
-   "\\\\\\\\\\|\\\\?[(){}|]\\|\\\\[`'<>]\\|\\\\_[<>]"
-   (lambda (x)
-     (cond
-      ((cdr (assoc x subst)))
-      ((= 1 (length x)) (concat "\\\\" x))
-      (t (substring x 1))))
-   regexp)))
+  (if (memq type '(emacs basic))
+      regexp
+    ;; See https://stackoverflow.com/questions/1946352/comparison-table-for-emacs-regexp-and-perl-compatible-regular-expression-pcre
+    ;; XXX Unsupported Emacs regexp features:
+    ;; * "*" at the beginning of a choice, e.g, "\(?:*" or "\|*"
+    ;; * Backslash constructs \= \sx \Sx \cx \Cx
+    (let ((subst `(("\\\\" . "\\\\")
+                   ,@(if (eq type 'pcre)
+                         '(("\\`" . "\\\\A") ("\\'" . "\\\\Z")
+                           ("\\<" . "\\\\b") ("\\>" . "\\\\b")
+                           ("\\_<" . "\\\\b") ("\\_>" . "\\\\b"))
+                       '(("\\`" . "\\\\`") ("\\'" . "\\\\'")
+                         ("\\<" . "\\\\<") ("\\>" . "\\\\>")
+                         ("\\_<" . "\\\\<") ("\\_>" . "\\\\>"))))))
+      (replace-regexp-in-string
+       "\\\\\\\\\\|\\\\?[(){}|]\\|\\\\[`'<>]\\|\\\\_[<>]"
+       (lambda (x)
+         (cond
+          ((cdr (assoc x subst)))
+          ((= 1 (length x)) (concat "\\\\" x))
+          (t (substring x 1))))
+       regexp))))
 
 (defun consult--compile-regexp (str type)
   "Compile STR to a list of regexps of TYPE."
   (setq str (split-string str nil 'omit-nulls))
-  (pcase-exhaustive type
-    ((or 'basic 'emacs) str)
-    ((or 'pcre 'extended)
-     (mapcar (lambda (x) (consult--convert-regexp x type)) str))))
+  (mapcar (lambda (x) (consult--convert-regexp x type)) str))
 
 (defun consult--join-regexp (str type)
   "Compile STR to a regexp joined from multiple regexps of TYPE."
