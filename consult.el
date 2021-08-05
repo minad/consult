@@ -549,14 +549,15 @@ ARGS is a list of commands or sources followed by the list of keyword-value pair
   (consult--compile-regexp (or (car (consult--command-split input)) "") 'emacs))
 
 (defun consult--convert-regexp (regexp type)
-  "Convert Emacs REGEXP to regexp syntax TYPE.
-This function only changes the escaping of parentheses, braces and pipes."
+  "Convert Emacs REGEXP to regexp syntax TYPE."
   (if (memq type '(emacs basic))
       regexp
-    ;; XXX Unsupported Emacs regexp features:
+    ;; Support for Emacs regular expressions is fairly complete for basic
+    ;; usage. There are a few unsupported Emacs regexp features:
     ;; - \= point matching
     ;; - Syntax classes \sx \Sx
     ;; - Character classes \cx \Cx
+    ;; - Explicitly numbered groups (?3:group)
     (let ((subst
            (append
             ;; Word beginning/end replacements
