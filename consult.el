@@ -555,8 +555,10 @@ This function only changes the escaping of parentheses, braces and pipes."
       regexp
     ;; See https://stackoverflow.com/questions/1946352/comparison-table-for-emacs-regexp-and-perl-compatible-regular-expression-pcre
     ;; XXX Unsupported Emacs regexp features:
-    ;; * "*" at the beginning of a choice, e.g, "\(?:*" or "\|*"
-    ;; * Backslash constructs \= \sx \Sx \cx \Cx
+    ;; - * at the beginning of a choice, e.g, \(?:* or \|*
+    ;; - \= point matching
+    ;; - Syntax classes \sx \Sx
+    ;; - Character classes \cx \Cx
     (let ((swap '(("\\|" . "|")
                     ("\\(" . "(") ("\\)" . ")")
                     ("\\{" . "{") ("\\}" . "}")))
