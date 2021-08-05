@@ -228,14 +228,7 @@ See `consult--multi' for a description of the source values."
 (defcustom consult-grep-command
   (list :args "grep --line-buffered --color=never --ignore-case\
                --exclude-dir=.git --line-number -I -r ."
-        :command (let (type)
-                   (lambda (config input)
-                     (setq type (or type (consult--grep-supported-regexp "grep"))
-                           input (consult--command-split input))
-                     (append (split-string-and-unquote (plist-get config :args))
-                             (list (if (eq type 'lookahead) "--perl-regexp" "--extended-regexp")
-                                   "-e" (consult--join-regexp (car input) type))
-                             (cdr input))))
+        :command #'consult--grep-command-builder
         :match consult--grep-match-regexp
         :highlight #'consult--command-highlight)
   "Command configuration for grep, see `consult-grep'.
@@ -250,12 +243,7 @@ the input to a regexp or a list of regexps."
 (defcustom consult-git-grep-command
   (list :args "git --no-pager grep --color=never --ignore-case\
                --extended-regexp --line-number -I"
-        :command (lambda (config input)
-                   (setq input (consult--command-split input))
-                   (append (split-string-and-unquote (plist-get config :args))
-                           (cdr (mapcan (lambda (x) (list "--and" "-e" x))
-                                        (consult--compile-regexp (car input) 'extended)))
-                           (cdr input)))
+        :command #'consult--git-grep-command-builder
         :match consult--grep-match-regexp
         :highlight #'consult--command-highlight)
   "Command configuration for git-grep, see `consult-git-grep'.
@@ -265,14 +253,7 @@ See `consult-grep-command' for more information."
 (defcustom consult-ripgrep-command
   (list :args "rg --line-buffered --color=never --max-columns=1000 --path-separator /\
                --smart-case --no-heading --line-number ."
-        :command (let (type)
-                   (lambda (config input)
-                     (setq type (or type (consult--grep-supported-regexp "rg"))
-                           input (consult--command-split input))
-                     (append (split-string-and-unquote (plist-get config :args))
-                             (and (eq type 'lookahead) '("-P"))
-                             (list  "-e" (consult--join-regexp (car input) type))
-                             (cdr input))))
+        :command #'consult--ripgrep-command-builder
         :match consult--grep-match-regexp
         :highlight #'consult--command-highlight)
   "Command configuration for ripgrep, see `consult-ripgrep'.
@@ -281,14 +262,7 @@ See `consult-grep-command' for more information."
 
 (defcustom consult-find-command
   (list :args "find . -not ( -wholename */.* -prune )"
-        :command (let (type)
-                   (lambda (config input)
-                     (setq type (or type (consult--find-supported-regexp))
-                           input (consult--command-split input))
-                     (append (split-string-and-unquote (plist-get config :args))
-                             (cdr (mapcan (lambda (x) `("-and" "-iregex" ,(format ".*%s.*" x)))
-                                          (consult--compile-regexp (car input) type)))
-                             (cdr input))))
+        :command #'consult--find-command-builder
         :highlight #'consult--command-highlight)
   "Command configuration for find, see `consult-find'.
 See `consult-grep-command' for more information."
@@ -296,11 +270,7 @@ See `consult-grep-command' for more information."
 
 (defcustom consult-locate-command
   (list :args "locate --ignore-case --existing --regexp"
-        :command (lambda (config input)
-                   (setq input (consult--command-split input))
-                   (append (split-string-and-unquote (plist-get config :args))
-                           (list (consult--join-regexp (car input) 'basic))
-                           (cdr input)))
+        :command #'consult--locate-command-builder
         :highlight #'consult--command-highlight)
   "Command configuration for locate, see `consult-locate'.
 See `consult-grep-command' for more information."
@@ -308,9 +278,7 @@ See `consult-grep-command' for more information."
 
 (defcustom consult-man-command
   (list :args "man -k"
-        :command (lambda (config input)
-                   (append (split-string-and-unquote (plist-get config :args))
-                           (consult--command-split input)))
+        :command #'consult--man-command-builder
         :highlight #'consult--command-highlight)
   "Command configuration for man, see `consult-man'.
 See `consult-grep-command' for more information."
@@ -574,21 +542,6 @@ ARGS is a list of commands or sources followed by the list of keyword-value pair
 (defun consult--command-highlight (_config input)
   "Return list of regular expressions given command INPUT."
   (consult--compile-regexp (or (car (consult--command-split input)) "") 'emacs))
-
-(defun consult--find-supported-regexp ()
-  "Return regexp type supported by find command."
-  (if (string-match-p "GNU findutils" (shell-command-to-string "find --version"))
-      'emacs
-    'basic))
-
-(defun consult--grep-supported-regexp (cmd)
-  "Return regexp type supported by grep CMD."
-  (with-temp-buffer
-    (insert "^(?=.*b)(?=.*a)")
-    (if (eq 0 (call-process-region (point-min) (point-max)
-                                   cmd nil nil nil "-P" "^(?=.*b)(?=.*a)"))
-        'lookahead
-      'extended)))
 
 (defun consult--emacs-to-extended-regexp (regexp)
   "Convert Emacs REGEXP to extended regexp syntax (ERE).
@@ -4095,6 +4048,29 @@ INITIAL is inital input."
      :history '(:input consult--grep-history)
      :sort nil)))
 
+(defvar consult--grep-supported-regexp nil)
+(defun consult--grep-supported-regexp (cmd)
+  "Return regexp type supported by grep CMD."
+  (or (alist-get cmd consult--grep-supported-regexp)
+      (let ((supported (with-temp-buffer
+                         (insert "^(?=.*b)(?=.*a)")
+                         (if (eq 0 (call-process-region (point-min) (point-max)
+                                                        (symbol-name cmd) nil nil nil "-P" "^(?=.*b)(?=.*a)"))
+                             'lookahead
+                           'extended))))
+        ;; XXX On Emacs 26 does not return the value from setf, this has been fixed in 27.
+        (setf (alist-get cmd consult--grep-supported-regexp) supported)
+        supported)))
+
+(defun consult--grep-command-builder (config input)
+  "Build command line given CONFIG and INPUT."
+  (let ((type (consult--grep-supported-regexp 'grep)))
+    (setq input (consult--command-split input))
+    (append (split-string-and-unquote (plist-get config :args))
+            (list (if (eq type 'lookahead) "--perl-regexp" "--extended-regexp")
+                  "-e" (consult--join-regexp (car input) type))
+            (cdr input))))
+
 ;;;###autoload
 (defun consult-grep (&optional dir initial)
   "Search for regexp with grep in DIR with INITIAL input.
@@ -4117,6 +4093,14 @@ Otherwise the `default-directory' is searched."
   (interactive "P")
   (consult--grep "Grep" consult-grep-command dir initial))
 
+(defun consult--git-grep-command-builder (config input)
+  "Build command line given CONFIG and INPUT."
+  (setq input (consult--command-split input))
+  (append (split-string-and-unquote (plist-get config :args))
+          (cdr (mapcan (lambda (x) (list "--and" "-e" x))
+                       (consult--compile-regexp (car input) 'extended)))
+          (cdr input)))
+
 ;;;###autoload
 (defun consult-git-grep (&optional dir initial)
   "Search for regexp with grep in DIR with INITIAL input.
@@ -4124,6 +4108,15 @@ Otherwise the `default-directory' is searched."
 See `consult-grep' for more details."
   (interactive "P")
   (consult--grep "Git-grep" consult-git-grep-command dir initial))
+
+(defun consult--ripgrep-command-builder (config input)
+  "Build command line given CONFIG and INPUT."
+  (let ((type (consult--grep-supported-regexp 'rg)))
+    (setq input (consult--command-split input))
+    (append (split-string-and-unquote (plist-get config :args))
+            (and (eq type 'lookahead) '("-P"))
+            (list  "-e" (consult--join-regexp (car input) type))
+            (cdr input))))
 
 ;;;###autoload
 (defun consult-ripgrep (&optional dir initial)
@@ -4159,6 +4152,24 @@ INITIAL is inital input."
    :category 'file
    :history '(:input consult--find-history)))
 
+(defvar consult--find-supported-regexp nil)
+(defun consult--find-supported-regexp ()
+  "Return regexp type supported by find command."
+  (or consult--find-supported-regexp
+      (setq consult--find-supported-regexp
+            (if (string-match-p "GNU findutils" (shell-command-to-string "find --version"))
+                'emacs
+              'basic))))
+
+(defun consult--find-command-builder (config input)
+  "Build command line given CONFIG and INPUT."
+  (let ((type (consult--find-supported-regexp)))
+    (setq input (consult--command-split input))
+    (append (split-string-and-unquote (plist-get config :args))
+            (cdr (mapcan (lambda (x) `("-and" "-iregex" ,(format ".*%s.*" x)))
+                         (consult--compile-regexp (car input) type)))
+            (cdr input))))
+
 ;;;###autoload
 (defun consult-find (&optional dir initial)
   "Search for regexp with find in DIR with INITIAL input.
@@ -4170,6 +4181,13 @@ See `consult-grep' for more details regarding the asynchronous search."
          (default-directory (cdr prompt-dir)))
     (find-file (consult--find (car prompt-dir) consult-find-command initial))))
 
+(defun consult--locate-command-builder (config input)
+  "Build command line given CONFIG and INPUT."
+  (setq input (consult--command-split input))
+  (append (split-string-and-unquote (plist-get config :args))
+          (list (consult--join-regexp (car input) 'basic))
+          (cdr input)))
+
 ;;;###autoload
 (defun consult-locate (&optional initial)
   "Search for regexp with locate with INITIAL input.
@@ -4180,6 +4198,11 @@ See `consult-grep' for more details regarding the asynchronous search."
   (find-file (consult--find "Locate: " consult-locate-command initial)))
 
 ;;;;; Command: consult-man
+
+(defun consult--man-command-builder (config input)
+  "Build command line given CONFIG and INPUT."
+  (append (split-string-and-unquote (plist-get config :args))
+          (consult--command-split input)))
 
 (defun consult--man-format (lines)
   "Format man candidates from LINES."
