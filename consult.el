@@ -548,6 +548,30 @@ ARGS is a list of commands or sources followed by the list of keyword-value pair
   "Return list of regular expressions given command INPUT."
   (consult--compile-regexp (or (car (consult--command-split input)) "") 'emacs))
 
+(defconst consult--convert-regexp-table
+  (append
+   ;; For simplicity, treat word beginning/end as word boundaries,
+   ;; since PCRE does not make this distinction. Usually the
+   ;; context determines if \b is the beginning or the end.
+   '(("\\<" . "\\b") ("\\>" . "\\b")
+     ("\\_<" . "\\b") ("\\_>" . "\\b"))
+   ;; Treat \` and \' as beginning and end of line. This is more
+   ;; widely supported and makes sense for line-based commands.
+   '(("\\`" . "^") ("\\'" . "$"))
+   ;; Historical: Unescaped *, +, ? are supported at the beginning
+   (mapcan (lambda (x)
+             (mapcar (lambda (y)
+                       (cons (concat x y)
+                             (concat (string-remove-prefix "\\" x) "\\" y)))
+                     '("*" "+" "?")))
+           '("" "\\(" "\\(?:" "\\|" "^"))
+   ;; Different escaping
+   (mapcan (lambda (x) `(,x (,(cdr x) . ,(car x))))
+           '(("\\|" . "|")
+             ("\\(" . "(") ("\\)" . ")")
+             ("\\{" . "{") ("\\}" . "}"))))
+  "Regexp conversion table.")
+
 (defun consult--convert-regexp (regexp type)
   "Convert Emacs REGEXP to regexp syntax TYPE."
   (if (memq type '(emacs basic))
@@ -558,40 +582,16 @@ ARGS is a list of commands or sources followed by the list of keyword-value pair
     ;; - Syntax classes \sx \Sx
     ;; - Character classes \cx \Cx
     ;; - Explicitly numbered groups (?3:group)
-    (let ((subst
-           (append
-            ;; Word beginning/end replacements
-            (if (memq type '(pcre rust))
-                '(("\\<" . "\\b") ("\\>" . "\\b")
-                  ("\\_<" . "\\b") ("\\_>" . "\\b"))
-              '(("\\_<" . "\\<") ("\\_>" . "\\>")))
-            (eval-when-compile
-              (append
-               ;; Treat \` and \' as beginning and end of line. This is more
-               ;; widely supported and makes sense for line-based commands.
-               '(("\\`" . "^") ("\\'" . "$"))
-               ;; Historical: Unescaped *, +, ? are supported at the beginning
-               (mapcan (lambda (x)
-                         (mapcar (lambda (y)
-                                   (cons (concat x y)
-                                         (concat (string-remove-prefix "\\" x) "\\" y)))
-                                 '("*" "+" "?")))
-                       '("" "\\(" "\\(?:" "\\|" "^"))
-               ;; Different escaping
-               (mapcan (lambda (x) `(,x (,(cdr x) . ,(car x))))
-                       '(("\\|" . "|")
-                         ("\\(" . "(") ("\\)" . ")")
-                         ("\\{" . "{") ("\\}" . "}"))))))))
-      (replace-regexp-in-string
-       (rx (or "\\\\" "\\^"                         ;; Pass through
-               (seq (or "\\(?:" "\\|") (any "*+?")) ;; Historical: \|+ or \(?:* etc
-               (seq "\\(" (any "*+"))               ;; Historical: \(* or \(+
-               (seq (or bos "^") (any "*+?"))       ;; Historical: + or * at the beginning
-               (seq (opt "\\") (any "(){|}"))       ;; Escape parens/braces/pipe
-               (seq "\\" (any "'<>`"))              ;; Special escapes
-               (seq "\\_" (any "<>"))))             ;; Beginning or end of symbol
-       (lambda (x) (or (cdr (assoc x subst)) x))
-       regexp 'fixedcase 'literal))))
+    (replace-regexp-in-string
+     (rx (or "\\\\" "\\^"                         ;; Pass through
+             (seq (or "\\(?:" "\\|") (any "*+?")) ;; Historical: \|+ or \(?:* etc
+             (seq "\\(" (any "*+"))               ;; Historical: \(* or \(+
+             (seq (or bos "^") (any "*+?"))       ;; Historical: + or * at the beginning
+             (seq (opt "\\") (any "(){|}"))       ;; Escape parens/braces/pipe
+             (seq "\\" (any "'<>`"))              ;; Special escapes
+             (seq "\\_" (any "<>"))))             ;; Beginning or end of symbol
+     (lambda (x) (or (cdr (assoc x consult--convert-regexp-table)) x))
+     regexp 'fixedcase 'literal)))
 
 (defun consult--compile-regexp (str type)
   "Compile STR to a list of regexps of TYPE."
@@ -4149,7 +4149,7 @@ See `consult-grep' for more details."
   "Return regexp type supported by ripgrep command."
   (or consult--ripgrep-regexp-type
       (setq consult--ripgrep-regexp-type
-            (if (consult--grep-lookahead-p "rg" "-P") 'pcre 'rust))))
+            (if (consult--grep-lookahead-p "rg" "-P") 'pcre 'extended))))
 
 (defun consult--ripgrep-command-builder (config input)
   "Build command line given CONFIG and INPUT."
