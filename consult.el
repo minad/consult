@@ -562,7 +562,7 @@ This function only changes the escaping of parentheses, braces and pipes."
     (let ((swap '(("\\|" . "|")
                     ("\\(" . "(") ("\\)" . ")")
                     ("\\{" . "{") ("\\}" . "}")))
-          (subst (if (eq type 'pcre)
+          (subst (if (memq type '(pcre rust))
                      ;; \z matches at the end, \Z matches at the end and before the last \n
                      '(("\\`" . "\\A") ("\\'" . "\\z")
                        ("\\<" . "\\b") ("\\>" . "\\b")
@@ -4064,23 +4064,23 @@ INITIAL is inital input."
      :history '(:input consult--grep-history)
      :sort nil)))
 
-(defvar consult--grep-supported-regexp nil)
-(defun consult--grep-supported-regexp (cmd)
-  "Return regexp type supported by grep CMD."
-  (or (alist-get cmd consult--grep-supported-regexp)
-      (let ((supported (with-temp-buffer
-                         (insert "^(?=.*b)(?=.*a)")
-                         (if (eq 0 (call-process-region (point-min) (point-max)
-                                                        (symbol-name cmd) nil nil nil "-P" "^(?=.*b)(?=.*a)"))
-                             'pcre
-                           'extended))))
-        ;; XXX On Emacs 26 does not return the value from setf, this has been fixed in 27.
-        (setf (alist-get cmd consult--grep-supported-regexp) supported)
-        supported)))
+(defun consult--grep-lookahead-p (&rest cmd)
+  "Return t if grep CMD supports lookahead."
+  (with-temp-buffer
+    (insert "xaxbx")
+    (eq 0 (apply #'call-process-region (point-min) (point-max)
+                 (car cmd) nil nil nil `(,@cmd "^(?=.*b)(?=.*a)")))))
+
+(defvar consult--grep-regexp-type nil)
+(defun consult--grep-regexp-type ()
+  "Return regexp type supported by grep command."
+  (or consult--grep-regexp-type
+      (setq consult--grep-regexp-type
+            (if (consult--grep-lookahead-p "grep" "-P") 'pcre 'extended))))
 
 (defun consult--grep-command-builder (config input)
   "Build command line given CONFIG and INPUT."
-  (let ((type (consult--grep-supported-regexp 'grep)))
+  (let ((type (consult--grep-regexp-type)))
     (setq input (consult--command-split input))
     (append (split-string-and-unquote (plist-get config :args))
             (list (if (eq type 'pcre) "--perl-regexp" "--extended-regexp")
@@ -4125,9 +4125,16 @@ See `consult-grep' for more details."
   (interactive "P")
   (consult--grep "Git-grep" consult-git-grep-command dir initial))
 
+(defvar consult--ripgrep-regexp-type nil)
+(defun consult--ripgrep-regexp-type ()
+  "Return regexp type supported by ripgrep command."
+  (or consult--ripgrep-regexp-type
+      (setq consult--ripgrep-regexp-type
+            (if (consult--grep-lookahead-p "rg" "-P") 'pcre 'rust))))
+
 (defun consult--ripgrep-command-builder (config input)
   "Build command line given CONFIG and INPUT."
-  (let ((type (consult--grep-supported-regexp 'rg)))
+  (let ((type (consult--ripgrep-regexp-type)))
     (setq input (consult--command-split input))
     (append (split-string-and-unquote (plist-get config :args))
             (and (eq type 'pcre) '("-P"))
@@ -4168,18 +4175,16 @@ INITIAL is inital input."
    :category 'file
    :history '(:input consult--find-history)))
 
-(defvar consult--find-supported-regexp nil)
-(defun consult--find-supported-regexp ()
+(defvar consult--find-regexp-type nil)
+(defun consult--find-regexp-type ()
   "Return regexp type supported by find command."
-  (or consult--find-supported-regexp
-      (setq consult--find-supported-regexp
-            (if (string-match-p "GNU findutils" (shell-command-to-string "find --version"))
-                'emacs
-              'basic))))
+  (or consult--find-regexp-type
+      (setq consult--find-regexp-type
+            (if (string-match-p "GNU" (shell-command-to-string "find --version")) 'emacs 'basic))))
 
 (defun consult--find-command-builder (config input)
   "Build command line given CONFIG and INPUT."
-  (let ((type (consult--find-supported-regexp)))
+  (let ((type (consult--find-regexp-type)))
     (setq input (consult--command-split input))
     (append (split-string-and-unquote (plist-get config :args))
             (cdr (mapcan (lambda (x) `("-and" "-iregex" ,(format ".*%s.*" x)))
