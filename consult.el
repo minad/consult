@@ -557,22 +557,19 @@ This function only changes the escaping of parentheses, braces and pipes."
     ;; XXX Unsupported Emacs regexp features:
     ;; * "*" at the beginning of a choice, e.g, "\(?:*" or "\|*"
     ;; * Backslash constructs \= \sx \Sx \cx \Cx
-    (let ((subst `(("\\\\" . "\\\\")
-                   ,@(if (eq type 'pcre)
-                         '(("\\`" . "\\\\A") ("\\'" . "\\\\Z")
-                           ("\\<" . "\\\\b") ("\\>" . "\\\\b")
-                           ("\\_<" . "\\\\b") ("\\_>" . "\\\\b"))
-                       '(("\\`" . "\\\\`") ("\\'" . "\\\\'")
-                         ("\\<" . "\\\\<") ("\\>" . "\\\\>")
-                         ("\\_<" . "\\\\<") ("\\_>" . "\\\\>"))))))
+    (let ((swap '(("\\|" . "|")
+                    ("\\(" . "(") ("\\)" . ")")
+                    ("\\{" . "{") ("\\}" . "}")))
+          (subst (if (eq type 'pcre)
+                     '(("\\`" . "\\A") ("\\'" . "\\Z")
+                       ("\\<" . "\\b") ("\\>" . "\\b")
+                       ("\\_<" . "\\b") ("\\_>" . "\\b"))
+                   '(("\\_<" . "\\<") ("\\_>" . "\\>")))))
       (replace-regexp-in-string
        "\\\\\\\\\\|\\\\?[(){}|]\\|\\\\[`'<>]\\|\\\\_[<>]"
        (lambda (x)
-         (cond
-          ((cdr (assoc x subst)))
-          ((= 1 (length x)) (concat "\\\\" x))
-          (t (substring x 1))))
-       regexp))))
+         (or (cdr (assoc x subst)) (cdr (assoc x swap)) (car (rassoc x swap)) x))
+       regexp 'fixedcase 'literal))))
 
 (defun consult--compile-regexp (str type)
   "Compile STR to a list of regexps of TYPE."
