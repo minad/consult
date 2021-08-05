@@ -576,17 +576,16 @@ This function only changes the escaping of parentheses, braces and pipes."
 
 (defun consult--compile-regexp (str type)
   "Compile STR to a list of regexps of TYPE."
-  (setq str (split-string str nil 'omit-nulls))
-  (mapcar (lambda (x) (consult--convert-regexp x type)) str))
+  (mapcar (lambda (x) (consult--convert-regexp x type))
+          (split-string str nil 'omit-nulls)))
 
 (defun consult--join-regexp (str type)
   "Compile STR to a regexp joined from multiple regexps of TYPE."
   (setq str (consult--compile-regexp str type))
   (pcase-exhaustive type
     ((or 'basic 'emacs 'extended) (string-join str ".*"))
-    ('pcre (concat "^" (mapconcat
-                             (lambda (x) (format "(?=.*%s)" x))
-                             str "")))))
+    ('pcre (concat "^" (mapconcat (lambda (x) (format "(?=.*%s)" x))
+                                  str "")))))
 
 (defun consult--valid-regexp-p (re)
   "Return t if regexp RE is valid."
