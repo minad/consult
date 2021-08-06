@@ -252,8 +252,10 @@ Please adjust your configuration." var)))
 The command configuration must be a plist, where :command is a function taking
 two arguments, the configuation plist itself and the current input string. The
 function should return a list of command line arguments. Furthermore a
-:hightlight function can be specified, which takes the same arguments as the
-:command function transforms the input to a regexp or a list of regexps.
+:highlight function can be specified, which takes the same arguments as the
+:command function. The function should return either nil or another function
+taking three arguments, the string, which is mutated, and the beginning and end
+of the range to highlight.
 
 For ease of use the function `consult--grep-command-builder' (the default
 command line builder for Grep) supports specifying command line arguments via
@@ -561,8 +563,29 @@ ARGS is a list of commands or sources followed by the list of keyword-value pair
         (cons str (and opts (ignore-errors (split-string-and-unquote opts))))))))
 
 (defun consult--command-highlight (_config input)
-  "Return list of regular expressions given command INPUT."
-  (consult--compile-regexp (or (car (consult--command-split input)) "") 'emacs))
+  "Return highlighter function given command INPUT."
+  (when-let (regexps (seq-filter
+                      #'consult--valid-regexp-p
+                      (consult--compile-regexp
+                       (or (car (consult--command-split input)) "")
+                       'emacs)))
+    (lambda (str beg end)
+      (consult--highlight-regexps regexps str beg end))))
+
+(defun consult--highlight-regexps (regexps str beg end)
+  "Highlight REGEXPS in STR from BEG to END.
+If a regular expression contains capturing groups, only these are highlighted.
+If no capturing groups are used highlight the whole match."
+  (dolist (re regexps)
+    (when (string-match re str beg)
+      (let ((i (if (match-beginning 1) 1 0)) m n)
+        (while (setq m (match-beginning i))
+          (when (< m end)
+            (setq n (match-end i))
+            (add-face-text-property
+             m (if (> n end) end n)
+             'consult-preview-match nil str))
+          (setq i (1+ i)))))))
 
 (defconst consult--convert-regexp-table
   (append
@@ -628,19 +651,6 @@ ARGS is a list of commands or sources followed by the list of keyword-value pair
   (condition-case nil
       (progn (string-match-p re "") t)
     (invalid-regexp nil)))
-
-(defun consult--highlight-regexps (regexps str start)
-  "Highlight REGEXPS in STR from START.
-If a regular expression contains capturing groups, only these are highlighted.
-If no capturing groups are used highlight the whole match."
-  (save-match-data
-    (dolist (re regexps)
-      (when (string-match re str start)
-        (let ((i (if (match-beginning 1) 1 0)))
-          (while (match-beginning i)
-            (add-face-text-property (match-beginning i) (match-end i)
-                                    'consult-preview-match nil str)
-            (setq i (1+ i))))))))
 
 (defun consult--regexp-filter (regexps)
   "Create filter regexp from REGEXPS."
@@ -1626,17 +1636,15 @@ PROPS are optional properties passed to `make-process'."
   "Return ASYNC function which highlightes the candidates.
 CONFIG is the command configuration."
   (if-let (fun (plist-get config :highlight))
-      (let ((regexps))
+      (let ((highlight))
         (lambda (action)
           (cond
            ((stringp action)
-            (setq regexps (seq-filter #'consult--valid-regexp-p
-                                      (consult--to-list
-                                       (funcall fun config action))))
+            (setq highlight (funcall fun config action))
             (funcall async action))
-           ((and (consp action) regexps)
+           ((and (consp action) highlight)
             (dolist (str action)
-              (consult--highlight-regexps regexps str 0))
+              (funcall highlight str 0 (length str)))
             (funcall async action))
            (t (funcall async action)))))
     async))
@@ -4027,14 +4035,12 @@ Macros containing mouse clicks are omitted."
 (defun consult--grep-format (async config)
   "Return ASYNC function highlighting grep match results.
 CONFIG is the command configuration."
-  (let ((regexps))
+  (let ((highlight))
     (lambda (action)
       (cond
        ((stringp action)
         (when-let (fun (plist-get config :highlight))
-          (setq regexps (seq-filter #'consult--valid-regexp-p
-                                    (consult--to-list
-                                     (funcall fun config action)))))
+          (setq highlight (funcall fun config action)))
         (funcall async action))
        ((consp action)
         (let ((regexp (plist-get config :match)) (result))
@@ -4051,7 +4057,8 @@ CONFIG is the command configuration."
                     (setq str (substring str file-beg max-len)))
                    ((> file-beg 0)
                     (setq str (substring str file-beg))))
-                  (consult--highlight-regexps regexps str (- (match-end 0) file-beg))
+                  (when highlight
+                    (funcall highlight str (- (match-end 0) file-beg) (length str)))
                   ;; Store file name in order to avoid allocations in `consult--grep-group'
                   (add-text-properties 0 file-len `(face consult-file consult--grep-file ,file) str)
                   (put-text-property (1+ file-len) (+ 1 file-len line-len) 'face 'consult-line-number str)
