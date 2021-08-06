@@ -531,8 +531,7 @@ their descriptions.
  used for filtering.
 
  The =perl= splitting style splits the input string at a punctuation character,
- using a similar syntax as Perl regular expressions. If the first character is
- a space, the space is ignored and the remaining string is not split.
+ using a similar syntax as Perl regular expressions.
 
  Examples:
 
@@ -545,7 +544,6 @@ their descriptions.
  - =#to#=: Force searching for "to" using grep, since the grep pattern
    must be longer than =consult-async-min-input= characters by default.
  - =#defun -- --invert-match#=: Pass argument =--invert-match= to grep.
- - =_+consult=: Search for "+consult". Note the space in the beginning!
 
  Asynchronous processes like =find= and =grep= create an error log buffer
  =_*consult-async*= (note the leading space), which is useful for
