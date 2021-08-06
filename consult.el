@@ -253,9 +253,9 @@ The command configuration must be a plist, where :command is a function taking
 two arguments, the configuation plist itself and the current input string. The
 function should return a list of command line arguments. Furthermore a
 :highlight function can be specified, which takes the same arguments as the
-:command function. The function should return either nil or another function
-taking three arguments, the string, which is mutated, and the beginning and end
-of the range to highlight.
+:command function. The function should return either nil or a function taking
+the string, which is to be mutated, and two optional arguments which specify
+the beginning and end of the range to highlight.
 
 For ease of use the function `consult--grep-command-builder' (the default
 command line builder for Grep) supports specifying command line arguments via
@@ -569,13 +569,14 @@ ARGS is a list of commands or sources followed by the list of keyword-value pair
                       (consult--compile-regexp
                        (or (car (consult--command-split input)) "")
                        'emacs)))
-    (lambda (str beg end)
+    (lambda (str &optional beg end)
       (consult--highlight-regexps regexps str beg end))))
 
-(defun consult--highlight-regexps (regexps str beg end)
+(defun consult--highlight-regexps (regexps str &optional beg end)
   "Highlight REGEXPS in STR from BEG to END.
 If a regular expression contains capturing groups, only these are highlighted.
 If no capturing groups are used highlight the whole match."
+  (setq end (or end most-positive-fixnum))
   (dolist (re regexps)
     (when (string-match re str beg)
       (let ((i (if (match-beginning 1) 1 0)) m n)
@@ -1644,7 +1645,7 @@ CONFIG is the command configuration."
             (funcall async action))
            ((and (consp action) highlight)
             (dolist (str action)
-              (funcall highlight str 0 (length str)))
+              (funcall highlight str))
             (funcall async action))
            (t (funcall async action)))))
     async))
@@ -4058,7 +4059,7 @@ CONFIG is the command configuration."
                    ((> file-beg 0)
                     (setq str (substring str file-beg))))
                   (when highlight
-                    (funcall highlight str (- (match-end 0) file-beg) (length str)))
+                    (funcall highlight str (- (match-end 0) file-beg)))
                   ;; Store file name in order to avoid allocations in `consult--grep-group'
                   (add-text-properties 0 file-len `(face consult-file consult--grep-file ,file) str)
                   (put-text-property (1+ file-len) (+ 1 file-len line-len) 'face 'consult-line-number str)
