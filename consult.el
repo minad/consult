@@ -4223,7 +4223,13 @@ INITIAL is inital input."
   (let ((type (consult--find-regexp-type)))
     (setq input (consult--command-split input))
     (append (split-string-and-unquote (plist-get config :args))
-            (cdr (mapcan (lambda (x) `("-and" "-iregex" ,(format ".*%s.*" x)))
+            (cdr (mapcan (lambda (x)
+                           `("-and" "-iregex"
+                             ,(format ".*%s.*"
+                                      ;; HACK Replace non-capturing groups with capturing groups.
+                                      ;; GNU find does not support non-capturing groups.
+                                      (replace-regexp-in-string
+                                       "\\\\(\\?:" "\\(" x 'fixedcase 'literal))))
                          (consult--compile-regexp (car input) type)))
             (cdr input))))
 
