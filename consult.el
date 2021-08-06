@@ -614,11 +614,17 @@ ARGS is a list of commands or sources followed by the list of keyword-value pair
     (invalid-regexp nil)))
 
 (defun consult--highlight-regexps (regexps str start)
-  "Highlight REGEXPS in STR from START."
+  "Highlight REGEXPS in STR from START.
+If a regular expression contains capturing groups, only these are highlighted.
+If no capturing groups are used highlight the whole match."
   (save-match-data
     (dolist (re regexps)
       (when (string-match re str start)
-        (put-text-property (match-beginning 0) (match-end 0) 'face 'consult-preview-match str)))))
+        (let ((i (if (match-beginning 1) 1 0)))
+          (while (match-beginning i)
+            (add-face-text-property (match-beginning i) (match-end i)
+                                    'consult-preview-match nil str)
+            (setq i (1+ i))))))))
 
 (defun consult--regexp-filter (regexps)
   "Create filter regexp from REGEXPS."
