@@ -1339,19 +1339,24 @@ The function returns a list with four elements: The async string, the
 completion filter string, the new point position computed from POINT and a
 force flag. If the first character is a punctuation character it determines the
 separator. Examples: \"/async/filter\", \"#async#filter\"."
-  (if (string-match-p "^[[:punct:]]" str)
-      (save-match-data
-        (let ((q (regexp-quote (substring str 0 1))))
-          (string-match (concat "^" q "\\([^" q "]*\\)\\(" q "\\)?") str)
-          `(,(match-string 1 str)
-            ,(substring str (match-end 0))
-            ,(max 0 (- point (match-end 0)))
-            ;; Force update it two punctuation characters are entered.
-            ,(match-end 2)
-            ;; List of highlights
-            (0 . ,(match-beginning 1))
-            ,@(and (match-end 2) `((,(match-beginning 2) . ,(match-end 2)))))))
-    `(,str "" 0)))
+  (cond
+   ;; If first character is a punctuation character, perform splitting.
+   ((string-match-p "^[[:punct:]]" str)
+    (save-match-data
+      (let ((q (regexp-quote (substring str 0 1))))
+        (string-match (concat "^" q "\\([^" q "]*\\)\\(" q "\\)?") str)
+        `(,(match-string 1 str)
+          ,(substring str (match-end 0))
+          ,(max 0 (- point (match-end 0)))
+          ;; Force update it two punctuation characters are entered.
+          ,(match-end 2)
+          ;; List of highlights
+          (0 . ,(match-beginning 1))
+          ,@(and (match-end 2) `((,(match-beginning 2) . ,(match-end 2))))))))
+   ;; If first character is a space, ignore it!
+   ((string-prefix-p " " str) `(,(substring str 1) "" 0))
+   ;; Otherwise the whole string is to be treated as async input.
+   (t `(,str "" 0))))
 
 (defun consult--split-separator (sep str point)
   "Split input STR in async input and filtering part at the first separator SEP.
