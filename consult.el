@@ -2772,6 +2772,8 @@ changed if the START prefix argument is set. The symbol at point and the last
      :prompt (if top "Go to line from top: " "Go to line: ")
      :initial initial)))
 
+;;;;; Command: consult-line-multi
+
 (defun consult--line-multi-candidates (query)
   "Collect the line candidates from multiple buffers.
 QUERY is passed to `consult--buffer-query'."
