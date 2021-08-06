@@ -4139,6 +4139,8 @@ Otherwise the `default-directory' is searched."
   (interactive "P")
   (consult--grep "Grep" consult-grep-command dir initial))
 
+;;;;; Command: consult-git-grep
+
 (defun consult--git-grep-command-builder (config input)
   "Build command line given CONFIG and INPUT."
   (setq input (consult--command-split input))
@@ -4154,6 +4156,8 @@ Otherwise the `default-directory' is searched."
 See `consult-grep' for more details."
   (interactive "P")
   (consult--grep "Git-grep" consult-git-grep-command dir initial))
+
+;;;;; Command: consult-ripgrep
 
 (defvar consult--ripgrep-regexp-type nil)
 (defun consult--ripgrep-regexp-type ()
@@ -4231,6 +4235,8 @@ See `consult-grep' for more details regarding the asynchronous search."
   (let* ((prompt-dir (consult--directory-prompt "Find" dir))
          (default-directory (cdr prompt-dir)))
     (find-file (consult--find (car prompt-dir) consult-find-command initial))))
+
+;;;;; Command: consult-locate
 
 (defun consult--locate-command-builder (config input)
   "Build command line given CONFIG and INPUT."
