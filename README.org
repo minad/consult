@@ -917,19 +917,19 @@ configuration examples.
  | consult-buffer-filter            | Filter for =consult-buffer=                             |
  | consult-buffer-sources           | List of virtual buffer sources                        |
  | consult-crm-prefix               | Prefix string for CRM candidates                      |
- | consult-find-config              | Command line arguments for find                       |
+ | consult-find-args                | Command line arguments for find                       |
  | consult-fontify-max-size         | Buffers larger than this limit are not fontified      |
  | consult-fontify-preserve         | Preserve fontification for line-based commands.       |
- | consult-git-grep-config          | Command line arguments for git-grep                   |
+ | consult-git-grep-args            | Command line arguments for git-grep                   |
  | consult-goto-line-numbers        | Show line numbers for =consult-goto-line=               |
  | consult-grep-max-columns         | Maximal number of columns of the matching lines       |
- | consult-grep-config              | Command line arguments for grep                       |
+ | consult-grep-args                | Command line arguments for grep                       |
  | consult-imenu-config             | Mode-specific configuration for =consult-imenu=         |
  | consult-line-numbers-widen       | Show absolute line numbers when narrowing is active.  |
  | consult-line-point-placement     | Placement of the point used by =consult-line=           |
  | consult-line-start-from-top      | Start the =consult-line= search from the top            |
- | consult-locate-config            | Command line arguments for locate                     |
- | consult-man-config               | Command line arguments for man                        |
+ | consult-locate-args              | Command line arguments for locate                     |
+ | consult-man-args                 | Command line arguments for man                        |
  | consult-mode-command-filter      | Filter for =consult-mode-command=                       |
  | consult-mode-histories           | Mode-specific history variables                       |
  | consult-narrow-key               | Narrowing prefix key during completion                |
@@ -940,7 +940,7 @@ configuration examples.
  | consult-preview-raw-size         | Files larger than this size are previewed in raw form |
  | consult-project-root-function    | Function which returns current project root           |
  | consult-register-narrow          | Narrowing configuration for =consult-register=          |
- | consult-ripgrep-config           | Command line arguments for ripgrep                    |
+ | consult-ripgrep-args             | Command line arguments for ripgrep                    |
  | consult-themes                   | List of themes to be presented for selection          |
  | consult-widen-key                | Widening key during completion                        |
 

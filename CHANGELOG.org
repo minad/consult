@@ -24,10 +24,8 @@
 - =consult-grep/git-grep/ripgrep=: Compute the highlighting based on the input,
   instead of relying on the ANSI-escaped output. This works better with multiple
   patterns, but may occasionally produce false highlighting.
-- Deprecate =consult-*-command= configuration variables in favor of =consult-*config=.
-  The variables have been renamed since the configuration format changed. The new
-  configuration variables allow you to specify a command line builder function,
-  which computes the command line.
+- Deprecate =consult-x-command= configuration variables in favor of =consult-x-args=.
+  The variables have been renamed since the configuration format changed.
 
 * Version 0.9 (2021-06-22)
 
