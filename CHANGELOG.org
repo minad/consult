@@ -13,16 +13,21 @@
 - =consult-grep/git-grep=: Use =--ignore-case=
 - Deprecate =consult-<cmd>-command= in favor of =consult-<cmd>-config.=
 - =consult-find=: Use regular expressions instead of globbing/wildcards by default.
+- =consult-find/locate/man=: Add highlighting to the matching file/man page names.
 - =consult-grep/git-grep/ripgrep/find/locate=: Add support for multiple patterns.
   + =consult-git-grep= and =consult-find= support unordered patterns out of the box.
-    For example: "first second third" is transformed to "first -and second -and third".
-  + =consult-grep= and =consult-ripgrep= support unordered patterns if the program supports it.
+    Example: "first second third" is transformed to "first -and second -and third".
+  + =consult-grep= and =consult-ripgrep= support unordered patterns if the program
+    supports it.
   + =consult-locate= only support ordered patterns.
-    For example: "first second third" is transformed to "first.*second.*third".
-- =consult-find/locate/man=: Add highlighting.
+    Example: "first second third" is transformed to "first.*second.*third".
 - =consult-grep/git-grep/ripgrep=: Compute the highlighting based on the input,
   instead of relying on the ANSI-escaped output. This works better with multiple
   patterns, but may occasionally produce false highlighting.
+- Deprecate =consult-*-command= configuration variables in favor of =consult-*config=.
+  The variables have been renamed since the configuration format changed. The new
+  configuration variables allow you to specify a command line builder function,
+  which computes the command line.
 
 * Version 0.9 (2021-06-22)
 

@@ -225,7 +225,23 @@ See `consult--multi' for a description of the source values."
   "\\`\\(?:./\\)?\\([^\n:]+\\):\\([0-9]+\\):"
   "Regexp used to match file and line of grep output.")
 
-(defcustom consult-grep-command
+;; TODO remove deprecation
+(defmacro consult--obsolete-command-config (&rest vars)
+  "Create obsolete command configuration VARS."
+  (macroexp-progn
+   (mapcan
+    (lambda (var)
+      (let ((sym (intern (format "consult-%s-command" var)))
+            (msg (format "This variable has been deprecated in favor of `consult-%s-config'.
+The command configuration format has been updated.
+See `consult-grep-config' or the CHANGELOG for more information.
+Please adjust your configuration." var)))
+        `((defvar ,sym ,msg)
+          (make-obsolete-variable ',sym ,msg "0.9"))))
+    vars)))
+(consult--obsolete-command-config grep ripgrep git-grep find locate man)
+
+(defcustom consult-grep-config
   (list :args "grep --line-buffered --color=never --ignore-case\
                --exclude-dir=.git --line-number -I -r ."
         :command #'consult--grep-command-builder
@@ -245,48 +261,48 @@ the :args string. The dynamically computed arguments are appended to these
 static arguments."
   :type 'plist)
 
-(defcustom consult-git-grep-command
+(defcustom consult-git-grep-config
   (list :args "git --no-pager grep --color=never --ignore-case\
                --extended-regexp --line-number -I"
         :command #'consult--git-grep-command-builder
         :match consult--grep-match-regexp
         :highlight #'consult--command-highlight)
   "Command configuration for git-grep, see `consult-git-grep'.
-See `consult-grep-command' for more information."
+See `consult-grep-config' for more information."
   :type 'plist)
 
-(defcustom consult-ripgrep-command
+(defcustom consult-ripgrep-config
   (list :args "rg --line-buffered --color=never --max-columns=1000 --path-separator /\
                --smart-case --no-heading --line-number ."
         :command #'consult--ripgrep-command-builder
         :match consult--grep-match-regexp
         :highlight #'consult--command-highlight)
   "Command configuration for ripgrep, see `consult-ripgrep'.
-See `consult-grep-command' for more information."
+See `consult-grep-config' for more information."
   :type 'plist)
 
-(defcustom consult-find-command
+(defcustom consult-find-config
   (list :args "find . -not ( -wholename */.* -prune )"
         :command #'consult--find-command-builder
         :highlight #'consult--command-highlight)
   "Command configuration for find, see `consult-find'.
-See `consult-grep-command' for more information."
+See `consult-grep-config' for more information."
   :type 'plist)
 
-(defcustom consult-locate-command
+(defcustom consult-locate-config
   (list :args "locate --ignore-case --existing --regexp"
         :command #'consult--locate-command-builder
         :highlight #'consult--command-highlight)
   "Command configuration for locate, see `consult-locate'.
-See `consult-grep-command' for more information."
+See `consult-grep-config' for more information."
   :type 'plist)
 
-(defcustom consult-man-command
+(defcustom consult-man-config
   (list :args "man -k"
         :command #'consult--man-command-builder
         :highlight #'consult--command-highlight)
   "Command configuration for man, see `consult-man'.
-See `consult-grep-command' for more information."
+See `consult-grep-config' for more information."
   :type 'plist)
 
 (defcustom consult-preview-key 'any
@@ -1712,8 +1728,11 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
 (defun consult--command-builder (cmd)
   "Return command line builder given CMD.
 CMD is the command line builder function or command configuration."
+  ;; TODO remove deprecation
   (when (stringp cmd)
-    (error "`%s' uses a deprecated command configuration %S" this-command cmd))
+    (error "`%s' uses a deprecated command configuration %S.
+Please adjust your configuration.
+See `consult-grep-config' or the CHANGELOG for more information" this-command cmd))
   (if (functionp cmd)
       cmd
     (lambda (input) (funcall (plist-get cmd :command) cmd input))))
@@ -4134,7 +4153,7 @@ the directory to search in. By default the project directory is used
 if `consult-project-root-function' is defined and returns non-nil.
 Otherwise the `default-directory' is searched."
   (interactive "P")
-  (consult--grep "Grep" consult-grep-command dir initial))
+  (consult--grep "Grep" consult-grep-config dir initial))
 
 ;;;;; Command: consult-git-grep
 
@@ -4152,7 +4171,7 @@ Otherwise the `default-directory' is searched."
 
 See `consult-grep' for more details."
   (interactive "P")
-  (consult--grep "Git-grep" consult-git-grep-command dir initial))
+  (consult--grep "Git-grep" consult-git-grep-config dir initial))
 
 ;;;;; Command: consult-ripgrep
 
@@ -4178,7 +4197,7 @@ See `consult-grep' for more details."
 
 See `consult-grep' for more details."
   (interactive "P")
-  (consult--grep "Ripgrep" consult-ripgrep-command dir initial))
+  (consult--grep "Ripgrep" consult-ripgrep-config dir initial))
 
 ;;;;; Command: consult-find
 
@@ -4237,7 +4256,7 @@ See `consult-grep' for more details regarding the asynchronous search."
   (interactive "P")
   (let* ((prompt-dir (consult--directory-prompt "Find" dir))
          (default-directory (cdr prompt-dir)))
-    (find-file (consult--find (car prompt-dir) consult-find-command initial))))
+    (find-file (consult--find (car prompt-dir) consult-find-config initial))))
 
 ;;;;; Command: consult-locate
 
@@ -4255,7 +4274,7 @@ See `consult-grep' for more details regarding the asynchronous search."
 The locate process is started asynchronously, similar to `consult-grep'.
 See `consult-grep' for more details regarding the asynchronous search."
   (interactive)
-  (find-file (consult--find "Locate: " consult-locate-command initial)))
+  (find-file (consult--find "Locate: " consult-locate-config initial)))
 
 ;;;;; Command: consult-man
 
@@ -4289,9 +4308,9 @@ The man process is started asynchronously, similar to `consult-grep'.
 See `consult-grep' for more details regarding the asynchronous search."
   (interactive)
   (man (consult--read
-        (consult--async-command consult-man-command
+        (consult--async-command consult-man-config
           (consult--async-transform consult--man-format)
-          (consult--async-highlight consult-man-command))
+          (consult--async-highlight consult-man-config))
         :prompt "Manual entry: "
         :require-match t
         :lookup #'consult--lookup-cdr
