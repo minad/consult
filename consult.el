@@ -1711,10 +1711,7 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
 BUILDER is the command line builder function."
   ;; TODO remove deprecation
   (unless (functionp builder)
-    (error "`%s' uses a deprecated command configuration %S.
-Please adjust your configuration.
-See `consult-grep-config' or the CHANGELOG for more information"
-           this-command builder))
+    (error "`%s' passed a string to `consult--async-command', which is deprecated" this-command))
   (lambda (input)
     (setq input (funcall builder input))
     (if (stringp (car input))
