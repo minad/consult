@@ -536,7 +536,7 @@ ARGS is a list of commands or sources followed by the list of keyword-value pair
   (save-match-data
     (let ((opts (when (string-match " +--\\( +\\|\\'\\)" str)
                   (prog1 (substring str (match-end 0))
-                    (setq str (substring str 0 (match-end 0)))))))
+                    (setq str (substring str 0 (match-beginning 0)))))))
       (unless (string-blank-p str)
         ;; split-string-and-unquote fails if the quotes are invalid. Ignore it.
         (cons str (and opts (ignore-errors (split-string-and-unquote opts))))))))
