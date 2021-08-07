@@ -552,8 +552,9 @@ If no capturing groups are used highlight the whole match."
       (let ((m (match-data)))
         (setq m (or (cddr m) m))
         (while m
-          (add-face-text-property (car m) (cadr m)
-                                  'consult-preview-match nil str)
+          (when (car m)
+            (add-face-text-property (car m) (cadr m)
+                                    'consult-preview-match nil str))
           (setq m (cddr m)))))))
 
 (defconst consult--convert-regexp-table
