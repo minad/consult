@@ -4038,6 +4038,19 @@ BUILDER is the command argument builder."
           (funcall async result)))
        (t (funcall async action))))))
 
+(defun consult--grep-position (cand &optional find-file)
+  "Return the grep position marker for CAND.
+FIND-FILE is the file open function, defaulting to `find-file'."
+  (save-match-data
+    (when (and cand (string-match consult--grep-match-regexp cand))
+      (let ((file (match-string 1 cand))
+            (line (string-to-number (match-string 2 cand)))
+            (col (next-single-property-change (match-end 0) 'face cand)))
+        (setq col (if col (- col (match-end 0)) 0))
+        (consult--position-marker
+         (funcall (or find-file #'find-file) file)
+         line col)))))
+
 (defun consult--grep-state ()
   "Grep preview state function."
   (let ((open (consult--temporary-files))
@@ -4045,16 +4058,9 @@ BUILDER is the command argument builder."
     (lambda (cand restore)
       (when restore
         (funcall open))
-      (funcall
-       jump
-       (save-match-data
-         (when (and cand (string-match consult--grep-match-regexp cand))
-           (let ((file (match-string 1 cand))
-                 (line (string-to-number (match-string 2 cand)))
-                 (col (next-single-property-change (match-end 0) 'face cand)))
-             (setq col (if col (- col (match-end 0)) 0))
-             (consult--position-marker (funcall (if restore #'find-file open) file) line col))))
-       restore))))
+      (funcall jump
+               (consult--grep-position cand (and (not restore) open))
+               restore))))
 
 (defun consult--grep-group (cand transform)
   "Return title for CAND or TRANSFORM the candidate."
