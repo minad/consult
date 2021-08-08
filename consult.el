@@ -2787,7 +2787,7 @@ QUERY is passed to `consult--buffer-query'."
 
 By default search across all project buffers. If the prefix argument QUERY is
 non-nil, all buffers are searched. Optional INITIAL input can be provided. See
-`consult-line' for more information. In order to search a subset of filters,
+`consult-line' for more information. In order to search a subset of buffers,
 QUERY can be set to a plist according to `consult--buffer-query'."
   (interactive "P")
   (let ((scope "Multiple buffers"))
