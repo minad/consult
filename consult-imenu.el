@@ -220,7 +220,7 @@ See also `consult-imenu-multi'."
 In order to determine the buffers belonging to the same project, the
 `consult-project-root-function' is used. Only the buffers with the
 same major mode as the current buffer are used. See also
-`consult-imenu' for more details. In order to search a subset of filters,
+`consult-imenu' for more details. In order to search a subset of buffers,
 QUERY can be set to a plist according to `consult--buffer-query'."
   (interactive)
   (let ((scope "Multiple buffers"))
