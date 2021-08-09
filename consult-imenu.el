@@ -226,7 +226,7 @@ QUERY can be set to a plist according to `consult--buffer-query'."
                       :directory (and (not query) 'project))))
   (let ((result (apply #'consult--buffer-query-scope query)))
     (consult-imenu--select
-     (format "Go to item (%s): " (cdr result))
+     (format "Imenu (%s)\nGo to item: " (cdr result))
      (consult-imenu--multi-items (car result)))))
 
 (define-obsolete-function-alias

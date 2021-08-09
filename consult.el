@@ -2797,7 +2797,7 @@ QUERY can be set to a plist according to `consult--buffer-query'."
   (let ((result (apply #'consult--buffer-query-scope query)))
     (consult--line
      (consult--line-multi-candidates (car result))
-     :prompt (format "Go to line (%s): " (cdr result))
+     :prompt (format "Search (%s)\nGo to line: " (cdr result))
      :initial initial
      :group #'consult--line-group)))
 
@@ -3738,7 +3738,7 @@ See a`consult-buffer-query' for the documentation of the arguments."
       (format "%d buffer%s" count (if (= count 1) "" "s"))
       (when new-dir
         (if (eq directory 'project)
-	    (format ", project %s" (consult--project-name new-dir))
+	    (format ", Project %s" (consult--project-name new-dir))
           (concat  ", " (consult--abbreviate-directory new-dir))))
       (and mode (concat ", " (mapconcat #'consult--mode-name (consult--to-list mode) ", ")))))))
 
