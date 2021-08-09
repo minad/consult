@@ -3735,13 +3735,12 @@ See a`consult-buffer-query' for the documentation of the arguments."
     (cons
      buffers
      (concat
-      (if new-dir
-          (if (eq directory 'project)
-	      (format "Project %s, " (consult--project-name new-dir))
-            (concat (consult--abbreviate-directory new-dir) ", "))
-        "All ")
       (format "%d buffer%s" count (if (= count 1) "" "s"))
-      (and mode (format " <%s>" (mapconcat #'consult--mode-name (consult--to-list mode) ", ")))))))
+      (when new-dir
+        (if (eq directory 'project)
+	    (format ", project %s" (consult--project-name new-dir))
+          (concat  ", " (consult--abbreviate-directory new-dir))))
+      (and mode (concat ", " (mapconcat #'consult--mode-name (consult--to-list mode) ", ")))))))
 
 (cl-defun consult--buffer-query (&key sort directory mode as predicate (filter t)
                                       include (exclude consult-buffer-filter))
