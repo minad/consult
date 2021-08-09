@@ -116,13 +116,15 @@ This applies to asynchronous commands, e.g., `consult-grep'."
 
 (defcustom consult-async-split-style 'perl
   "Async splitter style, see `consult-async-split-styles-alist'."
-  :type '(choice (const :tag "Space" space)
+  :type '(choice (const :tag "No splitting" nil)
+                 (const :tag "Space" space)
                  (const :tag "Comma" comma)
                  (const :tag "Semicolon" semicolon)
                  (const :tag "Perl" perl)))
 
 (defcustom consult-async-split-styles-alist
-  '((space :separator ?\s :type separator)
+  '((nil :type nil)
+    (space :separator ?\s :type separator)
     (comma :separator ?, :type separator)
     (semicolon :separator ?\; :type separator)
     (perl :initial "#" :type perl))
@@ -1361,6 +1363,10 @@ separator. Examples: \"/async/filter\", \"#async#filter\"."
             ,@(and (match-end 2) `((,(match-beginning 2) . ,(match-end 2)))))))
     `(,str "" 0)))
 
+(defun consult--split-nil (str _point)
+  "Treat the complete input STR as async input."
+  `(,str "" 0))
+
 (defun consult--split-separator (sep str point)
   "Split input STR in async input and filtering part at the first separator SEP.
 POINT is the point position."
@@ -1482,6 +1488,7 @@ SPLIT is the splitting function."
                     ('separator (apply-partially #'consult--split-separator
                                                  (plist-get style :separator)))
                     ('perl #'consult--split-perl)
+                    ('nil #'consult--split-nil)
                     (type (user-error "Invalid style type `%s'" type))))))
   (lambda (action)
     (pcase action

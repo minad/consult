@@ -522,13 +522,14 @@ their descriptions.
  This two-level filtering is possible by splitting the input string. Part of the
  input string is treated as input to grep and part of the input is used for
  filtering. There are multiple splitting styles available, configured in
- ~consult-async-split-styles-alist~: =space=, =comma=, =semicolon= and =perl=.
+ ~consult-async-split-styles-alist~: =nil=, =space=, =comma=, =semicolon= and =perl=.
  The default splitting style is configured with the variable
  ~consult-async-split-style~.
 
  With the =space=, =comma= and =semicolon= splitting styles, the first word
  before the space/comma/semicolon is passed to grep, the remaining string is
- used for filtering.
+ used for filtering. The =nil= splitting style does not perform any splitting,
+ the whole input is passed to grep.
 
  The =perl= splitting style splits the input string at a punctuation character,
  using a similar syntax as Perl regular expressions.
