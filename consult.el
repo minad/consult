@@ -3726,9 +3726,7 @@ DIR can be project, nil or a path."
     ((eq dir 'project) (consult--project-root))
     (dir (expand-file-name dir))))
 
-(cl-defun consult--buffer-query-scope (&rest args &key
-                                             directory mode (filter t)
-                                             include exclude &allow-other-keys)
+(cl-defun consult--buffer-query-scope (&rest args &key directory mode &allow-other-keys)
   "Buffer query function returning a scope description.
 See a`consult-buffer-query' for the documentation of the arguments."
   (let* ((new-dir (consult--normalize-directory directory))
@@ -3743,8 +3741,7 @@ See a`consult-buffer-query' for the documentation of the arguments."
             (concat (consult--abbreviate-directory new-dir) ", "))
         "All ")
       (format "%d buffer%s" count (if (= count 1) "" "s"))
-      (and mode (format " <%s>" (mapconcat #'consult--mode-name (consult--to-list mode) ", ")))
-      (and filter (or exclude include) " [filtered]")))))
+      (and mode (format " <%s>" (mapconcat #'consult--mode-name (consult--to-list mode) ", ")))))))
 
 (cl-defun consult--buffer-query (&key sort directory mode as predicate (filter t)
                                       include (exclude consult-buffer-filter))
