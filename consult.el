@@ -2772,12 +2772,11 @@ changed if the START prefix argument is set. The symbol at point and the last
 
 ;;;;; Command: consult-line-multi
 
-(defun consult--line-multi-candidates (query)
+(defun consult--line-multi-candidates (buffers)
   "Collect the line candidates from multiple buffers.
-QUERY is passed to `consult--buffer-query'."
+BUFFERS is the list of buffers."
   (or (apply #'nconc
-             (consult--buffer-map
-              (apply #'consult--buffer-query query)
+             (consult--buffer-map buffers
               #'consult--line-candidates 'top most-positive-fixnum))
       (user-error "No lines")))
 
@@ -2790,15 +2789,15 @@ non-nil, all buffers are searched. Optional INITIAL input can be provided. See
 `consult-line' for more information. In order to search a subset of buffers,
 QUERY can be set to a plist according to `consult--buffer-query'."
   (interactive "P")
-  (let ((scope "Multiple buffers"))
-    (unless (keywordp (car-safe query))
-      (let ((project (and (not query) (consult--project-root))))
-        (setq query `(:sort alpha :directory ,project)
-              scope (if project
-                        (format "Project %s" (consult--project-name project))
-                      "All buffers"))))
-    (consult--line
-     (consult--line-multi-candidates query)
+  (unless (keywordp (car-safe query))
+    (let ((project (and (not query) (consult--project-root))))
+      (setq query `(:sort alpha :directory ,project))))
+
+  (let* ((buffers (apply #'consult--buffer-query query))
+	 (scope (consult--buffer-query-prompt (length buffers) query)))
+
+  (consult--line
+   (consult--line-multi-candidates buffers)
      :prompt (format "Go to line (%s): " scope)
      :initial initial
      :group #'consult--line-group)))
@@ -3720,6 +3719,29 @@ The command supports previewing the currently selected theme."
           (push it hidden)
           nil)))
     (nconc (nreverse hidden) buffers (list (current-buffer)))))
+
+(defun consult--buffer-query-prompt (num query)
+  "Produce a prompt for the selected buffers.  
+NUM is the number of buffers, and QUERY is the
+`consult--buffer-query' compatible keyword PLIST."
+  (if (or (not (keywordp (car-safe query)))
+	  (and (plist-member query :directory)
+	       (null (plist-get query :directory))
+	       (not (seq-some (apply-partially #'plist-member query)
+			      '(:include :exclude :mode)))))
+      (if (<= num 1) "One buffer" (format "All %d buffers" num))
+    (concat
+     (if-let ((dir (plist-get query :directory)))
+	 (format "Project %s, %d bufs" (consult--project-name
+					(if (eq dir 'project)
+					    (consult--project-root) dir))
+		 num)
+       (format "%d buffer%s" num (if (<= num 1) "" "s")))
+     (if-let ((mode (plist-get query :mode))) (format " <%S>" mode))
+     (let ((flt (plist-get query :filter)))
+       (if (and (or flt (not (plist-member query :filter))) 	;default: t
+		(or (plist-get query :include) (plist-get query :exclude)))
+	   (concat " [FLT" (if (eq flt 'invert) "-INV") "]"))))))
 
 (cl-defun consult--buffer-query (&key sort directory mode as predicate (filter t)
                                       include (exclude consult-buffer-filter) )
