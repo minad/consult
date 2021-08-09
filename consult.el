@@ -619,10 +619,30 @@ expression, which can be `basic', `extended', `emacs' or `pcre'."
 (defun consult--join-regexps (regexps type)
   "Join REGEXPS of TYPE."
   ;; Add lookahead wrapper only if there is more than one regular expression
-  (if (and (eq type 'pcre) (cdr regexps))
-      (concat "^" (mapconcat (lambda (x) (format "(?=.*%s)" x))
-                             regexps ""))
-    (string-join regexps ".*")))
+  (cond
+   ((and (eq type 'pcre) (cdr regexps))
+    (concat "^" (mapconcat (lambda (x) (format "(?=.*%s)" x))
+                           regexps "")))
+   ((> (length regexps) 3)
+    (message "Too many regular expressions. Disengaging unordered matching. Use post-filtering!")
+    (string-join regexps ".*"))
+   (t
+    (consult--regexp-join-permutations regexps
+                                       (and (memq type '(basic emacs)) "\\")))))
+
+(defun consult--regexp-join-permutations (regexps esc)
+  "Join all permutations of REGEXPS.
+ESC is the escaping string for choice and groups."
+  (pcase regexps
+    ('nil "")
+    (`(,r) r)
+    (`(,r1 ,r2) (concat r1 ".*" r2 esc "|" r2 ".*" r1))
+    (_ (mapconcat
+        (lambda (r)
+          (concat r ".*" esc "("
+                  (consult--regexp-join-permutations (remove r regexps) esc)
+                  esc ")"))
+        regexps (concat esc "|")))))
 
 (defun consult--valid-regexp-p (re)
   "Return t if regexp RE is valid."
