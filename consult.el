@@ -623,7 +623,7 @@ expression, which can be `basic', `extended', `emacs' or `pcre'."
     (concat "^" (mapconcat (lambda (x) (format "(?=.*%s)" x))
                            regexps ""))
     (when (> (length regexps) 3)
-      (message "Too many regular expressions, %S ignored. Use post-filtering!"
+      (message "Too many regexps, %S ignored. Use post-filtering!"
                (string-join (seq-drop regexps 3) " "))
       (setq regexps (seq-take regexps 3)))
     (consult--regexp-join-permutations regexps
