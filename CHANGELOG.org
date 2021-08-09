@@ -16,18 +16,17 @@
   Due to the changes to =consult-find= it is not possible anymore to configure
   =fd= as backend for =consult-find=. A replacement is documented in the wiki.
 - =consult-find/locate/man=: Add highlighting to the matching file/man page names.
-- =consult-grep/git-grep/ripgrep/find/locate=: Add support for multiple patterns.
-  + =consult-git-grep= and =consult-find= support unordered patterns out of the box.
-    Example: "first second third" is transformed to "first -and second -and third".
-  + =consult-grep= and =consult-ripgrep= support unordered patterns if the program
-    supports it.
-  + =consult-locate= only support ordered patterns.
-    Example: "first second third" is transformed to "first.*second.*third".
+- =consult-grep/git-grep/ripgrep/find/locate=: Add support for multiple unordered
+  patterns. Each of the input patterns must be matched. For example,
+  =consult-find= transforms the input "first second third" to "first -and second
+  -and third".
 - =consult-grep/git-grep/ripgrep=: Compute the highlighting based on the input,
   instead of relying on the ANSI-escaped output. This works better with multiple
   patterns, but may occasionally produce false highlighting.
 - Deprecate =consult-x-command= configuration variables in favor of =consult-x-args=.
   The variables have been renamed since the configuration format changed.
+- =consult-async-split-styles-alist=: Remove the =space= splitting style, since
+  it has been obsoleted by the support for multiple unordered patterns.
 
 * Version 0.9 (2021-06-22)
 

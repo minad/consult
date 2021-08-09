@@ -115,20 +115,18 @@ This applies to asynchronous commands, e.g., `consult-grep'."
   :type 'integer)
 
 (defcustom consult-async-split-style 'perl
-  "Async splitter style, see `consult-async-split-styles-alist'."
+  "Async splitting style, see `consult-async-split-styles-alist'."
   :type '(choice (const :tag "No splitting" nil)
-                 (const :tag "Space" space)
                  (const :tag "Comma" comma)
                  (const :tag "Semicolon" semicolon)
                  (const :tag "Perl" perl)))
 
 (defcustom consult-async-split-styles-alist
   '((nil :type nil)
-    (space :separator ?\s :type separator)
     (comma :separator ?, :type separator)
     (semicolon :separator ?\; :type separator)
     (perl :initial "#" :type perl))
-  "Async splitter styles."
+  "Async splitting styles."
   :type '(alist :key-type symbol :value-type plist))
 
 (defcustom consult-mode-histories
@@ -1488,9 +1486,14 @@ string   Update with the current user input string. Return nil."
          candidates)))))
 
 (defun consult--async-split-style ()
-  "Return the async split style function and initial string."
+  "Return the async splitting style function and initial string."
   (or (alist-get consult-async-split-style consult-async-split-styles-alist)
-      (user-error "Split style `%s' not found" consult-async-split-style)))
+      ;; TODO Remove the special warning about the obsoletion
+      (when (eq consult-async-split-style 'space)
+        (user-error "The splitting style `space' has been obsoleted.
+`%s' automatically splits the input into separate regexps.
+The splitting styles `nil', `perl' or `semicolon' are recommended instead" this-command))
+      (user-error "Splitting style `%s' not found" consult-async-split-style)))
 
 (defun consult--async-split-initial (initial)
   "Return initial string for async command.
