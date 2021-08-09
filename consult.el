@@ -619,16 +619,15 @@ expression, which can be `basic', `extended', `emacs' or `pcre'."
 (defun consult--join-regexps (regexps type)
   "Join REGEXPS of TYPE."
   ;; Add lookahead wrapper only if there is more than one regular expression
-  (cond
-   ((and (eq type 'pcre) (cdr regexps))
+  (if (and (eq type 'pcre) (cdr regexps))
     (concat "^" (mapconcat (lambda (x) (format "(?=.*%s)" x))
-                           regexps "")))
-   ((> (length regexps) 3)
-    (message "Too many regular expressions. Disengaging unordered matching. Use post-filtering!")
-    (string-join regexps ".*"))
-   (t
+                           regexps ""))
+    (when (> (length regexps) 3)
+      (message "Too many regular expressions, %S ignored. Use post-filtering!"
+               (string-join (seq-drop regexps 3) " "))
+      (setq regexps (seq-take regexps 3)))
     (consult--regexp-join-permutations regexps
-                                       (and (memq type '(basic emacs)) "\\")))))
+                                       (and (memq type '(basic emacs)) "\\"))))
 
 (defun consult--regexp-join-permutations (regexps esc)
   "Join all permutations of REGEXPS.
