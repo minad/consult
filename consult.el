@@ -793,20 +793,23 @@ The line beginning/ending BEG/END is bound in BODY."
                             (kill-local-variable ',(cdr x))))
                        local)))))))
 
+(defun consult--abbreviate-directory (dir)
+  "Return abbreviated directory DIR for use in prompts."
+  (save-match-data
+    (let ((adir (abbreviate-file-name dir)))
+      (if (string-match "/\\([^/]+\\)/\\([^/]+\\)/\\'" adir)
+          (format "…/%s/%s/" (match-string 1 adir) (match-string 2 adir))
+        adir))))
+
 (defun consult--directory-prompt-1 (prompt dir)
   "Format PROMPT, expand directory DIR and return them as a pair."
-  (save-match-data
-    (let ((edir (file-name-as-directory (expand-file-name dir)))
-          (ddir (file-name-as-directory (expand-file-name default-directory))))
-      (cons
-       (if (string= ddir edir)
-           (concat prompt ": ")
-         (let ((adir (abbreviate-file-name edir)))
-           (if (string-match "/\\([^/]+\\)/\\([^/]+\\)/\\'" adir)
-               (format "%s in …/%s/%s/: " prompt
-                       (match-string 1 adir) (match-string 2 adir))
-             (format "%s in %s: " prompt adir))))
-       edir))))
+  (let ((edir (file-name-as-directory (expand-file-name dir)))
+        (ddir (file-name-as-directory (expand-file-name default-directory))))
+    (cons
+     (if (string= ddir edir)
+         (concat prompt ": ")
+       (format "%s (%s): " prompt (consult--abbreviate-directory dir)))
+     edir)))
 
 (defun consult--directory-prompt (prompt dir)
   "Return prompt and directory.
@@ -831,7 +834,7 @@ Otherwise the `default-directory' is returned."
          (let ((this-command this-command))
            (read-directory-name "Directory: " nil nil t))))
    ((when-let (root (consult--project-root))
-      (cons (format "%s in project %s: " prompt (consult--project-name root))
+      (cons (format "%s (Project %s): " prompt (consult--project-name root))
             root)))
    (t (consult--directory-prompt-1 prompt default-directory))))
 
@@ -2801,12 +2804,11 @@ changed if the START prefix argument is set. The symbol at point and the last
 
 ;;;;; Command: consult-line-multi
 
-(defun consult--line-multi-candidates (query)
+(defun consult--line-multi-candidates (buffers)
   "Collect the line candidates from multiple buffers.
-QUERY is passed to `consult--buffer-query'."
+BUFFERS is the list of buffers."
   (or (apply #'nconc
-             (consult--buffer-map
-              (apply #'consult--buffer-query query)
+             (consult--buffer-map buffers
               #'consult--line-candidates 'top most-positive-fixnum))
       (user-error "No lines")))
 
@@ -2819,16 +2821,12 @@ non-nil, all buffers are searched. Optional INITIAL input can be provided. See
 `consult-line' for more information. In order to search a subset of buffers,
 QUERY can be set to a plist according to `consult--buffer-query'."
   (interactive "P")
-  (let ((scope "Multiple buffers"))
-    (unless (keywordp (car-safe query))
-      (let ((project (and (not query) (consult--project-root))))
-        (setq query `(:sort alpha :directory ,project)
-              scope (if project
-                        (format "Project %s" (consult--project-name project))
-                      "All buffers"))))
+  (unless (keywordp (car-safe query))
+    (setq query (list :sort 'alpha :directory (and (not query) 'project))))
+  (let ((buffers (consult--buffer-query-prompt "Go to line" query)))
     (consult--line
-     (consult--line-multi-candidates query)
-     :prompt (format "Go to line (%s): " scope)
+     (consult--line-multi-candidates (cdr buffers))
+     :prompt (car buffers)
      :initial initial
      :group #'consult--line-group)))
 
@@ -3750,8 +3748,32 @@ The command supports previewing the currently selected theme."
           nil)))
     (nconc (nreverse hidden) buffers (list (current-buffer)))))
 
+(defun consult--normalize-directory (dir)
+  "Normalize directory DIR.
+DIR can be project, nil or a path."
+  (cond
+    ((eq dir 'project) (consult--project-root))
+    (dir (expand-file-name dir))))
+
+(defun consult--buffer-query-prompt (prompt query)
+  "Buffer query function returning a scope description.
+PROMPT is the prompt format string.
+QUERY is passed to `consult--buffer-query'."
+  (let* ((dir (plist-get query :directory))
+         (ndir (consult--normalize-directory dir))
+         (buffers (apply #'consult--buffer-query :directory ndir query))
+         (count (length buffers)))
+    (cons (format "%s (%d buffer%s%s): " prompt count
+                  (if (= count 1) "" "s")
+                  (cond
+                   ((and ndir (eq dir 'project))
+	            (format ", Project %s" (consult--project-name ndir)))
+                   (ndir (concat  ", " (consult--abbreviate-directory ndir)))
+                   (t "")))
+          buffers)))
+
 (cl-defun consult--buffer-query (&key sort directory mode as predicate (filter t)
-                                      include (exclude consult-buffer-filter) )
+                                      include (exclude consult-buffer-filter))
   "Buffer query function.
 DIRECTORY can either be project or a path.
 SORT can be visibility, alpha or nil.
@@ -3764,10 +3786,7 @@ AS is a conversion function."
   ;; This function is the backbone of most `consult-buffer' source. The
   ;; function supports filtering by various criteria which are used throughout
   ;; Consult.
-  (when-let (root (pcase-exhaustive directory
-                    ('project (consult--project-root))
-                    ('nil t)
-                    ((pred stringp) (expand-file-name directory))))
+  (when-let (root (or (consult--normalize-directory directory) t))
     (let ((buffers (buffer-list)))
       (when sort
         (setq buffers (funcall (intern (format "consult--buffer-sort-%s" sort)) buffers)))

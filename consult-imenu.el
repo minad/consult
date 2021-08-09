@@ -147,11 +147,9 @@ TYPES is the mode-specific types configuration."
                 (buffer-name) (error-message-string err))
        nil)))
 
-(defun consult-imenu--multi-items (query)
-  "Return all imenu items from buffers matching QUERY."
-  (apply #'append (consult--buffer-map
-                   (apply #'consult--buffer-query query)
-                   #'consult-imenu--items-safe)))
+(defun consult-imenu--multi-items (buffers)
+  "Return all imenu items from BUFFERS."
+  (apply #'append (consult--buffer-map buffers #'consult-imenu--items-safe)))
 
 (defun consult-imenu--jump (item)
   "Jump to imenu ITEM via `consult--jump'.
@@ -222,17 +220,13 @@ In order to determine the buffers belonging to the same project, the
 same major mode as the current buffer are used. See also
 `consult-imenu' for more details. In order to search a subset of buffers,
 QUERY can be set to a plist according to `consult--buffer-query'."
-  (interactive)
-  (let ((scope "Multiple buffers"))
-    (when-let (project (and (not (keywordp (car-safe query)))
-                            (consult--project-root)))
-      (setq scope (format "Project %s" (consult--project-name project))
-            query `(:directory ,project :mode ,major-mode :sort alpha)))
-    (if query
-        (consult-imenu--select
-         (format "Go to item (%s): " scope)
-         (consult-imenu--multi-items query))
-      (consult-imenu))))
+  (interactive "P")
+  (unless (keywordp (car-safe query))
+    (setq query (list :sort 'alpha :mode major-mode
+                      :directory (and (not query) 'project))))
+  (let ((buffers (consult--buffer-query-prompt "Go to item" query)))
+    (consult-imenu--select (car buffers)
+                           (consult-imenu--multi-items (cdr buffers)))))
 
 (define-obsolete-function-alias
   'consult-project-imenu
