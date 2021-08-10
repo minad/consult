@@ -251,7 +251,8 @@ their descriptions.
    character is a punctuation character, like =#=. For example
    =#grep-regexps#filter-string=, is split at the second =#=. The string
    =grep-regexps= is passed to Grep. If you enter multiple regular expressions
-   separated by space only lines matching all regular expressions are shown. The
+   separated by space only lines matching all regular expressions are shown. In
+   order to match space literally, escape the space with a backslash. The
    =filter-string= is passed to the /fast/ Emacs filtering to further narrow down
    the list of matches. This is particularly useful if you are using an advanced
    completion style like orderless. =consult-grep= supports preview. If the
