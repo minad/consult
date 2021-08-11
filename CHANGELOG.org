@@ -2,7 +2,7 @@
 #+author: Daniel Mendler
 #+language: en
 
-* Development
+* Version 0.10 (2021-08-11)
 
 - =consult-mark=, =consult-global-mark=: Add optional marker list argument
 - =consult-completing-read-multiple=: New function
