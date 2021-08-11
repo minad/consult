@@ -1251,12 +1251,14 @@ See `consult--with-preview' for the arguments PREVIEW-KEY, STATE, TRANSFORM and 
                                                          (setq last-preview new-preview)))))))
                                         (funcall state transformed nil)
                                         (setq last-preview new-preview))))))))))))
+              ;; symbol indirection because of bug#46407
               (let ((post-command-sym (make-symbol "consult--preview-post-command")))
                 (fset post-command-sym (lambda ()
                                          (setq input (minibuffer-contents-no-properties))
                                          (funcall consult--preview-function)))
                 (add-hook 'post-command-hook post-command-sym nil 'local)))
           (lambda ()
+            ;; symbol indirection because of bug#46407
             (let ((post-command-sym (make-symbol "consult--preview-post-command")))
               (fset post-command-sym (lambda () (setq input (minibuffer-contents-no-properties))))
               (add-hook 'post-command-hook post-command-sym nil 'local))))
@@ -1456,6 +1458,7 @@ BIND is the asynchronous function binding."
                (funcall ,async 'setup)
                ;; Push input string to request refresh.
                ;; We use a symbol in order to avoid adding lambdas to the hook variable.
+               ;; Symbol indirection because of bug#46407.
                (let ((sym (make-symbol "consult--async-after-change")))
                  (fset sym (lambda (&rest _) (funcall ,async (minibuffer-contents-no-properties))))
                  (run-at-time 0 nil sym)
