@@ -1050,12 +1050,14 @@ MARKER is the cursor position."
 
 (defun consult--temporary-files ()
   "Return a function to open files temporarily."
-  (let* ((new-buffers))
+  (let* ((new-buffers)
+         (dir default-directory))
     (lambda (&optional name)
       (if name
-          (or (get-file-buffer name)
-              (when-let (attrs (file-attributes name))
-                (let ((size (file-attribute-size attrs)))
+          (let ((default-directory dir))
+            (or (get-file-buffer name)
+                (when-let* ((attrs (file-attributes name))
+                            (size (file-attribute-size attrs)))
                   (if (> size consult-preview-max-size)
                       (prog1 nil
                         (message "File `%s' (%s) is too large for preview"
