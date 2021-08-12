@@ -621,7 +621,7 @@ expression, which can be `basic', `extended', `emacs' or `pcre'."
    (split-string (replace-regexp-in-string
                   "\\\\\\\\\\|\\\\ "
                   (lambda (x) (if (equal x "\\ ") (string 0) x))
-                  str)
+                  str 'fixedcase 'literal)
                  " +" t)))
 
 (defun consult--join-regexps (regexps type)
