@@ -1599,7 +1599,7 @@ PROPS are optional properties passed to `make-process'."
                    (when flush
                      (setq flush nil)
                      (funcall async 'flush))
-                   (let ((lines (split-string out "\n")))
+                   (let ((lines (split-string out "[\r\n]+")))
                      (if (not (cdr lines))
                          (setq rest (concat rest (car lines)))
                        (setcar lines (concat rest (car lines)))
