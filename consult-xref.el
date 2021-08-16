@@ -65,7 +65,7 @@
                        (funcall open (oref loc file))
                        (oref loc line)
                        (oref loc column)))
-                     (t (message "No preview for %s" (type-of loc))))
+                     (t (message "No preview for %s" (type-of loc)) nil))
                    nil)))))))
 
 (defun consult-xref--group (cand transform)
