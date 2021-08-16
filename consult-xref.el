@@ -60,6 +60,8 @@
                    (cl-typecase loc
                      (xref-buffer-location
                       (xref-location-marker loc))
+                     (xref-elisp-location
+                      (xref-location-marker loc))
                      (xref-file-location
                       (consult--position-marker
                        (funcall open (oref loc file))
