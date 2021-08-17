@@ -4102,7 +4102,7 @@ BUILDER is the command argument builder."
                   (add-text-properties 0 file-len `(face consult-file consult--grep-file ,file) str)
                   (put-text-property (1+ file-len) (+ 1 file-len (length line)) 'face 'consult-line-number str)
                   (push str result)))))
-          (funcall async result)))
+          (funcall async (nreverse result))))
        (t (funcall async action))))))
 
 (defun consult--grep-position (cand &optional find-file)
