@@ -222,7 +222,7 @@ See `consult--multi' for a description of the source values."
   :type 'integer)
 
 (defconst consult--grep-match-regexp
-  "\\`\\(?:./\\)?\\([^\n:]+\\):\\([0-9]+\\):"
+  "\\`\\(?:\\./\\)?\\([^\n:]+\\):\\([0-9]+\\):"
   "Regexp used to match file and line of grep output.")
 
 ;; TODO remove deprecation
