@@ -1056,7 +1056,8 @@ MARKER is the cursor position."
       (if name
           (let ((default-directory dir))
             (or (get-file-buffer name)
-                (when-let* ((attrs (file-attributes name))
+                ;; file-attributes may throw permission denied error
+                (when-let* ((attrs (ignore-errors (file-attributes name)))
                             (size (file-attribute-size attrs)))
                   (if (> size consult-preview-max-size)
                       (prog1 nil
