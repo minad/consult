@@ -3364,14 +3364,12 @@ There exists no equivalent of this command in Emacs 28."
             (funcall preview nil t))
         (funcall
          preview
-         (when-let (bm (and cand
-                            (bookmark-get-bookmark-record
-                             (assoc cand bookmark-alist))))
-           (let ((handler (alist-get 'handler bm #'bookmark-default-handler)))
+         (when-let (bm (and cand (assoc cand bookmark-alist)))
+           (let ((handler (or (bookmark-get-handler bm) #'bookmark-default-handler)))
              ;; Only preview bookmarks with the default handler.
              (if-let* ((file (and (eq handler #'bookmark-default-handler)
-                                  (alist-get 'filename bm)))
-                       (pos (alist-get 'position bm))
+                                  (bookmark-get-filename bm)))
+                       (pos (bookmark-get-position bm))
                        (buf (funcall open file)))
                  (set-marker (make-marker) pos buf)
                (message "No preview for %s" handler)
@@ -3390,12 +3388,11 @@ There exists no equivalent of this command in Emacs 28."
   (let ((narrow (mapcar (pcase-lambda (`(,y ,_ ,x)) (cons x y))
                         consult-bookmark-narrow)))
     (mapcar (lambda (cand)
-              (let ((bm (bookmark-get-bookmark-record cand)))
-                (propertize (car cand)
-                            'consult--type
-                            (alist-get
-                             (alist-get 'handler bm #'bookmark-default-handler)
-                             narrow))))
+              (propertize (car cand)
+                          'consult--type
+                          (alist-get
+                           (or (bookmark-get-handler cand) #'bookmark-default-handler)
+                           narrow)))
             bookmark-alist)))
 
 ;;;###autoload
