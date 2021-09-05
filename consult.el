@@ -3370,8 +3370,8 @@ There exists no equivalent of this command in Emacs 28."
            (let ((handler (alist-get 'handler bm #'bookmark-default-handler)))
              ;; Only preview bookmarks with the default handler.
              (if-let* ((file (and (eq handler #'bookmark-default-handler)
-                                  (alist-get 'filename bm)))
-                       (pos (alist-get 'position bm))
+                                  (bookmark-get-filename bm)))
+                       (pos (bookmark-get-position bm))
                        (buf (funcall open file)))
                  (set-marker (make-marker) pos buf)
                (message "No preview for %s" handler)
@@ -3394,7 +3394,7 @@ There exists no equivalent of this command in Emacs 28."
                 (propertize (car cand)
                             'consult--type
                             (alist-get
-                             (alist-get 'handler bm #'bookmark-default-handler)
+                             (or (bookmark-get-handler bm) #'bookmark-default-handler)
                              narrow))))
             bookmark-alist)))
 
