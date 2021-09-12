@@ -4178,7 +4178,7 @@ INITIAL is inital input."
   (pcase-let* ((cmd (split-string-and-unquote consult-grep-args))
                (type (consult--grep-regexp-type (car cmd)))
                (`(,arg . ,opts) (consult--command-split input))
-               (`(,re . ,hl) (funcall consult--regexp-compiler arg type)))
+               (`(,re . ,hl) (and arg (funcall consult--regexp-compiler arg type))))
     (when re
       (list :command
             (append cmd
@@ -4214,7 +4214,7 @@ Otherwise the `default-directory' is searched."
 (defun consult--git-grep-builder (input)
   "Build command line given CONFIG and INPUT."
   (pcase-let* ((`(,arg . ,opts) (consult--command-split input))
-               (`(,re . ,hl) (funcall consult--regexp-compiler arg 'extended)))
+               (`(,re . ,hl) (and arg (funcall consult--regexp-compiler arg 'extended))))
     (when re
       (list :command
             (append (split-string-and-unquote consult-git-grep-args)
@@ -4244,7 +4244,7 @@ See `consult-grep' for more details."
   (pcase-let* ((cmd (split-string-and-unquote consult-ripgrep-args))
                (type (consult--ripgrep-regexp-type (car cmd)))
                (`(,arg . ,opts) (consult--command-split input))
-               (`(,re . ,hl) (funcall consult--regexp-compiler arg type)))
+               (`(,re . ,hl) (and arg (funcall consult--regexp-compiler arg type))))
     (when re
       (list :command
             (append cmd
@@ -4301,7 +4301,7 @@ INITIAL is inital input."
   (pcase-let* ((cmd (split-string-and-unquote consult-find-args))
                (type (consult--find-regexp-type (car cmd)))
                (`(,arg . ,opts) (consult--command-split input))
-               (`(,re . ,hl) (funcall consult--regexp-compiler arg type)))
+               (`(,re . ,hl) (and arg (funcall consult--regexp-compiler arg type))))
     (when re
       (list :command
             (append cmd
@@ -4333,7 +4333,7 @@ See `consult-grep' for more details regarding the asynchronous search."
 (defun consult--locate-builder (input)
   "Build command line given INPUT."
   (pcase-let* ((`(,arg . ,opts) (consult--command-split input))
-               (`(,re . ,hl) (funcall consult--regexp-compiler arg 'basic)))
+               (`(,re . ,hl) (and arg (funcall consult--regexp-compiler arg 'basic))))
     (when re
       (list :command
             (append (split-string-and-unquote consult-locate-args)
@@ -4355,10 +4355,10 @@ See `consult-grep' for more details regarding the asynchronous search."
 (defun consult--man-builder (input)
   "Build command line given CONFIG and INPUT."
   (pcase-let ((`(,arg . ,opts) (consult--command-split input)))
-    (unless (string-blank-p arg)
-      (list :command (append (split-string-and-unquote consult-man-args)
-                             (list arg) opts)
-            :highlight (cdr (consult--default-regexp-compiler input 'basic))))))
+    (and arg (not (string-blank-p arg))
+         (list :command (append (split-string-and-unquote consult-man-args)
+                                (list arg) opts)
+               :highlight (cdr (consult--default-regexp-compiler input 'basic))))))
 
 (defun consult--man-format (lines)
   "Format man candidates from LINES."
