@@ -2372,7 +2372,11 @@ These configuration options are supported:
               (delete-region start end)
               (insert (substring-no-properties completion))
               (when-let (exit (plist-get completion-extra-properties :exit-function))
-                (funcall exit completion 'finished))
+                (funcall exit completion
+                         ;; If completion is finished and cannot be further completed,
+                         ;; return 'finished. Otherwise return 'exact.
+                         (if (eq (try-completion completion collection predicate) t)
+                             'finished 'exact)))
               t)
           (message "No completion")
           nil)))))
