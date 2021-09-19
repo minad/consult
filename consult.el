@@ -2316,13 +2316,11 @@ These configuration options are supported:
         (completion--in-region start end collection predicate)
       (let* ((limit (car (completion-boundaries initial collection predicate "")))
              (category (completion-metadata-get metadata 'category))
-             (exit-status 'finished)
              (buffer (current-buffer))
              (completion
               (cond
                ((atom all) nil)
                ((and (consp all) (atom (cdr all)))
-                (setq exit-status 'sole)
                 (concat (substring initial 0 limit) (car all)))
                (t (car
                    (consult--with-preview
@@ -2374,7 +2372,7 @@ These configuration options are supported:
               (delete-region start end)
               (insert (substring-no-properties completion))
               (when-let (exit (plist-get completion-extra-properties :exit-function))
-                (funcall exit completion exit-status))
+                (funcall exit completion 'finished))
               t)
           (message "No completion")
           nil)))))
