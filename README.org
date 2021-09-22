@@ -1089,7 +1089,8 @@ Please provide the necessary important information with your bug report:
 - Your operating system, since Emacs builds vary between Linux, Mac and
   Windows.
 - The package manager, e.g., straight.el or package.el, used to install
-  the Emacs packages, in order to exclude update issues.
+  the Emacs packages, in order to exclude update issues. Did you install
+  Consult as part of the Doom or Spacemacs Emacs distributions?
 - If you are using Evil or other packages which change Emacs fundamentally,
   since Consult does not provide Evil integration out of the box.
 
