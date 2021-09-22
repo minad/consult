@@ -1010,11 +1010,16 @@ There exist packages which integrate Consult with special programs or with other
 packages in the Emacs ecosystem. You may want to install some of them depending
 on your personal preferences.
 
+- [[https://github.com/mohkale/consult-bibtex][consult-bibtex]]: Consult interface for bibliographies.
+- [[https://github.com/mohkale/consult-yasnippet][consult-company]]: Completion at point using the company backends.
+- [[https://github.com/karthink/consult-dir][consult-dir]]: Directory jumper using Consult multi sources.
+- [[https://github.com/mohkale/consult-eglot][consult-eglot]]: Integration with eglot (lsp client).
 - [[https://github.com/minad/consult-flycheck][consult-flycheck]]: Provides the =consult-flycheck= command.
-- [[https://github.com/gagbo/consult-lsp][consult-lsp]]: Integration with [[https://github.com/emacs-lsp/lsp-mode][LSP-Mode]] (Language Server Protocol).
+- [[https://github.com/gagbo/consult-lsp][consult-lsp]]: Integration with =lsp-mode= (lsp client).
 - [[https://codeberg.org/jao/consult-notmuch][consult-notmuch]]: Access the [[https://notmuchmail.org/][Notmuch]] email system using Consult.
-- [[https://codeberg.org/jao/consult-recoll][consult-recoll]]: Access the [[https://www.lesbonscomptes.com/recoll/][Recoll]] desktop full-text search using Consult.
 - [[https://codeberg.org/jao/espotify][consult-spotify]]: Access the Spotify API and control your local music player.
+- [[https://codeberg.org/jao/consult-recoll][consult-recoll]]: Access the [[https://www.lesbonscomptes.com/recoll/][Recoll]] desktop full-text search using Consult.
+- [[https://github.com/mohkale/consult-yasnippet][consult-yasnippet]]: Integration with yasnippet.
 - [[https://github.com/minad/affe][affe]]: Asynchronous Fuzzy Finder for Emacs (uses Consult under the hood).
 
 Not directly related to Consult, but maybe still of interest are the following
@@ -1023,6 +1028,7 @@ offer functionality based on ~completing-read~.
 
 - [[https://github.com/minad/corfu][corfu]], [[https://github.com/company-mode/company-mode][company]]: Completion systems for =completion-at-point= using small popups.
 - [[https://github.com/minad/bookmark-view][bookmark-view]]: Store window configuration as bookmarks, possible integration with =consult-buffer=.
+- [[https://github.com/bdarcus/bibtex-actions][bibtex-actions]]: Versatile frontend for bibliographies, frontend agnostic.
 - [[https://github.com/d12frosted/flyspell-correct][flyspell-correct]]: Apply spelling corrections by selecting via =completing-read=.
 - [[https://github.com/mhayashi1120/Emacs-wgrep][wgrep]]: Editing of grep buffers, can be used together with =consult-grep= via =embark-export=.
 
@@ -1128,6 +1134,9 @@ Code contributions:
 - [[https://github.com/omar-polo][Omar Polo]]
 - [[https://github.com/astoff][Augusto Stoffel]]
 - [[https://github.com/noctuid][Fox Kiester]]
+- [[https://github.com/tecosaur][Tecosaur]]
+- [[https://github.com/mohamed-abdelnour][Mohamed Abdelnour]]
+- [[https://github.com/thisirs][Sylvain Rousseau]]
 
 Advice and useful discussions:
 - [[https://github.com/clemera/][Clemens Radermacher]]
@@ -1140,11 +1149,15 @@ Advice and useful discussions:
 - [[https://github.com/hmelman/][Howard Melman]]
 - [[https://github.com/monnier/][Stefan Monnier]]
 - [[https://github.com/dgutov/][Dmitry Gutov]]
+- [[https://github.com/iyefrat][Itai Y. Efrat]]
+- [[https://github.com/bdarcus][Bruce d'Arcus]]
 
 Authors of supplementary =consult-*= packages:
 
 - [[https://codeberg.org/jao/][Jose A Ortega Ruiz]] ([[https://codeberg.org/jao/consult-notmuch][consult-notmuch]], [[https://codeberg.org/jao/consult-recoll][consult-recoll]], [[https://codeberg.org/jao/espotify][consult-spotify]])
 - [[https://github.com/gagbo/][Gerry Agbobada]] ([[https://github.com/gagbo/consult-lsp][consult-lsp]])
+- [[https://github.com/karthink][Karthik Chikmagalur]] ([[https://github.com/karthink/consult-dir][consult-dir]])
+- [[https://github.com/mohkale][Mohsin Kaleem]] ([[https://github.com/mohkale/consult-bibtex][consult-bibtex]], [[https://github.com/mohkale/consult-company][consult-company]], [[https://github.com/mohkale/consult-eglot][consult-eglot]], [[https://github.com/mohkale/consult-yasnippet][consult-yasnippet]])
 
 #+html: <!--
 
