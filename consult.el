@@ -1102,7 +1102,7 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
 (defun consult--jump-nomark (pos)
   "Go to POS and recenter."
   (cond
-   ((and (markerp pos) (not (buffer-live-p (marker-buffer pos))))
+   ((and (markerp pos) (not (marker-buffer pos)))
     ;; Only print a message, no error in order to not mess
     ;; with the minibuffer update hook.
     (message "Buffer is dead"))
@@ -1147,7 +1147,7 @@ FACE is the cursor face."
       (cond
        (restore
         (let ((saved-buffer (marker-buffer saved-pos)))
-          (if (not (buffer-live-p saved-buffer))
+          (if (not saved-buffer)
               (message "Buffer is dead")
             (set-buffer saved-buffer)
             (narrow-to-region saved-min saved-max)

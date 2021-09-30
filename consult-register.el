@@ -97,7 +97,7 @@ This function can be used as `register-preview-function'."
                  (propertize (abbreviate-file-name (cadr val)) 'face 'consult-file)
                  (caddr val)))
         ;; Display full line of buffer
-        ((and (markerp val) (buffer-live-p (marker-buffer val)))
+        ((and (markerp val) (marker-buffer val))
          (with-current-buffer (marker-buffer val)
            (save-restriction
              (save-excursion
