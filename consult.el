@@ -218,7 +218,7 @@ See `consult--multi' for a description of the source values."
   :type 'integer)
 
 (defconst consult--grep-match-regexp
-  "\\`\\(?:\\./\\)?\\([^\n:]+\\):\\([0-9]+\\):"
+  "\\`\\(?:\\./\\)?\\([^\n\0]+\\)\0\\([0-9]+\\)[:\0]"
   "Regexp used to match file and line of grep output.")
 
 ;; TODO remove deprecation
@@ -238,21 +238,21 @@ Please adjust your configuration." var)))
 (consult--obsolete-command-variable grep ripgrep git-grep find locate man)
 
 (defcustom consult-grep-args
-  "grep --line-buffered --color=never --ignore-case\
+  "grep --null --line-buffered --color=never --ignore-case\
    --exclude-dir=.git --line-number -I -r ."
   "Command line arguments for grep, see `consult-grep'.
 The dynamically computed arguments are appended."
   :type 'string)
 
 (defcustom consult-git-grep-args
-  "git --no-pager grep --color=never --ignore-case\
+  "git --no-pager grep --null --color=never --ignore-case\
    --extended-regexp --line-number -I"
   "Command line arguments for git-grep, see `consult-git-grep'.
 The dynamically computed arguments are appended."
   :type 'string)
 
 (defcustom consult-ripgrep-args
-  "rg --line-buffered --color=never --max-columns=1000 --path-separator /\
+  "rg --null --line-buffered --color=never --max-columns=1000 --path-separator /\
    --smart-case --no-heading --line-number ."
   "Command line arguments for ripgrep, see `consult-ripgrep'.
 The dynamically computed arguments are appended."
@@ -4103,15 +4103,16 @@ BUILDER is the command argument builder."
 (defun consult--grep-position (cand &optional find-file)
   "Return the grep position marker for CAND.
 FIND-FILE is the file open function, defaulting to `find-file'."
-  (save-match-data
-    (when (and cand (string-match consult--grep-match-regexp cand))
-      (let ((file (match-string 1 cand))
-            (line (string-to-number (match-string 2 cand)))
-            (col (next-single-property-change (match-end 0) 'face cand)))
-        (setq col (if col (- col (match-end 0)) 0))
-        (consult--position-marker
-         (funcall (or find-file #'find-file) file)
-         line col)))))
+  (when cand
+    (let* ((file-end (next-single-property-change 0 'face cand))
+           (line-end (next-single-property-change (+ 1 file-end) 'face cand))
+           (col (next-single-property-change (+ 1 line-end) 'face cand))
+           (file (substring-no-properties cand 0 file-end))
+           (line (string-to-number (substring-no-properties cand (+ 1 file-end) line-end))))
+      (setq col (if col (- col line-end 1) 0))
+      (consult--position-marker
+       (funcall (or find-file #'find-file) file)
+       line col))))
 
 (defun consult--grep-state ()
   "Grep preview state function."
