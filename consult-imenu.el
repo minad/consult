@@ -228,10 +228,5 @@ QUERY can be set to a plist according to `consult--buffer-query'."
     (consult-imenu--select (car buffers)
                            (consult-imenu--multi-items (cdr buffers)))))
 
-(define-obsolete-function-alias
-  'consult-project-imenu
-  'consult-imenu-multi
-  "0.9")
-
 (provide 'consult-imenu)
 ;;; consult-imenu.el ends here

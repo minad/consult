@@ -221,22 +221,6 @@ See `consult--multi' for a description of the source values."
   "\\`\\(?:\\./\\)?\\([^\n\0]+\\)\0\\([0-9]+\\)[:\0]"
   "Regexp used to match file and line of grep output.")
 
-;; TODO remove deprecation
-(defmacro consult--obsolete-command-variable (&rest vars)
-  "Create obsolete command configuration VARS."
-  (macroexp-progn
-   (mapcan
-    (lambda (var)
-      (let ((sym (intern (format "consult-%s-command" var)))
-            (msg (format "This variable has been deprecated in favor of `consult-%s-args'.
-The command configuration format has been updated.
-See `consult-grep-args' or the CHANGELOG for more information.
-Please adjust your configuration." var)))
-        `((defvar ,sym ,msg)
-          (make-obsolete-variable ',sym ,msg "0.9"))))
-    vars)))
-(consult--obsolete-command-variable grep ripgrep git-grep find locate man)
-
 (defcustom consult-grep-args
   "grep --null --line-buffered --color=never --ignore-case\
    --exclude-dir=.git --line-number -I -r ."
@@ -1506,11 +1490,6 @@ string   Update with the current user input string. Return nil."
 (defun consult--async-split-style ()
   "Return the async splitting style function and initial string."
   (or (alist-get consult-async-split-style consult-async-split-styles-alist)
-      ;; TODO Remove the special warning about the obsoletion
-      (when (eq consult-async-split-style 'space)
-        (user-error "The splitting style `space' has been obsoleted.
-`%s' automatically splits the input into separate regexps.
-The splitting styles `nil', `perl' or `semicolon' are recommended instead" this-command))
       (user-error "Splitting style `%s' not found" consult-async-split-style)))
 
 (defun consult--async-split-initial (initial)
@@ -1757,9 +1736,6 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
 (defun consult--command-builder (builder)
   "Return command line builder given CMD.
 BUILDER is the command line builder function."
-  ;; TODO remove deprecation
-  (unless (functionp builder)
-    (error "`%s' passed a string to `consult--async-command', which is deprecated" this-command))
   (lambda (input)
     (setq input (funcall builder input))
     (if (stringp (car input))
