@@ -2,6 +2,12 @@
 #+author: Daniel Mendler
 #+language: en
 
+* Development
+
+- Bugfixes
+- Removed obsolete =consult-project-imenu= and =consult-x-command= variables
+- =consult-grep=: Use ~--null~ argument to support file names with colons
+
 * Version 0.11 (2021-08-18)
 
 - Bugfixes only
