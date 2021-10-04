@@ -480,7 +480,7 @@ their descriptions.
  candidates of multiple types or candidates from [[#multiple-sources][multiple sources]], like the
  =consult-buffer= command, which shows both buffers and recently opened files.
  Note that you can disable the group titles by setting the =:group= property of
- the corresponding command to using the =consult-customize= macro.
+ the corresponding command to nil using the =consult-customize= macro.
 
  By entering a narrowing prefix or by pressing a narrowing key it is possible to
  restrict the completion candidates to a certain candidate group. When you use
