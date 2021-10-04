@@ -2433,7 +2433,7 @@ See `completing-read-multiple' for the documentation of the arguments."
             (interactive)
             (pcase (catch 'exit
                      (call-interactively (setq this-command command))
-                     'continue)
+                     'consult--continue)
               ('nil
                (with-selected-window (active-minibuffer-window)
                  (let ((item (minibuffer-contents-no-properties)))
@@ -2454,7 +2454,8 @@ See `completing-read-multiple' for the documentation of the arguments."
                                     (format " (%s selected): " (length selected)))))
                    (delete-minibuffer-contents)
                    (run-hook-with-args 'consult--completion-refresh-hook 'reset))))
-              ('t (throw 'exit t)))))
+              ('consult--continue nil)
+              (other (throw 'exit other)))))
     (fset hook (lambda ()
                  (when (and this-command (= depth (recursion-depth)))
                    (setq command this-command this-command wrapper))))
