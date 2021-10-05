@@ -2056,7 +2056,7 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
   "Return `consult--multi' candidates from SOURCES."
   (let ((def) (idx 0) (max-width 0) (candidates))
     (seq-doseq (src sources)
-      (let* ((face (plist-get src :face))
+      (let* ((face (and (plist-member src :face) `(face ,(plist-get src :face))))
              (cat (plist-get src :category))
              (items (plist-get src :items))
              (items (if (functionp items) (funcall items) items)))
@@ -2065,7 +2065,7 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
         (dolist (item items)
           (let ((cand (consult--tofu-append item idx))
                 (width (consult--display-width item)))
-            (add-text-properties 0 (length item) `(face ,face consult-multi (,cat . ,item)) cand)
+            (add-text-properties 0 (length item) `(,@face consult-multi (,cat . ,item)) cand)
             (when (> width max-width) (setq max-width width))
             (push cand candidates))))
       (setq idx (1+ idx)))
