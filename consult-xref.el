@@ -61,10 +61,17 @@
                      (xref-buffer-location
                       (xref-location-marker loc))
                      (xref-file-location
-                      (consult--position-marker
-                       (funcall open (oref loc file))
-                       (oref loc line)
-                       (oref loc column)))
+                      ;; As of Emacs 28, xref uses cl-defstruct,
+                      ;; whereas earlier versions use EIEIO
+                      (if (cl-struct-p loc)
+                          (consult--position-marker
+                           (funcall open (xref-file-location-file loc))
+                           (xref-file-location-line loc)
+                           (xref-file-location-column loc))
+                        (consult--position-marker
+                         (funcall open (oref loc file))
+                         (oref loc line)
+                         (oref loc column))))
                      (t (message "No preview for %s" (type-of loc)) nil))
                    nil)))))))
 
