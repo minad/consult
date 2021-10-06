@@ -62,9 +62,12 @@
                       (xref-location-marker loc))
                      (xref-file-location
                       (consult--position-marker
-                       (funcall open (oref loc file))
-                       (oref loc line)
-                       (oref loc column)))
+                       (funcall open
+                                ;; xref-location-group returns the file name
+                                (let ((xref-file-name-display 'abs))
+                                  (xref-location-group loc)))
+                       (xref-location-line loc)
+                       (xref-file-location-column loc)))
                      (t (message "No preview for %s" (type-of loc)) nil))
                    nil)))))))
 
