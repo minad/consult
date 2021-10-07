@@ -1497,6 +1497,11 @@ string   Update with the current user input string. Return nil."
 INITIAL is the additional initial string."
   (concat (plist-get (consult--async-split-style) :initial) initial))
 
+(defun consult--async-split-thingatpt (thing)
+  "Return THING at point with async initial prefix."
+  (when-let (str (thing-at-point thing))
+    (consult--async-split-initial str)))
+
 (defun consult--async-split (async &optional split)
   "Create async function, which splits the input string.
 ASYNC is the async sink.
@@ -4125,9 +4130,7 @@ INITIAL is inital input."
      :lookup #'consult--lookup-member
      :state (consult--grep-state)
      :initial (consult--async-split-initial initial)
-     :add-history
-     (when-let (thing (thing-at-point 'symbol))
-       (consult--async-split-initial thing))
+     :add-history (consult--async-split-thingatpt 'symbol)
      :require-match t
      :category 'consult-grep
      :group #'consult--grep-group
@@ -4256,9 +4259,7 @@ INITIAL is inital input."
    :sort nil
    :require-match t
    :initial (consult--async-split-initial initial)
-   :add-history
-   (when-let (thing (thing-at-point 'filename))
-     (consult--async-split-initial thing))
+   :add-history (consult--async-split-thingatpt 'filename)
    :category 'file
    :history '(:input consult--find-history)))
 
@@ -4367,9 +4368,7 @@ See `consult-grep' for more details regarding the asynchronous search."
         :require-match t
         :lookup #'consult--lookup-cdr
         :initial (consult--async-split-initial initial)
-        :add-history
-        (when-let (thing (thing-at-point 'symbol))
-          (consult--async-split-initial thing))
+        :add-history (consult--async-split-thingatpt 'symbol)
         :history '(:input consult--man-history))))
 
 ;;;; Preview at point in completions buffers
