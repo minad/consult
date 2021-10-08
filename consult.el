@@ -1466,21 +1466,27 @@ actions no assumption about the context can be made.
 nil      Return the list of candidates.
 list     Append the list to the already existing candidates list and return it.
 string   Update with the current user input string. Return nil."
-  (let ((candidates) (last) (buffer))
+  (let (candidates last buffer previewed)
     (lambda (action)
       (pcase-exhaustive action
         ('setup
          (setq buffer (current-buffer))
          nil)
         ((or (pred stringp) 'destroy) nil)
-        ('flush (setq candidates nil last nil))
+        ('flush (setq candidates nil last nil previewed nil))
         ('refresh
          ;; Refresh the UI when the current minibuffer window belongs
          ;; to the current asynchronous completion session.
          (when-let (win (active-minibuffer-window))
            (when (eq (window-buffer win) buffer)
              (with-selected-window win
-               (run-hooks 'consult--completion-refresh-hook))))
+               (run-hooks 'consult--completion-refresh-hook)
+               ;; Interaction between asynchronous completion tables and
+               ;; preview: We have to trigger preview immediately when
+               ;; candidates arrive (Issue #436).
+               (when (and consult--preview-function candidates (not previewed))
+                 (setq previewed t)
+                 (funcall consult--preview-function)))))
          nil)
         ('nil candidates)
         ((pred consp)
