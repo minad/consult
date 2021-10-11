@@ -642,7 +642,7 @@ their descriptions.
                       :category 'bookmark
                       :face     'font-lock-keyword-face
                       :history  'bookmark-view-history
-                      :action   #'consult--bookmark-jump
+                      :action   #'bookmark-view-open
                       :items    #'bookmark-view-names)
                 'append)
 
