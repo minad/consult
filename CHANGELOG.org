@@ -2,7 +2,7 @@
 #+author: Daniel Mendler
 #+language: en
 
-* Development
+* Version 0.12 (2021-10-11)
 
 - Bugfixes
 - Removed obsolete =consult-project-imenu= and =consult-x-command= variables
