@@ -347,7 +347,9 @@ their descriptions.
  #+findex: consult-man
  #+findex: consult-preview-at-point
  #+findex: consult-preview-at-point-mode
- - =consult-apropos=: Replacement for =apropos= with completion.
+ - =consult-apropos=: Replacement for =apropos= with completion. As a better
+   alternative, you can run =embark-export= from commands like =M-x= or
+   =describe-symbol=.
  - =consult-man=: Find Unix man page, via Unix =apropos= or =man -k=.
    =consult-man= opens the selected man page using the Emacs =man= command.
  - =consult-file-externally=: Select a file and open it externally,

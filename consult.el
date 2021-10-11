@@ -3413,7 +3413,9 @@ variable `consult-bookmark-narrow' for the narrowing configuration."
 (defun consult-apropos ()
   "Select pattern and call `apropos'.
 
-The default value of the completion is the symbol at point."
+The default value of the completion is the symbol at point. As a better
+alternative, you can run `embark-export' from commands like `M-x' and
+`describe-symbol'."
   (interactive)
   (let ((pattern
          (consult--read
