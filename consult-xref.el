@@ -99,7 +99,7 @@ FETCHER and ALIST arguments."
           #'consult--read
           candidates
           (append
-           (alist-get #'consult-xref consult--read-config)
+           (consult--customize-get #'consult-xref)
            (list
             :prompt "Go to xref: "
             :history 'consult-xref--history

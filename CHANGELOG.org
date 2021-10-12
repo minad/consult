@@ -2,9 +2,15 @@
 #+author: Daniel Mendler
 #+language: en
 
-* Develop
+* Development
 
 - =consult-goto-line=: Use =goto-line-history= on Emacs 28
+- =consult-customize=: Evaluate settings at runtime. This change makes it possible
+  to use =thing-at-point= to overwrite the =:initial= and =:add-history= settings.
+- =consult--read-config= renamed to =consult--customize-alist= and changed the
+  format. The configuration is an alist. The car must be a command symbol. The
+  cdr must be a plist of key/expressions pairs, where the expressions evaluate
+  to the actual configuration value.
 
 * Version 0.16 (2022-03-08)
 

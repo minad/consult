@@ -443,13 +443,14 @@ Used by `consult-completion-in-region', `consult-yank' and `consult-history'.")
 The function must return a list of regular expressions and a highlighter
 function.")
 
-(defvar consult--read-config nil
+(defvar consult--customize-alist nil
   "Command configuration alist for fine-grained configuration.
 
-Each element of the list must have the form (command-name plist...). The options
-set here will be passed to `consult--read', when called from the corresponding
-command. Note that the options depend on the private `consult--read' API and
-should not be considered as stable as the public API.")
+Each element of the list must have the form (command-name plist...). The
+options set here will be evaluated and passed to `consult--read', when
+called from the corresponding command. Note that the options depend on
+the private `consult--read' API and should not be considered as stable
+as the public API.")
 
 (defvar consult--buffer-display #'switch-to-buffer
   "Buffer display function.")
@@ -504,15 +505,22 @@ We use invalid characters outside the Unicode range.")
 
 ;;;; Customization helper
 
+;; TODO remove obsolete function `consult--customize-set'.
+;; The function exists to avoid issues with precompiled configurations,
+;; which still refer to `consult--customize-set'.
 (defun consult--customize-set (cmds prop val)
   "Set property PROP to VAL of commands CMDS."
+  (consult--customize-put cmds prop `',val))
+
+(defun consult--customize-put (cmds prop form)
+  "Set property PROP to FORM of commands CMDS."
   (dolist (cmd cmds)
     (cond
      ((and (boundp cmd) (consp (symbol-value cmd)))
-      (set cmd (plist-put (symbol-value cmd) prop val)))
+      (set cmd (plist-put (symbol-value cmd) prop (eval form 'lexical))))
      ((functionp cmd)
-      (setf (alist-get cmd consult--read-config)
-            (plist-put (alist-get cmd consult--read-config) prop val)))
+      (setf (alist-get cmd consult--customize-alist)
+            (plist-put (alist-get cmd consult--customize-alist) prop form)))
      (t (user-error "%s is neither a Consult command nor a Consult source"
                     cmd))))
   nil)
@@ -526,9 +534,14 @@ pairs."
       (let ((cmds (seq-take-while (lambda (x) (not (keywordp x))) args)))
         (setq args (seq-drop-while (lambda (x) (not (keywordp x))) args))
         (while (keywordp (car args))
-          (push `(consult--customize-set ',cmds ,(car args) ,(cadr args)) setter)
+          (push `(consult--customize-put ',cmds ,(car args) ',(cadr args)) setter)
           (setq args (cddr args)))))
     (macroexp-progn setter)))
+
+(defun consult--customize-get (&optional cmd)
+  "Get configuration from `consult--customize-alist' for CMD."
+  (mapcar (lambda (x) (eval x 'lexical))
+          (alist-get (or cmd this-command) consult--customize-alist)))
 
 ;;;; Helper functions and macros
 
@@ -2101,7 +2114,7 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
           state preview-key sort lookup group inherit-input-method)
   (apply #'consult--read-1 candidates
          (append
-          (alist-get this-command consult--read-config)
+          (consult--customize-get)
           options
           (list :prompt "Select: "
                 :preview-key consult-preview-key
@@ -2327,7 +2340,7 @@ KEYMAP is a command-specific keymap."
           keymap state preview-key transform inherit-input-method)
   (apply #'consult--prompt-1
          (append
-          (alist-get this-command consult--read-config)
+          (consult--customize-get)
           options
           (list :prompt "Input: "
                 :preview-key consult-preview-key
@@ -2385,7 +2398,7 @@ These configuration options are supported:
     * :require-match - Require matches when completing (def: nil)
     * :prompt - The prompt string shown in the minibuffer"
   (barf-if-buffer-read-only)
-  (cl-letf* ((config (alist-get #'consult-completion-in-region consult--read-config))
+  (cl-letf* ((config (consult--customize-get #'consult-completion-in-region))
              ;; Overwrite both the local and global value of `completion-styles', such that the
              ;; `completing-read' minibuffer sees the overwritten value in any case. This is
              ;; necessary if `completion-styles' is buffer-local.

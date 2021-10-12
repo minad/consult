@@ -1000,6 +1000,22 @@ configuration examples.
     :preview-key (list (kbd "<S-down>") (kbd "<S-up>")))
  #+end_src
 
+ The configuration values are evaluated at runtime, just before the completion
+ session is started. Therefore you can use for example =thing-at-point= to adjust
+ the initial input or the future hitory.
+
+ #+begin_src emacs-lisp
+   (consult-customize
+    consult-line
+    :add-history (seq-some #'thing-at-point '(region symbol)))
+
+   (defalias 'consult-line-thing-at-point 'consult-line)
+
+   (consult-customize
+    consult-line-thing-at-point
+    :initial (thing-at-point 'symbol))
+ #+end_src
+
  Generally it is possible to modify commands for your individual needs by the
  following techniques:
 
