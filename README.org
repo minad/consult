@@ -985,14 +985,24 @@ configuration examples.
     :preview-key (list (kbd "<S-down>") (kbd "<S-up>")))
  #+end_src
 
+ If you want to dynamically adjust values at runtime you can use =:eval=. This works
+ only for commands, not for sources.
+
+ #+begin_src emacs-lisp
+   (defalias 'consult-line-thing-at-point 'consult-line)
+   (consult-customize
+    consult-line-thing-at-point :initial (:eval (thing-at-point 'symbol)))
+ #+end_src
+
  Generally it is possible to modify commands for your individual needs by the
  following techniques:
 
  1. Use =consult-customize= in order to change the command or source settings.
- 2. Create your own wrapper function which passes modified arguments to the Consult functions.
- 3. Create your own buffer [[#multiple-sources][multi sources]] for =consult-buffer=.
- 4. Create advices to modify some internal behavior.
- 5. Write or propose a patch.
+ 2. Use =consult-customize= with =:eval= to change a command setting.
+ 3. Create your own wrapper function which passes modified arguments to the Consult functions.
+ 4. Create your own buffer [[#multiple-sources][multi sources]] for =consult-buffer=.
+ 5. Create advices to modify some internal behavior.
+ 6. Write or propose a patch.
 
 * Recommended packages
   :properties:

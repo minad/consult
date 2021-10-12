@@ -489,6 +489,8 @@ Size of private unicode plane b.")
   (dolist (cmd cmds)
     (cond
      ((and (boundp cmd) (consp (symbol-value cmd)))
+      (when (eq (car-safe val) :eval)
+        (user-error ":eval cannot be used to customize %s of Consult sources" prop))
       (set cmd (plist-put (symbol-value cmd) prop val)))
      ((functionp cmd)
       (setf (alist-get cmd consult--read-config)
@@ -505,9 +507,22 @@ ARGS is a list of commands or sources followed by the list of keyword-value pair
       (let ((cmds (seq-take-while (lambda (x) (not (keywordp x))) args)))
         (setq args (seq-drop-while (lambda (x) (not (keywordp x))) args))
         (while (keywordp (car args))
-          (push `(consult--customize-set ',cmds ,(car args) ,(cadr args)) setter)
+          (push `(consult--customize-set ',cmds ,(car args)
+                                         ,(pcase (cadr args)
+                                            (`(:eval . ,body)
+                                             `(cons :eval (lambda () ,@body)))
+                                            (val val)))
+                setter)
           (setq args (cddr args)))))
     (macroexp-progn setter)))
+
+(defun consult--get-config (&optional cmd)
+  "Get configuration from `consult--read-config' for CMD."
+  (mapcar (lambda (x)
+            (pcase x
+              (`(:eval . ,fn) (funcall fn))
+              (_ x)))
+          (alist-get (or cmd this-command) consult--read-config)))
 
 ;;;; Helper functions and macros
 
@@ -1991,7 +2006,7 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
           state preview-key sort lookup group inherit-input-method)
   (apply #'consult--read-1 candidates
          (append
-          (alist-get this-command consult--read-config)
+          (consult--get-config)
           options
           (list :prompt "Select: "
                 :preview-key consult-preview-key
@@ -2208,7 +2223,7 @@ KEYMAP is a command-specific keymap."
           keymap state preview-key transform inherit-input-method)
   (apply #'consult--prompt-1
          (append
-          (alist-get this-command consult--read-config)
+          (consult--get-config)
           options
           (list :prompt "Input: "
                 :preview-key consult-preview-key
@@ -2265,7 +2280,7 @@ These configuration options are supported:
     * :completion-styles - Use completion styles (def: `completion-styles')
     * :require-match - Require matches when completing (def: nil)
     * :prompt - The prompt string shown in the minibuffer"
-  (cl-letf* ((config (alist-get #'consult-completion-in-region consult--read-config))
+  (cl-letf* ((config (consult--get-config #'consult-completion-in-region))
              ;; Overwrite both the local and global value of `completion-styles', such that the
              ;; `completing-read' minibuffer sees the overwritten value in any case. This is
              ;; necessary if `completion-styles' is buffer-local.
