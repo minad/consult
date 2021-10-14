@@ -3251,6 +3251,8 @@ If no MODES are specified, use currently active major and minor modes."
 
 (defun consult--read-from-kill-ring ()
   "Open kill ring menu and return selected string."
+  ;; `current-kill' updates `kill-ring' with a possible interprogram-paste (#443)
+  (current-kill 0)
   ;; Do not specify a :lookup function in order to preserve completion-styles
   ;; highlighting of the current candidate. We have to perform a final lookup
   ;; to obtain the original candidate which may be propertized with
