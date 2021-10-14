@@ -1013,7 +1013,7 @@ packages in the Emacs ecosystem. You may want to install some of them depending
 on your personal preferences.
 
 - [[https://github.com/mohkale/consult-bibtex][consult-bibtex]]: Consult interface for bibliographies.
-- [[https://github.com/mohkale/consult-yasnippet][consult-company]]: Completion at point using the company backends.
+- [[https://github.com/mohkale/consult-company][consult-company]]: Completion at point using the company backends.
 - [[https://github.com/karthink/consult-dir][consult-dir]]: Directory jumper using Consult multi sources.
 - [[https://github.com/mohkale/consult-eglot][consult-eglot]]: Integration with eglot (lsp client).
 - [[https://github.com/minad/consult-flycheck][consult-flycheck]]: Provides the =consult-flycheck= command.
