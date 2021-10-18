@@ -257,7 +257,8 @@ number. Otherwise store point, frameset, window or kmacro."
     (t
      `("Store"
        (?p "point" "Point to register: " ,#'point-to-register)
-       (?f "frameset" "Frameset to register: " ,#'frameset-to-register)
+       (?f "file" "File to register: " ,(lambda (r) (set-register r `(file . ,(buffer-file-name)))))
+       (?t "frameset" "Frameset to register: " ,#'frameset-to-register)
        (?w "window" "Window to register: " ,#'window-configuration-to-register)
        ,@(and last-kbd-macro `((?k "kmacro" "Kmacro to register: " ,#'kmacro-to-register))))))))
 
