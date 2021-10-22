@@ -1002,7 +1002,7 @@ configuration examples.
 I personally use and recommended this combination of packages:
 
 - consult: This package
-- [[https://github.com/minad/vertico][vertico]]: Fast and minimal vertical completion systems
+- [[https://github.com/minad/vertico][vertico]]: Fast and minimal vertical completion system
 - [[https://github.com/minad/marginalia][marginalia]]: Annotations for the completion candidates
 - [[https://github.com/oantolin/embark][embark and embark-consult]]: Action commands, which can act on the completion candidates
 - [[https://github.com/oantolin/orderless][orderless]]: Completion style which offers flexible candidate filtering
