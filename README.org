@@ -1008,13 +1008,13 @@ I personally use and recommended this combination of packages:
 - [[https://github.com/oantolin/orderless][orderless]]: Completion style which offers flexible candidate filtering
 
 There exist other completion UIs beside Vertico, which are supported by Consult.
-Depending on your preferences you may prefer one over the other.
+Give them a try and find out which interaction model fits best for you!
 
 - [[https://github.com/raxod502/selectrum][selectrum by Radon Rosborough]]: Alternative vertical completion system.
 - [[https://github.com/oantolin/icomplete-vertical][icomplete-vertical by Omar Antolín Camarena]]: Vertical completion system based on Icomplete.
   Icomplete-vertical is only needed for Emacs 27, built-in on Emacs 28.
 - [[https://github.com/oantolin/embark][embark by Omar Antolín Camarena]]: Completion based on live updating Embark collect buffer.
-- [[https://github.com/protesilaos/mct][mct by Protesilaos Stavrou]]: Minibuffer and Completions in Tandem, which is build
+- [[https://gitlab.com/protesilaos/mct][mct by Protesilaos Stavrou]]: Minibuffer and Completions in Tandem, which is build
   on the default completion UI.
 
 There exist packages which integrate Consult with special programs or with other
