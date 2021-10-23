@@ -1014,12 +1014,12 @@ Give them a try and find out which interaction model fits best for you!
 - [[https://github.com/oantolin/icomplete-vertical][icomplete-vertical by Omar Antolín Camarena]]: Vertical completion system based on Icomplete.
   Icomplete-vertical is only needed for Emacs 27, built-in on Emacs 28.
 - [[https://github.com/oantolin/embark][embark by Omar Antolín Camarena]]: Completion based on live updating Embark collect buffer.
-- [[https://gitlab.com/protesilaos/mct][mct by Protesilaos Stavrou]]: Minibuffer and Completions in Tandem, which is build
+- [[https://gitlab.com/protesilaos/mct][mct by Protesilaos Stavrou]]: Minibuffer and Completions in Tandem, which builds
   on the default completion UI.
 
-There exist packages which integrate Consult with special programs or with other
-packages in the Emacs ecosystem. You may want to install some of them depending
-on your personal preferences.
+You can integrated Consult with special programs or with other packages in the
+wider Emacs ecosystem. You may want to install some of theses packages depending
+on your preferences and requirements.
 
 - [[https://github.com/mohkale/consult-bibtex][consult-bibtex]]: Consult interface for bibliographies.
 - [[https://github.com/mohkale/consult-company][consult-company]]: Completion at point using the company backends.
@@ -1041,20 +1041,16 @@ offer functionality based on ~completing-read~.
 - [[https://github.com/minad/bookmark-view][bookmark-view]]: Store window configuration as bookmarks, possible integration with =consult-buffer=.
 - [[https://github.com/bdarcus/bibtex-actions][bibtex-actions]]: Versatile frontend for bibliographies, frontend agnostic.
 - [[https://github.com/d12frosted/flyspell-correct][flyspell-correct]]: Apply spelling corrections by selecting via =completing-read=.
-- [[https://github.com/mhayashi1120/Emacs-wgrep][wgrep]]: Editing of grep buffers, can be used together with =consult-grep= via =embark-export=.
+- [[https://github.com/mhayashi1120/Emacs-wgrep][wgrep]]: Editing of grep buffers, use together with =consult-grep= via =embark-export=.
 - [[https://github.com/iyefrat/all-the-icons-completion][all-the-icons-completion]]: Icons for the completion UI
 
-Note that all packages are independent and can potentially be exchanged with
-alternative components, since there exist no hard dependencies. Furthermore it
-is possible to get started with only default completion and Consult and add more
-components later to the mix. For example Embark can be omitted if action support
-is not desired.
-
-The Selectrum repository provides a [[https://github.com/raxod502/selectrum/tree/master/test][set of scripts]] which allow experimenting
-with multiple package combinations of completion systems and Consult. After
-cloning the repository, you can execute the scripts with =cd selectrum/test;
-./run.sh <package-combo.el>=. The scripts do not modify your existing Emacs
-configuration, but create a separate Emacs configuration in =/tmp=.
+Note that all packages are independent and can be exchanged with alternative
+components, since there exist no hard dependencies. Furthermore it is possible
+to get started with only default completion and Consult and add more components
+later to the mix. For example you can omit Marginalia if you don't need
+annotations. I highly recommend the Embark package, but in order to familarize
+yourself with the other components, you can first start without it - or you could
+even start with Embark right away and add the other components later on.
 
 * Bug reports
   :properties:
@@ -1109,6 +1105,12 @@ Please provide the necessary important information with your bug report:
 When evaluating Consult-related code snippets you should enable [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Lexical-Binding.html][lexical binding]].
 Consult often uses a functional programming style, relying on lambdas and
 lexical closures.
+
+The Selectrum repository provides a [[https://github.com/raxod502/selectrum/tree/master/test][set of scripts]] which allow experimenting
+with multiple package combinations of completion systems and Consult. After
+cloning the repository, you can execute the scripts with =cd selectrum/test;
+./run.sh <package-combo.el>=. The scripts do not modify your existing Emacs
+configuration, but create a separate Emacs configuration in =/tmp=.
 
 * Contributions
   :properties:
