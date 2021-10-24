@@ -1306,8 +1306,9 @@ This command is used internally by the narrowing system of `consult--read'."
     "" nil :filter
     ,(lambda (&optional _)
        (when (string= (minibuffer-contents-no-properties) "")
-         (consult-narrow nil)
-         #'ignore))))
+         (lambda ()
+           (interactive)
+           (consult-narrow nil))))))
 
 (defconst consult--narrow-space
   `(menu-item
@@ -1318,9 +1319,10 @@ This command is used internally by the narrowing system of `consult--read'."
                                   (assoc (aref str 0) consult--narrow-keys))
                              (and (string= str "")
                                   (assoc 32 consult--narrow-keys))))
-           (delete-minibuffer-contents)
-           (consult-narrow (car pair))
-           #'ignore)))))
+           (lambda ()
+             (interactive)
+             (delete-minibuffer-contents)
+             (consult-narrow (car pair))))))))
 
 (defun consult-narrow-help ()
   "Print narrowing help as a `minibuffer-message'.
