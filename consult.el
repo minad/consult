@@ -3542,7 +3542,7 @@ In order to select from a specific HISTORY, pass the history variable as argumen
     map)
   "Additional keymap used by `consult-isearch-history'.")
 
-(defun consult--isearch-candidates ()
+(defun consult--isearch-history-candidates ()
   "Return isearch history candidates."
   ;; NOTE: Do not throw an error on empty history,
   ;; in order to allow starting a search.
@@ -3572,7 +3572,7 @@ In order to select from a specific HISTORY, pass the history variable as argumen
          (+ 4 (apply #'max (mapcar #'length history)))
        0))))
 
-(defconst consult--isearch-narrow
+(defconst consult--isearch-history-narrow
   '((?c . "Char")
     (?u . "Custom")
     (?l . "Literal")
@@ -3590,7 +3590,7 @@ starts a new Isearch session otherwise."
   (consult--forbid-minibuffer)
   (let* ((isearch-message-function 'ignore) ;; Avoid flicker in echo area
          (inhibit-redisplay t)              ;; Avoid flicker in mode line
-         (candidates (consult--isearch-candidates))
+         (candidates (consult--isearch-history-candidates))
          (align (propertize " " 'display `(space :align-to (+ left ,(cdr candidates))))))
     (unless isearch-mode (isearch-mode t))
     (with-isearch-suspended
@@ -3605,12 +3605,12 @@ starts a new Isearch session otherwise."
             :keymap consult-isearch-history-map
             :annotate
             (lambda (cand)
-              (concat align (alist-get (consult--tofu-get cand) consult--isearch-narrow)))
+              (concat align (alist-get (consult--tofu-get cand) consult--isearch-history-narrow)))
             :group
             (lambda (cand transform)
               (if transform
                   cand
-                (alist-get (consult--tofu-get cand) consult--isearch-narrow)))
+                (alist-get (consult--tofu-get cand) consult--isearch-history-narrow)))
             :lookup
             (lambda (_ candidates str)
               (if-let (found (member str candidates)) (substring (car found) 0 -1) str))
@@ -3625,7 +3625,7 @@ starts a new Isearch session otherwise."
             :narrow
             (list :predicate
                   (lambda (cand) (= (consult--tofu-get cand) consult--narrow))
-                  :keys consult--isearch-narrow))
+                  :keys consult--isearch-history-narrow))
            isearch-new-message
            (mapconcat 'isearch-text-char-description isearch-new-string "")))
     ;; Setting `isearch-regexp' etc only works outside of `with-isearch-suspended'.
