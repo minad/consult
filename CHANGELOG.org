@@ -4,6 +4,8 @@
 
 * Development
 
+- Bugfixes
+- =consult-register=: Add support for file register values.
 - Rename =consult-isearch= to =consult-isearch-history=. The command is a history
   browsing command and not a replacement for Isearch.
 
