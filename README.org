@@ -201,7 +201,6 @@ their descriptions.
  #+findex: consult-multi-occur
  #+findex: consult-keep-lines
  #+findex: consult-focus-lines
- #+findex: consult-isearch
  - =consult-line=: Enter search string and select from matching lines.
    Supports live preview and recursive editing. The symbol at point and the
    recent Isearch string are added to the "future history" and can be accessed
@@ -210,11 +209,6 @@ their descriptions.
  - =consult-line-multi=: Search across multiple buffers. By default search across
    project buffers. If invoked with a prefix argument search across all buffers.
    Behaves like =consult-line=.
- - =consult-isearch=: During an Isearch session, this command picks a
-   search string from history and continues the search with the newly selected
-   string. Outside of Isearch, the command allows you to pick a string from the
-   history and starts a new Isearch. =consult-isearch= acts as a drop-in
-   replacement for =isearch-edit-string=.
  - =consult-multi-occur=: Replacement for =multi-occur= which uses
    =completing-read-multiple=.
  - =consult-keep-lines=: Replacement for =keep/flush-lines=
@@ -296,6 +290,7 @@ their descriptions.
 
  #+findex: consult-complex-command
  #+findex: consult-history
+ #+findex: consult-isearch-history
  - =consult-complex-command=: Select a command from the
    =command-history=. This command is a =completing-read= version of
    =repeat-complex-command= and is also a replacement for the =command-history=
@@ -303,6 +298,11 @@ their descriptions.
  - =consult-history=: Insert a string from the current buffer history.
    You can invoke this command from the minibuffer. In that case =consult-history=
    uses the  history stored in the =minibuffer-history-variable=.
+ - =consult-isearch-history=: During an Isearch session, this command picks a
+   search string from history and continues the search with the newly selected
+   string. Outside of Isearch, the command allows you to pick a string from the
+   history and starts a new Isearch. =consult-isearch-history= acts as a drop-in
+   replacement for =isearch-edit-string=.
 
 ** Modes
    :properties:
@@ -816,10 +816,10 @@ configuration examples.
             ("M-s k" . consult-keep-lines)
             ("M-s u" . consult-focus-lines)
             ;; Isearch integration
-            ("M-s e" . consult-isearch)
+            ("M-s e" . consult-isearch-history)
             :map isearch-mode-map
-            ("M-e" . consult-isearch)                 ;; orig. isearch-edit-string
-            ("M-s e" . consult-isearch)               ;; orig. isearch-edit-string
+            ("M-e" . consult-isearch-history)         ;; orig. isearch-edit-string
+            ("M-s e" . consult-isearch-history)       ;; orig. isearch-edit-string
             ("M-s l" . consult-line)                  ;; needed by consult-line to detect isearch
             ("M-s L" . consult-line-multi))           ;; needed by consult-line to detect isearch
 

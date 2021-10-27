@@ -3517,7 +3517,7 @@ In order to select from a specific HISTORY, pass the history variable as argumen
       (delete-minibuffer-contents))
     (insert (substring-no-properties str))))
 
-;;;;; Command: consult-isearch
+;;;;; Command: consult-isearch-history
 
 (defun consult-isearch-forward (&optional reverse)
   "Continue isearch forward optionally in REVERSE."
@@ -3535,12 +3535,12 @@ In order to select from a specific HISTORY, pass the history variable as argumen
 (put #'consult-isearch-backward 'completion-predicate #'ignore)
 (put #'consult-isearch-forward 'completion-predicate #'ignore)
 
-(defvar consult-isearch-map
+(defvar consult-isearch-history-map
   (let ((map (make-sparse-keymap)))
     (define-key map [remap isearch-forward] #'consult-isearch-forward)
     (define-key map [remap isearch-backward] #'consult-isearch-backward)
     map)
-  "Additional keymap used by `consult-isearch'.")
+  "Additional keymap used by `consult-isearch-history'.")
 
 (defun consult--isearch-candidates ()
   "Return isearch history candidates."
@@ -3581,8 +3581,8 @@ In order to select from a specific HISTORY, pass the history variable as argumen
     (?w . "Word")))
 
 ;;;###autoload
-(defun consult-isearch ()
-  "Read a search string with completion from history.
+(defun consult-isearch-history ()
+  "Read a search string with completion from the Isearch history.
 
 This replaces the current search string if Isearch is active, and
 starts a new Isearch session otherwise."
@@ -3602,7 +3602,7 @@ starts a new Isearch session otherwise."
             :history t ;; disable history
             :sort nil
             :initial isearch-string
-            :keymap consult-isearch-map
+            :keymap consult-isearch-history-map
             :annotate
             (lambda (cand)
               (concat align (alist-get (consult--tofu-get cand) consult--isearch-narrow)))
@@ -3632,6 +3632,11 @@ starts a new Isearch session otherwise."
     (unless (plist-member (text-properties-at 0 isearch-string) 'isearch-regexp-function)
       (setq isearch-regexp t
             isearch-regexp-function nil))))
+
+(define-obsolete-function-alias
+  'consult-isearch
+  'consult-isearch-history
+  "0.12")
 
 ;;;;; Command: consult-minor-mode-menu
 

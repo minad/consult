@@ -2,6 +2,11 @@
 #+author: Daniel Mendler
 #+language: en
 
+* Development
+
+- Rename =consult-isearch= to =consult-isearch-history=. The command is a history
+  browsing command and not a replacement for Isearch.
+
 * Version 0.12 (2021-10-11)
 
 - Bugfixes
