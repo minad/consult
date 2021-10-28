@@ -1031,6 +1031,7 @@ on your preferences and requirements.
 - [[https://codeberg.org/jao/espotify][consult-spotify]]: Access the Spotify API and control your local music player.
 - [[https://codeberg.org/jao/consult-recoll][consult-recoll]]: Access the [[https://www.lesbonscomptes.com/recoll/][Recoll]] desktop full-text search using Consult.
 - [[https://github.com/mohkale/consult-yasnippet][consult-yasnippet]]: Integration with yasnippet.
+- [[https://gitlab.com/OlMon/consult-projectile/][consult-projectile]]: Projectile integration, buffer sources for Projectile.
 - [[https://github.com/minad/affe][affe]]: Asynchronous Fuzzy Finder for Emacs (uses Consult under the hood).
 
 Not directly related to Consult, but maybe still of interest are the following
