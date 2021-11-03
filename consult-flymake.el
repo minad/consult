@@ -53,10 +53,7 @@
                      (goto-char (flymake-diagnostic-beg diag))
                      (list (buffer-name buffer)
                            (line-number-at-pos)
-                           (propertize (format "%s" (flymake--lookup-type-property
-                                                     type 'flymake-type-name type))
-                                       'face (flymake--lookup-type-property
-                                              type 'mode-line-face 'flymake-error))
+                           type
                            (flymake-diagnostic-text diag)
                            (point-marker)
                            (pcase (flymake--lookup-type-property type 'flymake-category)
@@ -69,12 +66,19 @@
          (fmt (format "%%-%ds %%-%dd %%-7s %%s" buffer-width line-width)))
     (mapcar
      (pcase-lambda (`(,buffer ,line ,type ,text ,marker ,narrow))
-       (propertize (format fmt buffer line type text)
+       (propertize (format fmt buffer line
+                           (propertize (format "%s" (flymake--lookup-type-property
+                                                     type 'flymake-type-name type))
+                                       'face (flymake--lookup-type-property
+                                              type 'mode-line-face 'flymake-error))
+                           text)
                    'consult--candidate marker
                    'consult--type narrow))
      (sort diags
            (pcase-lambda (`(_ _ ,t1 _ ,m1 _) `(_ _ ,t2 _ ,m2 _))
-             (or (string< t1 t2) (and (string= t1 t2) (< m1 m2))))))))
+             (let ((s1 (flymake--severity t1))
+                   (s2 (flymake--severity t2)))
+               (or (> s1 s2) (and (= s1 s2) (< m1 m2)))))))))
 
 ;;;###autoload
 (defun consult-flymake ()
