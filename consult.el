@@ -845,7 +845,7 @@ Otherwise the `default-directory' is returned."
 (defun consult--format-location (file line &optional str)
   "Format location string 'FILE:LINE:STR'."
   (setq line (number-to-string line)
-        str (concat file ":" line ":" str)
+        str (concat file ":" line (and str ":") str)
         file (length file))
   (put-text-property 0 file 'face 'consult-file str)
   (put-text-property (1+ file) (+ 1 file (length line)) 'face 'consult-line-number str)
@@ -2649,7 +2649,7 @@ The symbol at point is added to the future history."
                 ;; `line-number-at-pos' is slow, see comment in `consult--mark-candidates'.
                 (let ((line (line-number-at-pos pos consult-line-numbers-widen)))
                   (push (concat
-                         (propertize (consult--format-location (buffer-name buf) line)
+                         (propertize (consult--format-location (buffer-name buf) line "")
                                      'consult-location (cons marker line)
                                      'consult-strip t)
                          (consult--line-with-cursor marker)
