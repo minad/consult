@@ -2334,13 +2334,15 @@ These configuration options are supported:
                                         'consult--completion-candidate-hook)
                      (let ((enable-recursive-minibuffers t))
                        (if (eq category 'file)
-                           ;; When completing files with consult-completion-in-region, the point in the
-                           ;; minibuffer gets placed initially at the beginning of the last path component.
-                           ;; By using the filename as DIR argument (second argument of read-file-name), it
-                           ;; starts at the end of minibuffer contents, as for other types of completion.
-                           ;; However this is undefined behavior since initial does not only contain the
-                           ;; directory, but also the filename.
-                           (read-file-name prompt initial initial require-match nil predicate)
+                           ;; We use read-file-name, since many completion UIs make it nicer to
+                           ;; navigate the file system this way; and we insert the initial text
+                           ;; directly into the minibuffer to allow the user's completion
+                           ;; styles to expand it as appropriate (particularly useful for the
+                           ;; partial-completion and initials styles, which allow for very
+                           ;; condensed path specification).
+                           (consult--minibuffer-with-setup-hook
+                               (lambda () (insert initial))
+                             (read-file-name prompt nil initial require-match nil predicate))
                          (completing-read prompt
                                           ;; Evaluate completion table in the original buffer.
                                           ;; This is a reasonable thing to do and required
