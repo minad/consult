@@ -8,6 +8,8 @@
 - =consult-register=: Add support for file register values.
 - Rename =consult-isearch= to =consult-isearch-history=. The command is a history
   browsing command and not a replacement for Isearch.
+- =consult-grep= support -[ABC] grep options
+- Add =consult-grep-context= face
 
 * Version 0.12 (2021-10-11)
 
