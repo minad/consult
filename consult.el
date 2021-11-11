@@ -218,7 +218,7 @@ See `consult--multi' for a description of the source values."
   :type 'integer)
 
 (defconst consult--grep-match-regexp
-  "\\`\\(?:\\./\\)?\\([^\n\0]+\\)\0\\([0-9]+\\)[-:\0]"
+  "\\`\\(?:\\./\\)?\\([^\n\0]+\\)\0\\([0-9]+\\)\\([-:\0]\\)"
   "Regexp used to match file and line of grep output.")
 
 (defcustom consult-grep-args
@@ -371,6 +371,10 @@ Used by `consult-completion-in-region', `consult-yank' and `consult-history'.")
 (defface consult-file
   '((t :inherit font-lock-function-name-face))
   "Face used to highlight files in `consult-buffer'.")
+
+(defface consult-grep-context
+  '((t :inherit shadow))
+  "Face used to highlight grep context in `consult-grep'.")
 
 (defface consult-bookmark
   '((t :inherit font-lock-constant-face))
@@ -4084,19 +4088,26 @@ BUILDER is the command argument builder."
         (let (result)
           (save-match-data
             (dolist (str action)
-              (when (string-match consult--grep-match-regexp str)
+              (when (and (string-match consult--grep-match-regexp str)
+                         ;; Filter out empty context lines
+                         (or (/= (aref str (match-beginning 3)) ?-)
+                             (/= (match-end 0) (length str))))
                 (let* ((file (match-string 1 str))
                        (line (match-string 2 str))
+                       (ctx (= (aref str (match-beginning 3)) ?-))
                        (content (substring str (match-end 0)))
-                       (file-len (length file)))
+                       (file-len (length file))
+                       (line-len (length line)))
                   (when (> (length content) consult-grep-max-columns)
                     (setq content (substring content 0 consult-grep-max-columns)))
                   (when highlight
                     (funcall highlight content))
-                  (setq str (concat file ":" line ":" content))
+                  (setq str (concat file ":" line (if ctx "-" ":") content))
                   ;; Store file name in order to avoid allocations in `consult--grep-group'
                   (add-text-properties 0 file-len `(face consult-file consult--grep-file ,file) str)
-                  (put-text-property (1+ file-len) (+ 1 file-len (length line)) 'face 'consult-line-number str)
+                  (put-text-property (1+ file-len) (+ 1 file-len line-len) 'face 'consult-line-number str)
+                  (when ctx
+                    (add-face-text-property (+ 1 file-len line-len) (length str) 'consult-grep-context 'append str))
                   (push str result)))))
           (funcall async (nreverse result))))
        (t (funcall async action))))))
