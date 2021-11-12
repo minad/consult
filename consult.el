@@ -503,7 +503,8 @@ Size of private unicode plane b.")
 
 (defmacro consult-customize (&rest args)
   "Set properties of commands or sources.
-ARGS is a list of commands or sources followed by the list of keyword-value pairs."
+ARGS is a list of commands or sources followed by the list of keyword-value
+pairs."
   (let ((setter))
     (while args
       (let ((cmds (seq-take-while (lambda (x) (not (keywordp x))) args)))
@@ -977,7 +978,8 @@ If TRANSFORM non-nil, return transformed CAND, otherwise return title."
       (car (get-text-property 0 'consult-location cand))))))
 
 (defun consult--line-prefix (&optional curr-line)
-  "Annotate `consult-location' candidates with line numbers given the current line CURR-LINE."
+  "Annotate `consult-location' candidates with line numbers given the current line
+CURR-LINE."
   (setq curr-line (or curr-line -1))
   (let* ((width (length (number-to-string (line-number-at-pos
                                            (point-max)
@@ -1205,7 +1207,8 @@ FACE is the cursor face."
 (defun consult--with-preview-1 (preview-key state transform candidate fun)
   "Add preview support for FUN.
 
-See `consult--with-preview' for the arguments PREVIEW-KEY, STATE, TRANSFORM and CANDIDATE."
+See `consult--with-preview' for the arguments PREVIEW-KEY, STATE, TRANSFORM
+and CANDIDATE."
   (let ((input "") (selected) (timer))
     (consult--minibuffer-with-setup-hook
         (if (and state preview-key)
@@ -1279,7 +1282,8 @@ candidate argument can be nil if the selection has been aborted."
 ;;;; Narrowing support
 
 (defun consult--widen-key ()
-  "Return widening key, if `consult-widen-key' is not set, defaults to twice `consult-narrow-key'."
+  "Return widening key, if `consult-widen-key' is not set, defaults to twice
+`consult-narrow-key'."
   (or consult-widen-key (and consult-narrow-key (vconcat consult-narrow-key consult-narrow-key))))
 
 (defun consult-narrow (key)
@@ -3501,7 +3505,8 @@ for which the command history is used."
 (defun consult-history (&optional history)
   "Insert string from HISTORY of current buffer.
 
-In order to select from a specific HISTORY, pass the history variable as argument."
+In order to select from a specific HISTORY, pass the history variable
+as argument."
   (interactive)
   (let ((str (consult--local-let ((enable-recursive-minibuffers t))
                (consult--read
@@ -4406,7 +4411,8 @@ See `consult-grep' for more details regarding the asynchronous search."
 
 (define-minor-mode consult-preview-at-point-mode
   "Preview minor mode for *Completions* buffers.
-When moving around in the *Completions* buffer, the candidate at point is automatically previewed."
+When moving around in the *Completions* buffer, the candidate at point is
+automatically previewed."
   :init-value nil :group 'consult
   (if consult-preview-at-point-mode
       (add-hook 'post-command-hook #'consult-preview-at-point nil 'local)
