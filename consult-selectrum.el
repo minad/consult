@@ -37,7 +37,8 @@
 
 (defun consult-selectrum--filter-adv (orig pattern cands category highlight)
   "Advice for ORIG `consult--completion-filter' function.
-See `consult--completion-filter' for arguments PATTERN, CANDS, CATEGORY and HIGHLIGHT."
+See `consult--completion-filter' for arguments PATTERN, CANDS, CATEGORY
+and HIGHLIGHT."
   ;; Do not use selectrum-is-active here, since we want to always use
   ;; the Selectrum filtering when Selectrum is installed, even when
   ;; Selectrum is currently not active.
@@ -67,7 +68,8 @@ See `consult--completion-filter' for arguments PATTERN, CANDS, CATEGORY and HIGH
     (selectrum-exhibit (not reset))))
 
 (defun consult-selectrum--split-wrap (orig split)
-  "Wrap candidates highlight/refinement ORIG function, splitting the input using SPLIT."
+  "Wrap candidates highlight/refinement ORIG function, splitting
+the input using SPLIT."
   (lambda (str cands)
     (funcall orig (cadr (funcall split str 0)) cands)))
 
