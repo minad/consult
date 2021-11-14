@@ -978,8 +978,8 @@ If TRANSFORM non-nil, return transformed CAND, otherwise return title."
       (car (get-text-property 0 'consult-location cand))))))
 
 (defun consult--line-prefix (&optional curr-line)
-  "Annotate `consult-location' candidates with line numbers given the current line
-CURR-LINE."
+  "Annotate `consult-location' candidates with line numbers.
+CURR-LINE is the current line number."
   (setq curr-line (or curr-line -1))
   (let* ((width (length (number-to-string (line-number-at-pos
                                            (point-max)
@@ -1282,8 +1282,8 @@ candidate argument can be nil if the selection has been aborted."
 ;;;; Narrowing support
 
 (defun consult--widen-key ()
-  "Return widening key, if `consult-widen-key' is not set, defaults to twice
-`consult-narrow-key'."
+  "Return widening key, if `consult-widen-key' is not set.
+The default is twice the `consult-narrow-key'."
   (or consult-widen-key (and consult-narrow-key (vconcat consult-narrow-key consult-narrow-key))))
 
 (defun consult-narrow (key)
