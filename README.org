@@ -584,6 +584,7 @@ their descriptions.
   Required source fields:
   - =:category= Completion category.
   - =:items= List of strings to select from or function returning list of strings.
+    A list of cons cells is not supported.
 
   Optional source fields:
   - =:name= Name of the source, used for narrowing, group titles and annotations.

@@ -2136,7 +2136,11 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
 (defun consult--multi (sources &rest options)
   "Select from candidates taken from a list of SOURCES.
 
-OPTIONS is the plist of options passed to `consult--read'.
+OPTIONS is the plist of options passed to `consult--read'. The following
+options are supported: :require-match, :history, :keymap, :initial,
+:add-history, :sort and :inherit-input-method. The other options of
+`consult--read' are used by the implementation of `consult--multi' and should
+be overwritten only in special scenarios.
 
 The function returns the selected candidate in the form (cons candidate
 source-value). The sources of the source list can either be symbols of source
