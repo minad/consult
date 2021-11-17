@@ -441,7 +441,7 @@ their descriptions.
    (consult-customize
     consult-ripgrep consult-git-grep consult-grep
     consult-bookmark consult-recent-file consult-xref
-    consult--source-file consult--source-project-file consult--source-bookmark
+    consult--source-recent-file consult--source-project-recent-file consult--source-bookmark
     :preview-key (kbd "M-."))
  #+end_src
 
@@ -627,7 +627,7 @@ their descriptions.
 
   #+begin_src emacs-lisp
     (consult-customize
-     consult--source-file consult--source-project-file consult--source-bookmark
+     consult--source-recent-file consult--source-project-recent-file consult--source-bookmark
      :preview-key (kbd "M-."))
   #+end_src
 
@@ -865,7 +865,7 @@ configuration examples.
       :preview-key '(:debounce 0.2 any)
       consult-ripgrep consult-git-grep consult-grep
       consult-bookmark consult-recent-file consult-xref
-      consult--source-file consult--source-project-file consult--source-bookmark
+      consult--source-recent-file consult--source-project-recent-file consult--source-bookmark
       :preview-key (kbd "M-."))
 
      ;; Optionally configure the narrowing key.
@@ -939,6 +939,7 @@ configuration examples.
  | consult-preview-max-size         | Files larger than this size are not previewed         |
  | consult-preview-raw-size         | Files larger than this size are previewed in raw form |
  | consult-project-root-function    | Function which returns current project root           |
+ | consult-recent-file-filter       | Filter for =consult-recent-file=                        |
  | consult-register-narrow          | Narrowing configuration for =consult-register=          |
  | consult-ripgrep-args             | Command line arguments for ripgrep                    |
  | consult-themes                   | List of themes to be presented for selection          |

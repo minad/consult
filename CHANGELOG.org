@@ -2,6 +2,11 @@
 #+author: Daniel Mendler
 #+language: en
 
+* Development
+
+- Add =consult-recent-file-filter=
+- Rename =consult--source-(project-)file= to =consult-source-(project-)recent-file=
+
 * Version 0.13 (2021-11-12)
 
 - Bugfixes

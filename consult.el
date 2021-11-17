@@ -193,13 +193,17 @@ The default setting is to filter ephemeral buffer names beginning with a space
 character, the *Completions* buffer and a few log buffers."
   :type '(repeat regexp))
 
+(defcustom consult-recent-file-filter nil
+  "Filter regexps for `consult-recent-file'."
+  :type '(repeat regexp))
+
 (defcustom consult-buffer-sources
   '(consult--source-hidden-buffer
     consult--source-buffer
-    consult--source-file
+    consult--source-recent-file
     consult--source-bookmark
     consult--source-project-buffer
-    consult--source-project-file)
+    consult--source-project-recent-file)
   "Sources used by `consult-buffer'.
 
 See `consult--multi' for a description of the source values."
@@ -3132,7 +3136,11 @@ narrowing and the settings `consult-goto-line-numbers' and
   (interactive)
   (find-file
    (consult--read
-    (or (mapcar #'abbreviate-file-name recentf-list)
+    (or (mapcar #'abbreviate-file-name
+                (if-let (filter (and consult-recent-file-filter
+                                     (consult--regexp-filter consult-recent-file-filter)))
+                    (seq-remove (apply-partially #'string-match-p filter) recentf-list)
+                  recentf-list))
         (user-error "No recent files, `recentf-mode' is %s"
                     (if recentf-mode "on" "off")))
     :prompt "Find recent file: "
@@ -3911,7 +3919,10 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
                               :as #'buffer-name)))
   "Project buffer candidate source for `consult-buffer'.")
 
-(defvar consult--source-project-file
+(define-obsolete-variable-alias
+  'consult--source-project-file
+  'consult--source-project-recent-file "0.14")
+(defvar consult--source-project-recent-file
   `(:name     "Project File"
     :narrow   (?p . "Project")
     :hidden   t
@@ -3926,12 +3937,15 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
       (when-let (root (consult--project-root))
         (let ((len (length root))
               (inv-root (propertize root 'invisible t))
-              (ht (consult--buffer-file-hash)))
+              (ht (consult--buffer-file-hash))
+              (filter (consult--regexp-filter consult-recent-file-filter)))
           (mapcar (lambda (x)
                     (concat inv-root (substring x len)))
                   (seq-filter (lambda (x)
                                 (and (not (gethash x ht))
-                                     (string-prefix-p root x)))
+                                     (string-prefix-p root x)
+                                     (not (and consult-recent-file-filter
+                                               (string-match-p filter x)))))
                               recentf-list))))))
   "Project file candidate source for `consult-buffer'.")
 
@@ -3962,7 +3976,10 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
                                        :as #'buffer-name)))
   "Buffer candidate source for `consult-buffer'.")
 
-(defvar consult--source-file
+(define-obsolete-variable-alias
+  'consult--source-file
+  'consult--source-recent-file "0.14")
+(defvar consult--source-recent-file
   `(:name     "File"
     :narrow   ?f
     :category file
@@ -3972,9 +3989,13 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
     :enabled  ,(lambda () recentf-mode)
     :items
     ,(lambda ()
-       (let ((ht (consult--buffer-file-hash)))
+       (let ((ht (consult--buffer-file-hash))
+             (filter (consult--regexp-filter consult-recent-file-filter)))
          (mapcar #'abbreviate-file-name
-                 (seq-remove (lambda (x) (gethash x ht)) recentf-list)))))
+                 (seq-remove (lambda (x)
+                               (or (gethash x ht)
+                                   (and consult-recent-file-filter (string-match-p filter x))))
+                             recentf-list)))))
   "Recent file candidate source for `consult-buffer'.")
 
 ;;;###autoload
