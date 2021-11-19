@@ -362,12 +362,12 @@ their descriptions.
    This is mainly relevant if you use the default =*Completions*= UI or if you
    want to enable preview in Embark Collect buffers.
  - =consult-completion-in-region=: This function can be set as
-   =completion-in-region-function=. Then the minibuffer completion UI will be used
-   for =completion-at-point=. This function is particularly useful in combination
-   with Vertico or Icomplete, since these UIs do not provide their own
-   =completion-in-region-function=. Selectrum already comes with its own function
-   similar to =consult-completion-in-region=. If you use the default =*Completions*=
-   UI, note that =consult-completion-in-region= is not useful.
+   =completion-in-region-function=. Then the minibuffer completion UI will be
+   used for =completion-at-point=. This function is particularly useful in
+   combination with Vertico or Icomplete, since these UIs do not provide their
+   own =completion-in-region-function=. Selectrum provides its own function
+   similar to =consult-completion-in-region=. If you use the default
+   =*Completions*= UI, note that =consult-completion-in-region= is not useful.
    #+begin_src emacs-lisp
      ;; Use `consult-completion-in-region' if Vertico is enabled.
      ;; Otherwise use the default `completion--in-region' function.
@@ -477,8 +477,7 @@ their descriptions.
 
  Consult has special support for candidate groups. If the completion UI supports
  the grouping functionality, the UI separates the groups with thin lines and
- shows group titles. As of now, Vertico, Selectrum and Icomplete-vertical
- provide support. Grouping is useful if the list of candidates consists of
+ shows group titles. Grouping is useful if the list of candidates consists of
  candidates of multiple types or candidates from [[#multiple-sources][multiple sources]], like the
  =consult-buffer= command, which shows both buffers and recently opened files.
  Note that you can disable the group titles by setting the =:group= property of
@@ -824,9 +823,9 @@ configuration examples.
             ("M-s l" . consult-line)                  ;; needed by consult-line to detect isearch
             ("M-s L" . consult-line-multi))           ;; needed by consult-line to detect isearch
 
-     ;; Enable automatic preview at point in the *Completions* buffer.
-     ;; This is relevant when you use the default completion UI,
-     ;; and not necessary for Vertico, Selectrum, etc.
+     ;; Enable automatic preview at point in the *Completions* buffer. This is
+     ;; relevant when you use the default completion UI. You may want to also
+     ;; enable `consult-preview-at-point-mode` in Embark Collect buffers.
      :hook (completion-list-mode . consult-preview-at-point-mode)
 
      ;; The :init configuration is always executed (Not lazy)
