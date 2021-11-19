@@ -3289,7 +3289,7 @@ If no MODES are specified, use currently active major and minor modes."
     :prompt "Yank from kill-ring: "
     :history t ;; disable history
     :sort nil
-    :category 'consult-yank
+    :category 'kill-ring
     :require-match t
     :state
     (consult--insertion-preview
