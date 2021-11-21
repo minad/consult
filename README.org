@@ -427,8 +427,8 @@ their descriptions.
  You can configure each command individually with its own =:preview-key=. The
  following settings are possible:
 
- - Automatic and immediate =any=
- - Automatic and delayed =(:debounce 0.5 any)=
+ - Automatic and immediate ='any=
+ - Automatic and delayed =(list :debounce 0.5 'any)=
  - Manual and immediate =(kbd "M-.")=
  - Manual and delayed =(list :debounce 0.5 (kbd "M-."))=
  - Disabled =nil=
@@ -465,7 +465,7 @@ their descriptions.
                       :preview-key
                       (list (kbd "M-.")
                             :debounce 0.5 (kbd "<up>") (kbd "<down>")
-                            :debounce 1 any))
+                            :debounce 1 'any))
  #+end_src
 
 ** Narrowing and grouping
