@@ -1087,8 +1087,8 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
         (when (and (invisible-p inv) (overlay-get ov 'isearch-open-invisible))
           (push (if-let (fun (overlay-get ov 'isearch-open-invisible-temporary))
                     (progn
-                      (funcall fun nil)
-                      (lambda () (funcall fun t)))
+                      (funcall fun ov nil)
+                      (lambda () (funcall fun ov t)))
                   (overlay-put ov 'invisible nil)
                   (lambda () (overlay-put ov 'invisible inv)))
                 restore))))))
