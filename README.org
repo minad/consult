@@ -6,6 +6,7 @@
 #+texinfo_dir_title: Consult: (consult).
 #+texinfo_dir_desc: Useful commands built on completing-read.
 
+#+html: <a href="https://www.gnu.org/software/emacs/"><img alt="GNU Emacs" src="https://github.com/minad/corfu/blob/screenshots/emacs.svg?raw=true"/></a>
 #+html: <a href="http://elpa.gnu.org/packages/consult.html"><img alt="GNU ELPA" src="https://elpa.gnu.org/packages/consult.svg"/></a>
 #+html: <a href="http://elpa.gnu.org/devel/consult.html"><img alt="GNU-devel ELPA" src="https://elpa.gnu.org/devel/consult.svg"/></a>
 #+html: <a href="https://melpa.org/#/consult"><img alt="MELPA" src="https://melpa.org/packages/consult-badge.svg"/></a>
