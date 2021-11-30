@@ -1187,7 +1187,7 @@ FACE is the cursor face."
   "Normalize PREVIEW-KEY, return alist of keys and debounce times."
   (let ((keys)
         (debounce 0))
-    (setq preview-key (consult--to-list preview-key))
+    (setq preview-key (consult--ensure-list preview-key))
     (while preview-key
       (if (eq (car preview-key) :debounce)
           (setq debounce (cadr preview-key)
@@ -1754,9 +1754,9 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
   "Filter candidates of ASYNC by FUN."
   (consult--async-transform async seq-filter fun))
 
-(defun consult--to-list (list)
+(defun consult--ensure-list (list)
   "Ensure that LIST is a list."
-  (if (listp list) list (list list)))
+  (if (listp list) list (list list))) ;; Emacs 28 ensure-list
 
 (defun consult--command-builder (builder)
   "Return command line builder given CMD.
@@ -1815,9 +1815,9 @@ ASYNC must be non-nil for async completion functions."
   (delete-dups
    (append
     ;; the defaults are at the beginning of the future history
-    (consult--to-list minibuffer-default)
+    (consult--ensure-list minibuffer-default)
     ;; then our custom items
-    (remove "" (remq nil (consult--to-list items)))
+    (remove "" (remq nil (consult--ensure-list items)))
     ;; Add all the completions for non-async commands. For async commands this feature
     ;; is not useful, since if one selects a completion candidate, the async search is
     ;; restarted using that candidate string. This usually does not yield a desired
@@ -2066,7 +2066,7 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
                        (let ((key (if (plist-member src :preview-key)
                                       (plist-get src :preview-key)
                                     consult-preview-key)))
-                         (consult--to-list key)))
+                         (consult--ensure-list key)))
                      sources))))
 
 (defun consult--multi-lookup (sources _ candidates cand)
@@ -3828,7 +3828,7 @@ AS is a conversion function."
       (when sort
         (setq buffers (funcall (intern (format "consult--buffer-sort-%s" sort)) buffers)))
       (when (or filter mode as (stringp root))
-        (let ((mode (consult--to-list mode))
+        (let ((mode (consult--ensure-list mode))
               (exclude-re (consult--regexp-filter exclude))
               (include-re (consult--regexp-filter include)))
           (consult--keep! buffers
