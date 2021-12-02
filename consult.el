@@ -4231,13 +4231,18 @@ INITIAL is inital input."
 (defun consult-grep (&optional dir initial)
   "Search for regexp with grep in DIR with INITIAL input.
 
-The input string is split, the first part of the string is passed to
-the asynchronous grep process and the second part of the string is
-passed to the completion-style filtering. The input string is split at
-a punctuation character, which is given as the first character of the
-input string. The format is similar to Perl-style regular expressions,
-e.g., /regexp/. Furthermore command line options can be passed to
-grep, specified behind --.
+The input string is split, the first part of the string is passed to the
+asynchronous grep process and the second part of the string is passed to
+the completion-style filtering. Note that the input string is
+transformed from Emacs regular expressions to Posix regular expressions
+Always enter Emacs regular expressions at the prompt. `consult-grep'
+behaves like builtin Emacs search commands (Isearch etc) which take
+Emacs regular expressions.
+
+The input string is split at a punctuation character, which is given as
+the first character of the input string. The format is similar to
+Perl-style regular expressions, e.g., /regexp/. Furthermore command line
+options can be passed to grep, specified behind --.
 
 Example: #async-regexp -- grep-opts#filter-string
 
