@@ -1447,18 +1447,22 @@ BIND is the asynchronous function binding."
   (let ((async (car bind)))
     `(let ((,async ,@(cdr bind)) (orig-chunk))
        (consult--minibuffer-with-setup-hook
-           (lambda ()
-             (when (functionp ,async)
-               (setq orig-chunk read-process-output-max
-                     read-process-output-max (max read-process-output-max consult--process-chunk))
-               (funcall ,async 'setup)
-               ;; Push input string to request refresh.
-               ;; We use a symbol in order to avoid adding lambdas to the hook variable.
-               ;; Symbol indirection because of bug#46407.
-               (let ((sym (make-symbol "consult--async-after-change")))
-                 (fset sym (lambda (&rest _) (funcall ,async (minibuffer-contents-no-properties))))
-                 (run-at-time 0 nil sym)
-                 (add-hook 'after-change-functions sym nil 'local))))
+           ;; Append such that we overwrite the completion style setting of
+           ;; `fido-mode'. See `consult--async-split' and
+           ;; `consult--split-setup'.
+           (:append
+            (lambda ()
+              (when (functionp ,async)
+                (setq orig-chunk read-process-output-max
+                      read-process-output-max (max read-process-output-max consult--process-chunk))
+                (funcall ,async 'setup)
+                ;; Push input string to request refresh.
+                ;; We use a symbol in order to avoid adding lambdas to the hook variable.
+                ;; Symbol indirection because of bug#46407.
+                (let ((sym (make-symbol "consult--async-after-change")))
+                  (fset sym (lambda (&rest _) (funcall ,async (minibuffer-contents-no-properties))))
+                  (run-at-time 0 nil sym)
+                  (add-hook 'after-change-functions sym nil 'local)))))
          (let ((,async (if (functionp ,async) ,async (lambda (_) ,async))))
            (unwind-protect
                ,(macroexp-progn body)

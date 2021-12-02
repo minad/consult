@@ -1072,10 +1072,8 @@ out the following steps:
    This includes Consult, Vertico, Selectrum, Icomplete-vertical, Marginalia,
    Embark, Orderless and Prescient in case you are using any of those packages.
 2. Either use the default completion UI or ensure that exactly one of
-   =vertico-mode=, =selectrum-mode=, =mct-mode=, or =icomplete-mode= is enabled. (Use
-   =icomplete-mode= instead of =fido-mode=, since Fido always overwrites the
-   =completion-styles= style with =flex=. Furthermore =ivy-mode= and =helm-mode= must be
-   disabled.)
+   =vertico-mode=, =selectrum-mode=, =mct-mode=, or =icomplete-mode= is enabled.
+   Furthermore =ivy-mode= and =helm-mode= must be disabled.
 3. Ensure that the =completion-styles= variable is properly configured. Try to set
    =completion-styles= to a list including =substring= or =orderless=.
 4. Try to reproduce the issue by starting a bare bone Emacs instance with =emacs -Q=
