@@ -4235,21 +4235,26 @@ INITIAL is inital input."
 (defun consult-grep (&optional dir initial)
   "Search for regexp with grep in DIR with INITIAL input.
 
-The input string is split, the first part of the string is passed to the
-asynchronous grep process and the second part of the string is passed to
-the completion-style filtering. Note that the input string is
-transformed from Emacs regular expressions to Posix regular expressions
-Always enter Emacs regular expressions at the prompt. `consult-grep'
-behaves like builtin Emacs search commands (Isearch etc) which take
-Emacs regular expressions.
+The input string is split, the first part of the string (grep input) is
+passed to the asynchronous grep process and the second part of the string is
+passed to the completion-style filtering.
 
-The input string is split at a punctuation character, which is given as
-the first character of the input string. The format is similar to
-Perl-style regular expressions, e.g., /regexp/. Furthermore command line
-options can be passed to grep, specified behind --. The overall prompt
-input has the form `#async-regexp -- grep-opts#filter-string'.
+The input string is split at a punctuation character, which is given as the
+first character of the input string. The format is similar to Perl-style
+regular expressions, e.g., /regexp/. Furthermore command line options can be
+passed to grep, specified behind --. The overall prompt input has the form
+`#async-input -- grep-opts#filter-string'.
 
-Examples:
+Note that the grep input string is transformed from Emacs regular expressions
+to Posix regular expressions. Always enter Emacs regular expressions at the
+prompt. `consult-grep' behaves like builtin Emacs search commands, e.g.,
+Isearch, which take Emacs regular expressions. Furthermore the asynchronous
+input split into words, each word must match separately and in any order. See
+`consult--regexp-compiler' for the inner workings. In order to disable
+transformations of the grep input, adjust `consult--regexp-compiler'
+accordingly.
+
+Here we give a few example inputs:
 
 #alpha beta         : Search for alpha and beta in any order.
 #alpha.*beta        : Search for alpha before beta.
