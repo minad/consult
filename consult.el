@@ -4242,9 +4242,16 @@ Emacs regular expressions.
 The input string is split at a punctuation character, which is given as
 the first character of the input string. The format is similar to
 Perl-style regular expressions, e.g., /regexp/. Furthermore command line
-options can be passed to grep, specified behind --.
+options can be passed to grep, specified behind --. The overall prompt
+input has the form `#async-regexp -- grep-opts#filter-string'.
 
-Example: #async-regexp -- grep-opts#filter-string
+Examples:
+
+#alpha beta         : Search for alpha and beta in any order.
+#alpha.*beta        : Search for alpha before beta.
+#\\(alpha\\|beta\\) : Search for alpha or beta (Note Emacs syntax!)
+#word -- -C3        : Search for word, include 3 lines as context
+#first#second       : Search for first, quick filter for second.
 
 The symbol at point is added to the future history. If `consult-grep'
 is called interactively with a prefix argument, the user can specify
