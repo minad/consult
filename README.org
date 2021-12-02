@@ -537,7 +537,8 @@ their descriptions.
  Examples:
 
  - =#defun=: Search for "defun" using grep.
- - =#consult embark=: Search for both "consult" and "embark" using grep.
+ - =#consult embark=: Search for both "consult" and "embark" using grep in any order.
+ - =#first.*second=: Search for "first" followed by "second" using grep.
  - =#\(consult\|embark\)=: Search for "consult" or "embark" using grep. Note the
    usage of Emacs-style regular expressions.
  - =#defun#consult=: Search for "defun" using grep, filter with the word
