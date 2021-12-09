@@ -1046,6 +1046,7 @@ packages. These packages should work well with Consult, follow a similar spirit 
 offer functionality based on ~completing-read~.
 
 - [[https://github.com/minad/corfu][corfu]]: Completion systems for =completion-at-point= using small popups (Alternative to [[https://github.com/company-mode/company-mode][company]]).
+- [[https://github.com/minad/cape][cape]]: Completion At Point Extensions, which can be used with =consult-completion-in-region= and [[https://github.com/minad/corfu][Corfu]].
 - [[https://github.com/minad/bookmark-view][bookmark-view]]: Store window configuration as bookmarks, possible integration with =consult-buffer=.
 - [[https://github.com/bdarcus/citar][citar]]: Versatile package for citation insertion and bibliographies.
 - [[https://github.com/d12frosted/flyspell-correct][flyspell-correct]]: Apply spelling corrections by selecting via =completing-read=.
