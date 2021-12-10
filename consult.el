@@ -802,13 +802,20 @@ The line beginning/ending BEG/END is bound in BODY."
         adir))))
 
 (defun consult--directory-prompt-1 (prompt dir)
-  "Format PROMPT, expand directory DIR and return them as a pair."
+  "Format PROMPT, expand directory DIR and return them as a pair.
+	
+  if the absolute path of DIR matches that of `(current-project)',
+format the prompt as a `project' "
   (let ((edir (file-name-as-directory (expand-file-name dir)))
-        (ddir (file-name-as-directory (expand-file-name default-directory))))
+        (ddir (file-name-as-directory (expand-file-name default-directory)))
+        (pdir (file-name-as-directory (expand-file-name (consult--project-root)))))
     (cons
-     (if (string= ddir edir)
-         (concat prompt ": ")
-       (format "%s (%s): " prompt (consult--abbreviate-directory dir)))
+     (cond
+      ((string= ddir edir) (concat prompt ": "))
+      ((string= edir pdir) 
+       (format "%s (%s %s): " prompt 
+	       "Project" (consult--project-name pdir)))
+      (t (format "%s (%s): " prompt (consult--abbreviate-directory dir))))
      edir)))
 
 (defun consult--directory-prompt (prompt dir)
