@@ -801,16 +801,6 @@ The line beginning/ending BEG/END is bound in BODY."
           (format "…/%s/%s/" (match-string 1 adir) (match-string 2 adir))
         adir))))
 
-(defun consult--directory-prompt-1 (prompt dir)
-  "Format PROMPT, expand directory DIR and return them as a pair."
-  (let ((edir (file-name-as-directory (expand-file-name dir)))
-        (ddir (file-name-as-directory (expand-file-name default-directory))))
-    (cons
-     (if (string= ddir edir)
-         (concat prompt ": ")
-       (format "%s (%s): " prompt (consult--abbreviate-directory dir)))
-     edir)))
-
 (defun consult--directory-prompt (prompt dir)
   "Return prompt and directory.
 
@@ -824,19 +814,27 @@ If DIR is a string, it is returned.
 If DIR is a true value, the user is asked.
 Then the `consult-project-root-function' is tried.
 Otherwise the `default-directory' is returned."
-  (cond
-   ((stringp dir) (consult--directory-prompt-1 prompt dir))
-   (dir (consult--directory-prompt-1
-         prompt
-         ;; HACK Preserve this-command across `read-directory-name' call,
-         ;; such that `consult-customize' continues to work.
-         ;; TODO Find a better and more general solution which preserves `this-command'.
-         (let ((this-command this-command))
-           (read-directory-name "Directory: " nil nil t))))
-   ((when-let (root (consult--project-root))
-      (cons (format "%s (Project %s): " prompt (consult--project-name root))
-            root)))
-   (t (consult--directory-prompt-1 prompt default-directory))))
+  (let* ((dir
+          (cond
+           ((stringp dir) dir)
+           (dir
+            ;; HACK Preserve this-command across `read-directory-name' call,
+            ;; such that `consult-customize' continues to work.
+            ;; TODO Find a better and more general solution which preserves `this-command'.
+            (let ((this-command this-command))
+              (read-directory-name "Directory: " nil nil t)))
+           (t (or (consult--project-root) default-directory))))
+         (edir (file-name-as-directory (expand-file-name dir)))
+         ;; Bind default-directory in order to find the project
+         (pdir (let ((default-directory edir)) (consult--project-root))))
+    (cons
+     (cond
+      ((equal edir pdir)
+       (format "%s (Project %s): " prompt (consult--project-name pdir)))
+      ((equal edir (file-name-as-directory (expand-file-name default-directory)))
+       (concat prompt ": "))
+      (t (format "%s (%s): " prompt (consult--abbreviate-directory dir))))
+     edir)))
 
 (defun consult--project-root ()
   "Return project root as absolute path."
