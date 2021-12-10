@@ -702,10 +702,8 @@ CATEGORY is the completion category, used to find the completion style via
 HIGHLIGHT must be non-nil if the resulting strings should be highlighted."
   ;; completion-all-completions returns an improper list
   ;; where the last link is not necessarily nil.
-  ;; TODO Implement support to disable highlighting as in Vertico deferred highlighting.
-  (nconc (completion-all-completions
-          pattern cands nil (length pattern)
-          `(metadata (category . ,category)))
+  (nconc (completion-all-completions pattern cands nil (length pattern)
+                                     `(metadata (category . ,category)))
          nil))
 
 (defun consult--completion-filter-complement (pattern cands category _highlight)

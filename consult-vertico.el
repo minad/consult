@@ -32,6 +32,7 @@
 (defvar vertico--lock-candidate)
 (declare-function vertico--exhibit "ext:vertico")
 (declare-function vertico--candidate "ext:vertico")
+(declare-function vertico--all-completions "ext:vertico")
 
 (defun consult-vertico--candidate ()
   "Return current candidate for Consult preview."
@@ -46,6 +47,19 @@
             vertico--lock-candidate nil))
     (vertico--exhibit)))
 
+(defun consult-vertico--filter-adv (orig pattern cands category highlight)
+  "Advice for ORIG `consult--completion-filter' function.
+See `consult--completion-filter' for arguments PATTERN, CANDS, CATEGORY
+and HIGHLIGHT."
+  (if (and (bound-and-true-p vertico-mode) (not highlight))
+      ;; Optimize `consult--completion-filter' using the deferred highlighting
+      ;; from Vertico. The advice is not necessary - it is a pure optimization.
+      (nconc (car (vertico--all-completions pattern cands nil (length pattern)
+                                            `(metadata (category . ,category))))
+             nil)
+    (funcall orig pattern cands category highlight)))
+
+(advice-add #'consult--completion-filter :around #'consult-vertico--filter-adv)
 (add-hook 'consult--completion-candidate-hook #'consult-vertico--candidate)
 (add-hook 'consult--completion-refresh-hook #'consult-vertico--refresh)
 (define-key consult-async-map [remap vertico-insert] 'vertico-next-group)
