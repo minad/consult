@@ -2516,8 +2516,8 @@ See `completing-read-multiple' for the documentation of the arguments."
                     "" ;; default
                     inherit-input-method)))
               (unless (or (equal result "") selected)
-                (setq selected (split-string (substring-no-properties result) separator 'omit-nulls)
-                      consult--crm-history (append selected hist-val)))))
+                (setq selected (split-string result separator 'omit-nulls)
+                      consult--crm-history (append (mapcar #'substring-no-properties selected) hist-val)))))
         (remove-hook 'pre-command-hook hook)))
     (when (consp def)
       (setq def (car def)))
