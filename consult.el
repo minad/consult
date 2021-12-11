@@ -2519,12 +2519,13 @@ See `completing-read-multiple' for the documentation of the arguments."
                 (setq selected (split-string (substring-no-properties result) separator 'omit-nulls)
                       consult--crm-history (append selected hist-val)))))
         (remove-hook 'pre-command-hook hook)))
-    (set hist-sym consult--crm-history)
     (when (consp def)
       (setq def (car def)))
     (if (and def (not (equal "" def)) (not selected))
         (split-string def separator 'omit-nulls)
-      (mapcar #'substring-no-properties selected))))
+      (setq selected (mapcar #'substring-no-properties selected))
+      (set hist-sym (append selected (symbol-value hist-sym)))
+      selected)))
 
 ;;;; Commands
 
