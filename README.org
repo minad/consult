@@ -743,7 +743,7 @@ their descriptions.
    -> =occur-edit-mode= for editing of matches in buffer.
  + =consult-grep= -> =embark-export= to =grep-mode= buffer
    -> =wgrep= for editing of all matches.
- + =consult-file= -> =embark-export= to =dired-mode= buffer
+ + =consult-find= -> =embark-export= to =dired-mode= buffer
    -> =wdired-change-to-wdired-mode= for editing.
 
 * Configuration
