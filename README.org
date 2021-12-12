@@ -43,8 +43,8 @@ You can combine the complementary packages [[https://github.com/minad/marginalia
 Consult. Marginalia enriches the completion display with annotations, e.g.,
 documentation strings or file information. The versatile Embark package provides
 local actions, comparable to a context menu. These actions operate on the
-selected candidate in the minibuffer or in other contexts. For example, when
-selecting from a list of files, Embark offers an action to delete the file.
+selected candidate in the minibuffer or at point in normal buffers. For example,
+when selecting from a list of files, Embark offers an action to delete the file.
 Additionally Embark offers a completion system by itself through its
 live-updating collect buffer. The section [[#embark-integration][Embark integration]] documents in
 greater detail how Consult and Embark work together.
@@ -736,13 +736,15 @@ their descriptions.
  they can be edited via the =occur-edit-mode= (press key =e=). Similarly,
  Embark supports exporting the matches found by =consult-grep=,
  =consult-ripgrep= and =consult-git-grep= to a Grep buffer, where the matches
- across files can be edited, if the [[https://github.com/mhayashi1120/Emacs-wgrep][wgrep]] package is installed. The two
+ across files can be edited, if the [[https://github.com/mhayashi1120/Emacs-wgrep][wgrep]] package is installed. These three
  workflows are symmetric.
 
  + =consult-line= -> =embark-export= to =occur-mode= buffer
    -> =occur-edit-mode= for editing of matches in buffer.
  + =consult-grep= -> =embark-export= to =grep-mode= buffer
    -> =wgrep= for editing of all matches.
+ + =consult-file= -> =embark-export= to =dired-mode= buffer
+   -> =wdired-change-to-wdired-mode= for editing.
 
 * Configuration
   :properties:
@@ -1006,7 +1008,7 @@ configuration examples.
   :description: Related packages recommended for installation
   :end:
 
-I personally use and recommended this combination of packages:
+I use and recommend this combination of packages:
 
 - consult: This package
 - [[https://github.com/minad/vertico][vertico]]: Fast and minimal vertical completion system
@@ -1014,8 +1016,9 @@ I personally use and recommended this combination of packages:
 - [[https://github.com/oantolin/embark][embark and embark-consult]]: Action commands, which can act on the completion candidates
 - [[https://github.com/oantolin/orderless][orderless]]: Completion style which offers flexible candidate filtering
 
-There exist other completion UIs beside Vertico, which are supported by Consult.
-Give them a try and find out which interaction model fits best for you!
+There exist many other fine completion UIs beside Vertico, which are supported
+by Consult. Give them a try and find out which interaction model fits best for
+you!
 
 - [[https://github.com/raxod502/selectrum][selectrum by Radon Rosborough]]: Alternative vertical completion system.
 - [[https://github.com/oantolin/icomplete-vertical][icomplete-vertical by Omar Antolín Camarena]]: Vertical completion system based on Icomplete.
@@ -1028,7 +1031,6 @@ You can integrated Consult with special programs or with other packages in the
 wider Emacs ecosystem. You may want to install some of theses packages depending
 on your preferences and requirements.
 
-- [[https://github.com/mohkale/consult-bibtex][consult-bibtex]]: Consult interface for bibliographies.
 - [[https://github.com/mohkale/consult-company][consult-company]]: Completion at point using the company backends.
 - [[https://github.com/karthink/consult-dir][consult-dir]]: Directory jumper using Consult multi sources.
 - [[https://github.com/mohkale/consult-eglot][consult-eglot]]: Integration with eglot (lsp client).
@@ -1048,7 +1050,7 @@ offer functionality based on ~completing-read~.
 - [[https://github.com/minad/corfu][corfu]]: Completion systems for =completion-at-point= using small popups (Alternative to [[https://github.com/company-mode/company-mode][company]]).
 - [[https://github.com/minad/cape][cape]]: Completion At Point Extensions, which can be used with =consult-completion-in-region= and [[https://github.com/minad/corfu][Corfu]].
 - [[https://github.com/minad/bookmark-view][bookmark-view]]: Store window configuration as bookmarks, possible integration with =consult-buffer=.
-- [[https://github.com/bdarcus/citar][citar]]: Versatile package for citation insertion and bibliographies.
+- [[https://github.com/bdarcus/citar][citar]]: Versatile package for citation insertion and bibliography management.
 - [[https://github.com/d12frosted/flyspell-correct][flyspell-correct]]: Apply spelling corrections by selecting via =completing-read=.
 - [[https://github.com/mhayashi1120/Emacs-wgrep][wgrep]]: Editing of grep buffers, use together with =consult-grep= via =embark-export=.
 - [[https://github.com/iyefrat/all-the-icons-completion][all-the-icons-completion]]: Icons for the completion UI.
@@ -1070,8 +1072,9 @@ If you find a bug or suspect that there is a problem with Consult, please carry
 out the following steps:
 
 1. *Update all the relevant packages to the newest version*.
-   This includes Consult, Vertico, Selectrum, Icomplete-vertical, Marginalia,
-   Embark, Orderless and Prescient in case you are using any of those packages.
+   This includes Consult, Vertico, Mct, Selectrum, Icomplete-vertical,
+   Marginalia, Embark, Orderless and Prescient in case you are using any of
+   those packages.
 2. Either use the default completion UI or ensure that exactly one of
    =vertico-mode=, =selectrum-mode=, =mct-mode=, or =icomplete-mode= is enabled.
    Furthermore =ivy-mode= and =helm-mode= must be disabled.
@@ -1102,10 +1105,10 @@ Minimal setup with the default completion system for =emacs -Q=:
 Please provide the necessary important information with your bug report:
 
 - The minimal configuration snippet used to reproduce the issue.
-- Your completion UI (Default completion, Vertico, Selectrum, Mct or Icomplete).
+- Your completion UI (Default completion, Vertico, Mct, Selectrum or Icomplete).
 - The full stack trace in case the bug triggers an exception.
-- Your Emacs version, since bugs are often version-dependent.
-- Your operating system, since Emacs builds vary between Linux, Mac and
+- Your Emacs version, since bugs may be fixed or introduced in newer versions.
+- Your operating system, since Emacs behavior varies between Linux, Mac and
   Windows.
 - The package manager, e.g., straight.el or package.el, used to install
   the Emacs packages, in order to exclude update issues. Did you install
@@ -1134,9 +1137,10 @@ first. Since this package is part of [[http://elpa.gnu.org/packages/consult.html
 assignment to the FSF.
 
 If you have a proposal, take a look at the [[https://github.com/consult/issues][Consult issue tracker]] and the [[https://github.com/minad/consult/issues/6][Consult
-wishlist]]. There exists a rich set of prior feature discussions. You can
-contribute to the [[https://github.com/minad/consult/wiki][Consult wiki]], in case you want to share small configuration or
-command snippets.
+wishlist]]. There have been many prior feature discussions. Please search through
+the issue tracker, maybe your issue or feature request has already been
+discussed. You can contribute to the [[https://github.com/minad/consult/wiki][Consult wiki]], in case you want to share
+small configuration or command snippets.
 
 * Acknowledgments
   :properties:
@@ -1183,7 +1187,7 @@ Authors of supplementary =consult-*= packages:
 - [[https://codeberg.org/jao/][Jose A Ortega Ruiz]] ([[https://codeberg.org/jao/consult-notmuch][consult-notmuch]], [[https://codeberg.org/jao/consult-recoll][consult-recoll]], [[https://codeberg.org/jao/espotify][consult-spotify]])
 - [[https://github.com/gagbo/][Gerry Agbobada]] ([[https://github.com/gagbo/consult-lsp][consult-lsp]])
 - [[https://github.com/karthink][Karthik Chikmagalur]] ([[https://github.com/karthink/consult-dir][consult-dir]])
-- [[https://github.com/mohkale][Mohsin Kaleem]] ([[https://github.com/mohkale/consult-bibtex][consult-bibtex]], [[https://github.com/mohkale/consult-company][consult-company]], [[https://github.com/mohkale/consult-eglot][consult-eglot]], [[https://github.com/mohkale/consult-yasnippet][consult-yasnippet]])
+- [[https://github.com/mohkale][Mohsin Kaleem]] ([[https://github.com/mohkale/consult-company][consult-company]], [[https://github.com/mohkale/consult-eglot][consult-eglot]], [[https://github.com/mohkale/consult-yasnippet][consult-yasnippet]])
 - [[https://gitlab.com/OlMon][Marco Pawłowski]] ([[https://gitlab.com/OlMon/consult-projectile][consult-projectile]])
 
 #+html: <!--

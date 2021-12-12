@@ -36,7 +36,7 @@
 
 ;; The Consult commands are compatible with completion systems based
 ;; on the Emacs `completing-read' API, including the default completion
-;; system, Icomplete, Selectrum, Vertico and Embark.
+;; system, Vertico, Icomplete, Mct, Selectrum and Embark.
 
 ;; Consult has been inspired by Counsel. Some of the Consult commands
 ;; originated in the Counsel package or the Selectrum wiki. See the
