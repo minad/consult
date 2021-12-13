@@ -2390,13 +2390,15 @@ These configuration options are supported:
 (defun consult--crm-selected ()
   "Return selected candidates from `consult-completing-read-multiple'."
   (when (eq minibuffer-history-variable 'consult--crm-history)
-    (all-completions
-     "" minibuffer-completion-table
-     (lambda (cand)
-       (and (stringp cand)
-            (get-text-property 0 'consult--crm-selected cand)
-            (or (not minibuffer-completion-predicate)
-                (funcall minibuffer-completion-predicate cand)))))))
+    (mapcar
+     (apply-partially #'get-text-property 0 'consult--crm-selected)
+     (all-completions
+      "" minibuffer-completion-table
+      (lambda (cand)
+        (and (stringp cand)
+             (get-text-property 0 'consult--crm-selected cand)
+             (or (not minibuffer-completion-predicate)
+                 (funcall minibuffer-completion-predicate cand))))))))
 
 ;;;###autoload
 (defun consult-completing-read-multiple (prompt table &optional
@@ -2412,10 +2414,13 @@ See `completing-read-multiple' for the documentation of the arguments."
            (all-completions "" table pred)))
          (format-item
           (lambda (item)
-            ;; Restore original candidate in order to preserve formatting
-            (setq item (propertize (or (car (member item orig-items)) item)
-                                   'consult--crm-selected t
-                                   'line-prefix (cdr consult-crm-prefix)))
+            (setq item (propertize
+                        ;; Restore original candidate in order to preserve formatting
+                        (or (get-text-property 0 'consult--crm-selected item)
+                            (car (member item orig-items))
+                            item)
+                        'consult--crm-selected item
+                        'line-prefix (cdr consult-crm-prefix)))
             (add-face-text-property 0 (length item) 'consult-crm-selected 'append item)
             item))
          (separator (or (bound-and-true-p crm-separator) "[ \t]*,[ \t]*"))
