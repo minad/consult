@@ -2387,7 +2387,7 @@ These configuration options are supported:
 
 ;;;;; Function: consult-completing-read-multiple
 
-(defun consult-crm-selected ()
+(defun consult--crm-selected ()
   "Return selected candidates from `consult-completing-read-multiple'."
   (when (eq minibuffer-history-variable 'consult--crm-history)
     (all-completions
