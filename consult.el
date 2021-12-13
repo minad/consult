@@ -2387,6 +2387,17 @@ These configuration options are supported:
 
 ;;;;; Function: consult-completing-read-multiple
 
+(defun consult-crm-selected ()
+  "Return selected candidates from `consult-completing-read-multiple'."
+  (when (eq minibuffer-history-variable 'consult--crm-history)
+    (all-completions
+     "" minibuffer-completion-table
+     (lambda (cand)
+       (and (stringp cand)
+            (get-text-property 0 'consult--crm-selected cand)
+            (or (not minibuffer-completion-predicate)
+                (funcall minibuffer-completion-predicate cand)))))))
+
 ;;;###autoload
 (defun consult-completing-read-multiple (prompt table &optional
                                                 pred require-match initial-input
