@@ -2974,8 +2974,8 @@ INITIAL is the initial input."
            (consult--completion-filter-dispatch
             pattern cands 'consult-location 'highlight))))
   (consult--forbid-minibuffer)
-  (let ((ro buffer-read-only)
-        (buffer-read-only nil))
+  (cl-letf ((ro buffer-read-only)
+            ((buffer-local-value 'buffer-read-only (current-buffer)) nil))
     (consult--minibuffer-with-setup-hook
         (lambda ()
           (when ro
