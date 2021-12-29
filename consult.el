@@ -1580,18 +1580,18 @@ SPLIT is the splitting function."
 ASYNC is the async function which receives the candidates.
 CMD is the command line builder function.
 PROPS are optional properties passed to `make-process'."
-  (let ((proc) (last-args) (indicator) (count))
+  (let (proc proc-buf last-args indicator count)
     (lambda (action)
       (pcase action
         ("" ;; If no input is provided kill current process
          (when proc
            (delete-process proc)
-           (setq proc nil))
+           (kill-buffer proc-buf)
+           (setq proc nil proc-buf nil))
          (setq last-args nil))
         ((pred stringp)
          (funcall async action)
          (let* ((args (funcall cmd action))
-                (stderr-buffer (generate-new-buffer " *consult-async-stderr*"))
                 (flush t)
                 (rest "")
                 (proc-filter
@@ -1624,24 +1624,25 @@ PROPS are optional properties passed to `make-process'."
                    (with-current-buffer (get-buffer-create consult--async-log)
                      (goto-char (point-max))
                      (insert ">>>>> stderr >>>>>\n")
-                     (insert-buffer-substring stderr-buffer)
-                     (insert "<<<<< stderr <<<<<\n")
-                     (kill-buffer stderr-buffer)))))
+                     (insert-buffer-substring proc-buf)
+                     (insert "<<<<< stderr <<<<<\n")))))
            (unless (equal args last-args)
              (setq last-args args)
              (when proc
                (delete-process proc)
-               (setq proc nil))
+               (kill-buffer proc-buf)
+               (setq proc nil proc-buf nil))
              (when args
                (overlay-put indicator 'display #("*" 0 1 (face consult-async-running)))
                (consult--async-log "consult--async-process started %S\n" args)
                (setq count 0
+                     proc-buf (generate-new-buffer " *consult-async-stderr*")
                      proc (apply #'make-process
                                  `(,@props
                                    :connection-type pipe
                                    :name ,(car args)
                                    ;;; XXX tramp bug, the stderr buffer must be empty
-                                   :stderr ,stderr-buffer
+                                   :stderr ,proc-buf
                                    :noquery t
                                    :command ,args
                                    :filter ,proc-filter
@@ -1650,7 +1651,8 @@ PROPS are optional properties passed to `make-process'."
         ('destroy
          (when proc
            (delete-process proc)
-           (setq proc nil))
+           (kill-buffer proc-buf)
+           (setq proc nil proc-buf nil))
          (delete-overlay indicator)
          (funcall async 'destroy))
         ('setup
