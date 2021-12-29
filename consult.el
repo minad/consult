@@ -2043,7 +2043,7 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
   (let* ((src (consult--multi-source sources cand))
          (annotate (plist-get src :annotate))
          (ann (if annotate
-                  (funcall annotate (cdr (get-text-property 0 'consult-multi cand)))
+                  (funcall annotate (cdr (get-text-property 0 'multi-category cand)))
                 (plist-get src :name))))
     (and ann (concat align ann))))
 
@@ -2072,7 +2072,7 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
 (defun consult--multi-lookup (sources _ candidates cand)
   "Lookup CAND in CANDIDATES given SOURCES."
   (if-let (found (member cand candidates))
-      (cons (cdr (get-text-property 0 'consult-multi (car found)))
+      (cons (cdr (get-text-property 0 'multi-category (car found)))
             (consult--multi-source sources cand))
     (unless (string-blank-p cand)
       (list cand))))
@@ -2090,7 +2090,7 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
         (dolist (item items)
           (let ((cand (consult--tofu-append item idx))
                 (width (consult--display-width item)))
-            (add-text-properties 0 (length item) `(,@face consult-multi (,cat . ,item)) cand)
+            (add-text-properties 0 (length item) `(,@face multi-category (,cat . ,item)) cand)
             (when (> width max-width) (setq max-width width))
             (push cand candidates))))
       (setq idx (1+ idx)))
@@ -2179,7 +2179,7 @@ Optional source fields:
                            options
                            (list
                             :default     (car candidates)
-                            :category    'consult-multi
+                            :category    'multi-category
                             :predicate   (apply-partially #'consult--multi-predicate sources)
                             :annotate    (apply-partially #'consult--multi-annotate sources align)
                             :group       (apply-partially #'consult--multi-group sources)
