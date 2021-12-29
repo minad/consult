@@ -1641,7 +1641,7 @@ PROPS are optional properties passed to `make-process'."
                                    :connection-type pipe
                                    :name ,(car args)
                                    ;;; XXX tramp bug, the stderr buffer must be empty
-                                   :stderr ,stderr-buffer
+                                   :stderr ,(get-buffer-create " *consult-async-stderr*")
                                    :noquery t
                                    :command ,args
                                    :filter ,proc-filter
