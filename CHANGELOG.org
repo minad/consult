@@ -4,8 +4,10 @@
 
 * Development
 
+- Bugfixes
 - Add =consult-recent-file-filter=
 - Rename =consult--source-(project-)file= to =consult-source-(project-)recent-file=
+- =consult-keep-lines= makes read-only buffers temporarily writable if confirmed
 
 * Version 0.13 (2021-11-12)
 
