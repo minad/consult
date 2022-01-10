@@ -32,16 +32,22 @@
 
 (defun consult-xref--candidates (xrefs)
   "Return candidate list from XREFS."
-  (mapcar (lambda (xref)
-            (let* ((loc (xref-item-location xref))
-                   (group (xref-location-group loc))
-                   (cand (consult--format-location group
-                                                   (or (xref-location-line loc) 0)
-                                                   (xref-item-summary xref))))
-              (add-text-properties
-               0 1 `(consult--candidate ,xref consult-xref--group ,group) cand)
-              cand))
-          xrefs))
+  (let ((root (consult--project-root)))
+    (mapcar (lambda (xref)
+              (let* ((loc (xref-item-location xref))
+                     (group (if (fboundp 'xref--group-name-for-display)
+                                ;; This function is available in xref 1.3.2
+                                (xref--group-name-for-display
+                                 (xref-location-group loc) root)
+                              (xref-location-group loc)))
+                     (cand (consult--format-location
+                            group
+                            (or (xref-location-line loc) 0)
+                            (xref-item-summary xref))))
+                (add-text-properties
+                 0 1 `(consult--candidate ,xref consult-xref--group ,group) cand)
+                cand))
+            xrefs)))
 
 (defun consult-xref--preview (display)
   "Xref preview with DISPLAY function."
