@@ -3034,12 +3034,12 @@ INITIAL is the initial input."
                  (block-beg pt-min)
                  (block-end pt-min))
             (unless (eq matches t)      ;; input arrived
-              (while (< block-end pt-max)
+              (while old-ind
                 (pcase-let ((`(,ind ,beg . ,end)
                              (if matches
                                  (get-text-property 0 'line (pop matches))
-                               `(,most-positive-fixnum ,pt-max . ,pt-max))))
-                  (when (/= ind (1+ old-ind))
+                               `(nil ,pt-max . ,pt-max))))
+                  (unless (eq ind (1+ old-ind))
                     (let ((a (if not block-beg block-end))
                           (b (if not block-end beg)))
                       (when (/= a b)
