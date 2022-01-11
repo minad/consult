@@ -3023,34 +3023,36 @@ INITIAL is the initial input."
     (lambda (input restore)
       ;; New input provided -> Update
       (when (and input (not (equal input last-input)))
-        (mapc #'delete-overlay overlays)
-        (setq last-input input overlays nil)
-        (unless (string-match-p "\\`!? ?\\'" input) ;; empty input.
-          (let* ((not (string-prefix-p "! " input))
-                 (stripped (string-remove-prefix "! " input))
-                 ;; Heavy computation is interruptible if *not* committing!
-                 (matches (if restore
-                              (funcall filter stripped lines)
-                            (while-no-input (funcall filter stripped lines))))
-                 (old-ind 0)
-                 (block-beg pt-min)
-                 (block-end pt-min))
-            (unless (eq matches t)      ;; input arrived
-              (while old-ind
-                (let ((match (pop matches)) (ind nil) (beg pt-max) (end pt-max) prop)
-                  (when match
-                    (setq prop (get-text-property 0 'consult--focus-line match)
-                          ind (car prop)
-                          beg (cdr prop)
-                          ;; NOTE: Check for empty lines, see above!
-                          end (+ 1 beg (if (equal match "\n") 0 (length match)))))
-                  (unless (eq ind (1+ old-ind))
-                    (let ((a (if not block-beg block-end))
-                          (b (if not block-end beg)))
-                      (when (/= a b)
-                        (push (consult--overlay a b 'invisible t) overlays)))
-                    (setq block-beg beg))
-                  (setq block-end end old-ind ind)))))))
+        (let (new-overlays)
+          (pcase (while-no-input
+                   (unless (string-match-p "\\`!? ?\\'" input) ;; empty input.
+                     (let* ((inhibit-quit restore) ;; Non interruptible, when quitting!
+                            (not (string-prefix-p "! " input))
+                            (stripped (string-remove-prefix "! " input))
+                            (matches (funcall filter stripped lines))
+                            (old-ind 0)
+                            (block-beg pt-min)
+                            (block-end pt-min))
+                       (while old-ind
+                         (let ((match (pop matches)) (ind nil) (beg pt-max) (end pt-max) prop)
+                           (when match
+                             (setq prop (get-text-property 0 'consult--focus-line match)
+                                   ind (car prop)
+                                   beg (cdr prop)
+                                   ;; NOTE: Check for empty lines, see above!
+                                   end (+ 1 beg (if (equal match "\n") 0 (length match)))))
+                           (unless (eq ind (1+ old-ind))
+                             (let ((a (if not block-beg block-end))
+                                   (b (if not block-end beg)))
+                               (when (/= a b)
+                                 (push (consult--overlay a b 'invisible t) new-overlays)))
+                             (setq block-beg beg))
+                           (setq block-end end old-ind ind)))))
+                   'commit)
+            ('commit
+             (mapc #'delete-overlay overlays)
+             (setq last-input input overlays new-overlays))
+            (_ (mapc #'delete-overlay new-overlays)))))
       (when restore
         (cond
          ((not input)
