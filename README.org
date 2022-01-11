@@ -1167,6 +1167,7 @@ Code contributions:
 - [[https://github.com/tecosaur][Tecosaur]]
 - [[https://github.com/mohamed-abdelnour][Mohamed Abdelnour]]
 - [[https://github.com/thisirs][Sylvain Rousseau]]
+- [[https://github.com/jdtsmith][J.D. Smith]]
 
 Advice and useful discussions:
 - [[https://github.com/clemera/][Clemens Radermacher]]
@@ -1181,6 +1182,7 @@ Advice and useful discussions:
 - [[https://github.com/dgutov/][Dmitry Gutov]]
 - [[https://github.com/iyefrat][Itai Y. Efrat]]
 - [[https://github.com/bdarcus][Bruce d'Arcus]]
+- [[https://github.com/jdtsmith][J.D. Smith]]
 
 Authors of supplementary =consult-*= packages:
 
