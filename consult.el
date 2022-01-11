@@ -2995,7 +2995,7 @@ INITIAL is the initial input."
 
 (defun consult--focus-lines-state (filter)
   "State function for `consult-focus-lines' with FILTER function."
-  (let ((lines) (overlays) (last-input) (point-orig (point)))
+  (let (lines overlays last-input pt-orig pt-min pt-max)
     (save-excursion
       (save-restriction
         (if (not (use-region-p))
@@ -3010,72 +3010,60 @@ INITIAL is the initial input."
 	     (unless (or (bolp) (eobp))
 	       (forward-line 0))
 	     (point))))
-        (let ((i 0) line)
+        (setq pt-orig (point) pt-min (point-min) pt-max (point-max))
+        (let ((i 0))
 	  (consult--each-line beg end
-	    (setq line
-		  (if (eq beg end) (char-to-string ?\n) ; "\n" reuses string! 
-		    (buffer-substring-no-properties beg end)))
-	    (add-text-properties 0 1 `(line (,(cl-incf i) ,beg ,end)) line)
-	    (push line lines))
+	    (let ((line (if (eq beg end) (char-to-string ?\n)
+		          (buffer-substring-no-properties beg end))))
+              (put-text-property 0 1 'line `(,(cl-incf i) ,beg . ,end) line)
+	      (push line lines)))
 	  (setq lines (nreverse lines)))))
     (lambda (input restore)
       ;; New input provided -> Update
       (when (and input (not (equal input last-input)))
 	(mapc #'delete-overlay overlays)
 	(setq last-input input overlays nil)
-	(unless (string-match-p "\\`!? ?\\'" input) ; empty input.
+	(unless (string-match-p "\\`!? ?\\'" input) ;; empty input.
 	  (let* ((not (string-prefix-p "! " input))
-		 (stripped (string-remove-prefix "! " input))
+                 (stripped (string-remove-prefix "! " input))
 		 ;; Heavy computation is interruptible if *not* committing!
 		 (matches (if restore
 			      (funcall filter stripped lines)
 			    (while-no-input (funcall filter stripped lines))))
 		 (old-ind 0)
-		 (start (point-min))
-		 (finish nil)
-		 (max (point-max)))
-	    (unless (eq matches t)	;input arrived
-	      (while matches
-		(pcase-let* ((`(,ind ,beg ,end)
-			      (get-text-property 0 'line (car matches)))
-			     (new-block (> (- ind old-ind) 1)))
-		  (if not
-		      ;; exclude: hide from beg to 1+end of the last contiguous block
-		      (progn (when new-block
-			       (if finish
-				   (push (consult--overlay start finish 'invisible t) overlays))
-			       (setq start beg))
-			     (setq finish (1+ end)))
-		    ;; include: hide from 1+end of last block to beg of new block
-		    (when new-block
-		      (push (consult--overlay start beg 'invisible t) overlays))
-		    (setq start (1+ end)))
-		  (setq matches (cdr matches) old-ind ind)))
-	      (if not
-		  (when finish		; finish up
-		    (setq finish (min finish max))
-		    (if (> finish start)
-			(push (consult--overlay start finish 'invisible t) overlays)))
-		(if (> max start)	; may hide ALL
-		    (push (consult--overlay start max 'invisible t) overlays)))))))
+		 (block-beg pt-min)
+                 (block-end pt-min))
+	    (unless (eq matches t)	;; input arrived
+              (while (< block-end pt-max)
+	        (pcase-let ((`(,ind ,beg . ,end)
+                             (if matches
+                                 (get-text-property 0 'line (pop matches))
+                               `(,most-positive-fixnum ,pt-max . ,pt-max))))
+	          (when (/= ind (1+ old-ind))
+                    (let ((a (if not block-beg block-end))
+                          (b (if not block-end beg)))
+                      (when (/= a b)
+	                (push (consult--overlay a b 'invisible t) overlays)))
+                    (setq block-beg beg))
+	          (setq block-end (1+ end) old-ind ind)))))))
       (when restore
 	(cond
 	 ((not input)
 	  (mapc #'delete-overlay overlays)
-	  (goto-char point-orig))
+	  (goto-char pt-orig))
 	 ((equal input "")
 	  (consult-focus-lines 'show)
-	  (goto-char point-orig))
+	  (goto-char pt-orig))
 	 (t
 	  ;; Sucessfully terminated -> Remember invisible overlays
-	  (setq consult--focus-lines-overlays  ; FIXME: overlap possible
-		(nconc consult--focus-lines-overlays overlays))
-	  (if-let ((invisible-p point-orig) ;move point past invisible
-		   (ovs (overlays-at point-orig))
-		   (ov (seq-find (lambda (ov) (overlay-get ov 'invisible)) ovs)))
-	      (goto-char (overlay-end ov))
-	    (goto-char point-orig))
-	  (recenter)))
+	  (setq consult--focus-lines-overlays
+                (nconc consult--focus-lines-overlays overlays))
+          ;; move point past invisible
+	  (goto-char (if-let (ov (and (invisible-p pt-orig)
+                                      (seq-find (lambda (ov) (overlay-get ov 'invisible))
+                                                (overlays-at pt-orig))))
+	                 (overlay-end ov)
+	               pt-orig))))
 	(setq overlays nil)))))
 
 ;;;###autoload
