@@ -2,6 +2,14 @@
 #+author: Daniel Mendler
 #+language: en
 
+* Development
+
+- Bugfixes
+- =consult-xref=: Prettify the group titles, use =xref--group-name-for-display=
+  if available.
+- =consult-focus-lines=: Thanks to @jdtsmith, the command is much faster and
+  actually useable in large files.
+
 * Version 0.14 (2021-12-31)
 
 - Bugfixes
