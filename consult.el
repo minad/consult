@@ -2995,8 +2995,7 @@ INITIAL is the initial input."
 
 (defsubst consult--extract-line-ind (matches)
   "Extract and sort (line beg end) from MATCHES."
-  (sort (mapcar (apply-partially #'get-text-property 0 'line) matches)
-	(lambda (a b) (< (car a) (car b)))))
+  (mapcar (apply-partially #'get-text-property 0 'line) matches))
 
 (defun consult--focus-lines-state (filter)
   "State function for `consult-focus-lines' with FILTER function."
@@ -3021,7 +3020,8 @@ INITIAL is the initial input."
 		  (if (eq beg end) (char-to-string ?\n) ; "\n" reuses string! 
 		    (buffer-substring-no-properties beg end)))
 	    (add-text-properties 0 1 `(line (,(cl-incf i) ,beg ,end)) line)
-	    (push line lines)))))
+	    (push line lines))
+	  (setq lines (nreverse lines)))))
     (cl-labels ((add-inv-ov (beg end)
 			    (push (consult--overlay beg end 'invisible t)
 				  overlays)))
