@@ -3023,32 +3023,34 @@ INITIAL is the initial input."
     (lambda (input restore)
       ;; New input provided -> Update
       (when (and input (not (equal input last-input)))
-        (mapc #'delete-overlay overlays)
+	(mapc #'delete-overlay overlays)
         (setq last-input input overlays nil)
         (unless (string-match-p "\\`!? ?\\'" input) ;; empty input.
-	  (while-no-input
-	    (let* ((inhibit-quit restore)
-		   (not (string-prefix-p "! " input))
-		   (stripped (string-remove-prefix "! " input))
-		   (matches (funcall filter stripped lines))
-		   (old-ind 0)
-		   (block-beg pt-min)
-		   (block-end pt-min))
-	      (while old-ind
-		(let ((match (pop matches)) (ind nil) (beg pt-max) (end pt-max) prop)
-		  (when match
-		    (setq prop (get-text-property 0 'consult--focus-line match)
-			  ind (car prop)
-			  beg (cdr prop)
-			  ;; NOTE: Check for empty lines, see above!
-			  end (+ 1 beg (if (equal match "\n") 0 (length match)))))
-		  (unless (eq ind (1+ old-ind))
-		    (let ((a (if not block-beg block-end))
-			  (b (if not block-end beg)))
-		      (when (/= a b)
-			(push (consult--overlay a b 'invisible t) overlays)))
-		    (setq block-beg beg))
-		  (setq block-end end old-ind ind)))))))
+	  (when (while-no-input
+		  (let* ((inhibit-quit restore)
+			 (not (string-prefix-p "! " input))
+			 (stripped (string-remove-prefix "! " input))
+			 (matches (funcall filter stripped lines))
+			 (old-ind 0)
+			 (block-beg pt-min)
+			 (block-end pt-min))
+		    (while old-ind
+		      (let ((match (pop matches)) (ind nil) (beg pt-max) (end pt-max) prop)
+			(when match
+			  (setq prop (get-text-property 0 'consult--focus-line match)
+				ind (car prop)
+				beg (cdr prop)
+				;; NOTE: Check for empty lines, see above!
+				end (+ 1 beg (if (equal match "\n") 0 (length match)))))
+			(unless (eq ind (1+ old-ind))
+			  (let ((a (if not block-beg block-end))
+				(b (if not block-end beg)))
+			    (when (/= a b)
+			      (push (consult--overlay a b 'invisible t) overlays)))
+			  (setq block-beg beg))
+			(setq block-end end old-ind ind)))))
+	    (mapc #'delete-overlay overlays) ; Interrupted!
+	    (setq overlays nil))))
       (when restore
         (cond
          ((not input)
@@ -3058,6 +3060,7 @@ INITIAL is the initial input."
           (consult-focus-lines 'show)
           (goto-char pt-orig))
          (t
+	  (message "Concluding with %s" input)
           ;; Sucessfully terminated -> Remember invisible overlays
           (setq consult--focus-lines-overlays
                 (nconc consult--focus-lines-overlays overlays))
