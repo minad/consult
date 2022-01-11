@@ -3015,7 +3015,7 @@ INITIAL is the initial input."
           (consult--each-line beg end
             (let ((line (if (eq beg end) (char-to-string ?\n)
                           (buffer-substring-no-properties beg end))))
-              (put-text-property 0 1 'line `(,(cl-incf i) ,beg . ,end) line)
+              (put-text-property 0 1 'line (cons (cl-incf i) beg) line)
               (push line lines)))
           (setq lines (nreverse lines)))))
     (lambda (input restore)
@@ -3035,17 +3035,19 @@ INITIAL is the initial input."
                  (block-end pt-min))
             (unless (eq matches t)      ;; input arrived
               (while old-ind
-                (pcase-let ((`(,ind ,beg . ,end)
-                             (if matches
-                                 (get-text-property 0 'line (pop matches))
-                               `(nil ,pt-max . ,pt-max))))
+                (let ((match (pop matches)) (ind nil) (beg pt-max) (end pt-max) prop)
+                  (when match
+                    (setq prop (get-text-property 0 'line match)
+                          ind (car prop)
+                          beg (cdr prop)
+                          end (+ 1 beg (length match))))
                   (unless (eq ind (1+ old-ind))
                     (let ((a (if not block-beg block-end))
                           (b (if not block-end beg)))
                       (when (/= a b)
                         (push (consult--overlay a b 'invisible t) overlays)))
                     (setq block-beg beg))
-                  (setq block-end (1+ end) old-ind ind)))))))
+                  (setq block-end end old-ind ind)))))))
       (when restore
         (cond
          ((not input)
