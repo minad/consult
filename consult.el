@@ -3013,6 +3013,8 @@ INITIAL is the initial input."
         (setq pt-orig (point) pt-min (point-min) pt-max (point-max))
         (let ((i 0))
           (consult--each-line beg end
+            ;; NOTE: Use "\n" for empty lines, since we need
+            ;; a string to attach the text property to.
             (let ((line (if (eq beg end) (char-to-string ?\n)
                           (buffer-substring-no-properties beg end))))
               (put-text-property 0 1 'consult--focus-line (cons (cl-incf i) beg) line)
@@ -3040,7 +3042,8 @@ INITIAL is the initial input."
                     (setq prop (get-text-property 0 'consult--focus-line match)
                           ind (car prop)
                           beg (cdr prop)
-                          end (+ 1 beg (length match))))
+                          ;; NOTE: Check for empty lines, see above!
+                          end (+ 1 beg (if (equal match "\n") 0 (length match)))))
                   (unless (eq ind (1+ old-ind))
                     (let ((a (if not block-beg block-end))
                           (b (if not block-end beg)))
