@@ -3064,12 +3064,12 @@ INITIAL is the initial input."
 	  (mapc #'delete-overlay overlays)
 	  (goto-char point-orig))
 	 ((equal input "")
-	  (setq consult--focus-lines-overlays (seq-copy overlays)) ;;XXX loses old overlays
 	  (consult-focus-lines 'show)
 	  (goto-char point-orig))
 	 (t
 	  ;; Sucessfully terminated -> Remember invisible overlays
-	  (consult--focus-lines-overlays (seq-copy overlays))
+	  (setq consult--focus-lines-overlays  ; FIXME: overlap possible
+		(nconc consult--focus-lines-overlays overlays))
 	  (if-let ((invisible-p point-orig) ;move point past invisible
 		   (ovs (overlays-at point-orig))
 		   (ov (seq-find (lambda (ov) (overlay-get ov 'invisible)) ovs)))
