@@ -3063,8 +3063,7 @@ INITIAL is the initial input."
                                       (seq-find (lambda (ov) (overlay-get ov 'invisible))
                                                 (overlays-at pt-orig))))
 	                 (overlay-end ov)
-	               pt-orig))))
-	(setq overlays nil)))))
+	               pt-orig))))))))
 
 ;;;###autoload
 (defun consult-focus-lines (&optional show filter initial)
