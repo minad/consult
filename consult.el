@@ -3015,7 +3015,7 @@ INITIAL is the initial input."
           (consult--each-line beg end
             (let ((line (if (eq beg end) (char-to-string ?\n)
                           (buffer-substring-no-properties beg end))))
-              (put-text-property 0 1 'line (cons (cl-incf i) beg) line)
+              (put-text-property 0 1 'consult--focus-line (cons (cl-incf i) beg) line)
               (push line lines)))
           (setq lines (nreverse lines)))))
     (lambda (input restore)
@@ -3037,7 +3037,7 @@ INITIAL is the initial input."
               (while old-ind
                 (let ((match (pop matches)) (ind nil) (beg pt-max) (end pt-max) prop)
                   (when match
-                    (setq prop (get-text-property 0 'line match)
+                    (setq prop (get-text-property 0 'consult--focus-line match)
                           ind (car prop)
                           beg (cdr prop)
                           end (+ 1 beg (length match))))
