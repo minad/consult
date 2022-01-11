@@ -3045,7 +3045,6 @@ INITIAL is the initial input."
 		   (finish nil)
 		   (max (point-max)))
 	      (unless (eq matches t)	;input arrived
-		(message "%s %d lines" (if not "Excluded" "Included") (length matches))
 		(while matches
 		  (pcase-let* ((`(,ind ,beg ,end) (car matches))
 			       (new-block (> (- ind old-ind) 1)))
