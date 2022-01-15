@@ -253,7 +253,7 @@ The dynamically computed arguments are appended."
   :type 'string)
 
 (defcustom consult-locate-args
-  "locate --ignore-case --existing --regexp"
+  "locate --ignore-case --existing --regex"
   "Command line arguments for locate, see `consult-locate'.
 The dynamically computed arguments are appended."
   :type 'string)
