@@ -417,7 +417,6 @@ Used by `consult-completion-in-region', `consult-yank' and `consult-history'.")
 (defvar consult--apropos-history nil)
 (defvar consult--theme-history nil)
 (defvar consult--minor-mode-menu-history nil)
-(defvar consult--mode-command-history nil)
 (defvar consult--kmacro-history nil)
 (defvar consult--buffer-history nil)
 (defvar consult--crm-history nil)
@@ -3312,7 +3311,7 @@ If no MODES are specified, use currently active major and minor modes."
       :group (consult--type-group narrow)
       :narrow narrow
       :require-match t
-      :history 'consult--mode-command-history
+      :history 'extended-command-history
       :category 'command))))
 
 ;;;;; Command: consult-yank
