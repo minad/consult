@@ -3523,28 +3523,30 @@ This command can act as a drop-in replacement for `repeat-complex-command'."
 
 ;;;;; Command: consult-history
 
-(defun consult--current-history ()
-  "Return the history relevant to the current buffer.
+(declare-function ring-elements "ring")
+(defun consult--current-history (&optional history)
+  "Return the normalized HISTORY or the history relevant to the current buffer.
 
 If the minibuffer is active, returns the minibuffer history,
 otherwise the history corresponding to the mode is returned.
 There is a special case for `repeat-complex-command',
 for which the command history is used."
   (cond
+   (history)
    ;; If pressing "C-x M-:", i.e., `repeat-complex-command',
    ;; we are instead querying the `command-history' and get a full s-expression.
    ;; Alternatively you might want to use `consult-complex-command',
    ;; which can also be bound to "C-x M-:"!
    ((eq last-command 'repeat-complex-command)
-    (mapcar #'prin1-to-string command-history))
+    (setq history (mapcar #'prin1-to-string command-history)))
    ;; In the minibuffer we use the current minibuffer history,
    ;; which can be configured by setting `minibuffer-history-variable'.
    ((minibufferp)
     (if (eq minibuffer-history-variable t)
         (user-error "Minibuffer history is disabled for `%s'" this-command)
-      (symbol-value minibuffer-history-variable))) ;; (minibuffer-history-value) is Emacs 27 only
+      (setq history (symbol-value minibuffer-history-variable)))) ;; (minibuffer-history-value) is Emacs 27 only
    ;; Otherwise we use a mode-specific history, see `consult-mode-histories'.
-   (t (when-let (history
+   (t (when-let (found
                  (or (seq-find (lambda (ring)
                                  (and (derived-mode-p (car ring))
                                       (boundp (cdr ring))))
@@ -3552,9 +3554,9 @@ for which the command history is used."
                      (user-error
                       "No history configured for `%s', see `consult-mode-histories'"
                       major-mode)))
-        (symbol-value (cdr history))))))
+        (setq history (symbol-value (cdr found))))))
+  (consult--remove-dups (if (ring-p history) (ring-elements history) history)))
 
-(declare-function ring-elements "ring")
 ;; This command has been adopted from https://github.com/oantolin/completing-history/.
 ;;;###autoload
 (defun consult-history (&optional history)
@@ -3565,11 +3567,8 @@ as argument."
   (interactive)
   (let ((str (consult--local-let ((enable-recursive-minibuffers t))
                (consult--read
-                (let ((history (or history (consult--current-history))))
-                  (or (consult--remove-dups (if (ring-p history)
-                                                (ring-elements history)
-                                              history))
-                      (user-error "History is empty")))
+                (or (consult--current-history history)
+                    (user-error "History is empty"))
                 :prompt "History: "
                 :history t ;; disable history
                 :category ;; Report command category for M-x history
