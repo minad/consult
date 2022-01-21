@@ -4551,5 +4551,9 @@ automatically previewed."
 (with-eval-after-load 'icomplete (require 'consult-icomplete))
 (with-eval-after-load 'selectrum (require 'consult-selectrum))
 (with-eval-after-load 'vertico (require 'consult-vertico))
+(with-eval-after-load 'mct
+  ;; TODO Remove the fboundp check as soon as new mct is released.
+  (when (fboundp 'mct--live-completions-refresh)
+    (add-hook 'consult--completion-refresh-hook 'mct--live-completions-refresh)))
 
 ;;; consult.el ends here
