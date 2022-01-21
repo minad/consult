@@ -9,6 +9,7 @@
   if available.
 - =consult-focus-lines=: Thanks to @jdtsmith, the command is much faster and
   actually useable in large files.
+- Added Mct integration, auto refreshing of asynchronous Consult commands.
 
 * Version 0.14 (2021-12-31)
 
