@@ -2374,7 +2374,8 @@ These configuration options are supported:
                                           predicate require-match initial)))))))))
         (if completion
             (progn
-              (completion--replace start end completion)
+              ;; completion--replace removes properties!
+              (completion--replace start end (setq completion (concat completion)))
               (when-let (exit (plist-get completion-extra-properties :exit-function))
                 (funcall exit completion
                          ;; If completion is finished and cannot be further completed,
