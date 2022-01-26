@@ -733,7 +733,8 @@ The line beginning/ending BEG/END is bound in BODY."
        (let ((,beg (point-min)) (,max (point-max)) end)
          (while (< ,beg ,max)
            (goto-char ,beg)
-           (setq ,end (line-end-position))
+           (let ((inhibit-field-text-motion t))
+             (setq ,end (line-end-position)))
            ,@body
            (setq ,beg (1+ ,end)))))))
 
@@ -1023,7 +1024,8 @@ MARKER is the cursor position."
 
 (defun consult--line-with-cursor (marker)
   "Return current line where the cursor MARKER is highlighted."
-  (consult--region-with-cursor (line-beginning-position) (line-end-position) marker))
+  (let ((inhibit-field-text-motion t))
+    (consult--region-with-cursor (line-beginning-position) (line-end-position) marker)))
 
 ;;;; Preview support
 
@@ -1068,7 +1070,8 @@ MARKER is the cursor position."
 (defun consult--invisible-open-permanently ()
   "Open overlays which hide the current line.
 See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
-  (dolist (ov (overlays-in (line-beginning-position) (line-end-position)))
+  (dolist (ov (let ((inhibit-field-text-motion t))
+                (overlays-in (line-beginning-position) (line-end-position))))
     (when-let (fun (overlay-get ov 'isearch-open-invisible))
       (when (invisible-p (overlay-get ov 'invisible))
         (funcall fun ov)))))
@@ -1076,8 +1079,9 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
 (defun consult--invisible-open-temporarily ()
   "Temporarily open overlays which hide the current line.
 See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
-  (let ((restore))
-    (dolist (ov (overlays-in (line-beginning-position) (line-end-position)) restore)
+  (let (restore)
+    (dolist (ov (let ((inhibit-field-text-motion t))
+                  (overlays-in (line-beginning-position) (line-end-position))))
       (let ((inv (overlay-get ov 'invisible)))
         (when (and (invisible-p inv) (overlay-get ov 'isearch-open-invisible))
           (push (if-let (fun (overlay-get ov 'isearch-open-invisible-temporary))
@@ -1086,7 +1090,8 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
                       (lambda () (funcall fun ov t)))
                   (overlay-put ov 'invisible nil)
                   (lambda () (overlay-put ov 'invisible inv)))
-                restore))))))
+                restore))))
+    restore))
 
 (defun consult--jump-nomark (pos)
   "Go to POS and recenter."
@@ -2574,6 +2579,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                         (lambda () ;; as in the default from outline.el
                           (or (cdr (assoc (match-string 0) heading-alist))
                               (- (match-end 0) (match-beginning 0))))))
+         (inhibit-field-text-motion t)
          (candidates))
     (save-excursion
       (goto-char (point-min))
