@@ -998,15 +998,23 @@ tofu-encoded MARKER suffix for disambiguation."
   (add-text-properties 0 1 `(consult-location (,marker . ,line) ,@props) cand)
   cand)
 
+(defconst consult--remove-text-properties
+  '(mouse-face help-echo keymap local-map read-only cursor-intangible field cursor pointer
+    modification-hooks insert-in-front-hooks insert-behind-hooks cursor-sensor-functions
+    front-sticky rear-nonsticky follow-link)
+  "List of text properties to remove from buffer strings.")
+
 (defsubst consult--buffer-substring (beg end &optional fontify)
   "Return buffer substring between BEG and END.
 If FONTIFY and `consult-fontify-preserve' are non-nil, first ensure that the
 region has been fontified."
   (if consult-fontify-preserve
-      (progn
-        (when fontify
-          (consult--fontify-region beg end))
-        (buffer-substring beg end))
+      (let (str)
+        (when fontify (consult--fontify-region beg end))
+        (setq str (buffer-substring beg end))
+        ;; TODO Propose the addition of a function `preserve-list-of-text-properties'
+        (remove-list-of-text-properties 0 (- end beg) consult--remove-text-properties str)
+        str)
     (buffer-substring-no-properties beg end)))
 
 (defun consult--region-with-cursor (beg end marker)
