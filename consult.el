@@ -998,10 +998,13 @@ tofu-encoded MARKER suffix for disambiguation."
   (add-text-properties 0 1 `(consult-location (,marker . ,line) ,@props) cand)
   cand)
 
+;; There is a similar variable `yank-excluded-properties'. Unfortunately
+;; we cannot use it here since it excludes too much (e.g., invisible)
+;; and at the same time not enough (e.g., cursor-sensor-functions).
 (defconst consult--remove-text-properties
-  '(mouse-face help-echo keymap local-map read-only cursor-intangible field cursor pointer
-    modification-hooks insert-in-front-hooks insert-behind-hooks cursor-sensor-functions
-    front-sticky rear-nonsticky follow-link)
+  '(category cursor cursor-intangible cursor-sensor-functions field follow-link font-lock-face
+    fontified front-sticky help-echo insert-behind-hooks insert-in-front-hooks intangible keymap
+    local-map modification-hooks mouse-face pointer read-only rear-nonsticky yank-handler)
   "List of text properties to remove from buffer strings.")
 
 (defsubst consult--buffer-substring (beg end &optional fontify)
