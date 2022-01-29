@@ -3356,7 +3356,7 @@ See `yank-pop' for the meaning of ARG.
 This command behaves like `yank-pop' in Emacs 28, which also offers a
 `completing-read' interface to the `kill-ring'. Additionally the Consult
 version supports preview of the selected string."
-  (interactive "*p")
+  (interactive "p")
   (if (eq last-command 'yank)
       (yank-pop (or arg 1))
     (call-interactively #'consult-yank-from-kill-ring)))
