@@ -2,7 +2,7 @@
 #+author: Daniel Mendler
 #+language: en
 
-* Development
+* Version 0.15 (2022-01-31)
 
 - Bugfixes
 - =consult-xref=: Prettify the group titles, use =xref--group-name-for-display=

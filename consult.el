@@ -1,11 +1,11 @@
 ;;; consult.el --- Consulting completing-read -*- lexical-binding: t -*-
 
-;; Copyright (C) 2021  Free Software Foundation, Inc.
+;; Copyright (C) 2021, 2022  Free Software Foundation, Inc.
 
 ;; Author: Daniel Mendler and Consult contributors
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2020
-;; Version: 0.14
+;; Version: 0.15
 ;; Package-Requires: ((emacs "26.1"))
 ;; Homepage: https://github.com/minad/consult
 
