@@ -321,23 +321,23 @@ Each element of the list must have the form '(char name handler)."
 
 (defface consult-preview-line
   '((t :inherit consult-preview-insertion :extend t))
-  "Face used to for line previews.")
+  "Face used for line previews.")
 
 (defface consult-preview-match
   '((t :inherit match))
-  "Face used to for match previews in `consult-grep'.")
+  "Face used for match previews in `consult-grep'.")
 
 (defface consult-preview-cursor
   '((t :inherit consult-preview-match))
-  "Face used to for cursor previews and marks in `consult-mark'.")
+  "Face used for cursor previews and marks in `consult-mark'.")
 
 (defface consult-preview-error
   '((t :inherit isearch-fail))
-  "Face used to for cursor previews and marks in `consult-compile-error'.")
+  "Face used for cursor previews and marks in `consult-compile-error'.")
 
 (defface consult-preview-insertion
   '((t :inherit region))
-  "Face used to for previews of text to be inserted.
+  "Face used for previews of text to be inserted.
 Used by `consult-completion-in-region', `consult-yank' and `consult-history'.")
 
 (defface consult-narrow-indicator
