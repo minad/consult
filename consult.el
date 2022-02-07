@@ -3715,11 +3715,6 @@ starts a new Isearch session otherwise."
       (setq isearch-regexp t
             isearch-regexp-function nil))))
 
-(define-obsolete-function-alias
-  'consult-isearch
-  'consult-isearch-history
-  "0.12")
-
 ;;;;; Command: consult-minor-mode-menu
 
 (defun consult--minor-mode-candidates ()
@@ -3978,9 +3973,6 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
                               :as #'buffer-name)))
   "Project buffer candidate source for `consult-buffer'.")
 
-(define-obsolete-variable-alias
-  'consult--source-project-file
-  'consult--source-project-recent-file "0.14")
 (defvar consult--source-project-recent-file
   `(:name     "Project File"
     :narrow   (?p . "Project")
@@ -4035,9 +4027,6 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
                                        :as #'buffer-name)))
   "Buffer candidate source for `consult-buffer'.")
 
-(define-obsolete-variable-alias
-  'consult--source-file
-  'consult--source-recent-file "0.14")
 (defvar consult--source-recent-file
   `(:name     "File"
     :narrow   ?f
