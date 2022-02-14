@@ -1051,7 +1051,11 @@ MARKER is the cursor position."
          (dir default-directory))
     (lambda (&optional name)
       (if name
-          (let ((default-directory dir))
+          (let ((default-directory dir)
+                (inhibit-message t)
+                (enable-dir-local-variables nil)
+                (enable-local-variables (and enable-local-variables :safe))
+                (non-essential t))
             (or (get-file-buffer name)
                 ;; file-attributes may throw permission denied error
                 (when-let* ((attrs (ignore-errors (file-attributes name)))
@@ -1063,10 +1067,6 @@ MARKER is the cursor position."
                     (cl-letf* (((default-value 'find-file-hook)
                                 (seq-remove (lambda (x) (memq x consult-preview-excluded-hooks))
                                             (default-value 'find-file-hook)))
-                               (inhibit-message t)
-                               (non-essential t)
-                               (enable-dir-local-variables nil)
-                               (enable-local-variables (and enable-local-variables :safe))
                                (buf (find-file-noselect
                                      name 'nowarn
                                      (> size consult-preview-raw-size))))
