@@ -4009,7 +4009,9 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
     :state    ,#'consult--file-state
     :enabled  ,(lambda () consult-project-function)
     :items
-    ,(lambda () (funcall consult-project-function 'known-projects)))
+    ,(lambda ()
+       (mapcar #'abbreviate-file-name
+               (funcall consult-project-function 'known-projects))))
   "Project root directory source for `consult-buffer'.")
 
 (defvar consult--source-project-recent-file
