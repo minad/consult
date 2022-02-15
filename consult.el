@@ -88,9 +88,9 @@ This is the key representation accepted by `define-key'."
   "Function which takes a single symbol argument and returns project directories.
 
 The argument can be:
-- current-project-root: Return the current project directory.
+- current-project: Return the current project directory.
   The root directory is used by `consult-buffer' and `consult-grep'.
-- known-project-roots: Return the directories of known projects.
+- known-projects: Return the directories of known projects.
   The list of known projects is used by `consult--source-project-root'."
   :type '(choice function (const nil)))
 
@@ -851,27 +851,27 @@ Otherwise the `default-directory' is returned."
   "Return project directories depending on WHAT.
 See `consult-project-function' for WHAT."
   (pcase what
-    ('current-project-root
+    ('current-project
      (when-let (proj (project-current))
        (cond
         ((fboundp 'project-root) (project-root proj))
         ((fboundp 'project-roots) (car (project-roots proj))))))
-    ('known-project-roots
+    ('known-projects
      (and (fboundp 'project-known-project-roots)
           (project-known-project-roots)))))
 
 (defun consult--project-root ()
   "Return project root as absolute path."
   (when-let (root (and consult-project-function
-                       (funcall consult-project-function 'current-project-root)))
+                       (funcall consult-project-function 'current-project)))
     (expand-file-name root)))
 
-(defun consult--known-project-roots ()
+(defun consult--known-projects ()
   "Return list of known project directories."
   (let ((root (consult--project-root))
         (dirs (sort
                (mapcar #'abbreviate-file-name
-                       (funcall consult-project-function 'known-project-roots))
+                       (funcall consult-project-function 'known-projects))
                #'string<)))
     (when root
       (setq root (abbreviate-file-name root)
@@ -4019,7 +4019,7 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
     :history  file-name-history
     :state    ,#'consult--file-state
     :enabled  ,(lambda () consult-project-function)
-    :items    ,#'consult--known-project-roots)
+    :items    ,#'consult--known-projects)
   "Known project root directory source for `consult-buffer'.")
 
 (defvar consult--source-project-recent-file
