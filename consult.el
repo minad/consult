@@ -851,13 +851,12 @@ Otherwise the `default-directory' is returned."
   "Return project directories depending on WHAT.
 If WHAT is current-project return the directory of the current project.
 If WHAT is known-projects return the list of known project directories."
-  (unless (fboundp 'project-current) (require 'project))
   (pcase what
     ('current-project
      (when-let (proj (project-current))
        (cond
         ((fboundp 'project-root) (project-root proj))
-        ((fboundp 'project-roots) (project-roots proj)))))
+        ((fboundp 'project-roots) (car (project-roots proj))))))
     ('known-projects
      (and (fboundp 'project-known-project-roots)
           (project-known-project-roots)))))
