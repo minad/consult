@@ -3994,6 +3994,52 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
     :state    ,#'consult--bookmark-state)
   "Bookmark candidate source for `consult-buffer'.")
 
+(defvar consult--source-hidden-buffer
+  `(:name     "Hidden Buffer"
+    :narrow   32
+    :hidden   t
+    :category buffer
+    :face     consult-buffer
+    :history  buffer-name-history
+    :action   ,#'consult--buffer-action
+    :items
+    ,(lambda () (consult--buffer-query :sort 'visibility
+                                       :filter 'invert
+                                       :as #'buffer-name)))
+  "Hidden buffer candidate source for `consult-buffer'.")
+
+(defvar consult--source-buffer
+  `(:name     "Buffer"
+    :narrow   ?b
+    :category buffer
+    :face     consult-buffer
+    :history  buffer-name-history
+    :state    ,#'consult--buffer-state
+    :default  t
+    :items
+    ,(lambda () (consult--buffer-query :sort 'visibility
+                                       :as #'buffer-name)))
+  "Buffer candidate source for `consult-buffer'.")
+
+(defvar consult--source-recent-file
+  `(:name     "File"
+    :narrow   ?f
+    :category file
+    :face     consult-file
+    :history  file-name-history
+    :state    ,#'consult--file-state
+    :enabled  ,(lambda () recentf-mode)
+    :items
+    ,(lambda ()
+       (let ((ht (consult--buffer-file-hash))
+             (filter (consult--regexp-filter consult-recent-file-filter)))
+         (mapcar #'abbreviate-file-name
+                 (seq-remove (lambda (x)
+                               (or (gethash x ht)
+                                   (and consult-recent-file-filter (string-match-p filter x))))
+                             recentf-list)))))
+  "Recent file candidate source for `consult-buffer'.")
+
 (defvar consult--source-project-buffer
   `(:name     "Project Buffer"
     :narrow   (?p . "Project")
@@ -4047,52 +4093,6 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
                                                (string-match-p filter x)))))
                               recentf-list))))))
   "Project file candidate source for `consult-buffer'.")
-
-(defvar consult--source-hidden-buffer
-  `(:name     "Hidden Buffer"
-    :narrow   32
-    :hidden   t
-    :category buffer
-    :face     consult-buffer
-    :history  buffer-name-history
-    :action   ,#'consult--buffer-action
-    :items
-    ,(lambda () (consult--buffer-query :sort 'visibility
-                                       :filter 'invert
-                                       :as #'buffer-name)))
-  "Hidden buffer candidate source for `consult-buffer'.")
-
-(defvar consult--source-buffer
-  `(:name     "Buffer"
-    :narrow   ?b
-    :category buffer
-    :face     consult-buffer
-    :history  buffer-name-history
-    :state    ,#'consult--buffer-state
-    :default  t
-    :items
-    ,(lambda () (consult--buffer-query :sort 'visibility
-                                       :as #'buffer-name)))
-  "Buffer candidate source for `consult-buffer'.")
-
-(defvar consult--source-recent-file
-  `(:name     "File"
-    :narrow   ?f
-    :category file
-    :face     consult-file
-    :history  file-name-history
-    :state    ,#'consult--file-state
-    :enabled  ,(lambda () recentf-mode)
-    :items
-    ,(lambda ()
-       (let ((ht (consult--buffer-file-hash))
-             (filter (consult--regexp-filter consult-recent-file-filter)))
-         (mapcar #'abbreviate-file-name
-                 (seq-remove (lambda (x)
-                               (or (gethash x ht)
-                                   (and consult-recent-file-filter (string-match-p filter x))))
-                             recentf-list)))))
-  "Recent file candidate source for `consult-buffer'.")
 
 ;;;###autoload
 (defun consult-buffer ()
