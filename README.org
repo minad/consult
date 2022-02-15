@@ -256,10 +256,10 @@ their descriptions.
    =filter-string= is passed to the /fast/ Emacs filtering to further narrow down
    the list of matches. This is particularly useful if you are using an advanced
    completion style like orderless. =consult-grep= supports preview. If the
-   =consult-project-root-function= is [[#use-package-example][configured]] and returns non-nil, =consult-grep=
-   searches the current project directory. Otherwise the =default-directory= is
-   searched. If =consult-grep= is invoked with prefix argument =C-u M-s g=, you can
-   specify the directory manually.
+   =consult-project-root-function= returns non-nil, =consult-grep= searches the
+   current project directory. Otherwise the =default-directory= is searched. If
+   =consult-grep= is invoked with prefix argument =C-u M-s g=, you can specify the
+   directory manually.
  - =consult-find=, =consult-locate=: Find file by
    matching the path against a regexp. Like for =consult-grep,= either the project
    root or the current directory is the root directory for the search. The input
