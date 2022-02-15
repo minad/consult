@@ -100,8 +100,7 @@ their descriptions.
    - b Buffers
    - f Files (Requires =recentf-mode=)
    - m Bookmarks
-   - p Project (Requires configuration of the =consult-project-root-function=
-     as shown in the [[#use-package-example][example configuration]]).
+   - p Project
    - Arbitrary [[#multiple-sources][other sources]] configured in =consult-buffer-sources=.
  - =consult-bookmark=: Select or create bookmark. To select bookmarks you might use the
    =consult-buffer= as an alternative, which can include a bookmark virtual buffer
@@ -253,10 +252,10 @@ their descriptions.
    =filter-string= is passed to the /fast/ Emacs filtering to further narrow down
    the list of matches. This is particularly useful if you are using an advanced
    completion style like orderless. =consult-grep= supports preview. If the
-   =consult-project-root-function= is [[#use-package-example][configured]] and returns non-nil, =consult-grep=
-   searches the current project directory. Otherwise the =default-directory= is
-   searched. If =consult-grep= is invoked with prefix argument =C-u M-s g=, you can
-   specify the directory manually.
+   =consult-project-function= is [[#use-package-example][configured]] and returns a non-nil directory,
+   =consult-grep= searches the current project directory. Otherwise the
+   =default-directory= is searched. If =consult-grep= is invoked with prefix
+   argument =C-u M-s g=, you can specify the directory manually.
  - =consult-find=, =consult-locate=: Find file by
    matching the path against a regexp. Like for =consult-grep,= either the project
    root or the current directory is the root directory for the search. The input
@@ -444,7 +443,8 @@ their descriptions.
    (consult-customize
     consult-ripgrep consult-git-grep consult-grep
     consult-bookmark consult-recent-file consult-xref
-    consult--source-recent-file consult--source-project-recent-file consult--source-bookmark
+    consult--source-bookmark consult--source-project-root
+    consult--source-recent-file consult--source-project-recent-file
     :preview-key (kbd "M-."))
  #+end_src
 
@@ -882,21 +882,6 @@ configuration examples.
      ;; Optionally make narrowing help available in the minibuffer.
      ;; You may want to use `embark-prefix-help-command' or which-key instead.
      ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
-
-     ;; Optionally configure a function which returns the project root directory.
-     ;; There are multiple reasonable alternatives to chose from.
-     ;;;; 1. project.el (project-roots)
-     (setq consult-project-root-function
-           (lambda ()
-             (when-let (project (project-current))
-               (car (project-roots project)))))
-     ;;;; 2. projectile.el (projectile-project-root)
-     ;; (autoload 'projectile-project-root "projectile")
-     ;; (setq consult-project-root-function #'projectile-project-root)
-     ;;;; 3. vc.el (vc-root-dir)
-     ;; (setq consult-project-root-function #'vc-root-dir)
-     ;;;; 4. locate-dominating-file
-     ;; (setq consult-project-root-function (lambda () (locate-dominating-file "." ".git")))
    )
  #+end_src
 
@@ -945,7 +930,7 @@ configuration examples.
  | consult-preview-max-count        | Maximum number of files to keep open during preview   |
  | consult-preview-max-size         | Files larger than this size are not previewed         |
  | consult-preview-raw-size         | Files larger than this size are previewed in raw form |
- | consult-project-root-function    | Function which returns current project root           |
+ | consult-project-function         | Function which returns project directories            |
  | consult-recent-file-filter       | Filter for =consult-recent-file=                        |
  | consult-register-narrow          | Narrowing configuration for =consult-register=          |
  | consult-ripgrep-args             | Command line arguments for ripgrep                    |

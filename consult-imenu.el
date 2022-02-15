@@ -216,10 +216,10 @@ See also `consult-imenu-multi'."
   "Select item from the imenus of all buffers from the same project.
 
 In order to determine the buffers belonging to the same project, the
-`consult-project-root-function' is used. Only the buffers with the
-same major mode as the current buffer are used. See also
-`consult-imenu' for more details. In order to search a subset of buffers,
-QUERY can be set to a plist according to `consult--buffer-query'."
+`consult-project-function' is used. Only the buffers with the same major
+mode as the current buffer are used. See also `consult-imenu' for more
+details. In order to search a subset of buffers, QUERY can be set to a
+plist according to `consult--buffer-query'."
   (interactive "P")
   (unless (keywordp (car-safe query))
     (setq query (list :sort 'alpha :mode major-mode
