@@ -850,7 +850,7 @@ Otherwise the `default-directory' is returned."
 (defun consult--default-project-function (what)
   "Return project directories depending on WHAT.
 See `consult-project-function' for WHAT."
-  (pcase what
+  (pcase-exhaustive what
     ('current-project
      (when-let (proj (project-current))
        (cond
