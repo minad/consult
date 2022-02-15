@@ -68,8 +68,8 @@ and HIGHLIGHT."
     (selectrum-exhibit (not reset))))
 
 (defun consult-selectrum--split-wrap (orig split)
-  "Wrap candidates highlight/refinement ORIG function, splitting
-the input using SPLIT."
+  "Wrap candidates highlight/refinement ORIG function.
+The input is split by the SPLIT function."
   (lambda (str cands)
     (funcall orig (cadr (funcall split str 0)) cands)))
 
