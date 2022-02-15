@@ -805,7 +805,7 @@ The line beginning/ending BEG/END is bound in BODY."
                        local)))))))
 
 (defun consult--abbreviate-directory (dir)
-  "Return abbreviated directory DIR for use in prompts."
+  "Return abbreviated directory DIR for use in `completing-read' prompt."
   (save-match-data
     (let ((adir (abbreviate-file-name dir)))
       (if (string-match "/\\([^/]+\\)/\\([^/]+\\)/\\'" adir)
