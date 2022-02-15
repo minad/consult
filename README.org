@@ -256,10 +256,10 @@ their descriptions.
    =filter-string= is passed to the /fast/ Emacs filtering to further narrow down
    the list of matches. This is particularly useful if you are using an advanced
    completion style like orderless. =consult-grep= supports preview. If the
-   =consult-project-function= is [[#use-package-example][configured]] and returns a non-nil directory,
-   =consult-grep= searches the current project directory. Otherwise the
-   =default-directory= is searched. If =consult-grep= is invoked with prefix
-   argument =C-u M-s g=, you can specify the directory manually.
+   =consult-project-root-function= is [[#use-package-example][configured]] and returns non-nil, =consult-grep=
+   searches the current project directory. Otherwise the =default-directory= is
+   searched. If =consult-grep= is invoked with prefix argument =C-u M-s g=, you can
+   specify the directory manually.
  - =consult-find=, =consult-locate=: Find file by
    matching the path against a regexp. Like for =consult-grep,= either the project
    root or the current directory is the root directory for the search. The input
@@ -447,8 +447,8 @@ their descriptions.
    (consult-customize
     consult-ripgrep consult-git-grep consult-grep
     consult-bookmark consult-recent-file consult-xref
-    consult--source-bookmark consult--source-project-root
     consult--source-recent-file consult--source-project-recent-file
+    consult--source-bookmark
     :preview-key (kbd "M-."))
  #+end_src
 
@@ -636,7 +636,9 @@ their descriptions.
 
   #+begin_src emacs-lisp
     (consult-customize
-     consult--source-recent-file consult--source-project-recent-file consult--source-bookmark
+     consult--source-recent-file
+     consult--source-project-recent-file
+     consult--source-bookmark
      :preview-key (kbd "M-."))
   #+end_src
 
@@ -876,8 +878,8 @@ configuration examples.
       consult-theme
       :preview-key '(:debounce 0.2 any)
       consult-ripgrep consult-git-grep consult-grep
-      consult-bookmark consult-recent-file consult-xref
-      consult--source-recent-file consult--source-project-recent-file consult--source-bookmark
+      consult-bookmark consult-recent-file consult-xref consult--source-bookmark
+      consult--source-recent-file consult--source-project-recent-file
       :preview-key (kbd "M-."))
 
      ;; Optionally configure the narrowing key.
@@ -887,6 +889,19 @@ configuration examples.
      ;; Optionally make narrowing help available in the minibuffer.
      ;; You may want to use `embark-prefix-help-command' or which-key instead.
      ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
+
+     ;; By default `consult-project-root-function' uses `project-root' from project.el.
+     ;; Optionally configure a different project root function.
+     ;; There are multiple reasonable alternatives to chose from.
+     ;;;; 1. project.el (the default)
+     ;; (setq consult-project-root-function #'consult--project-root-default-function)
+     ;;;; 2. projectile.el (projectile-project-root)
+     ;; (autoload 'projectile-project-root "projectile")
+     ;; (setq consult-project-root-function #'projectile-project-root)
+     ;;;; 3. vc.el (vc-root-dir)
+     ;; (setq consult-project-root-function #'vc-root-dir)
+     ;;;; 4. locate-dominating-file
+     ;; (setq consult-project-root-function (lambda () (locate-dominating-file "." ".git")))
    )
  #+end_src
 
@@ -936,7 +951,7 @@ configuration examples.
  | consult-preview-max-size         | Files larger than this size are not previewed         |
  | consult-preview-raw-size         | Files larger than this size are previewed in raw form |
  | consult-project-buffer-sources   | List of virtual project buffer sources                |
- | consult-project-function         | Function which returns project directories            |
+ | consult-project-root-function    | Function which returns current project root           |
  | consult-recent-file-filter       | Filter for =consult-recent-file=                        |
  | consult-register-narrow          | Narrowing configuration for =consult-register=          |
  | consult-ripgrep-args             | Command line arguments for ripgrep                    |

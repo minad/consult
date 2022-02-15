@@ -78,20 +78,11 @@ The key must be either a string or a vector.
 This is the key representation accepted by `define-key'."
   :type '(choice key-sequence (const nil)))
 
-(defvar consult-project-root-function nil)
-(make-obsolete-variable
- 'consult-project-root-function
- "The function has been generalized to the `consult-project-function'"
- "0.15")
+(defcustom consult-project-root-function
+  #'consult--project-root-default-function
+  "Function which returns project root directory.
 
-(defcustom consult-project-function #'consult--default-project-function
-  "Function which takes a single symbol argument and returns project directories.
-
-The argument can be:
-- current-project: Return the current project directory.
-  The root directory is used by `consult-buffer' and `consult-grep'.
-- known-projects: Return the directories of known projects.
-  The list of known projects is used by `consult--source-project-root'."
+The root directory is used by `consult-buffer' and `consult-grep'."
   :type '(choice function (const nil)))
 
 (defcustom consult-async-refresh-delay 0.2
@@ -213,8 +204,7 @@ character, the *Completions* buffer and a few log buffers."
     consult--source-recent-file
     consult--source-bookmark
     consult--source-project-buffer
-    consult--source-project-recent-file
-    consult--source-project-root)
+    consult--source-project-recent-file)
   "Sources used by `consult-buffer'.
 See also `consult-project-buffer-sources'.
 See `consult--multi' for a description of the source data structure."
@@ -829,7 +819,7 @@ only the last two path components are shown.
 
 If DIR is a string, it is returned.
 If DIR is a true value, the user is asked.
-Then the `consult-project-function' is tried.
+Then the `consult-project-root-function' is tried.
 Otherwise the `default-directory' is returned."
   (let* ((dir
           (cond
@@ -853,36 +843,17 @@ Otherwise the `default-directory' is returned."
       (t (format "%s (%s): " prompt (consult--abbreviate-directory dir))))
      edir)))
 
-(defun consult--default-project-function (what)
-  "Return project directories depending on WHAT.
-See `consult-project-function' for WHAT."
-  (pcase-exhaustive what
-    ('current-project
-     (when-let (proj (project-current))
-       (cond
-        ((fboundp 'project-root) (project-root proj))
-        ((fboundp 'project-roots) (car (project-roots proj))))))
-    ('known-projects
-     (and (fboundp 'project-known-project-roots)
-          (project-known-project-roots)))))
+(defun consult--project-root-default-function ()
+  "Return project root directory."
+  (when-let (proj (project-current))
+    (cond
+     ((fboundp 'project-root) (project-root proj))
+     ((fboundp 'project-roots) (car (project-roots proj))))))
 
 (defun consult--project-root ()
   "Return project root as absolute path."
-  (when-let (root (and consult-project-function
-                       (funcall consult-project-function 'current-project)))
+  (when-let (root (and consult-project-root-function (funcall consult-project-root-function)))
     (expand-file-name root)))
-
-(defun consult--known-projects ()
-  "Return list of known project directories."
-  (let ((root (consult--project-root))
-        (dirs (sort
-               (mapcar #'abbreviate-file-name
-                       (funcall consult-project-function 'known-projects))
-               #'string<)))
-    (when root
-      (setq root (abbreviate-file-name root)
-            dirs (cons root (delete root dirs))))
-    dirs))
 
 (defun consult--project-name (dir)
   "Return the project name for DIR."
@@ -4000,6 +3971,49 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
     :state    ,#'consult--bookmark-state)
   "Bookmark candidate source for `consult-buffer'.")
 
+(defvar consult--source-project-buffer
+  `(:name     "Project Buffer"
+    :narrow   (?p . "Project")
+    :hidden   t
+    :category buffer
+    :face     consult-buffer
+    :history  buffer-name-history
+    :state    ,#'consult--buffer-state
+    :enabled  ,(lambda () consult-project-root-function)
+    :items
+    ,(lambda ()
+       (consult--buffer-query :sort 'visibility
+                              :directory 'project
+                              :as #'buffer-name)))
+  "Project buffer candidate source for `consult-buffer'.")
+
+(defvar consult--source-project-recent-file
+  `(:name     "Project File"
+    :narrow   (?p . "Project")
+    :hidden   t
+    :category file
+    :face     consult-file
+    :history  file-name-history
+    :state    ,#'consult--file-state
+    :enabled  ,(lambda () (and consult-project-root-function
+                               recentf-mode))
+    :items
+    ,(lambda ()
+      (when-let (root (consult--project-root))
+        (let ((len (length root))
+              (inv-root (propertize root 'invisible t))
+              (ht (consult--buffer-file-hash))
+              (filter (consult--regexp-filter consult-recent-file-filter)))
+          (mapcar (lambda (x)
+                    (concat inv-root (substring x len)))
+                  (seq-filter (lambda (x)
+                                (and (not (gethash x ht))
+                                     (string-prefix-p root x)
+                                     (not (and consult-recent-file-filter
+                                               (string-match-p filter x)))))
+                              recentf-list))))))
+  "Project file candidate source for `consult-buffer'.")
+
 (defvar consult--source-hidden-buffer
   `(:name     "Hidden Buffer"
     :narrow   32
@@ -4046,67 +4060,6 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
                              recentf-list)))))
   "Recent file candidate source for `consult-buffer'.")
 
-(defvar consult--source-project-buffer
-  `(:name     "Project Buffer"
-    :narrow   (?p . "Project")
-    :hidden   t
-    :category buffer
-    :face     consult-buffer
-    :history  buffer-name-history
-    :state    ,#'consult--buffer-state
-    :enabled  ,(lambda () consult-project-function)
-    :items
-    ,(lambda ()
-       (consult--buffer-query :sort 'visibility
-                              :directory 'project
-                              :as #'buffer-name)))
-  "Project buffer candidate source for `consult-buffer'.")
-
-(defvar consult--source-project-root
-  `(:name     "Project Root"
-    :narrow   (?p . "Project")
-    :hidden   t
-    :category file
-    :face     consult-file
-    :history  file-name-history
-    :state    ,#'consult--file-state
-    :enabled  ,(lambda () consult-project-function)
-    :items    ,#'consult--known-projects)
-  "Known project root directory source for `consult-buffer'.")
-
-(defvar consult--source-project-recent-file
-  `(:name     "Project File"
-    :narrow   (?p . "Project")
-    :hidden   t
-    :category file
-    :face     consult-file
-    :history  file-name-history
-    :state    ,#'consult--file-state
-    :enabled  ,(lambda () (and consult-project-function recentf-mode))
-    :items
-    ,(lambda ()
-      (when-let (root (consult--project-root))
-        (let ((len (length root))
-              (inv-root (propertize root 'invisible t))
-              (ht (consult--buffer-file-hash))
-              (filter (consult--regexp-filter consult-recent-file-filter)))
-          (mapcar (lambda (x)
-                    (concat inv-root (substring x len)))
-                  (seq-filter (lambda (x)
-                                (and (not (gethash x ht))
-                                     (string-prefix-p root x)
-                                     (not (and consult-recent-file-filter
-                                               (string-match-p filter x)))))
-                              recentf-list))))))
-  "Project file candidate source for `consult-buffer'.")
-
-;; Populate `consult-project-buffer-sources'.
-(setq consult-project-buffer-sources
-      (list
-       `(:hidden nil :narrow ?b ,@consult--source-project-buffer)
-       `(:hidden nil :narrow ?f ,@consult--source-project-recent-file)
-       `(:hidden nil :narrow ?r ,@consult--source-project-root)))
-
 ;;;###autoload
 (defun consult-buffer ()
   "Enhanced `switch-to-buffer' command with support for virtual buffers.
@@ -4115,7 +4068,7 @@ The command supports recent files, bookmarks, views and project files as virtual
 buffers. Buffers are previewed. Furthermore narrowing to buffers (b), files (f),
 bookmarks (m) and project files (p) is supported via the corresponding keys. In
 order to determine the project-specific files and buffers, the
-`consult-project-unction' is used. See `consult-buffer-sources' and
+`consult-project-root-function' is used. See `consult-buffer-sources' and
 `consult--multi' for the configuration of the virtual buffer sources."
   (interactive)
   (when-let (buffer (consult--multi consult-buffer-sources
@@ -4128,6 +4081,12 @@ order to determine the project-specific files and buffers, the
     ;; create a new buffer with the name.
     (unless (cdr buffer)
       (consult--buffer-action (car buffer)))))
+
+;; Populate `consult-project-buffer-sources'.
+(setq consult-project-buffer-sources
+      (list
+       `(:hidden nil :narrow ?b ,@consult--source-project-buffer)
+       `(:hidden nil :narrow ?f ,@consult--source-project-recent-file)))
 
 ;;;###autoload
 (defun consult-project-buffer ()
@@ -4374,10 +4333,10 @@ Here we give a few example inputs:
 #word -- -C3        : Search for word, include 3 lines as context
 #first#second       : Search for first, quick filter for second.
 
-The symbol at point is added to the future history. If `consult-grep' is
-called interactively with a prefix argument, the user can specify the
-directory to search in. By default the project directory is used if
-`consult-project-function' is defined and returns a non-nil directory.
+The symbol at point is added to the future history. If `consult-grep'
+is called interactively with a prefix argument, the user can specify
+the directory to search in. By default the project directory is used
+if `consult-project-root-function' is defined and returns non-nil.
 Otherwise the `default-directory' is searched."
   (interactive "P")
   (consult--grep "Grep" #'consult--grep-builder dir initial))

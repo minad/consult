@@ -4,12 +4,8 @@
 
 * Development
 
-- Add =consult--source-project-root=, a =consult-buffer= source for root directories
-  of known projects.
-- Introduce generalized =consult-project-function=, deprecate
-  =consult-project-root-function=. The =consult-project-function= is used to
-  retrieve the project directories and is preconfigured with a default function,
-  which uses project.el.
+- Preconfigure =consult-project-root-function= with a default function based
+  on project.el.
 - Add =consult-project-buffer=, a variant of =consult-buffer= restricted to the
   current project.
 
