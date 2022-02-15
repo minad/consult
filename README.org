@@ -1174,6 +1174,7 @@ Advice and useful discussions:
 - [[https://github.com/iyefrat][Itai Y. Efrat]]
 - [[https://github.com/bdarcus][Bruce d'Arcus]]
 - [[https://github.com/jdtsmith][J.D. Smith]]
+- [[https://github.com/Qkessler][Enrique Kessler Martínez]]
 
 Authors of supplementary =consult-*= packages:
 
