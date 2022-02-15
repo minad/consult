@@ -216,8 +216,14 @@ character, the *Completions* buffer and a few log buffers."
     consult--source-project-recent-file
     consult--source-project-root)
   "Sources used by `consult-buffer'.
+See also `consult-project-buffer-sources'.
+See `consult--multi' for a description of the source data structure."
+  :type '(repeat symbol))
 
-See `consult--multi' for a description of the source values."
+(defcustom consult-project-buffer-sources nil
+  "Sources used by `consult-project-buffer'.
+See also `consult-buffer-sources'.
+See `consult--multi' for a description of the source data structure."
   :type '(repeat symbol))
 
 (defcustom consult-mode-command-filter
@@ -4094,6 +4100,13 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
                               recentf-list))))))
   "Project file candidate source for `consult-buffer'.")
 
+;; Populate `consult-project-buffer-sources'.
+(setq consult-project-buffer-sources
+      (list
+       `(:hidden nil :narrow ?b ,@consult--source-project-buffer)
+       `(:hidden nil :narrow ?f ,@consult--source-project-recent-file)
+       `(:hidden nil :narrow ?r ,@consult--source-project-root)))
+
 ;;;###autoload
 (defun consult-buffer ()
   "Enhanced `switch-to-buffer' command with support for virtual buffers.
@@ -4115,6 +4128,14 @@ order to determine the project-specific files and buffers, the
     ;; create a new buffer with the name.
     (unless (cdr buffer)
       (consult--buffer-action (car buffer)))))
+
+;;;###autoload
+(defun consult-project-buffer ()
+  "Enhanced `project-switch-to-buffer' command with support for virtual buffers.
+See `consult-buffer' for more details."
+  (interactive)
+  (let ((consult-buffer-sources consult-project-buffer-sources))
+    (consult-buffer)))
 
 ;;;###autoload
 (defun consult-buffer-other-window ()

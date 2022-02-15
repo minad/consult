@@ -10,6 +10,8 @@
   =consult-project-root-function=. The =consult-project-function= is used to
   retrieve the project directories and is preconfigured with a default function,
   which uses project.el.
+- Add =consult-project-buffer=, a variant of =consult-buffer= restricted to the
+  current project.
 
 * Version 0.15 (2022-01-31)
 
