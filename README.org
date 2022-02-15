@@ -935,6 +935,7 @@ configuration examples.
  | consult-preview-max-count        | Maximum number of files to keep open during preview   |
  | consult-preview-max-size         | Files larger than this size are not previewed         |
  | consult-preview-raw-size         | Files larger than this size are previewed in raw form |
+ | consult-project-buffer-sources   | List of virtual project buffer sources                |
  | consult-project-function         | Function which returns project directories            |
  | consult-recent-file-filter       | Filter for =consult-recent-file=                        |
  | consult-register-narrow          | Narrowing configuration for =consult-register=          |
