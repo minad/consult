@@ -460,13 +460,12 @@ should not be considered as stable as the public API.")
 This function can be called by custom completion systems from
 outside the minibuffer.")
 
-(defconst consult--tofu-char #x100000
+(defconst consult--tofu-char #x200000
   "Special character used to encode line prefixes for disambiguation.
-We use the first character of the private unicode plane b.")
+We use invalid characters outside the Unicode range.")
 
-(defconst consult--tofu-range #xFFFE
-  "Special character range.
-Size of private unicode plane b.")
+(defconst consult--tofu-range #x100000
+  "Special character range.")
 
 (defvar-local consult--narrow nil
   "Current narrowing key.")
@@ -1931,8 +1930,8 @@ PREVIEW-KEY are the preview keys."
 ;; We must disambiguate the lines by adding a prefix such that two lines with
 ;; the same text can be distinguished. In order to avoid matching the line
 ;; number, such that the user can search for numbers with `consult-line', we
-;; encode the line number as unicode characters in the supplementary private use
-;; plane b. By doing that, it is unlikely that accidential matching occurs.
+;; encode the line number as characters outside the unicode range.
+;; By doing that, no accidential matching can occur.
 (defun consult--tofu-encode (n)
   "Return tofu-encoded number N."
   (let ((str ""))
