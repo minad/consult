@@ -1070,6 +1070,7 @@ MARKER is the cursor position."
 (defun consult--temporary-files ()
   "Return a function to open files temporarily."
   (let* ((new-buffers)
+         (old-buffers (buffer-list))
          (dir default-directory))
     (lambda (&optional name)
       (if name
@@ -1078,26 +1079,33 @@ MARKER is the cursor position."
                 (enable-dir-local-variables nil)
                 (enable-local-variables (and enable-local-variables :safe))
                 (non-essential t))
-            (or (get-file-buffer name)
-                ;; file-attributes may throw permission denied error
-                (when-let* ((attrs (ignore-errors (file-attributes name)))
-                            (size (file-attribute-size attrs)))
-                  (if (> size consult-preview-max-size)
+            (or
+             ;; get-file-buffer is only a small optimization here. It
+             ;; may not find the actual buffer, for directories it
+             ;; returns nil instead of returning the Dired buffer.
+             (get-file-buffer name)
+             ;; file-attributes may throw permission denied error
+             (when-let* ((attrs (ignore-errors (file-attributes name)))
+                         (size (file-attribute-size attrs)))
+               (if (> size consult-preview-max-size)
                       (prog1 nil
                         (message "File `%s' (%s) is too large for preview"
                                  name (file-size-human-readable size)))
-                    (cl-letf* (((default-value 'find-file-hook)
-                                (seq-remove (lambda (x) (memq x consult-preview-excluded-hooks))
-                                            (default-value 'find-file-hook)))
-                               (buf (find-file-noselect
-                                     name 'nowarn
-                                     (> size consult-preview-raw-size))))
-                      (push buf new-buffers)
-                      ;; Only keep a few buffers alive
-                      (while (> (length new-buffers) consult-preview-max-count)
-                        (consult--kill-clean-buffer (car (last new-buffers)))
-                        (setq new-buffers (nbutlast new-buffers)))
-                      buf)))))
+                 (cl-letf* (((default-value 'find-file-hook)
+                             (seq-remove (lambda (x)
+                                           (memq x consult-preview-excluded-hooks))
+                                         (default-value 'find-file-hook)))
+                            (buf (find-file-noselect
+                                  name 'nowarn
+                                  (> size consult-preview-raw-size))))
+                   ;; Only add new buffer if not already in the list
+                   (unless (or (memq buf new-buffers) (memq buf old-buffers))
+                     (push buf new-buffers)
+                     ;; Only keep a few buffers alive
+                     (while (> (length new-buffers) consult-preview-max-count)
+                       (consult--kill-clean-buffer (car (last new-buffers)))
+                       (setq new-buffers (nbutlast new-buffers))))
+                   buf)))))
         (mapc #'consult--kill-clean-buffer new-buffers)))))
 
 (defun consult--invisible-open-permanently ()
