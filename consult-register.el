@@ -78,8 +78,7 @@ Append newline if NO-NEWLINE is nil."
     (let* ((key-str (propertize (single-key-description key) 'face 'consult-key))
            (len (max 3 (length key-str))))
       (concat
-       key-str
-       (make-string (- len (length key-str)) ?\s)
+       key-str (make-string (- len (length key-str)) ?\s) " "
        ;; Special printing for certain register types
        (cond
         ;; Display full string
