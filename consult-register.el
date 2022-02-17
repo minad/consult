@@ -47,7 +47,7 @@ Each element of the list must have the form '(char name predicate)."
 
 BUFFER is the window buffer.
 SHOW-EMPTY must be t if the window should be shown for an empty register list."
-  (let ((regs (seq-filter #'cdr register-alist))
+  (let ((regs (consult-register--alist 'noerror))
         (separator
          (and (display-graphic-p)
               (propertize (concat (propertize " " 'display '(space :align-to right)) "\n")
@@ -66,17 +66,14 @@ SHOW-EMPTY must be t if the window should be shown for an empty register list."
         (insert (mapconcat
                  (lambda (reg)
                    (concat (funcall register-preview-function reg) separator))
-                 (seq-sort #'car-less-than-car regs) nil))))))
+                 regs nil))))))
 
 ;;;###autoload
-(defun consult-register-format (reg)
+(defun consult-register-format (reg &optional no-newline)
   "Enhanced preview of register REG.
 
-This function can be used as `register-preview-function'."
-  (concat (consult-register--format reg) "\n"))
-
-(defun consult-register--format (reg)
-  "Format register REG for preview."
+This function can be used as `register-preview-function'.
+Append newline if NO-NEWLINE is nil."
   (pcase-let ((`(,key . ,val) reg))
     (let* ((key-str (propertize (single-key-description key) 'face 'consult-key))
            (len (max 3 (length key-str))))
@@ -110,24 +107,30 @@ This function can be used as `register-preview-function'."
                (consult--format-location (buffer-name) (line-number-at-pos)
                                          (consult--line-with-cursor val))))))
         ;; Default printing for the other types
-        (t (register-describe-oneline key)))))))
+        (t (register-describe-oneline key)))
+       (and (not no-newline) "\n")))))
 
-(defun consult-register--alist ()
-  "Return register list or raise an error if the list is empty."
+(defun consult-register--alist (&optional noerror)
+  "Return sorted register list.
+Raise an error if the list is empty and NOERROR is nil."
   ;; Sometimes, registers are made without a `cdr'.
   ;; Such registers don't do anything, and can be ignored.
-  (or (seq-filter #'cdr register-alist) (user-error "All registers are empty")))
+  (or (sort (seq-filter #'cdr register-alist) #'car-less-than-car)
+      (and (not noerror) (user-error "All registers are empty"))))
 
 (defun consult-register--candidates ()
   "Return list of formatted register candidates."
   (mapcar (lambda (reg)
-            (propertize
-             (consult-register--format reg)
-             'consult--candidate (car reg)
-             'consult--type
-             (car (seq-find (lambda (x) (funcall (caddr x) (cdr reg)))
-                            consult-register-narrow))))
-          (sort (consult-register--alist) #'car-less-than-car)))
+            (let ((str (consult-register-format reg 'no-newline)))
+              (add-text-properties
+               0 (length str)
+               (list 'consult--candidate (car reg)
+                     'consult--type
+                     (car (seq-find (lambda (x) (funcall (caddr x) (cdr reg)))
+                                    consult-register-narrow)))
+               str)
+              str))
+          (consult-register--alist)))
 
 ;;;###autoload
 (defun consult-register (&optional arg)
