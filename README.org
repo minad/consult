@@ -1057,6 +1057,7 @@ offer functionality based on ~completing-read~.
 - [[https://github.com/minad/cape][cape]]: Completion At Point Extensions, which can be used with =consult-completion-in-region= and [[https://github.com/minad/corfu][Corfu]].
 - [[https://github.com/minad/bookmark-view][bookmark-view]]: Store window configuration as bookmarks, possible integration with =consult-buffer=.
 - [[https://github.com/bdarcus/citar][citar]]: Versatile package for citation insertion and bibliography management.
+- [[https://github.com/astoff/devdocs.el][devdocs]]: Emacs viewer for DevDocs with a convenient completion interface.
 - [[https://github.com/d12frosted/flyspell-correct][flyspell-correct]]: Apply spelling corrections by selecting via =completing-read=.
 - [[https://github.com/mhayashi1120/Emacs-wgrep][wgrep]]: Editing of grep buffers, use together with =consult-grep= via =embark-export=.
 - [[https://github.com/iyefrat/all-the-icons-completion][all-the-icons-completion]]: Icons for the completion UI.
