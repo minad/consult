@@ -54,7 +54,7 @@ SHOW-EMPTY must be t if the window should be shown for an empty register list."
                           'face '(:inherit consult-separator :height 1 :underline t)))))
     (when (or show-empty regs)
       (with-current-buffer-window buffer
-          (cons 'display-buffer-below-selected
+          (cons 'display-buffer-at-bottom
                 '((window-height . fit-window-to-buffer)
 	          (preserve-size . (nil . t))))
           nil
