@@ -953,6 +953,7 @@ configuration examples.
  | consult-project-root-function    | Function which returns current project root           |
  | consult-recent-file-filter       | Filter for =consult-recent-file=                        |
  | consult-register-narrow          | Narrowing configuration for =consult-register=          |
+ | consult-register-prefix          | Prefix string for register keys during completion     |
  | consult-ripgrep-args             | Command line arguments for ripgrep                    |
  | consult-themes                   | List of themes to be presented for selection          |
  | consult-widen-key                | Widening key during completion                        |

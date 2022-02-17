@@ -8,6 +8,7 @@
   on project.el.
 - Add =consult-project-buffer=, a variant of =consult-buffer= restricted to the
   current project.
+- Add =consult-register-prefix= option.
 
 * Version 0.15 (2022-01-31)
 

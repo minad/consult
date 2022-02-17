@@ -25,6 +25,11 @@
 
 (require 'consult)
 
+(defcustom consult-register-prefix #("@" 0 1 (face consult-key))
+  "Prepend prefix in front of register keys during completion."
+  :type '(choice (const nil) string)
+  :group 'consult)
+
 (defcustom consult-register-narrow
   `((?n "Number" ,#'numberp)
     (?s "String" ,#'stringp)
@@ -50,7 +55,7 @@ SHOW-EMPTY must be t if the window should be shown for an empty register list."
   (let ((regs (consult-register--alist 'noerror))
         (separator
          (and (display-graphic-p)
-              (propertize (concat (propertize " " 'display '(space :align-to right)) "\n")
+              (propertize #(" \n" 0 1 (display (space :align-to right)))
                           'face '(:inherit consult-separator :height 1 :underline t)))))
     (when (or show-empty regs)
       (with-current-buffer-window buffer
@@ -69,15 +74,15 @@ SHOW-EMPTY must be t if the window should be shown for an empty register list."
                  regs nil))))))
 
 ;;;###autoload
-(defun consult-register-format (reg &optional no-newline)
+(defun consult-register-format (reg &optional completion)
   "Enhanced preview of register REG.
-
 This function can be used as `register-preview-function'.
-Append newline if NO-NEWLINE is nil."
+If COMPLETION is non-nil format the register for completion."
   (pcase-let ((`(,key . ,val) reg))
     (let* ((key-str (propertize (single-key-description key) 'face 'consult-key))
            (len (max 3 (length key-str))))
       (concat
+       (and completion consult-register-prefix)
        key-str (make-string (- len (length key-str)) ?\s) " "
        ;; Special printing for certain register types
        (cond
@@ -107,7 +112,7 @@ Append newline if NO-NEWLINE is nil."
                                          (consult--line-with-cursor val))))))
         ;; Default printing for the other types
         (t (register-describe-oneline key)))
-       (and (not no-newline) "\n")))))
+       (and (not completion) "\n")))))
 
 (defun consult-register--alist (&optional noerror)
   "Return sorted register list.
@@ -120,7 +125,7 @@ Raise an error if the list is empty and NOERROR is nil."
 (defun consult-register--candidates ()
   "Return list of formatted register candidates."
   (mapcar (lambda (reg)
-            (let ((str (consult-register-format reg 'no-newline)))
+            (let ((str (consult-register-format reg 'completion)))
               (add-text-properties
                0 (length str)
                (list 'consult--candidate (car reg)
