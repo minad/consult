@@ -2136,12 +2136,12 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
         (dolist (item items)
           (let ((cand (consult--tofu-append item idx))
                 (width (consult--display-width item)))
-            (add-text-properties 0 (length item)
-                                 `(multi-category
-                                   ,(or (get-text-property 0 'multi-category item)
-                                        (cons cat item))
-                                   ,@face)
-                                 cand)
+            ;; Preserve existing `multi-category' datum of the candidate.
+            (if (get-text-property 0 'multi-category cand)
+                (when face (add-text-properties 0 (length item) face cand))
+              ;; Attach `multi-category' datum and face.
+              (add-text-properties 0 (length item)
+                                   `(multi-category (,cat . ,item) ,@face) cand))
             (when (> width max-width) (setq max-width width))
             (push cand candidates))))
       (setq idx (1+ idx)))
