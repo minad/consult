@@ -68,11 +68,12 @@ Each element of the list must have the form '(char . name).")
       (save-excursion
         (widen)
         (goto-char val)
-        (list
-         (consult--format-location
-          (buffer-name) (line-number-at-pos)
-          (consult--line-with-cursor val))
-         'consult--type ?p)))))
+        (let* ((line (line-number-at-pos))
+               (str (propertize (consult--line-with-cursor val)
+                                'consult-location (cons val line))))
+          (list (consult--format-location (buffer-name) line str)
+                'multi-category `(consult-location . ,str)
+                'consult--type ?p))))))
 
 (cl-defmethod consult-register--describe ((val kmacro-register))
   "Describe kmacro register VAL."
