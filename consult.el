@@ -309,8 +309,9 @@ don't want to see epa password prompts."
     (?m "Man" ,#'Man-bookmark-jump)
     (?w "Woman" ,#'woman-bookmark-jump)
     (?g "Gnus" ,#'gnus-summary-bookmark-jump)
-    (?s "Eshell" ,#'eshell-bookmark-jump)
-    (?e "Eww" ,#'eww-bookmark-jump))
+    ;; Introduced on Emacs 28
+    (?s "Eshell" eshell-bookmark-jump)
+    (?e "Eww" eww-bookmark-jump))
   "Bookmark narrowing configuration.
 
 Each element of the list must have the form '(char name handler)."
