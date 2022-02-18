@@ -990,7 +990,7 @@ When no project is found and MAYBE-PROMPT is non-nil ask the user."
           (point-marker))))))
 
 (defun consult--line-group (cand transform)
-  "Group function used by `consult-line-all' and `consult-line-project'.
+  "Group function used by `consult-line-multi'.
 If TRANSFORM non-nil, return transformed CAND, otherwise return title."
   (if transform
       cand
