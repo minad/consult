@@ -912,6 +912,31 @@ When no project is found and MAYBE-PROMPT is non-nil ask the user."
         (lambda (cand) (eq (get-text-property 0 'consult--type cand) consult--narrow))
         :keys types))
 
+(defmacro consult--with-location-upgrade (candidates &rest body)
+  "Upgrade location markers from CANDIDATES on window selection change.
+The markers are not upgraded when BODY has finished without a window change."
+  (declare (indent 1))
+  (let ((hook (make-symbol "hook")))
+    `(let ((,hook (make-symbol "consult--location-upgrade")))
+       (fset ,hook
+             (lambda (_)
+               (unless (eq (selected-window) (active-minibuffer-window))
+                 (remove-hook 'window-selection-change-functions ,hook)
+                 (mapc #'consult--get-location ,candidates))))
+       (unwind-protect
+           (progn
+             (add-hook 'window-selection-change-functions ,hook)
+             ,@body)
+         (remove-hook 'window-selection-change-functions ,hook)))))
+
+(defun consult--get-location (cand)
+  "Return location from CAND."
+  (let ((loc (get-text-property 0 'consult-location cand)))
+    (when (consp (car loc))
+      ;; Transform cheap marker to real marker
+      (setcar loc (set-marker (make-marker) (cdar loc) (caar loc))))
+    loc))
+
 (defun consult--lookup-member (_ candidates cand)
   "Lookup CAND in CANDIDATES list, return original element."
   (car (member cand candidates)))
@@ -927,7 +952,7 @@ When no project is found and MAYBE-PROMPT is non-nil ask the user."
 (defun consult--lookup-location (_ candidates cand)
   "Lookup CAND in CANDIDATES list of 'consult-location category, return the marker."
   (when-let (found (member cand candidates))
-    (car (get-text-property 0 'consult-location (car found)))))
+    (car (consult--get-location (car found)))))
 
 (defun consult--lookup-candidate (_ candidates cand)
   "Lookup CAND in CANDIDATES list and return property 'consult--candidate."
@@ -997,9 +1022,12 @@ When no project is found and MAYBE-PROMPT is non-nil ask the user."
 If TRANSFORM non-nil, return transformed CAND, otherwise return title."
   (if transform
       cand
-    (buffer-name
-     (marker-buffer
-      (car (get-text-property 0 'consult-location cand))))))
+    (let ((marker (car (get-text-property 0 'consult-location cand))))
+      (buffer-name
+       ;; Handle cheap marker
+       (if (consp marker)
+           (car marker)
+         (marker-buffer marker))))))
 
 (defun consult--line-prefix (&optional curr-line)
   "Annotate `consult-location' candidates with line numbers.
@@ -1018,7 +1046,8 @@ CURR-LINE is the current line number."
   "Add MARKER and LINE as 'consult-location text property to CAND.
 Furthermore add the additional text properties PROPS, and append
 tofu-encoded MARKER suffix for disambiguation."
-  (setq cand (concat cand (consult--tofu-encode marker)))
+  ;; Handle cheap marker
+  (setq cand (concat cand (consult--tofu-encode (if (consp marker) (cdr marker) marker))))
   (add-text-properties 0 1 `(consult-location (,marker . ,line) ,@props) cand)
   cand)
 
@@ -2779,13 +2808,13 @@ Start from top if TOP non-nil.
 CURR-LINE is the current line number."
   (consult--forbid-minibuffer)
   (consult--fontify-all)
-  (let* ((default-cand)
-         (candidates)
+  (let* (default-cand candidates
+         (buffer (current-buffer))
          (line (line-number-at-pos (point-min) consult-line-numbers-widen)))
     (consult--each-line beg end
       (let ((str (consult--buffer-substring beg end)))
         (unless (string-blank-p str)
-          (push (consult--location-candidate str (point-marker) line) candidates)
+          (push (consult--location-candidate str (cons buffer (point)) line) candidates)
           (when (and (not default-cand) (>= line curr-line))
             (setq default-cand candidates)))
         (setq line (1+ line))))
@@ -2858,24 +2887,25 @@ CAND is the currently selected candidate."
   "Select from from line CANDIDATES and jump to the match.
 CURR-LINE is the current line. See `consult--read' for the arguments PROMPT,
 INITIAL and GROUP."
-  (consult--read
-   candidates
-   :prompt prompt
-   :annotate (consult--line-prefix curr-line)
-   :group group
-   :category 'consult-location
-   :sort nil
-   :require-match t
-   ;; Always add last isearch string to future history
-   :add-history (list (thing-at-point 'symbol) isearch-string)
-   :history '(:input consult--line-history)
-   :lookup #'consult--line-match
-   :default (car candidates)
-   ;; Add isearch-string as initial input if starting from isearch
-   :initial (or initial
-                (and isearch-mode
-                     (prog1 isearch-string (isearch-done))))
-   :state (consult--jump-state)))
+  (consult--with-location-upgrade candidates
+    (consult--read
+     candidates
+     :prompt prompt
+     :annotate (consult--line-prefix curr-line)
+     :group group
+     :category 'consult-location
+     :sort nil
+     :require-match t
+     ;; Always add last isearch string to future history
+     :add-history (list (thing-at-point 'symbol) isearch-string)
+     :history '(:input consult--line-history)
+     :lookup #'consult--line-match
+     :default (car candidates)
+     ;; Add isearch-string as initial input if starting from isearch
+     :initial (or initial
+                  (and isearch-mode
+                       (prog1 isearch-string (isearch-done))))
+     :state (consult--jump-state))))
 
 ;;;###autoload
 (defun consult-line (&optional initial start)
