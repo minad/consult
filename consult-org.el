@@ -40,7 +40,7 @@
                   (apply #'append (mapcar #'cdr org-todo-keywords))))))
     (list :predicate
           (lambda (cand)
-            (pcase-let ((`(_ ,level ,todo ,prio)
+            (pcase-let ((`(,level ,todo . ,prio)
                          (get-text-property 0 'consult-org--heading cand)))
               (cond
                ((<= ?1 consult--narrow ?9) (<= level (- consult--narrow ?0)))
@@ -74,7 +74,10 @@ MATCH, SCOPE and SKIP are as in `org-map-entries'."
          (setq cand (if prefix
                         (concat buffer " " cand (consult--tofu-encode (point)))
                       (concat cand (consult--tofu-encode (point)))))
-         (put-text-property 0 1 'consult-org--heading (list (point-marker) level todo prio) cand)
+         (add-text-properties 0 1
+                              `(consult--candidate ,(point-marker)
+                                consult-org--heading (,level ,todo . ,prio))
+                              cand)
          cand))
      match scope skip)))
 
@@ -102,12 +105,9 @@ buffer are offered."
        (lambda (cand transform)
          (let ((name (buffer-name
                       (marker-buffer
-                       (car (get-text-property 0 'consult-org--heading cand))))))
+                       (get-text-property 0 'consult--candidate cand)))))
            (if transform (substring cand (1+ (length name))) name))))
-     :lookup
-     (lambda (_ candidates cand)
-       (when-let (found (member cand candidates))
-         (car (get-text-property 0 'consult-org--heading (car found))))))))
+     :lookup #'consult--lookup-candidate)))
 
 ;;;###autoload
 (defun consult-org-agenda (&optional match)
