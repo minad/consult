@@ -1276,7 +1276,7 @@ FACE is the cursor face."
   (let ((keys (this-single-command-keys)))
     (cdr (or (seq-find (lambda (x)
                          (and (not (eq (car x) 'any))
-                              (equal (vconcat (car x)) keys)))
+                              (lookup-key `(keymap (,(car x) . ignore)) keys)))
                        preview-key)
              (assq 'any preview-key)))))
 
