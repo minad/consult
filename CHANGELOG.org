@@ -4,12 +4,14 @@
 
 * Development
 
+- Bug fixes
 - Preconfigure =consult-project-root-function= with a default function based
   on project.el.
 - Add =consult-project-buffer=, a variant of =consult-buffer= restricted to the
   current project.
 - Add =consult-register-prefix= option.
 - Introduced a generic and extensible =consult-register= implementation.
+- Lazy marker creation in =consult-line= (performance improvements)
 
 * Version 0.15 (2022-01-31)
 
