@@ -230,6 +230,7 @@ This function is derived from `register-read-with-preview'."
          (prefix (car action-list))
          (action-list (cdr action-list))
          (action (car (nth 0 action-list)))
+         (key)
          (reg)
          (preview
           (lambda ()
@@ -252,20 +253,27 @@ This function is derived from `register-read-with-preview'."
 	 (help-chars (seq-remove #'get-register (cons help-char help-event-list))))
     (unwind-protect
         (while (not reg)
-	  (while (memq (read-key (propertize (caddr (assq action action-list))
-                                             'face 'minibuffer-prompt))
+	  (while (memq (setq key
+                             (read-key (propertize (caddr (assq action action-list))
+                                                   'face 'minibuffer-prompt)))
 		       help-chars)
             (funcall preview))
-          (cond
-           ((or (eq ?\C-g last-input-event)
-                (eq 'escape last-input-event)
-                (eq ?\C-\[ last-input-event))
-            (keyboard-quit))
-           ((and (numberp last-input-event) (assq (logxor #x8000000 last-input-event) action-list))
-            (setq action (logxor #x8000000 last-input-event)))
-	   ((characterp last-input-event)
-            (setq reg last-input-event))
-           (t (error "Non-character input-event"))))
+          (let ((input (if (and (eql key ?\e) (characterp last-input-event))
+                           ;; in terminal Emacs M-letter is read as two keys, ESC and the letter,
+                           ;; use what would have been read in graphical Emacs
+                           (logior #x8000000 last-input-event)
+                         last-input-event)))
+            
+            (cond
+             ((or (eq ?\C-g input)
+                  (eq 'escape input)
+                  (eq ?\C-\[ input))
+              (keyboard-quit))
+             ((and (numberp input) (assq (logxor #x8000000 input) action-list))
+              (setq action (logxor #x8000000 input)))
+	     ((characterp input)
+              (setq reg input))
+             (t (error "Non-character input-event")))))
       (when (timerp timer)
         (cancel-timer timer))
       (let ((w (get-buffer-window buffer)))
