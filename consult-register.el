@@ -122,7 +122,7 @@ SHOW-EMPTY must be t if the window should be shown for an empty register list."
       (with-current-buffer-window buffer
           (cons 'display-buffer-at-bottom
                 '((window-height . fit-window-to-buffer)
-	          (preserve-size . (nil . t))))
+                  (preserve-size . (nil . t))))
           nil
         (setq-local cursor-in-non-selected-windows nil)
         (setq-local mode-line-format nil)
@@ -230,12 +230,10 @@ This function is derived from `register-read-with-preview'."
          (prefix (car action-list))
          (action-list (cdr action-list))
          (action (car (nth 0 action-list)))
-         (key)
-         (reg)
          (preview
           (lambda ()
-	    (unless (get-buffer-window buffer)
-	      (register-preview buffer 'show-empty)
+            (unless (get-buffer-window buffer)
+              (register-preview buffer 'show-empty)
               (when-let (win (get-buffer-window buffer))
                 (with-selected-window win
                   (let ((inhibit-read-only t))
@@ -248,32 +246,32 @@ This function is derived from `register-read-with-preview'."
                                 " " (propertize (cadr x) 'face 'consult-help)))
                       action-list "  "))
                     (fit-window-to-buffer)))))))
-	 (timer (when (numberp register-preview-delay)
-	          (run-at-time register-preview-delay nil preview)))
-	 (help-chars (seq-remove #'get-register (cons help-char help-event-list))))
+         (timer (when (numberp register-preview-delay)
+                  (run-at-time register-preview-delay nil preview)))
+         (help-chars (seq-remove #'get-register (cons help-char help-event-list)))
+         key reg)
     (unwind-protect
         (while (not reg)
-	  (while (memq (setq key
+          (while (memq (setq key
                              (read-key (propertize (caddr (assq action action-list))
                                                    'face 'minibuffer-prompt)))
-		       help-chars)
+                       help-chars)
             (funcall preview))
-          (let ((input (if (and (eql key ?\e) (characterp last-input-event))
-                           ;; in terminal Emacs M-letter is read as two keys, ESC and the letter,
-                           ;; use what would have been read in graphical Emacs
-                           (logior #x8000000 last-input-event)
-                         last-input-event)))
-            
-            (cond
-             ((or (eq ?\C-g input)
-                  (eq 'escape input)
-                  (eq ?\C-\[ input))
-              (keyboard-quit))
-             ((and (numberp input) (assq (logxor #x8000000 input) action-list))
-              (setq action (logxor #x8000000 input)))
-	     ((characterp input)
-              (setq reg input))
-             (t (error "Non-character input-event")))))
+          (setq key (if (and (eql key ?\e) (characterp last-input-event))
+                        ;; in terminal Emacs M-letter is read as two keys, ESC and the letter,
+                        ;; use what would have been read in graphical Emacs
+                        (logior #x8000000 last-input-event)
+                      last-input-event))
+          (cond
+           ((or (eq ?\C-g key)
+                (eq 'escape key)
+                (eq ?\C-\[ key))
+            (keyboard-quit))
+           ((and (numberp key) (assq (logxor #x8000000 key) action-list))
+            (setq action (logxor #x8000000 key)))
+           ((characterp key)
+            (setq reg key))
+           (t (error "Non-character input"))))
       (when (timerp timer)
         (cancel-timer timer))
       (let ((w (get-buffer-window buffer)))
