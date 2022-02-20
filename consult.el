@@ -2659,6 +2659,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                           (or (cdr (assoc (match-string 0) heading-alist))
                               (- (match-end 0) (match-beginning 0))))))
          (inhibit-field-text-motion t)
+         (buffer (current-buffer))
          (candidates))
     (save-excursion
       (goto-char (point-min))
@@ -2668,7 +2669,8 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                (consult--buffer-substring (line-beginning-position)
                                           (line-end-position)
                                           'fontify)
-               (point-marker) line 'consult--outline-level (funcall level-fun))
+               (cons buffer (point)) line
+               'consult--outline-level (funcall level-fun))
               candidates)
         (unless (eobp) (forward-char 1))))
     (unless candidates
@@ -2682,29 +2684,31 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
 This command supports narrowing to a heading level and candidate preview.
 The symbol at point is added to the future history."
   (interactive)
-  (let* ((cands (consult--with-increased-gc (consult--outline-candidates)))
+  (let* ((candidates
+          (consult--with-increased-gc (consult--outline-candidates)))
          (min-level (- (apply #'min (mapcar
                                      (lambda (cand)
                                        (get-text-property 0 'consult--outline-level cand))
-                                     cands))
+                                     candidates))
                        ?1))
          (narrow-pred (lambda (cand)
                         (<= (get-text-property 0 'consult--outline-level cand)
                             (+ consult--narrow min-level))))
          (narrow-keys (mapcar (lambda (c) (cons c (format "Level %c" c)))
                               (number-sequence ?1 ?9))))
-    (consult--read
-     cands
-     :prompt "Go to heading: "
-     :annotate (consult--line-prefix)
-     :category 'consult-location
-     :sort nil
-     :require-match t
-     :lookup #'consult--line-match
-     :narrow `(:predicate ,narrow-pred :keys ,narrow-keys)
-     :history '(:input consult--line-history)
-     :add-history (thing-at-point 'symbol)
-     :state (consult--jump-state))))
+    (consult--with-location-upgrade candidates
+      (consult--read
+       candidates
+       :prompt "Go to heading: "
+       :annotate (consult--line-prefix)
+       :category 'consult-location
+       :sort nil
+       :require-match t
+       :lookup #'consult--line-match
+       :narrow `(:predicate ,narrow-pred :keys ,narrow-keys)
+       :history '(:input consult--line-history)
+       :add-history (thing-at-point 'symbol)
+       :state (consult--jump-state)))))
 
 ;;;;; Command: consult-mark
 
