@@ -1268,17 +1268,19 @@ FACE is the cursor face."
         (pop preview-key)))
     keys))
 
-(defun consult--preview-key-pressed-p (preview-key cand)
-  "Return t if PREVIEW-KEY has been pressed given the current candidate CAND."
+(defun consult--preview-key-debounce (preview-key cand)
+  "Return debounce value of PREVIEW-KEY given the current candidate CAND."
   (when (and (consp preview-key) (memq :keys preview-key))
     (setq preview-key (funcall (plist-get preview-key :predicate) cand)))
-  (setq preview-key (consult--preview-key-normalize preview-key))
-  (let ((keys (this-single-command-keys)))
-    (cdr (or (seq-find (lambda (x)
-                         (and (not (eq (car x) 'any))
-                              (lookup-key `(keymap (,(car x) . ignore)) keys)))
-                       preview-key)
-             (assq 'any preview-key)))))
+  (let ((map (make-sparse-keymap))
+        (keys (this-single-command-keys))
+        any)
+    (dolist (x (consult--preview-key-normalize preview-key))
+      (if (eq (car x) 'any)
+          (setq any (cdr x))
+        (define-key map (car x) (cdr x))))
+    (setq keys (lookup-key map keys))
+    (if (numberp keys) keys any)))
 
 (defun consult--with-preview-1 (preview-key state transform candidate fun)
   "Add preview support for FUN.
@@ -1298,7 +1300,7 @@ and CANDIDATE."
                               (with-selected-window (or (minibuffer-selected-window) (next-window))
                                 (let ((transformed (funcall transform input cand))
                                       (new-preview (cons input cand)))
-                                  (when-let (debounce (consult--preview-key-pressed-p preview-key transformed))
+                                  (when-let (debounce (consult--preview-key-debounce preview-key transformed))
                                     (when timer
                                       (cancel-timer timer)
                                       (setq timer nil))
