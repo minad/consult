@@ -1294,8 +1294,8 @@ and CANDIDATE."
               (setq consult--preview-function
                     (let ((last-preview))
                       (lambda ()
-                        (when-let (cand (funcall candidate))
-                          (with-selected-window (active-minibuffer-window)
+                        (with-selected-window (active-minibuffer-window)
+                          (when-let (cand (funcall candidate))
                             (let ((input (minibuffer-contents-no-properties)))
                               (with-selected-window (or (minibuffer-selected-window) (next-window))
                                 (let ((transformed (funcall transform input cand))
@@ -1322,7 +1322,9 @@ and CANDIDATE."
               (let ((post-command-sym (make-symbol "consult--preview-post-command")))
                 (fset post-command-sym (lambda ()
                                          (setq input (minibuffer-contents-no-properties))
-                                         (funcall consult--preview-function)))
+                                         ;; Defer running the preview function until
+                                         ;; after minibuffer UI candidate computation
+                                         (run-at-time 0 nil consult--preview-function)))
                 (add-hook 'post-command-hook post-command-sym nil 'local)))
           (lambda ()
             ;; symbol indirection because of bug#46407
