@@ -1294,7 +1294,8 @@ and CANDIDATE."
               (setq consult--preview-function
                     (let ((last-preview))
                       (lambda ()
-                        (with-selected-window (active-minibuffer-window)
+                        (with-selected-window (or (active-minibuffer-window)
+                                                  (selected-window))
                           (when-let (cand (funcall candidate))
                             (let ((input (minibuffer-contents-no-properties)))
                               (with-selected-window (or (minibuffer-selected-window) (next-window))
@@ -1322,15 +1323,27 @@ and CANDIDATE."
               (let ((post-command-sym (make-symbol "consult--preview-post-command")))
                 (fset post-command-sym (lambda ()
                                          (setq input (minibuffer-contents-no-properties))
-                                         ;; Defer running the preview function until
-                                         ;; after minibuffer UI candidate computation
-                                         (run-at-time 0 nil consult--preview-function)))
-                (add-hook 'post-command-hook post-command-sym nil 'local)))
+                                         (funcall consult--preview-function)))
+                ;; TODO Emacs 28 has a bug, where the hook--depth-alist is not cleaned up properly
+                ;; Do not use the broken add-hook here.
+                ;;(add-hook 'post-command-hook post-command-sym 'append 'local)
+                (setq-local post-command-hook
+                            (append
+                             (remove t post-command-hook)
+                             (list post-command-sym)
+                             (and (memq t post-command-hook) '(t))))))
           (lambda ()
             ;; symbol indirection because of bug#46407
             (let ((post-command-sym (make-symbol "consult--preview-post-command")))
               (fset post-command-sym (lambda () (setq input (minibuffer-contents-no-properties))))
-              (add-hook 'post-command-hook post-command-sym nil 'local))))
+              ;; TODO Emacs 28 has a bug, where the hook--depth-alist is not cleaned up properly
+              ;; Do not use the broken add-hook here.
+              ;;(add-hook 'post-command-hook post-command-sym 'append 'local)
+              (setq-local post-command-hook
+                          (append
+                           (remove t post-command-hook)
+                           (list post-command-sym)
+                           (and (memq t post-command-hook) '(t)))))))
       (unwind-protect
           (cons (setq selected (when-let (result (funcall fun))
                                  (funcall transform input result)))
