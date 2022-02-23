@@ -366,13 +366,12 @@ their descriptions.
  - =consult-preview-at-point= and =consult-preview-at-point-mode=: Command and
    minor mode which previews the candidate at point in the =*Completions*= buffer.
    This mode is relevant if you use [[https://gitlab.com/protesilaos/mct][Mct]] or the default =*Completions*= UI.
- - =consult-completion-in-region=: This function can be set as
-   =completion-in-region-function=. Then the minibuffer completion UI will be
-   used for =completion-at-point=. This function is particularly useful in
-   combination with Vertico or Icomplete, since these UIs do not provide their
-   own =completion-in-region-function=. Selectrum provides its own function
-   similar to =consult-completion-in-region=. If you use the default
-   =*Completions*= UI, note that =consult-completion-in-region= is not useful.
+ - =consult-completion-in-region=: In case you don't use [[https://github.com/minad/corfu][Corfu]] as your in-buffer
+   completion UI, this function can be set as =completion-in-region-function=.
+   Then your minibuffer completion UI (e.g., Vertico or Icomplete) will be used
+   for =completion-at-point=. Note that Selectrum provides its own function
+   similar to =consult-completion-in-region=. If you use Mct, you may want to use
+   the =mct-region-mode= instead.
    #+begin_src emacs-lisp
      ;; Use `consult-completion-in-region' if Vertico is enabled.
      ;; Otherwise use the default `completion--in-region' function.
@@ -1023,12 +1022,12 @@ There exist many other fine completion UIs beside Vertico, which are supported
 by Consult. Give them a try and find out which interaction model fits best for
 you!
 
+- The builtin completion UI, which pops up the =*Completions*= buffer.
+- [[https://gitlab.com/protesilaos/mct][mct by Protesilaos Stavrou]]: Minibuffer and Completions in Tandem, which builds
+  on the default completion UI.
 - [[https://github.com/raxod502/selectrum][selectrum by Radon Rosborough]]: Alternative vertical completion system.
 - [[https://github.com/oantolin/icomplete-vertical][icomplete-vertical by Omar Antolín Camarena]]: Vertical completion system based on Icomplete.
   Icomplete-vertical is only needed for Emacs 27, built-in on Emacs 28.
-- [[https://github.com/oantolin/embark][embark by Omar Antolín Camarena]]: Completion based on live updating Embark collect buffer.
-- [[https://gitlab.com/protesilaos/mct][mct by Protesilaos Stavrou]]: Minibuffer and Completions in Tandem, which builds
-  on the default completion UI.
 
 You can integrated Consult with special programs or with other packages in the
 wider Emacs ecosystem. You may want to install some of theses packages depending
@@ -1076,11 +1075,10 @@ If you find a bug or suspect that there is a problem with Consult, please carry
 out the following steps:
 
 1. *Update all the relevant packages to the newest version*.
-   This includes Consult, Vertico, Mct, Selectrum, Icomplete-vertical,
-   Marginalia, Embark, Orderless and Prescient in case you are using any of
-   those packages.
+   This includes Consult, Vertico or other completion UIs, Marginalia, Embark
+   and Orderless.
 2. Either use the default completion UI or ensure that exactly one of
-   =vertico-mode=, =selectrum-mode=, =mct-mode=, or =icomplete-mode= is enabled.
+   =vertico-mode=, =mct-mode=, =selectrum-mode=, or =icomplete-mode= is enabled.
    Furthermore =ivy-mode= and =helm-mode= must be disabled.
 3. Ensure that the =completion-styles= variable is properly configured. Try to set
    =completion-styles= to a list including =substring= or =orderless=.
