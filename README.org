@@ -29,8 +29,8 @@ command =consult-imenu= presents a flat list of the Imenu with [[#live-previews]
 [[#narrowing-and-grouping][grouping and narrowing]]. Please take a look at the [[#available-commands][full list of commands]].
 
 Consult is fully compatible with completion systems based on the standard Emacs
-=completing-read= API, notably the default completion system, [[https://github.com/minad/vertico][Vertico]],
-[[https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html][Icomplete]]/[[https://github.com/oantolin/icomplete-vertical][Icomplete-vertical]], [[https://github.com/raxod502/selectrum][Selectrum]], [[https://github.com/oantolin/embark/][Embark]] and [[https://github.com/protesilaos/mct][Mct]].
+=completing-read= API, notably the default completion system, [[https://github.com/minad/vertico][Vertico]], [[https://github.com/protesilaos/mct][Mct]],
+[[https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html][Icomplete]]/[[https://github.com/oantolin/icomplete-vertical][Icomplete-vertical]] and [[https://github.com/raxod502/selectrum][Selectrum]].
 
 This package keeps the completion system specifics to a minimum. The ability of
 the Consult commands to work well with arbitrary completion systems is one of
@@ -45,9 +45,9 @@ documentation strings or file information. The versatile Embark package provides
 local actions, comparable to a context menu. These actions operate on the
 selected candidate in the minibuffer or at point in normal buffers. For example,
 when selecting from a list of files, Embark offers an action to delete the file.
-Additionally Embark offers a completion system by itself through its
-live-updating collect buffer. The section [[#embark-integration][Embark integration]] documents in
-greater detail how Consult and Embark work together.
+Additionally Embark offers a facility to collect completion candidates in a
+collect buffer. The section [[#embark-integration][Embark integration]] documents in greater detail how
+Consult and Embark work together.
 
 ** Screenshots                                                     :noexport:
 
@@ -365,8 +365,7 @@ their descriptions.
    candidates.
  - =consult-preview-at-point= and =consult-preview-at-point-mode=: Command and
    minor mode which previews the candidate at point in the =*Completions*= buffer.
-   This is mainly relevant if you use the default =*Completions*= UI or if you
-   want to enable preview in Embark Collect buffers.
+   This mode is relevant if you use [[https://gitlab.com/protesilaos/mct][Mct]] or the default =*Completions*= UI.
  - =consult-completion-in-region=: This function can be set as
    =completion-in-region-function=. Then the minibuffer completion UI will be
    used for =completion-at-point=. This function is particularly useful in
@@ -837,8 +836,7 @@ configuration examples.
             ("M-s L" . consult-line-multi))           ;; needed by consult-line to detect isearch
 
      ;; Enable automatic preview at point in the *Completions* buffer. This is
-     ;; relevant when you use the default completion UI. You may want to also
-     ;; enable `consult-preview-at-point-mode` in Embark Collect buffers.
+     ;; relevant when you use the default completion UI.
      :hook (completion-list-mode . consult-preview-at-point-mode)
 
      ;; The :init configuration is always executed (Not lazy)
