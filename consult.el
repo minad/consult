@@ -1297,9 +1297,8 @@ and CANDIDATE."
               (setq consult--preview-function
                     (let ((last-preview))
                       (lambda ()
-                        (with-selected-window (or (active-minibuffer-window)
-                                                  (selected-window))
-                          (when-let (cand (funcall candidate))
+                        (when-let (cand (funcall candidate))
+                          (with-selected-window (active-minibuffer-window)
                             (let ((input (minibuffer-contents-no-properties)))
                               (with-selected-window (or (minibuffer-selected-window) (next-window))
                                 (let ((transformed (funcall transform input cand))
