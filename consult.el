@@ -598,17 +598,20 @@ If no capturing groups are used highlight the whole match."
      (lambda (x) (or (cdr (assoc x consult--convert-regexp-table)) x))
      regexp 'fixedcase 'literal)))
 
-(defun consult--default-regexp-compiler (input type)
+(defun consult--default-regexp-compiler (input type ignore-case)
   "Compile the INPUT string to a list of regular expressions.
 The function should return a pair, the list of regular expressions and a
-highlight function. The highlight function should take a single argument, the
-string to highlight given the INPUT. TYPE is the desired type of regular
-expression, which can be `basic', `extended', `emacs' or `pcre'."
+highlight function. The highlight function should take a single
+argument, the string to highlight given the INPUT. TYPE is the desired
+type of regular expression, which can be `basic', `extended', `emacs' or
+`pcre'. If IGNORE-CASE is non-nil return a highlight function which
+matches case insensitively."
   (setq input (consult--split-escaped input))
   (cons (mapcar (lambda (x) (consult--convert-regexp x type)) input)
         (when-let (regexps (seq-filter #'consult--valid-regexp-p input))
           (lambda (str)
-            (consult--highlight-regexps regexps str)))))
+            (let ((case-fold-search ignore-case))
+              (consult--highlight-regexps regexps str))))))
 
 (defun consult--split-escaped (str)
   "Split STR at spaces, which can be escaped with backslash."
@@ -4388,7 +4391,8 @@ INITIAL is inital input."
   (pcase-let* ((cmd (split-string-and-unquote consult-grep-args))
                (type (consult--grep-regexp-type (car cmd)))
                (`(,arg . ,opts) (consult--command-split input))
-               (`(,re . ,hl) (funcall consult--regexp-compiler arg type)))
+               (`(,re . ,hl) (funcall consult--regexp-compiler arg type
+                                      (member "--ignore-case" cmd))))
     (when re
       (list :command
             (append cmd
@@ -4440,11 +4444,13 @@ Otherwise the `default-directory' is searched."
 
 (defun consult--git-grep-builder (input)
   "Build command line given CONFIG and INPUT."
-  (pcase-let* ((`(,arg . ,opts) (consult--command-split input))
-               (`(,re . ,hl) (funcall consult--regexp-compiler arg 'extended)))
+  (pcase-let* ((cmd (split-string-and-unquote consult-git-grep-args))
+               (`(,arg . ,opts) (consult--command-split input))
+               (`(,re . ,hl) (funcall consult--regexp-compiler arg 'extended
+                                      (member "--ignore-case" cmd))))
     (when re
       (list :command
-            (append (split-string-and-unquote consult-git-grep-args)
+            (append cmd
                     (cdr (mapcan (lambda (x) (list "--and" "-e" x)) re))
                     opts)
             :highlight hl))))
@@ -4471,7 +4477,12 @@ See `consult-grep' for more details."
   (pcase-let* ((cmd (split-string-and-unquote consult-ripgrep-args))
                (type (consult--ripgrep-regexp-type (car cmd)))
                (`(,arg . ,opts) (consult--command-split input))
-               (`(,re . ,hl) (funcall consult--regexp-compiler arg type)))
+               (`(,re . ,hl) (funcall consult--regexp-compiler arg type
+                                      (if (member "--smart-case" cmd)
+                                          (let ((case-fold-search nil))
+                                           ;; Case insensitive if there are no uppercase letters
+                                           (not (string-match-p "[[:upper:]]" input)))
+                                        (member "--ignore-case" cmd)))))
     (when re
       (list :command
             (append cmd
@@ -4526,7 +4537,8 @@ INITIAL is inital input."
   (pcase-let* ((cmd (split-string-and-unquote consult-find-args))
                (type (consult--find-regexp-type (car cmd)))
                (`(,arg . ,opts) (consult--command-split input))
-               (`(,re . ,hl) (funcall consult--regexp-compiler arg type)))
+               ;; ignore-case=t since -iregex is used below
+               (`(,re . ,hl) (funcall consult--regexp-compiler arg type t)))
     (when re
       (list :command
             (append cmd
@@ -4557,13 +4569,13 @@ See `consult-grep' for more details regarding the asynchronous search."
 
 (defun consult--locate-builder (input)
   "Build command line given INPUT."
-  (pcase-let* ((`(,arg . ,opts) (consult--command-split input))
-               (`(,re . ,hl) (funcall consult--regexp-compiler arg 'basic)))
+  (pcase-let* ((cmd (split-string-and-unquote consult-locate-args))
+               (`(,arg . ,opts) (consult--command-split input))
+               (`(,re . ,hl) (funcall consult--regexp-compiler arg 'basic
+                                      (member "--ignore-case" cmd))))
     (when re
       (list :command
-            (append (split-string-and-unquote consult-locate-args)
-                    (list (consult--join-regexps re 'basic))
-                    opts)
+            (append cmd (list (consult--join-regexps re 'basic)) opts)
             :highlight hl))))
 
 ;;;###autoload
@@ -4583,7 +4595,7 @@ See `consult-grep' for more details regarding the asynchronous search."
     (unless (string-blank-p arg)
       (list :command (append (split-string-and-unquote consult-man-args)
                              (list arg) opts)
-            :highlight (cdr (consult--default-regexp-compiler input 'basic))))))
+            :highlight (cdr (consult--default-regexp-compiler input 'basic t))))))
 
 (defun consult--man-format (lines)
   "Format man candidates from LINES."
