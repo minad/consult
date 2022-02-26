@@ -74,7 +74,7 @@
             (overlay-arrow-position overlay-arrow-position))
         (save-window-excursion
           (funcall next-error-function 0)
-          (point-marker))))))
+          (cons (point-marker) marker))))))
 
 (defun consult-compile--compilation-buffers (file)
   "Return a list of compilation buffers relevant to FILE."
@@ -84,6 +84,17 @@
      (with-current-buffer buffer
        (and (compilation-buffer-internal-p)
             (file-in-directory-p file default-directory))))))
+
+(defun consult-compile--jump-state (&optional face)
+  "Like `consult--jump-state', but also sets the current compilation error.
+FACE is the cursor face."
+  (let ((state (consult--jump-state face)))
+    (pcase-lambda (`(,cand . ,error) restore)
+      (when (and error restore)
+        (with-current-buffer (marker-buffer error)
+          (setq compilation-current-error error
+	        overlay-arrow-position error)))
+      (funcall state cand restore))))
 
 ;;;###autoload
 (defun consult-compile-error ()
@@ -109,7 +120,7 @@ preview of the currently selected error."
    :group (consult--type-group consult-compile--narrow)
    :narrow (consult--type-narrow consult-compile--narrow)
    :history '(:input consult-compile--history)
-   :state (consult--jump-state 'consult-preview-error)))
+   :state (consult-compile--jump-state 'consult-preview-error)))
 
 (provide 'consult-compile)
 ;;; consult-compile.el ends here
