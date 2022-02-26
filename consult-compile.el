@@ -72,16 +72,18 @@
              (loc (get-text-property 0 'consult-compile--loc cand))
              (buffer (marker-buffer marker))
              (default-directory (buffer-local-value 'default-directory buffer)))
-    (consult--position-marker
-     ;; taken from compile.el
-     (apply #'compilation-find-file
-            marker
-            (caar (compilation--loc->file-struct loc))
-            (cadar (compilation--loc->file-struct loc))
-            (compilation--file-struct->formats
-             (compilation--loc->file-struct loc)))
-     (compilation--loc->line loc)
-     (compilation--loc->col loc))))
+    (cons
+     (consult--position-marker
+      ;; taken from compile.el
+      (apply #'compilation-find-file
+             marker
+             (caar (compilation--loc->file-struct loc))
+             (cadar (compilation--loc->file-struct loc))
+             (compilation--file-struct->formats
+              (compilation--loc->file-struct loc)))
+      (compilation--loc->line loc)
+      (compilation--loc->col loc))
+     marker)))
 
 (defun consult-compile--compilation-buffers (file)
   "Return a list of compilation buffers relevant to FILE."
@@ -91,6 +93,16 @@
      (with-current-buffer buffer
        (and (compilation-buffer-internal-p)
             (file-in-directory-p file default-directory))))))
+
+(defun consult-compile--state ()
+  "Like `consult--jump-state', also setting the current compilation error."
+  (let ((state (consult--jump-state 'consult-preview-error)))
+    (pcase-lambda (`(,cand . ,error) restore)
+      (when (and cand restore)
+        (with-current-buffer (marker-buffer error)
+          (setq compilation-current-error error
+                overlay-arrow-position error)))
+      (funcall state cand restore))))
 
 ;;;###autoload
 (defun consult-compile-error ()
@@ -116,7 +128,7 @@ preview of the currently selected error."
    :group (consult--type-group consult-compile--narrow)
    :narrow (consult--type-narrow consult-compile--narrow)
    :history '(:input consult-compile--history)
-   :state (consult--jump-state 'consult-preview-error)))
+   :state (consult-compile--state)))
 
 (provide 'consult-compile)
 ;;; consult-compile.el ends here
