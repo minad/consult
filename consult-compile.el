@@ -60,8 +60,7 @@
                                     (0 ?i)
                                     (1 ?w)
                                     (_ ?e))
-                   'consult-compile--marker (point-marker)
-                   'consult-compile--loc (compilation--message->loc msg))
+                   'consult-compile--marker (point-marker))
                   candidates))))
       (nreverse candidates))))
 
@@ -69,19 +68,13 @@
   "Lookup marker of CAND by accessing CANDIDATES list."
   (when-let ((cand (car (member cand candidates)))
              (marker (get-text-property 0 'consult-compile--marker cand))
-             (loc (get-text-property 0 'consult-compile--loc cand))
-             (buffer (marker-buffer marker))
-             (default-directory (buffer-local-value 'default-directory buffer)))
-    (consult--position-marker
-     ;; taken from compile.el
-     (apply #'compilation-find-file
-            marker
-            (caar (compilation--loc->file-struct loc))
-            (cadar (compilation--loc->file-struct loc))
-            (compilation--file-struct->formats
-             (compilation--loc->file-struct loc)))
-     (compilation--loc->line loc)
-     (compilation--loc->col loc))))
+             (buffer (marker-buffer marker)))
+    (with-current-buffer buffer
+      (let ((compilation-current-error marker)
+            (overlay-arrow-position overlay-arrow-position))
+        (save-window-excursion
+          (funcall next-error-function 0)
+          (point-marker))))))
 
 (defun consult-compile--compilation-buffers (file)
   "Return a list of compilation buffers relevant to FILE."
