@@ -66,8 +66,9 @@
 
 (defun consult-compile--lookup (marker)
   "Lookup error position given error MARKER."
-  (when-let ((buffer (marker-buffer marker))
+  (when-let ((buffer (and marker (marker-buffer marker)))
              (msg (with-current-buffer buffer (get-text-property marker 'compilation-message)))
+             (loc (compilation--message->loc msg))
              (default-directory (buffer-local-value 'default-directory buffer)))
     (consult--position-marker
      ;; taken from compile.el
