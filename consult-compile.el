@@ -48,32 +48,38 @@
 (defun consult-compile--error-candidates (buffer)
   "Return alist of errors and positions in BUFFER, a compilation buffer."
   (with-current-buffer buffer
-    (let (candidates (pos (point-min)))
+    (let ((candidates)
+          (pos (point-min)))
       (save-excursion
         (while (setq pos (compilation-next-single-property-change pos 'compilation-message))
           (when-let (msg (get-text-property pos 'compilation-message))
             (goto-char pos)
-            (let* ((marker (point-marker))
-                   (loc (compilation--message->loc msg))
-                   (dest (consult--position-marker
-                          ;; taken from compile.el
-                          (apply #'compilation-find-file
-                                 marker
-                                 (caar (compilation--loc->file-struct loc))
-                                 (cadar (compilation--loc->file-struct loc))
-                                 (compilation--file-struct->formats
-                                  (compilation--loc->file-struct loc)))
-                          (compilation--loc->line loc)
-                          (compilation--loc->col loc))))
-              (push (propertize
-                     (consult-compile--font-lock (consult--buffer-substring pos (line-end-position)))
-                     'consult--type (pcase (compilation--message->type msg)
-                                      (0 ?i)
-                                      (1 ?w)
-                                      (_ ?e))
-                     'consult--candidate (cons marker dest))
-                    candidates)))))
+            (push (propertize
+                   (consult-compile--font-lock (consult--buffer-substring pos (line-end-position)))
+                   'consult--type (pcase (compilation--message->type msg)
+                                    (0 ?i)
+                                    (1 ?w)
+                                    (_ ?e))
+                   'consult--candidate (point-marker))
+                  candidates))))
       (nreverse candidates))))
+
+(defun consult-compile--lookup (marker)
+  "Lookup error position given error MARKER."
+  (when-let ((buffer (and marker (marker-buffer marker)))
+             (msg (with-current-buffer buffer (get-text-property marker 'compilation-message)))
+             (loc (compilation--message->loc msg))
+             (default-directory (buffer-local-value 'default-directory buffer)))
+    (consult--position-marker
+     ;; taken from compile.el
+     (apply #'compilation-find-file
+            marker
+            (caar (compilation--loc->file-struct loc))
+            (cadar (compilation--loc->file-struct loc))
+            (compilation--file-struct->formats
+             (compilation--loc->file-struct loc)))
+     (compilation--loc->line loc)
+     (compilation--loc->col loc))))
 
 (defun consult-compile--compilation-buffers (file)
   "Return a list of compilation buffers relevant to FILE."
@@ -87,12 +93,13 @@
 (defun consult-compile--state ()
   "Like `consult--jump-state', also setting the current compilation error."
   (let ((state (consult--jump-state 'consult-preview-error)))
-    (pcase-lambda (`(,marker . ,pos) restore)
-      (when-let (buffer (and restore marker (marker-buffer marker)))
-        (with-current-buffer buffer
-          (setq compilation-current-error marker
-                overlay-arrow-position marker)))
-      (funcall state pos restore))))
+    (lambda (marker restore)
+      (let ((pos (consult-compile--lookup marker)))
+        (when restore
+          (with-current-buffer (marker-buffer marker)
+            (setq compilation-current-error marker
+                  overlay-arrow-position marker)))
+        (funcall state pos restore)))))
 
 ;;;###autoload
 (defun consult-compile-error ()
