@@ -1058,7 +1058,7 @@ tofu-encoded MARKER suffix for disambiguation."
 ;; we cannot use it here since it excludes too much (e.g., invisible)
 ;; and at the same time not enough (e.g., cursor-sensor-functions).
 (defconst consult--remove-text-properties
-  '(category cursor cursor-intangible cursor-sensor-functions field follow-link font-lock-face
+  '(category cursor cursor-intangible cursor-sensor-functions field follow-link
     fontified front-sticky help-echo insert-behind-hooks insert-in-front-hooks intangible keymap
     local-map modification-hooks mouse-face pointer read-only rear-nonsticky yank-handler)
   "List of text properties to remove from buffer strings.")
