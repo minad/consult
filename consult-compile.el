@@ -66,20 +66,15 @@
 
 (defun consult-compile--lookup (marker)
   "Lookup error position given error MARKER."
-  (when-let ((buffer (and marker (marker-buffer marker)))
-             (msg (with-current-buffer buffer (get-text-property marker 'compilation-message)))
-             (loc (compilation--message->loc msg))
-             (default-directory (buffer-local-value 'default-directory buffer)))
-    (consult--position-marker
-     ;; taken from compile.el
-     (apply #'compilation-find-file
-            marker
-            (caar (compilation--loc->file-struct loc))
-            (cadar (compilation--loc->file-struct loc))
-            (compilation--file-struct->formats
-             (compilation--loc->file-struct loc)))
-     (compilation--loc->line loc)
-     (compilation--loc->col loc))))
+  (when-let (buffer (and marker (marker-buffer marker)))
+    (with-current-buffer buffer
+      (let ((next-error-highlight nil)
+            (compilation-current-error marker)
+            (overlay-arrow-position overlay-arrow-position))
+        (ignore-errors
+          (save-window-excursion
+            (compilation-next-error-function 0)
+            (point-marker)))))))
 
 (defun consult-compile--compilation-buffers (file)
   "Return a list of compilation buffers relevant to FILE."
@@ -95,8 +90,8 @@
   (let ((state (consult--jump-state 'consult-preview-error)))
     (lambda (marker restore)
       (let ((pos (consult-compile--lookup marker)))
-        (when restore
-          (with-current-buffer (marker-buffer marker)
+        (when-let (buffer (and restore marker (marker-buffer marker)))
+          (with-current-buffer buffer
             (setq compilation-current-error marker
                   overlay-arrow-position marker)))
         (funcall state pos restore)))))
