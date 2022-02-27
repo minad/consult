@@ -12,6 +12,7 @@
 - Add =consult-register-prefix= option.
 - Introduced a generic and extensible =consult-register= implementation.
 - Lazy marker creation in =consult-line/outline= (performance improvements)
+- Deprecate =consult-project-root-function= in favor of =consult-project-function=.
 
 * Version 0.15 (2022-01-31)
 

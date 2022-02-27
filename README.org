@@ -256,7 +256,7 @@ their descriptions.
    =filter-string= is passed to the /fast/ Emacs filtering to further narrow down
    the list of matches. This is particularly useful if you are using an advanced
    completion style like orderless. =consult-grep= supports preview. If the
-   =consult-project-root-function= returns non-nil, =consult-grep= searches the
+   =consult-project-function= returns non-nil, =consult-grep= searches the
    current project directory. Otherwise the =default-directory= is searched. If
    =consult-grep= is invoked with prefix argument =C-u M-s g=, you can specify the
    directory manually.
@@ -886,18 +886,18 @@ configuration examples.
      ;; You may want to use `embark-prefix-help-command' or which-key instead.
      ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
 
-     ;; By default `consult-project-root-function' uses `project-root' from project.el.
+     ;; By default `consult-project-function' uses `project-root' from project.el.
      ;; Optionally configure a different project root function.
      ;; There are multiple reasonable alternatives to chose from.
      ;;;; 1. project.el (the default)
-     ;; (setq consult-project-root-function #'consult--project-root-default-function)
+     ;; (setq consult-project-function #'consult--default-project--function)
      ;;;; 2. projectile.el (projectile-project-root)
      ;; (autoload 'projectile-project-root "projectile")
-     ;; (setq consult-project-root-function #'projectile-project-root)
+     ;; (setq consult-project-function (lambda (_) (projectile-project-root)))
      ;;;; 3. vc.el (vc-root-dir)
-     ;; (setq consult-project-root-function #'vc-root-dir)
+     ;; (setq consult-project-function (lambda (_) (vc-root-dir)))
      ;;;; 4. locate-dominating-file
-     ;; (setq consult-project-root-function (lambda () (locate-dominating-file "." ".git")))
+     ;; (setq consult-project-function (lambda (_) (locate-dominating-file "." ".git")))
    )
  #+end_src
 
@@ -947,7 +947,7 @@ configuration examples.
  | consult-preview-max-size         | Files larger than this size are not previewed         |
  | consult-preview-raw-size         | Files larger than this size are previewed in raw form |
  | consult-project-buffer-sources   | List of virtual project buffer sources                |
- | consult-project-root-function    | Function which returns current project root           |
+ | consult-project-function         | Function which returns current project root           |
  | consult-recent-file-filter       | Filter for =consult-recent-file=                        |
  | consult-register-prefix          | Prefix string for register keys during completion     |
  | consult-ripgrep-args             | Command line arguments for ripgrep                    |

@@ -78,10 +78,14 @@ The key must be either a string or a vector.
 This is the key representation accepted by `define-key'."
   :type '(choice key-sequence (const nil)))
 
-(defcustom consult-project-root-function
-  #'consult--project-root-default-function
-  "Function which returns project root directory.
+(defvar consult-project-root-function nil)
+(make-obsolete-variable 'consult-project-root-function "Deprecated in favor of `consult-project-function'." "0.15")
 
+(defcustom consult-project-function
+  #'consult--default-project-function
+  "Function which returns project root directory.
+The function takes one boolargument MAY-PROMPT. If MAY-PROMPT is non-nil,
+the function may ask the prompt the user for a project directory.
 The root directory is used by `consult-buffer' and `consult-grep'."
   :type '(choice function (const nil)))
 
@@ -824,7 +828,7 @@ only the last two path components are shown.
 
 If DIR is a string, it is returned.
 If DIR is a true value, the user is asked.
-Then the `consult-project-root-function' is tried.
+Then the `consult-project-function' is tried.
 Otherwise the `default-directory' is returned."
   (let* ((dir
           (cond
@@ -848,7 +852,7 @@ Otherwise the `default-directory' is returned."
       (t (format "%s (%s): " prompt (consult--abbreviate-directory dir))))
      edir)))
 
-(defun consult--project-root-default-function (&optional may-prompt)
+(defun consult--default-project-function (may-prompt)
   "Return project root directory.
 When no project is found and MAY-PROMPT is non-nil ask the user."
   (when-let (proj (project-current may-prompt))
@@ -859,13 +863,8 @@ When no project is found and MAY-PROMPT is non-nil ask the user."
 (defun consult--project-root (&optional may-prompt)
   "Return project root as absolute path.
 When no project is found and MAY-PROMPT is non-nil ask the user."
-  (when-let (root (and consult-project-root-function
-                       (if may-prompt
-                           (condition-case nil
-                               (funcall consult-project-root-function t)
-                             (wrong-number-of-arguments
-                              (funcall consult-project-root-function)))
-                         (funcall consult-project-root-function))))
+  (when-let (root (and consult-project-function
+                       (funcall consult-project-function may-prompt)))
     (expand-file-name root)))
 
 (defun consult--project-name (dir)
@@ -4055,7 +4054,7 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
     :face     consult-buffer
     :history  buffer-name-history
     :state    ,#'consult--buffer-state
-    :enabled  ,(lambda () consult-project-root-function)
+    :enabled  ,(lambda () consult-project-function)
     :items
     ,(lambda ()
        (consult--buffer-query :sort 'visibility
@@ -4071,7 +4070,7 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
     :face     consult-file
     :history  file-name-history
     :state    ,#'consult--file-state
-    :enabled  ,(lambda () (and consult-project-root-function
+    :enabled  ,(lambda () (and consult-project-function
                                recentf-mode))
     :items
     ,(lambda ()
@@ -4146,7 +4145,7 @@ The command supports recent files, bookmarks, views and project files as
 virtual buffers. Buffers are previewed. Narrowing to buffers (b), files (f),
 bookmarks (m) and project files (p) is supported via the corresponding
 keys. In order to determine the project-specific files and buffers, the
-`consult-project-root-function' is used. The virtual buffer SOURCES
+`consult-project-function' is used. The virtual buffer SOURCES
 default to `consult-buffer-sources'. See `consult--multi' for the
 configuration of the virtual buffer sources."
   (interactive)
@@ -4175,14 +4174,14 @@ configuration of the virtual buffer sources."
   ;; project. But who does that? Working on the first level on project A
   ;; and on the second level on project B and on the third level on project C?
   ;; You mustn't be afraid to dream a little bigger, darling.
-  `(let ((consult-project-root-function
+  `(let ((consult-project-function
           (let ((root (or (consult--project-root t) (user-error "No project found")))
                 (depth (recursion-depth))
-                (orig consult-project-root-function))
-            (lambda (&rest args)
+                (orig consult-project-function))
+            (lambda (may-prompt)
               (if (= depth (recursion-depth))
                   root
-                (apply orig args))))))
+                (funcall orig may-prompt))))))
      ,@body))
 
 ;;;###autoload
@@ -4434,7 +4433,7 @@ Here we give a few example inputs:
 The symbol at point is added to the future history. If `consult-grep'
 is called interactively with a prefix argument, the user can specify
 the directory to search in. By default the project directory is used
-if `consult-project-root-function' is defined and returns non-nil.
+if `consult-project-function' is defined and returns non-nil.
 Otherwise the `default-directory' is searched."
   (interactive "P")
   (consult--grep "Grep" #'consult--grep-builder dir initial))
