@@ -1040,7 +1040,7 @@ on your preferences and requirements.
 - [[https://github.com/gagbo/consult-lsp][consult-lsp]]: Integration with =lsp-mode= (lsp client).
 - [[https://codeberg.org/jao/consult-notmuch][consult-notmuch]]: Access the [[https://notmuchmail.org/][Notmuch]] email system using Consult.
 - [[https://codeberg.org/jao/espotify][consult-spotify]]: Access the Spotify API and control your local music player.
-- [[https://gitlab.com/Qkessler/consult-project-extra/][consult-project-extra]]: Additional project.el extras and buffer sources.
+- [[https://github.com/Qkessler/consult-project-extra/][consult-project-extra]]: Additional project.el extras and buffer sources.
 - [[https://gitlab.com/OlMon/consult-projectile/][consult-projectile]]: Additional Projectile integration and buffer sources.
 - [[https://codeberg.org/jao/consult-recoll][consult-recoll]]: Access the [[https://www.lesbonscomptes.com/recoll/][Recoll]] desktop full-text search using Consult.
 - [[https://github.com/mohkale/consult-yasnippet][consult-yasnippet]]: Integration with yasnippet.
