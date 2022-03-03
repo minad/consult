@@ -36,7 +36,7 @@
 
 ;; The Consult commands are compatible with completion systems based
 ;; on the Emacs `completing-read' API, including the default completion
-;; system, Vertico, Icomplete, Mct, Selectrum and Embark.
+;; system, Vertico, Mct, Icomplete and Selectrum.
 
 ;; Consult has been inspired by Counsel. Some of the Consult commands
 ;; originated in the Counsel package or the Selectrum wiki. See the
@@ -4187,7 +4187,8 @@ configuration of the virtual buffer sources."
 ;;;###autoload
 (defun consult-project-buffer ()
   "Enhanced `project-switch-to-buffer' command with support for virtual buffers.
-See `consult-buffer' for more details."
+The command may prompt you for a project directory if it is invoked from
+outside a project. See `consult-buffer' for more details."
   (interactive)
   (consult--with-project
     (consult-buffer consult-project-buffer-sources)))

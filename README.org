@@ -23,14 +23,14 @@ Consult provides practical commands based on the Emacs completion function
 candidates. Consult offers in particular an advanced buffer switching command
 =consult-buffer= to switch between buffers and recently opened files. Furthermore
 Consult provides multiple search commands, an asynchronous =consult-grep= and
-=consult-ripgrep=, and =consult-line=, which resembles [[https://github.com/abo-abo/swiper#swiper][Swiper]]. Some of the Consult
-commands are enhanced versions of built-in Emacs commands. For example the
-command =consult-imenu= presents a flat list of the Imenu with [[#live-previews][live preview]],
+=consult-ripgrep=, and the line-based search command =consult-line=. Some of the
+Consult commands are enhanced versions of built-in Emacs commands. For example
+the command =consult-imenu= presents a flat list of the Imenu with [[#live-previews][live preview]],
 [[#narrowing-and-grouping][grouping and narrowing]]. Please take a look at the [[#available-commands][full list of commands]].
 
 Consult is fully compatible with completion systems based on the standard Emacs
 =completing-read= API, notably the default completion system, [[https://github.com/minad/vertico][Vertico]], [[https://github.com/protesilaos/mct][Mct]],
-[[https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html][Icomplete]]/[[https://github.com/oantolin/icomplete-vertical][Icomplete-vertical]] and [[https://github.com/raxod502/selectrum][Selectrum]].
+[[https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html][Icomplete]] and [[https://github.com/raxod502/selectrum][Selectrum]].
 
 This package keeps the completion system specifics to a minimum. The ability of
 the Consult commands to work well with arbitrary completion systems is one of
@@ -105,7 +105,8 @@ their descriptions.
    - Custom [[#multiple-sources][other sources]] configured in =consult-buffer-sources=.
  - =consult-project-buffer=: Variant of =consult-buffer= restricted to buffers and
    recent files of the current project. You can add custom sources to
-   =consult-project-buffer-sources=.
+   =consult-project-buffer-sources=. The command may prompt you for a project if
+   you invoke it from outside a project.
  - =consult-bookmark=: Select or create bookmark. To select bookmarks you might use the
    =consult-buffer= as an alternative, which can include a bookmark virtual buffer
    source. Note that =consult-bookmark= supports preview of bookmarks and
@@ -1126,12 +1127,6 @@ Please provide the necessary important information with your bug report:
 When evaluating Consult-related code snippets you should enable [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Lexical-Binding.html][lexical binding]].
 Consult often uses a functional programming style, relying on lambdas and
 lexical closures.
-
-The Selectrum repository provides a [[https://github.com/raxod502/selectrum/tree/master/test][set of scripts]] which allow experimenting
-with multiple package combinations of completion systems and Consult. After
-cloning the repository, you can execute the scripts with =cd selectrum/test;
-./run.sh <package-combo.el>=. The scripts do not modify your existing Emacs
-configuration, but create a separate Emacs configuration in =/tmp=.
 
 * Contributions
   :properties:
