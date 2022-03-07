@@ -1042,6 +1042,7 @@ on your preferences and requirements.
 - [[https://github.com/karthink/consult-dir][consult-dir]]: Directory jumper using Consult multi sources.
 - [[https://github.com/mohkale/consult-eglot][consult-eglot]]: Integration with eglot (lsp client).
 - [[https://github.com/minad/consult-flycheck][consult-flycheck]]: Provides the =consult-flycheck= command.
+- [[https://gitlab.com/OlMon/consult-flyspell][consult-flyspell]]: Additional Flyspell integration.
 - [[https://github.com/gagbo/consult-lsp][consult-lsp]]: Integration with =lsp-mode= (lsp client).
 - [[https://codeberg.org/jao/consult-notmuch][consult-notmuch]]: Access the [[https://notmuchmail.org/][Notmuch]] email system using Consult.
 - [[https://codeberg.org/jao/espotify][consult-spotify]]: Access the Spotify API and control your local music player.
@@ -1193,7 +1194,7 @@ Authors of supplementary =consult-*= packages:
 - [[https://github.com/gagbo/][Gerry Agbobada]] ([[https://github.com/gagbo/consult-lsp][consult-lsp]])
 - [[https://github.com/karthink][Karthik Chikmagalur]] ([[https://github.com/karthink/consult-dir][consult-dir]])
 - [[https://github.com/mohkale][Mohsin Kaleem]] ([[https://github.com/mohkale/consult-company][consult-company]], [[https://github.com/mohkale/consult-eglot][consult-eglot]], [[https://github.com/mohkale/consult-yasnippet][consult-yasnippet]])
-- [[https://gitlab.com/OlMon][Marco Pawłowski]] ([[https://gitlab.com/OlMon/consult-projectile][consult-projectile]])
+- [[https://gitlab.com/OlMon][Marco Pawłowski]] ([[https://gitlab.com/OlMon/consult-flyspell][consult-flyspell]], [[https://gitlab.com/OlMon/consult-projectile][consult-projectile]])
 - [[https://github.com/Qkessler][Enrique Kessler Martínez]] ([[https://github.com/Qkessler/consult-project-extra][consult-project-extra]])
 
 #+html: <!--
