@@ -1,6 +1,6 @@
 ;;; consult-org.el --- Consult commands for org-mode -*- lexical-binding: t -*-
 
-;; Copyright (C) 2021  Free Software Foundation, Inc.
+;; Copyright (C) 2021, 2022  Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 

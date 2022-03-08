@@ -1,6 +1,6 @@
 ;;; consult-selectrum.el --- Selectrum integration for Consult -*- lexical-binding: t -*-
 
-;; Copyright (C) 2021  Free Software Foundation, Inc.
+;; Copyright (C) 2021, 2022  Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -81,9 +81,9 @@ SPLIT is the splitter function."
   (if (not selectrum-is-active)
       (funcall orig split)
     (setq-local selectrum-refine-candidates-function
-		(consult-selectrum--split-wrap selectrum-refine-candidates-function split))
+                (consult-selectrum--split-wrap selectrum-refine-candidates-function split))
     (setq-local selectrum-highlight-candidates-function
-		(consult-selectrum--split-wrap selectrum-highlight-candidates-function split))))
+                (consult-selectrum--split-wrap selectrum-highlight-candidates-function split))))
 
 (defun consult-selectrum--crm-adv (&rest args)
   "Setup crm for Selectrum given ARGS."
