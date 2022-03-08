@@ -2,7 +2,7 @@
 #+author: Daniel Mendler
 #+language: en
 
-* Development
+* Version 0.16 (2022-03-08)
 
 - Bug fixes
 - Deprecate =consult-project-root-function= in favor of =consult-project-function=.
