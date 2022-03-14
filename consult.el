@@ -4032,7 +4032,11 @@ Report progress and return a list of the results"
 (defun consult--buffer-action (buffer &optional norecord)
   "Switch to BUFFER via `consult--buffer-display' function.
 If NORECORD is non-nil, do not record the buffer switch in the buffer list."
-  (funcall consult--buffer-display buffer norecord))
+  (prog1
+      (funcall consult--buffer-display buffer norecord)
+    ;; Stop EXWM buffers from hijacking focus. See https://github.com/minad/consult/issues/178.
+    (when-let ((mini (active-minibuffer-window)))
+      (select-window (active-minibuffer-window)))))
 
 (consult--define-state buffer)
 
