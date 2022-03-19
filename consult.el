@@ -3251,6 +3251,8 @@ narrowing and the settings `consult-goto-line-numbers' and
       (while (if-let (pos (consult--goto-line-position
                            (consult--prompt
                             :prompt "Go to line: "
+                            ;; goto-line-history is available on Emacs 28
+                            :history (and (boundp 'goto-line-history) 'goto-line-history)
                             :state (let ((preview (consult--jump-preview)))
                                      (lambda (str restore)
                                        (funcall preview
