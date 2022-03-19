@@ -2,6 +2,10 @@
 #+author: Daniel Mendler
 #+language: en
 
+* Develop
+
+- =consult-goto-line=: Use =goto-line-history= on Emacs 28
+
 * Version 0.16 (2022-03-08)
 
 - Bug fixes
