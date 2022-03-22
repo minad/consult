@@ -727,7 +727,7 @@ their descriptions.
  =delete-file= command is offered. With Embark you can execute arbitrary commands
  on the currently selected candidate via =M-x=.
 
- Furthermore Embark provides the =embark-collect-snapshot= command, which collects
+ Furthermore Embark provides the =embark-collect= command, which collects
  candidates and presents them in an Embark collect buffer, where further actions
  can be applied to them. A related feature is the =embark-export= command, which
  exports candidate lists to a buffer of a special type. For example in the case
@@ -762,9 +762,8 @@ There is the [[https://github.com/minad/consult/wiki][Consult wiki]], where addi
 contributed.
 
 *IMPORTANT:* It is strongly recommended that you enable [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Lexical-Binding.html][lexical binding]] in your
-configuration. Consult uses a functional programming style, relying on lambdas
-and lexical closures. For this reason many Consult-related snippets require
-lexical binding.
+configuration. Consult relies on lambdas and lexical closures. For this reason
+many Consult-related snippets require lexical binding.
 
 ** Use-package example
  :properties:
@@ -1126,8 +1125,7 @@ Please provide the necessary important information with your bug report:
   since Consult does not provide Evil integration out of the box.
 
 When evaluating Consult-related code snippets you should enable [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Lexical-Binding.html][lexical binding]].
-Consult often uses a functional programming style, relying on lambdas and
-lexical closures.
+Consult often relies on lambdas and lexical closures.
 
 * Contributions
   :properties:
