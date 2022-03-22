@@ -1124,7 +1124,8 @@ MARKER is the cursor position."
                       (prog1 nil
                         (message "File `%s' (%s) is too large for preview"
                                  name (file-size-human-readable size)))
-                 (cl-letf* (((default-value 'find-file-hook)
+                 (cl-letf* (((default-value 'delay-mode-hooks) t)
+                            ((default-value 'find-file-hook)
                              (seq-remove (lambda (x)
                                            (memq x consult-preview-excluded-hooks))
                                          (default-value 'find-file-hook)))
