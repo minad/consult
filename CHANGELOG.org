@@ -9,8 +9,8 @@
   to use =thing-at-point= to overwrite the =:initial= and =:add-history= settings.
 - =consult--read-config= renamed to =consult--customize-alist= and changed the
   format. The configuration is an alist. The car must be a command symbol. The
-  cdr must be a plist of key/expressions pairs, where the expressions evaluate
-  to the actual configuration value.
+  cdr must be a plist of keys and expressions, where the expressions evaluate
+  to the actual configuration values.
 
 * Version 0.16 (2022-03-08)
 
