@@ -124,11 +124,11 @@ SHOW-EMPTY must be t if the window should be shown for an empty register list."
                 '((window-height . fit-window-to-buffer)
                   (preserve-size . (nil . t))))
           nil
-        (setq-local cursor-in-non-selected-windows nil)
-        (setq-local mode-line-format nil)
-        (setq-local truncate-lines t)
-        (setq-local window-min-height 1)
-        (setq-local window-resize-pixelwise t)
+        (setq-local cursor-in-non-selected-windows nil
+                    mode-line-format nil
+                    truncate-lines t
+                    window-min-height 1
+                    window-resize-pixelwise t)
         (insert (mapconcat
                  (lambda (reg)
                    (concat (funcall register-preview-function reg) separator))

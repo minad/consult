@@ -6,7 +6,7 @@
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2020
 ;; Version: 0.16
-;; Package-Requires: ((emacs "26.1"))
+;; Package-Requires: ((emacs "27.1"))
 ;; Homepage: https://github.com/minad/consult
 
 ;; This file is part of GNU Emacs.
@@ -1535,10 +1535,10 @@ POINT is the point position."
                       (parts (funcall split str point)))
                   (completion-all-completions (cadr parts) table pred (caddr parts))))))
     (setq-local completion-styles-alist (cons `(consult--split ,try ,all "")
-                                              completion-styles-alist))
-    (setq-local completion-styles '(consult--split))
-    (setq-local completion-category-defaults nil)
-    (setq-local completion-category-overrides nil)))
+                                              completion-styles-alist)
+                completion-styles '(consult--split)
+                completion-category-defaults nil
+                completion-category-overrides nil)))
 
 ;;;; Async support
 
@@ -3665,7 +3665,7 @@ for which the command history is used."
    ((minibufferp)
     (if (eq minibuffer-history-variable t)
         (user-error "Minibuffer history is disabled for `%s'" this-command)
-      (setq history (symbol-value minibuffer-history-variable)))) ;; (minibuffer-history-value) is Emacs 27 only
+      (setq history (symbol-value minibuffer-history-variable))))
    ;; Otherwise we use a mode-specific history, see `consult-mode-histories'.
    (t (when-let (found
                  (or (seq-find (lambda (ring)
@@ -3740,7 +3740,7 @@ as argument."
      (delete-dups
       (mapcar
        (lambda (cand)
-         ;; Emacs 27.1 uses settings on the search string, we can use that for narrowing.
+         ;; The search type can be distinguished via text properties.
          (let* ((props (plist-member (text-properties-at 0 cand)
                                      'isearch-regexp-function))
                 (type (pcase (cadr props)
@@ -3804,9 +3804,7 @@ starts a new Isearch session otherwise."
             (lambda (cand restore)
               (unless restore
                 (setq isearch-string cand)
-                ;; Emacs 27.1 uses properties on the search string to store settings
-                (when (fboundp 'isearch-update-from-string-properties)
-                  (isearch-update-from-string-properties cand))
+                (isearch-update-from-string-properties cand)
                 (isearch-update)))
             :narrow
             (list :predicate
