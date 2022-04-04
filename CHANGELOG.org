@@ -12,6 +12,8 @@
   format. The configuration is an alist. The car must be a command symbol. The
   cdr must be a plist of keys and expressions, where the expressions evaluate
   to the actual configuration values.
+- Mode hooks in previewed files are delayed. The buffer is only fully
+  initialized when leaving the minibuffer for recursive editing.
 
 * Version 0.16 (2022-03-08)
 
