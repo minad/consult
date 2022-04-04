@@ -1108,16 +1108,34 @@ MARKER is the cursor position."
 
 ;;;; Preview support
 
-(defun consult--kill-clean-buffer (buf)
-  "Kill BUF if it has not been modified."
-  (unless (buffer-modified-p buf)
-    (kill-buffer buf)))
-
 (defun consult--temporary-files ()
   "Return a function to open files temporarily."
-  (let* ((new-buffers)
-         (old-buffers (buffer-list))
-         (dir default-directory))
+  (let ((dir default-directory)
+        (hook (make-symbol "consult--temporary-files"))
+        (orig-buffers (buffer-list))
+        temporary-buffers)
+    (fset hook
+          (lambda (_)
+            ;; Fully initialize previewed files and keep them alive.
+            (unless (eq (selected-window) (active-minibuffer-window))
+              (let (live-files)
+                (dolist (buf temporary-buffers)
+                  (when-let ((file (buffer-file-name buf))
+                             (wins (and (buffer-live-p buf)
+                                        (get-buffer-window-list buf))))
+                    (push (cons file (mapcar
+                                      (lambda (win)
+                                        (cons win (window-state-get win t)))
+                                      wins))
+                          live-files))
+                  (kill-buffer buf))
+                (setq temporary-buffers nil)
+                (pcase-dolist (`(,file . ,wins) live-files)
+                  (when-let (buf (find-file-noselect file))
+                    (push buf orig-buffers)
+                    (pcase-dolist (`(,win . ,state) wins)
+                      (set-window-buffer win buf)
+                      (window-state-put win state))))))))
     (lambda (&optional name)
       (if name
           (let ((default-directory dir)
@@ -1137,7 +1155,8 @@ MARKER is the cursor position."
                       (prog1 nil
                         (message "File `%s' (%s) is too large for preview"
                                  name (file-size-human-readable size)))
-                 (cl-letf* (((default-value 'find-file-hook)
+                 (cl-letf* (((default-value 'delay-mode-hooks) t)
+                            ((default-value 'find-file-hook)
                              (seq-remove (lambda (x)
                                            (memq x consult-preview-excluded-hooks))
                                          (default-value 'find-file-hook)))
@@ -1145,14 +1164,16 @@ MARKER is the cursor position."
                                   name 'nowarn
                                   (> size consult-preview-raw-size))))
                    ;; Only add new buffer if not already in the list
-                   (unless (or (memq buf new-buffers) (memq buf old-buffers))
-                     (push buf new-buffers)
+                   (unless (or (memq buf temporary-buffers) (memq buf orig-buffers))
+                     (add-hook 'window-selection-change-functions hook)
+                     (push buf temporary-buffers)
                      ;; Only keep a few buffers alive
-                     (while (> (length new-buffers) consult-preview-max-count)
-                       (consult--kill-clean-buffer (car (last new-buffers)))
-                       (setq new-buffers (nbutlast new-buffers))))
+                     (while (> (length temporary-buffers) consult-preview-max-count)
+                       (kill-buffer (car (last temporary-buffers)))
+                       (setq temporary-buffers (nbutlast temporary-buffers))))
                    buf)))))
-        (mapc #'consult--kill-clean-buffer new-buffers)))))
+        (remove-hook 'window-selection-change-functions hook)
+        (mapc #'kill-buffer temporary-buffers)))))
 
 (defun consult--invisible-open-permanently ()
   "Open overlays which hide the current line.
