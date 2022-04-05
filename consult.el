@@ -301,7 +301,8 @@ The dynamically computed arguments are appended."
                         "Deprecated in favor of `consult-preview-allowed-hooks'." "0.16")
 
 (defcustom consult-preview-allowed-hooks
-  '(global-font-lock-mode-check-buffers)
+  '(global-font-lock-mode-check-buffers
+    save-place-find-file-hook)
   "List of `find-file' hooks, which should be executed during file preview."
   :type '(repeat symbol))
 
