@@ -1126,7 +1126,7 @@ MARKER is the cursor position."
                                         (get-buffer-window-list buf))))
                     (push (cons file (mapcar
                                       (lambda (win)
-                                        (cons win (window-state-get win t)))
+                                        (list (window-state-get win t) win))
                                       wins))
                           live-files))
                   (kill-buffer buf))
@@ -1134,9 +1134,8 @@ MARKER is the cursor position."
                 (pcase-dolist (`(,file . ,wins) live-files)
                   (when-let (buf (find-file-noselect file))
                     (push buf orig-buffers)
-                    (pcase-dolist (`(,win . ,state) wins)
-                      (set-window-buffer win buf)
-                      (window-state-put win state))))))))
+                    (dolist (state wins)
+                      (apply #'window-state-put state))))))))
     (lambda (&optional name)
       (if name
           (let ((default-directory dir)
