@@ -313,7 +313,9 @@ The dynamically computed arguments are appended."
     (non-essential . t)
     (delay-mode-hooks . t)
     (org-startup-with-inline-images . nil)
-    (org-startup-with-latex-preview . nil))
+    (org-startup-with-latex-preview . nil)
+    (latexenc-dont-use-tex-guess-main-file-flag . t)
+    (latexenc-dont-use-TeX-master-flag . t))
   "Variables which are bound for file preview."
   :type '(alist :key-type symbol))
 
