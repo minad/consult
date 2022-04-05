@@ -1131,7 +1131,9 @@ MARKER is the cursor position."
 (defun consult--find-file-temporarily (name)
   "Open file NAME temporarily for preview."
   (cl-letf ((orig (mapcar (pcase-lambda (`(,k . ,_))
-                            (list k (default-value k) (symbol-value k)))
+                            (list k
+                                  (and (boundp k) (default-value k))
+                                  (and (boundp k) (symbol-value k))))
                           consult-preview-variables))
             ((default-value 'find-file-hook)
              (seq-filter (lambda (x)
