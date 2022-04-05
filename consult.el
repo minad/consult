@@ -928,6 +928,11 @@ When no project is found and MAY-PROMPT is non-nil ask the user."
         (lambda (cand) (eq (get-text-property 0 'consult--type cand) consult--narrow))
         :keys types))
 
+(defun consult--completion-window-p ()
+  "Return non-nil if the selected window belongs to the completion UI."
+  (or (eq (selected-window) (active-minibuffer-window))
+      (string-match-p "\\`\\*Completions\\*" (buffer-name (window-buffer)))))
+
 (defmacro consult--with-location-upgrade (candidates &rest body)
   "Upgrade location markers from CANDIDATES on window selection change.
 The markers are not upgraded when BODY has finished without a window change."
@@ -936,7 +941,7 @@ The markers are not upgraded when BODY has finished without a window change."
     `(let ((,hook (make-symbol "consult--location-upgrade")))
        (fset ,hook
              (lambda (_)
-               (unless (eq (selected-window) (active-minibuffer-window))
+               (unless (consult--completion-window-p)
                  (remove-hook 'window-selection-change-functions ,hook)
                  (mapc #'consult--get-location ,candidates))))
        (unwind-protect
@@ -1118,7 +1123,7 @@ MARKER is the cursor position."
     (fset hook
           (lambda (_)
             ;; Fully initialize previewed files and keep them alive.
-            (unless (eq (selected-window) (active-minibuffer-window))
+            (unless (consult--completion-window-p)
               (let (live-files)
                 (dolist (buf temporary-buffers)
                   (when-let ((file (buffer-file-name buf))
