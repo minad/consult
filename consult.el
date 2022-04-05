@@ -1115,8 +1115,28 @@ MARKER is the cursor position."
 
 ;;;; Preview support
 
+(defun consult--find-file-temporarily (name)
+  "Open file NAME temporarily for preview."
+  (cl-letf ((inhibit-message t)
+            (enable-dir-local-variables nil)
+            (enable-local-variables nil)
+            (non-essential t)
+            ((default-value 'delay-mode-hooks) t)
+            ((default-value 'find-file-hook)
+             (seq-filter (lambda (x)
+                           (memq x consult-preview-allowed-hooks))
+                         (default-value 'find-file-hook))))
+    ;; file-attributes may throw permission denied error
+    (when-let* ((attrs (ignore-errors (file-attributes name)))
+                (size (file-attribute-size attrs)))
+      (if (<= size consult-preview-max-size)
+          (find-file-noselect name 'nowarn (> size consult-preview-raw-size))
+        (message "File `%s' (%s) is too large for preview"
+                 name (file-size-human-readable size))
+        nil))))
+
 (defun consult--temporary-files ()
-  "Return a function to open files temporarily."
+  "Return a function to open files temporarily for preview."
   (let ((dir default-directory)
         (hook (make-symbol "consult--temporary-files"))
         (orig-buffers (buffer-list))
@@ -1144,31 +1164,12 @@ MARKER is the cursor position."
                       (apply #'window-state-put state))))))))
     (lambda (&optional name)
       (if name
-          (let ((default-directory dir)
-                (inhibit-message t)
-                (enable-dir-local-variables nil)
-                (enable-local-variables (and enable-local-variables :safe))
-                (non-essential t))
-            (or
+          (let ((default-directory dir))
              ;; get-file-buffer is only a small optimization here. It
              ;; may not find the actual buffer, for directories it
              ;; returns nil instead of returning the Dired buffer.
-             (get-file-buffer name)
-             ;; file-attributes may throw permission denied error
-             (when-let* ((attrs (ignore-errors (file-attributes name)))
-                         (size (file-attribute-size attrs)))
-               (if (> size consult-preview-max-size)
-                      (prog1 nil
-                        (message "File `%s' (%s) is too large for preview"
-                                 name (file-size-human-readable size)))
-                 (cl-letf* (((default-value 'delay-mode-hooks) t)
-                            ((default-value 'find-file-hook)
-                             (seq-filter (lambda (x)
-                                           (memq x consult-preview-allowed-hooks))
-                                         (default-value 'find-file-hook)))
-                            (buf (find-file-noselect
-                                  name 'nowarn
-                                  (> size consult-preview-raw-size))))
+             (or (get-file-buffer name)
+                 (when-let (buf (consult--find-file-temporarily name))
                    ;; Only add new buffer if not already in the list
                    (unless (or (memq buf temporary-buffers) (memq buf orig-buffers))
                      (add-hook 'window-selection-change-functions hook)
@@ -1178,7 +1179,7 @@ MARKER is the cursor position."
                      (while (> (length temporary-buffers) consult-preview-max-count)
                        (kill-buffer (car (last temporary-buffers)))
                        (setq temporary-buffers (nbutlast temporary-buffers))))
-                   buf)))))
+                   buf)))
         (remove-hook 'window-selection-change-functions hook)
         (mapc #'kill-buffer temporary-buffers)))))
 
