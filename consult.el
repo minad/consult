@@ -1130,18 +1130,16 @@ MARKER is the cursor position."
 
 (defun consult--find-file-temporarily (name)
   "Open file NAME temporarily for preview."
-  (cl-letf ((vars (delq nil
-                        (mapcar (pcase-lambda (`(,k . ,v))
-                                  (and (boundp k)
-                                       (list k v (default-value k) (symbol-value k))))
-                                consult-preview-variables)))
+  (cl-letf ((orig (mapcar (pcase-lambda (`(,k . ,_))
+                            (list k (default-value k) (symbol-value k)))
+                          consult-preview-variables))
             ((default-value 'find-file-hook)
              (seq-filter (lambda (x)
                            (memq x consult-preview-allowed-hooks))
                          (default-value 'find-file-hook))))
     (unwind-protect
         (progn
-          (pcase-dolist (`(,k ,v . ,_) vars)
+          (pcase-dolist (`(,k . ,v) consult-preview-variables)
             (set-default k v)
             (set k v))
           ;; file-attributes may throw permission denied error
@@ -1152,7 +1150,7 @@ MARKER is the cursor position."
               (message "File `%s' (%s) is too large for preview"
                        name (file-size-human-readable size))
               nil)))
-      (pcase-dolist (`(,k ,_ ,d ,v) vars)
+      (pcase-dolist (`(,k ,d ,v) orig)
         (set-default k d)
         (set k v)))))
 
