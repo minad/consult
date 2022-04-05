@@ -306,6 +306,15 @@ The dynamically computed arguments are appended."
   "List of `find-file' hooks, which should be executed during file preview."
   :type '(repeat symbol))
 
+(defcustom consult-preview-variables
+  '((inhibit-message . t)
+    (enable-dir-local-variables . nil)
+    (enable-local-variables . nil)
+    (non-essential . t)
+    (delay-mode-hooks . t))
+  "Variables which are bound for file preview."
+  :type '(alist :key-type symbol))
+
 (defcustom consult-bookmark-narrow
   `((?f "File" ,#'bookmark-default-handler)
     (?h "Help" ,#'help-bookmark-jump)
@@ -1117,23 +1126,29 @@ MARKER is the cursor position."
 
 (defun consult--find-file-temporarily (name)
   "Open file NAME temporarily for preview."
-  (cl-letf ((inhibit-message t)
-            (enable-dir-local-variables nil)
-            (enable-local-variables nil)
-            (non-essential t)
-            ((default-value 'delay-mode-hooks) t)
+  (cl-letf ((orig (mapcar (pcase-lambda (`(,k . ,_))
+                            (list k (default-value k) (symbol-value k)))
+                          consult-preview-variables))
             ((default-value 'find-file-hook)
              (seq-filter (lambda (x)
                            (memq x consult-preview-allowed-hooks))
                          (default-value 'find-file-hook))))
-    ;; file-attributes may throw permission denied error
-    (when-let* ((attrs (ignore-errors (file-attributes name)))
-                (size (file-attribute-size attrs)))
-      (if (<= size consult-preview-max-size)
-          (find-file-noselect name 'nowarn (> size consult-preview-raw-size))
-        (message "File `%s' (%s) is too large for preview"
-                 name (file-size-human-readable size))
-        nil))))
+    (unwind-protect
+        (progn
+          (pcase-dolist (`(,k . ,v) consult-preview-variables)
+            (set-default k v)
+            (set k v))
+          ;; file-attributes may throw permission denied error
+          (when-let* ((attrs (ignore-errors (file-attributes name)))
+                      (size (file-attribute-size attrs)))
+            (if (<= size consult-preview-max-size)
+                (find-file-noselect name 'nowarn (> size consult-preview-raw-size))
+              (message "File `%s' (%s) is too large for preview"
+                       name (file-size-human-readable size))
+              nil)))
+      (pcase-dolist (`(,k ,_ ,d ,v) orig)
+        (set-default k d)
+        (set k v)))))
 
 (defun consult--temporary-files ()
   "Return a function to open files temporarily for preview."
