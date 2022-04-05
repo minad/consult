@@ -448,20 +448,19 @@ their descriptions.
     consult-bookmark consult-recent-file consult-xref
     consult--source-bookmark consult--source-recent-file
     consult--source-project-recent-file
-    :preview-key (kbd "M-."))
+    ;; :preview-key '(:debounce 0.2 any) ;; Option 1: Delay preview
+    :preview-key (kbd "M-."))            ;; Option 2: Manual preview
  #+end_src
 
- In this case one may wonder what the difference is between using an Embark
- action on the current candidate in comparison to a manually triggered preview.
- The main difference is that the files opened by manual preview are closed again
- after the completion session. Furthermore during preview some functionality is
- disabled to improve the performance, see for example
- =consult-preview-allowed-hooks=. Files larger than =consult-preview-raw-size=
- are previewed literally without syntax highlighting and without changing the
- major mode.
-
- Delaying the preview is particularly useful for =consult-theme=, since the theme
- preview is a little bit slow. The delay can result in a smoother UI.
+In this case one may wonder what the difference is between using an Embark
+action on the current candidate in comparison to a manually triggered preview.
+The main difference is that the files opened by manual preview are closed again
+after the completion session. Furthermore during preview some functionality is
+disabled to improve the performance, see for example
+=consult-preview-allowed-hooks=. Files larger than =consult-preview-raw-size= are
+previewed literally without syntax highlighting and without changing the major
+mode. Delaying the preview is also useful for =consult-theme=, since the theme
+preview is slow. The delay results in a smoother UI experience.
 
  #+begin_src emacs-lisp
    ;; Preview on any key press, but delay 0.5s
