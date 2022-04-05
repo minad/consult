@@ -309,7 +309,7 @@ The dynamically computed arguments are appended."
 (defcustom consult-preview-variables
   '((inhibit-message . t)
     (enable-dir-local-variables . nil)
-    (enable-local-variables . nil)
+    (enable-local-variables . :safe)
     (non-essential . t)
     (delay-mode-hooks . t)
     (org-startup-with-inline-images . nil)
