@@ -79,7 +79,8 @@ This is the key representation accepted by `define-key'."
   :type '(choice key-sequence (const nil)))
 
 (defvar consult-project-root-function nil)
-(make-obsolete-variable 'consult-project-root-function "Deprecated in favor of `consult-project-function'." "0.15")
+(make-obsolete-variable 'consult-project-root-function
+                        "Deprecated in favor of `consult-project-function'." "0.15")
 
 (defcustom consult-project-function
   #'consult--default-project-function
@@ -287,7 +288,7 @@ The dynamically computed arguments are appended."
   "Files larger than this byte limit are not previewed."
   :type 'integer)
 
-(defcustom consult-preview-raw-size 102400
+(defcustom consult-preview-raw-size 524288
   "Files larger than this byte limit are previewed in raw form."
   :type 'integer)
 
@@ -295,13 +296,13 @@ The dynamically computed arguments are appended."
   "Number of files to keep open at once during preview."
   :type 'integer)
 
-(defcustom consult-preview-excluded-hooks
-  '(epa-file-find-file-hook
-    recentf-track-opened-file
-    vc-refresh-state)
-  "List of `find-file' hooks, which should not be executed during file preview.
-In particular we don't want to modify the list of recent files and we
-don't want to see epa password prompts."
+(defvar consult-preview-excluded-hooks nil)
+(make-obsolete-variable 'consult-preview-excluded-hooks
+                        "Deprecated in favor of `consult-preview-allowed-hooks'." "0.16")
+
+(defcustom consult-preview-allowed-hooks
+  '(global-font-lock-mode-check-buffers)
+  "List of `find-file' hooks, which should be executed during file preview."
   :type '(repeat symbol))
 
 (defcustom consult-bookmark-narrow
@@ -1157,8 +1158,8 @@ MARKER is the cursor position."
                                  name (file-size-human-readable size)))
                  (cl-letf* (((default-value 'delay-mode-hooks) t)
                             ((default-value 'find-file-hook)
-                             (seq-remove (lambda (x)
-                                           (memq x consult-preview-excluded-hooks))
+                             (seq-filter (lambda (x)
+                                           (memq x consult-preview-allowed-hooks))
                                          (default-value 'find-file-hook)))
                             (buf (find-file-noselect
                                   name 'nowarn
@@ -1167,6 +1168,7 @@ MARKER is the cursor position."
                    (unless (or (memq buf temporary-buffers) (memq buf orig-buffers))
                      (add-hook 'window-selection-change-functions hook)
                      (push buf temporary-buffers)
+                     (with-current-buffer buf (setq buffer-read-only t))
                      ;; Only keep a few buffers alive
                      (while (> (length temporary-buffers) consult-preview-max-count)
                        (kill-buffer (car (last temporary-buffers)))

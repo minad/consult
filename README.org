@@ -456,7 +456,7 @@ their descriptions.
  The main difference is that the files opened by manual preview are closed again
  after the completion session. Furthermore during preview some functionality is
  disabled to improve the performance, see for example
- =consult-preview-excluded-hooks=. Files larger than =consult-preview-raw-size=
+ =consult-preview-allowed-hooks=. Files larger than =consult-preview-raw-size=
  are previewed literally without syntax highlighting and without changing the
  major mode.
 
@@ -946,7 +946,7 @@ configuration examples.
  | consult-mode-histories           | Mode-specific history variables                       |
  | consult-narrow-key               | Narrowing prefix key during completion                |
  | consult-preview-key              | Keys which triggers preview                           |
- | consult-preview-excluded-hooks   | List of =find-file= hooks to avoid during preview       |
+ | consult-preview-allowed-hooks    | List of =find-file= hooks to enable during preview      |
  | consult-preview-max-count        | Maximum number of files to keep open during preview   |
  | consult-preview-max-size         | Files larger than this size are not previewed         |
  | consult-preview-raw-size         | Files larger than this size are previewed in raw form |

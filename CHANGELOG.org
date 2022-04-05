@@ -14,6 +14,8 @@
   to the actual configuration values.
 - Mode hooks in previewed files are delayed. The buffer is only fully
   initialized when leaving the minibuffer for recursive editing.
+- Increase =consult-preview-raw-size=
+- Replace =consult-preview-excluded-hooks= by =consult-preview-allowed-hooks=
 
 * Version 0.16 (2022-03-08)
 
