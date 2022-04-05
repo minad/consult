@@ -1230,7 +1230,7 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
                 restore))))
     restore))
 
-(defun consult--jump-nomark (pos)
+(defun consult--jump-1 (pos)
   "Go to POS and recenter."
   (cond
    ((and (markerp pos) (not (marker-buffer pos)))
@@ -1244,8 +1244,7 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
     ;; Widen if we cannot jump to the position (idea from flycheck-jump-to-error)
     (unless (= (goto-char pos) (point))
       (widen)
-      (goto-char pos))
-    (run-hooks 'consult-after-jump-hook))))
+      (goto-char pos)))))
 
 (defun consult--jump (pos)
   "Push current position to mark ring, go to POS and recenter."
@@ -1254,8 +1253,9 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
     ;; record previous location such that the user can jump back quickly.
     (unless (and (markerp pos) (not (eq (current-buffer) (marker-buffer pos))))
       (push-mark (point) t))
-    (consult--jump-nomark pos)
-    (consult--invisible-open-permanently))
+    (consult--jump-1 pos)
+    (consult--invisible-open-permanently)
+    (run-hooks 'consult-after-jump-hook))
   nil)
 
 ;; Matched strings are not highlighted as of now.
@@ -1276,7 +1276,8 @@ FACE is the cursor face."
       (mapc #'delete-overlay overlays)
       (setq invisible nil overlays nil)
       (cond
-       (restore
+       ;; If position cannot be previewed, return to saved position
+       ((or restore (not cand))
         (let ((saved-buffer (marker-buffer saved-pos)))
           (if (not saved-buffer)
               (message "Buffer is dead")
@@ -1285,7 +1286,7 @@ FACE is the cursor face."
             (goto-char saved-pos))))
        ;; Jump to position
        (cand
-        (consult--jump-nomark cand)
+        (consult--jump-1 cand)
         (setq invisible (consult--invisible-open-temporarily)
               overlays
               (list (save-excursion
@@ -1297,9 +1298,8 @@ FACE is the cursor face."
                                           'window (selected-window))))
                     (consult--overlay (point) (1+ (point))
                                       'face face
-                                      'window (selected-window)))))
-       ;; If position cannot be previewed, return to saved position
-       (t (consult--jump-nomark saved-pos))))))
+                                      'window (selected-window))))
+        (run-hooks 'consult-after-jump-hook))))))
 
 (defun consult--jump-state (&optional face)
   "The state function used if selecting from a list of candidate positions.
