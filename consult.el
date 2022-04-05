@@ -1150,7 +1150,7 @@ MARKER is the cursor position."
               (message "File `%s' (%s) is too large for preview"
                        name (file-size-human-readable size))
               nil)))
-      (pcase-dolist (`(,k ,_ ,d ,v) orig)
+      (pcase-dolist (`(,k ,d ,v) orig)
         (set-default k d)
         (set k v)))))
 
