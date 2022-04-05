@@ -456,11 +456,12 @@ In this case one may wonder what the difference is between using an Embark
 action on the current candidate in comparison to a manually triggered preview.
 The main difference is that the files opened by manual preview are closed again
 after the completion session. Furthermore during preview some functionality is
-disabled to improve the performance, see for example
-=consult-preview-allowed-hooks=. Files larger than =consult-preview-raw-size= are
-previewed literally without syntax highlighting and without changing the major
-mode. Delaying the preview is also useful for =consult-theme=, since the theme
-preview is slow. The delay results in a smoother UI experience.
+disabled to improve the performance, see for example the customization variables
+=consult-preview-allowed-hooks= and =consult-preview-variables=. Files larger than
+=consult-preview-raw-size= are previewed literally without syntax highlighting and
+without changing the major mode. Delaying the preview is also useful for
+=consult-theme=, since the theme preview is slow. The delay results in a smoother
+UI experience.
 
  #+begin_src emacs-lisp
    ;; Preview on any key press, but delay 0.5s
