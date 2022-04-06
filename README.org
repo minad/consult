@@ -1118,14 +1118,14 @@ Minimal setup with Vertico for =emacs -Q=:
 (require 'consult)
 (require 'vertico)
 (vertico-mode)
-(setq completion-styles '(substring))
+(setq completion-styles '(substring basic))
 #+end_src
 
 Minimal setup with the default completion system for =emacs -Q=:
 #+begin_src emacs-lisp
 (package-initialize)
 (require 'consult)
-(setq completion-styles '(substring))
+(setq completion-styles '(substring basic))
 #+end_src
 
 Please provide the necessary important information with your bug report:
