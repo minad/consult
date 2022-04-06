@@ -945,7 +945,7 @@ When no project is found and MAY-PROMPT is non-nil ask the user."
 (defun consult--completion-window-p ()
   "Return non-nil if the selected window belongs to the completion UI."
   (or (eq (selected-window) (active-minibuffer-window))
-      (string-match-p "\\`\\*Completions\\*" (buffer-name (window-buffer)))))
+      (eq #'completion-list-mode (buffer-local-value 'major-mode (window-buffer)))))
 
 (defmacro consult--with-location-upgrade (candidates &rest body)
   "Upgrade location markers from CANDIDATES on window selection change.
