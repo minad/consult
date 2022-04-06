@@ -4745,7 +4745,8 @@ automatically previewed."
              (setq end (1- (point)) beg (point)))))
       (setq beg (previous-single-property-change beg 'mouse-face)
             end (or (next-single-property-change end 'mouse-face) (point-max)))
-      (buffer-substring-no-properties beg end))))
+      (or (get-text-property beg 'completion--string)
+          (buffer-substring-no-properties beg end)))))
 
 ;; Announce now that consult has been loaded
 (provide 'consult)
