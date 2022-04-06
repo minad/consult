@@ -311,11 +311,7 @@ The dynamically computed arguments are appended."
     (enable-dir-local-variables . nil)
     (enable-local-variables . :safe)
     (non-essential . t)
-    (delay-mode-hooks . t)
-    (org-startup-with-inline-images . nil)
-    (org-startup-with-latex-preview . nil)
-    (latexenc-dont-use-tex-guess-main-file-flag . t)
-    (latexenc-dont-use-TeX-master-flag . t))
+    (delay-mode-hooks . t))
   "Variables which are bound for file preview."
   :type '(alist :key-type symbol))
 
