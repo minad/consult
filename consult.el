@@ -1124,21 +1124,31 @@ MARKER is the cursor position."
 
 ;;;; Preview support
 
+(defun consult--filter-find-file-hook (orig &rest hooks)
+  "Filter `find-file-hook' by `consult-preview-allowed-hooks'.
+This function is an advice for `run-hooks'.
+ORIG is the original function, HOOKS the arguments."
+  (if (memq 'find-file-hook hooks)
+      (cl-letf* (((default-value 'find-file-hook)
+                  (seq-filter (lambda (x)
+                                (memq x consult-preview-allowed-hooks))
+                              (default-value 'find-file-hook)))
+                 (find-file-hook (default-value 'find-file-hook)))
+        (apply orig hooks))
+    (apply orig hooks)))
+
 (defun consult--find-file-temporarily (name)
   "Open file NAME temporarily for preview."
-  (cl-letf ((vars (delq nil
-                        (mapcar (pcase-lambda (`(,k . ,v))
-                                  (if (boundp k)
-                                      (list k v (default-value k) (symbol-value k))
-                                    (message "consult-preview-variables: The variable `%s' is not bound" k)
-                                    nil))
-                         consult-preview-variables)))
-            ((default-value 'find-file-hook)
-             (seq-filter (lambda (x)
-                           (memq x consult-preview-allowed-hooks))
-                         (default-value 'find-file-hook))))
+  (let ((vars (delq nil
+                    (mapcar (pcase-lambda (`(,k . ,v))
+                              (if (boundp k)
+                                  (list k v (default-value k) (symbol-value k))
+                                (message "consult-preview-variables: The variable `%s' is not bound" k)
+                                nil))
+                            consult-preview-variables))))
     (unwind-protect
         (progn
+          (advice-add #'run-hooks :around #'consult--filter-find-file-hook)
           (pcase-dolist (`(,k ,v . ,_) vars)
             (set-default k v)
             (set k v))
@@ -1150,6 +1160,7 @@ MARKER is the cursor position."
               (message "File `%s' (%s) is too large for preview"
                        name (file-size-human-readable size))
               nil)))
+      (advice-remove #'run-hooks #'consult--filter-find-file-hook)
       (pcase-dolist (`(,k ,_ ,d ,v) vars)
         (set-default k d)
         (set k v)))))
