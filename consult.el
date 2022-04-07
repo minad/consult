@@ -1463,8 +1463,8 @@ sequence with the following arguments:
 |    'preview CAND/nil
 |    'preview CAND/nil
 |    ...
-| 3. 'preview nil       Reset preview.
-\ 4. 'exit nil          Before exiting the minibuffer (minibuffer-exit-hook).
+\ 3. 'preview nil       Reset preview.
+  4. 'exit nil          Before exiting the minibuffer (minibuffer-exit-hook).
   5. 'return CAND/nil   After leaving the minibuffer, CAND has been selected.
 
 The state function is always executed with the original window selected,
@@ -1477,11 +1477,16 @@ candidate CAND or nil if no candidate is selected. Furthermore if nil is
 passed for CAND, then the preview must be undone and the original state
 must be restored. The call with the `exit' argument happens once at the
 end of the completion process, just before exiting the minibuffer. The
-minibuffer is still alive at that point. After leaving the minibuffer,
-the selected candidate or nil is passed to the state function with the
-action argument `return'. At this point the state function can perform
-the actual action on the candidate. The state function with the `return'
-argument is the continuation of `consult--read'."
+minibuffer is still alive at that point. Both `setup' and `exit' are
+only useful for setup and cleanup operations. They don't receive a
+candidate as argument. After leaving the minibuffer, the selected
+candidate or nil is passed to the state function with the action
+argument `return'. At this point the state function can perform the
+actual action on the candidate. The state function with the `return'
+argument is the continuation of `consult--read'. Via `unwind-protect' it
+is guaranteed, that if the `setup' action of a state function is
+invoked, the state function will also be called with `exit' and
+`return'."
   (declare (indent 4))
   `(consult--with-preview-1 ,preview-key ,state ,transform ,candidate (lambda () ,@body)))
 
