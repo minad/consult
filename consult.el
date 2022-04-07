@@ -1315,7 +1315,7 @@ FACE is the cursor face."
   (let ((preview (consult--jump-preview face)))
     (lambda (action cand)
       (funcall preview action cand)
-      (when (and cand (eq action 'finish))
+      (when (and cand (eq action 'return))
         (consult--jump cand)))))
 
 (defmacro consult--define-state (type)
@@ -1324,7 +1324,7 @@ FACE is the cursor face."
      (let ((preview (,(intern (format "consult--%s-preview" type)))))
        (lambda (action cand)
          (funcall preview action cand)
-         (when (and cand (eq action 'finish))
+         (when (and cand (eq action 'return))
            (,(intern (format "consult--%s-action" type)) cand))))))
 
 (defun consult--preview-key-normalize (preview-key)
@@ -1443,7 +1443,7 @@ PREVIEW-KEY, STATE, TRANSFORM and CANDIDATE."
                 input)
         (when state
           ;; STEP 5: The preview function should perform its final action
-          (consult--protected-preview-call state 'finish selected))))))
+          (consult--protected-preview-call state 'return selected))))))
 
 (defmacro consult--with-preview (preview-key state transform candidate &rest body)
   "Add preview support to BODY.
@@ -1459,13 +1459,29 @@ selected or if the selection was aborted. The function is called in
 sequence with the following arguments:
 
   1. 'setup nil         After entering the minibuffer (minibuffer-setup-hook).
-  2. 'preview CAND/nil  Preview candidate CAND or reset if CAND is nil.
-     'preview CAND/nil
-     'preview CAND/nil
-     ...
-  3. 'preview nil       Reset preview.
-  4. 'exit nil          Before exiting the minibuffer (minibuffer-exit-hook).
-  5. 'finish CAND/nil   After leaving the minibuffer, CAND has been selected."
+/ 2. 'preview CAND/nil  Preview candidate CAND or reset if CAND is nil.
+|    'preview CAND/nil
+|    'preview CAND/nil
+|    ...
+| 3. 'preview nil       Reset preview.
+\ 4. 'exit nil          Before exiting the minibuffer (minibuffer-exit-hook).
+  5. 'return CAND/nil   After leaving the minibuffer, CAND has been selected.
+
+The state function is always executed with the original window selected,
+see `minibuffer-selected-window'. The state function is called once in
+the beginning of the minibuffer setup with the `setup' argument. This is
+useful in order to perform certain setup operations which require that
+the minibuffer is initialized. During completion candidates are
+previewed. Then the function is called with the `preview' argument and a
+candidate CAND or nil if no candidate is selected. Furthermore if nil is
+passed for CAND, then the preview must be undone and the original state
+must be restored. The call with the `exit' argument happens once at the
+end of the completion process, just before exiting the minibuffer. The
+minibuffer is still alive at that point. After leaving the minibuffer,
+the selected candidate or nil is passed to the state function with the
+action argument `return'. At this point the state function can perform
+the actual action on the candidate. The state function with the `return'
+argument is the continuation of `consult--read'."
   (declare (indent 4))
   `(consult--with-preview-1 ,preview-key ,state ,transform ,candidate (lambda () ,@body)))
 
@@ -2329,15 +2345,15 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
              (setq last-fun selected-fun)
              (when selected-fun
                (funcall selected-fun 'preview cand))))
-          ('finish
+          ('return
            (let ((selected-fun (cdr (assq src states))))
              ;; Finish all the sources, except the selected one.
              (pcase-dolist (`(,_ . ,fun) states)
                (unless (eq fun selected-fun)
-                 (funcall fun 'finish nil)))
+                 (funcall fun 'return nil)))
              ;; Finish the source with the selected candidate
              (when selected-fun
-               (funcall selected-fun 'finish cand)))))))))
+               (funcall selected-fun 'return cand)))))))))
 
 (defun consult--multi (sources &rest options)
   "Select from candidates taken from a list of SOURCES.
@@ -3121,14 +3137,14 @@ QUERY can be set to a plist according to `consult--buffer-query'."
     (setq lines (nreverse lines))
     (lambda (action input)
       ;; Restoring content and point position
-      (when (and (eq action 'finish) last-input)
+      (when (and (eq action 'return) last-input)
         ;; No undo recording, modification hooks, buffer modified-status
         (with-silent-modifications (funcall replace content-orig point-orig)))
       ;; Committing or new input provided -> Update
       (when (and input ;; Input has been povided
                  (or
                   ;; Committing, but not with empty input
-                  (and (eq action 'finish) (not (string-match-p "\\`!? ?\\'" input)))
+                  (and (eq action 'return) (not (string-match-p "\\`!? ?\\'" input)))
                   ;; Input has changed
                   (not (equal input last-input))))
         (let ((filtered-content
@@ -3137,7 +3153,7 @@ QUERY can be set to a plist according to `consult--buffer-query'."
                    ;; Otherwise it could happen that the minibuffer is empty,
                    ;; but the buffer has not been updated.
                    content-orig
-                 (if (eq action 'finish)
+                 (if (eq action 'return)
                      (apply #'concat (mapcan (lambda (x) (list x "\n"))
                                              (funcall filter input lines)))
                    (while-no-input
@@ -3148,7 +3164,7 @@ QUERY can be set to a plist according to `consult--buffer-query'."
           (when (stringp filtered-content)
             (when font-lock-mode (font-lock-mode -1))
             (when (bound-and-true-p hl-line-mode) (hl-line-mode -1))
-            (if (eq action 'finish)
+            (if (eq action 'return)
                 (atomic-change-group
                   ;; Disable modification hooks for performance
                   (let ((inhibit-modification-hooks t))
@@ -3158,7 +3174,7 @@ QUERY can be set to a plist according to `consult--buffer-query'."
                 (funcall replace filtered-content)
                 (setq last-input input))))))
       ;; Restore modes
-      (when (eq action 'finish)
+      (when (eq action 'return)
         (when hl-line-orig (hl-line-mode 1))
         (when font-lock-orig (font-lock-mode 1))))))
 
@@ -3230,7 +3246,7 @@ INITIAL is the initial input."
         (let (new-overlays)
           (pcase (while-no-input
                    (unless (string-match-p "\\`!? ?\\'" input) ;; empty input.
-                     (let* ((inhibit-quit (eq action 'finish)) ;; Non interruptible, when quitting!
+                     (let* ((inhibit-quit (eq action 'return)) ;; Non interruptible, when quitting!
                             (not (string-prefix-p "! " input))
                             (stripped (string-remove-prefix "! " input))
                             (matches (funcall filter stripped lines))
@@ -3257,7 +3273,7 @@ INITIAL is the initial input."
              (mapc #'delete-overlay overlays)
              (setq last-input input overlays new-overlays))
             (_ (mapc #'delete-overlay new-overlays)))))
-      (when (eq action 'finish)
+      (when (eq action 'return)
         (cond
          ((not input)
           (mapc #'delete-overlay overlays)
@@ -3990,7 +4006,7 @@ The command supports previewing the currently selected theme."
                      saved-theme))
        :state (lambda (action theme)
                 (pcase action
-                  ('finish (consult-theme (or theme saved-theme)))
+                  ('return (consult-theme (or theme saved-theme)))
                   ((and 'preview (guard theme)) (consult-theme theme))))
        :default (symbol-name (or saved-theme 'default))))))
   (when (eq theme 'default) (setq theme nil))

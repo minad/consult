@@ -90,7 +90,7 @@
   (let ((state (consult--jump-state 'consult-preview-error)))
     (lambda (action marker)
       (let ((pos (consult-compile--lookup marker)))
-        (when-let (buffer (and (eq action 'finish)
+        (when-let (buffer (and (eq action 'return)
                                marker
                                (marker-buffer marker)))
           (with-current-buffer buffer
