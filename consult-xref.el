@@ -53,15 +53,13 @@
   "Xref preview with DISPLAY function."
   (let ((open (consult--temporary-files))
         (preview (consult--jump-preview)))
-    (lambda (cand restore)
-      (cond
-       (restore
-        (funcall preview nil t)
-        (funcall open nil))
-       (cand
-        (let ((loc (xref-item-location cand))
-              (consult--buffer-display display))
-          (funcall preview
+    (lambda (action cand)
+      (when (eq action 'exit)
+        (funcall open))
+      (let ((consult--buffer-display display))
+        (funcall preview action
+                 (when-let (loc (and cand (eq action 'preview)
+                                     (xref-item-location cand)))
                    ;; Only preview file and buffer markers
                    (cl-typecase loc
                      (xref-buffer-location
@@ -74,8 +72,7 @@
                                   (xref-location-group loc)))
                        (xref-location-line loc)
                        (xref-file-location-column loc)))
-                     (t (message "No preview for %s" (type-of loc)) nil))
-                   nil)))))))
+                     (t (message "No preview for %s" (type-of loc)) nil))))))))
 
 (defun consult-xref--group (cand transform)
   "Return title for CAND or TRANSFORM the candidate."

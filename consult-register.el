@@ -188,12 +188,11 @@ built-in register access functions. The command supports narrowing, see
     :category 'multi-category
     :state
     (let ((preview (consult--jump-preview)))
-      (lambda (cand restore)
+      (lambda (action cand)
         ;; Preview only markers
-        (funcall preview
+        (funcall preview action
                  (when-let (reg (get-register cand))
-                   (and (markerp reg) reg))
-                 restore)))
+                   (and (markerp reg) reg)))))
     :group (consult--type-group consult-register--narrow)
     :narrow (consult--type-narrow consult-register--narrow)
     :sort nil

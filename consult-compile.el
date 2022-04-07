@@ -88,13 +88,15 @@
 (defun consult-compile--state ()
   "Like `consult--jump-state', also setting the current compilation error."
   (let ((state (consult--jump-state 'consult-preview-error)))
-    (lambda (marker restore)
+    (lambda (action marker)
       (let ((pos (consult-compile--lookup marker)))
-        (when-let (buffer (and restore marker (marker-buffer marker)))
+        (when-let (buffer (and (eq action 'finish)
+                               marker
+                               (marker-buffer marker)))
           (with-current-buffer buffer
             (setq compilation-current-error marker
                   overlay-arrow-position marker)))
-        (funcall state pos restore)))))
+        (funcall state action pos)))))
 
 ;;;###autoload
 (defun consult-compile-error ()
