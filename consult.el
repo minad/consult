@@ -943,22 +943,22 @@ When no project is found and MAY-PROMPT is non-nil ask the user."
   (or (eq (selected-window) (active-minibuffer-window))
       (eq #'completion-list-mode (buffer-local-value 'major-mode (window-buffer)))))
 
-(defmacro consult--with-location-upgrade (candidates &rest body)
-  "Upgrade location markers from CANDIDATES on window selection change.
-The markers are not upgraded when BODY has finished without a window change."
-  (declare (indent 1))
-  (let ((hook (make-symbol "hook")))
-    `(let ((,hook (make-symbol "consult--location-upgrade")))
-       (fset ,hook
-             (lambda (_)
-               (unless (consult--completion-window-p)
-                 (remove-hook 'window-selection-change-functions ,hook)
-                 (mapc #'consult--get-location ,candidates))))
-       (unwind-protect
-           (progn
-             (add-hook 'window-selection-change-functions ,hook)
-             ,@body)
-         (remove-hook 'window-selection-change-functions ,hook)))))
+(defun consult--location-state (candidates)
+  "Location state function.
+The cheap location markers from CANDIDATES are upgraded on window
+selection change to full Emacs markers."
+  (let ((jump (consult--jump-state))
+        (hook (make-symbol "consult--location-upgrade")))
+    (fset hook
+          (lambda (_)
+            (unless (consult--completion-window-p)
+              (remove-hook 'window-selection-change-functions hook)
+              (mapc #'consult--get-location candidates))))
+    (lambda (action cand)
+      (pcase action
+        ('setup (add-hook 'window-selection-change-functions hook))
+        ('exit (remove-hook 'window-selection-change-functions hook)))
+      (funcall jump action cand))))
 
 (defun consult--get-location (cand)
   "Return location from CAND."
@@ -1273,60 +1273,58 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
   "The preview function used if selecting from a list of candidate positions.
 The function can be used as the `:state' argument of `consult--read'.
 FACE is the cursor face."
-  (let ((overlays)
-        (invisible)
-        (face (or face 'consult-preview-cursor))
+  (let ((face (or face 'consult-preview-cursor))
         (saved-min (point-min-marker))
         (saved-max (point-max-marker))
-        (saved-pos (point-marker)))
+        (saved-pos (point-marker))
+        overlays invisible)
     (set-marker-insertion-type saved-max t) ;; Grow when text is inserted
-    (lambda (cand restore)
-      (mapc #'funcall invisible)
-      (mapc #'delete-overlay overlays)
-      (setq invisible nil overlays nil)
-      (cond
-       ;; If position cannot be previewed, return to saved position
-       ((or restore (not cand))
-        (let ((saved-buffer (marker-buffer saved-pos)))
-          (if (not saved-buffer)
-              (message "Buffer is dead")
-            (set-buffer saved-buffer)
-            (narrow-to-region saved-min saved-max)
-            (goto-char saved-pos))))
-       ;; Jump to position
-       (cand
-        (consult--jump-1 cand)
-        (setq invisible (consult--invisible-open-temporarily)
-              overlays
-              (list (save-excursion
-                      (let ((vbeg (progn (beginning-of-visual-line) (point)))
-                            (vend (progn (end-of-visual-line) (point)))
-                            (end (line-end-position)))
-                        (consult--overlay vbeg (if (= vend end) (1+ end) vend)
-                                          'face 'consult-preview-line
-                                          'window (selected-window))))
-                    (consult--overlay (point) (1+ (point))
-                                      'face face
-                                      'window (selected-window))))
-        (run-hooks 'consult-after-jump-hook))))))
+    (lambda (action cand)
+      (when (eq action 'preview)
+        (mapc #'funcall invisible)
+        (mapc #'delete-overlay overlays)
+        (setq invisible nil overlays nil)
+        (if (not cand)
+            ;; If position cannot be previewed, return to saved position
+            (let ((saved-buffer (marker-buffer saved-pos)))
+              (if (not saved-buffer)
+                  (message "Buffer is dead")
+                (set-buffer saved-buffer)
+                (narrow-to-region saved-min saved-max)
+                (goto-char saved-pos)))
+          ;; Jump to position
+          (consult--jump-1 cand)
+          (setq invisible (consult--invisible-open-temporarily)
+                overlays
+                (list (save-excursion
+                        (let ((vbeg (progn (beginning-of-visual-line) (point)))
+                              (vend (progn (end-of-visual-line) (point)))
+                              (end (line-end-position)))
+                          (consult--overlay vbeg (if (= vend end) (1+ end) vend)
+                                            'face 'consult-preview-line
+                                            'window (selected-window))))
+                      (consult--overlay (point) (1+ (point))
+                                        'face face
+                                        'window (selected-window))))
+          (run-hooks 'consult-after-jump-hook))))))
 
 (defun consult--jump-state (&optional face)
   "The state function used if selecting from a list of candidate positions.
 The function can be used as the `:state' argument of `consult--read'.
 FACE is the cursor face."
   (let ((preview (consult--jump-preview face)))
-    (lambda (cand restore)
-      (funcall preview cand restore)
-      (when (and cand restore)
+    (lambda (action cand)
+      (funcall preview action cand)
+      (when (and cand (eq action 'finish))
         (consult--jump cand)))))
 
 (defmacro consult--define-state (type)
   "Define state function for TYPE."
   `(defun ,(intern (format "consult--%s-state" type)) ()
      (let ((preview (,(intern (format "consult--%s-preview" type)))))
-       (lambda (cand restore)
-         (funcall preview cand restore)
-         (when (and cand restore)
+       (lambda (action cand)
+         (funcall preview action cand)
+         (when (and cand (eq action 'finish))
            (,(intern (format "consult--%s-action" type)) cand))))))
 
 (defun consult--preview-key-normalize (preview-key)
@@ -1356,17 +1354,27 @@ FACE is the cursor face."
     (setq keys (lookup-key map keys))
     (if (numberp keys) keys any)))
 
+;; TODO Remove this function after upgrades of :state functions
+(defun consult--protected-preview-call (fun action cand)
+  "Call state FUN with ACTION and CAND and protect against errors."
+  (condition-case err
+      (funcall fun action cand)
+    (t (message "consult--read: No preview, the :state function protocol changed: %S" err))))
+
 (defun consult--with-preview-1 (preview-key state transform candidate fun)
   "Add preview support for FUN.
-
-See `consult--with-preview' for the arguments PREVIEW-KEY, STATE, TRANSFORM
-and CANDIDATE."
+See `consult--with-preview' for the arguments
+PREVIEW-KEY, STATE, TRANSFORM and CANDIDATE."
   (let ((input "") selected timer last-preview
         ;; symbol indirection because of bug#46407
-        (post-command-sym (make-symbol "consult--preview-post-command")))
+        (post-command-sym (make-symbol "consult--preview-post-command"))
+        (minibuffer-exit-sym (make-symbol "consult--preview-minibuffer-exit")))
     (consult--minibuffer-with-setup-hook
         (if (and state preview-key)
             (lambda ()
+              ;; STEP 1: Setup the preview function
+              (with-selected-window (or (minibuffer-selected-window) (next-window))
+                (consult--protected-preview-call state 'setup nil))
               (setq consult--preview-function
                     (lambda ()
                       (when-let ((cand (funcall candidate))
@@ -1389,10 +1397,24 @@ and CANDIDATE."
                                              (lambda ()
                                                (when (window-live-p win)
                                                  (with-selected-window win
-                                                   (funcall state transformed nil)
+                                                   ;; STEP 2: Preview candidate
+                                                   (consult--protected-preview-call
+                                                    state 'preview transformed)
                                                    (setq last-preview new-preview)))))))
-                                  (funcall state transformed nil)
+                                  ;; STEP 2: Preview candidate
+                                  (consult--protected-preview-call state 'preview transformed)
                                   (setq last-preview new-preview)))))))))
+              (fset minibuffer-exit-sym
+                    (lambda ()
+                      (when timer
+                        (cancel-timer timer))
+                      (with-selected-window (or (minibuffer-selected-window) (next-window))
+                        ;; STEP 3: Reset preview
+                        (when last-preview
+                          (consult--protected-preview-call state 'preview nil))
+                        ;; STEP 4: Notify the preview function of the minibuffer exit
+                        (consult--protected-preview-call state 'exit nil))))
+              (add-hook 'minibuffer-exit-hook minibuffer-exit-sym nil 'local)
               (fset post-command-sym
                     (lambda ()
                       (setq input (minibuffer-contents-no-properties))
@@ -1419,13 +1441,9 @@ and CANDIDATE."
           (cons (setq selected (when-let (result (funcall fun))
                                  (funcall transform input result)))
                 input)
-        (when timer
-          (cancel-timer timer))
-        ;; If there is a state function, always call restore!
-        ;; The preview function should be seen as a stateful object,
-        ;; and we call the destructor here.
         (when state
-          (funcall state selected t))))))
+          ;; STEP 5: The preview function should perform its final action
+          (consult--protected-preview-call state 'finish selected))))))
 
 (defmacro consult--with-preview (preview-key state transform candidate &rest body)
   "Add preview support to BODY.
@@ -1435,11 +1453,19 @@ TRANSFORM is the transformation function.
 CANDIDATE is the function returning the current candidate.
 PREVIEW-KEY are the keys which triggers the preview.
 
-The preview function takes two arguments, the selected candidate and a restore
-flag. It is called every time with restore=nil after a preview-key keypress, as
-long as a new candidate is selected. Finally the preview function is called in
-any case with restore=t even if no preview has actually taken place. The
-candidate argument can be nil if the selection has been aborted."
+The state function takes two arguments, an action argument and the
+selected candidate. The candidate argument can be nil if no candidate is
+selected or if the selection was aborted. The function is called in
+sequence with the following arguments:
+
+  1. 'setup nil         After entering the minibuffer (minibuffer-setup-hook).
+  2. 'preview CAND/nil  Preview candidate CAND or reset if CAND is nil.
+     'preview CAND/nil
+     'preview CAND/nil
+     ...
+  3. 'preview nil       Reset preview.
+  4. 'exit nil          Before exiting the minibuffer (minibuffer-exit-hook).
+  5. 'finish CAND/nil   After leaving the minibuffer, CAND has been selected."
   (declare (indent 4))
   `(consult--with-preview-1 ,preview-key ,state ,transform ,candidate (lambda () ,@body)))
 
@@ -2112,11 +2138,12 @@ PREVIEW-KEY are the preview keys."
                          ,@(unless sort '((cycle-sort-function . identity)
                                           (display-sort-function . identity)))))
              (result
-              (consult--with-preview preview-key state
-                                     (lambda (input cand)
-                                       (funcall lookup input (funcall async nil) cand))
-                                     (apply-partially #'run-hook-with-args-until-success
-                                                      'consult--completion-candidate-hook)
+              (consult--with-preview
+                  preview-key state
+                  (lambda (input cand)
+                    (funcall lookup input (funcall async nil) cand))
+                  (apply-partially #'run-hook-with-args-until-success
+                                   'consult--completion-candidate-hook)
                 (completing-read prompt
                                  (lambda (str pred action)
                                    (if (eq action 'metadata)
@@ -2284,29 +2311,33 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
                                         (when-let (fun (plist-get src :state))
                                           (cons src (funcall fun))))
                                       sources)))
-    (let ((last-fun))
-      (pcase-lambda (`(,cand . ,src) restore)
-        ;; Get state function
-        (let ((selected-fun (cdr (assq src states))))
-          (if restore
-              (progn
-                ;; If the candidate source changed, destruct first the last source.
-                (when (and last-fun (not (eq last-fun selected-fun)))
-                  (funcall last-fun nil t))
-                ;; Destruct all the sources, except the last and selected source
-                (dolist (state states)
-                  (let ((fun (cdr state)))
-                    (unless (or (eq fun last-fun) (eq fun selected-fun))
-                      (funcall fun nil t))))
-                ;; Finally destruct the source with the selected candidate
-                (when selected-fun (funcall selected-fun cand t)))
-            ;; If the candidate source changed during preview communicate to
-            ;; the last source, that none of its candidates is previewed anymore.
-            (when (and last-fun (not (eq last-fun selected-fun)))
-              (funcall last-fun nil nil))
-            (setq last-fun selected-fun)
-            ;; Call the state function.
-            (when selected-fun (funcall selected-fun cand nil))))))))
+    (let (last-fun)
+      (pcase-lambda (action `(,cand . ,src))
+        (pcase action
+          ('setup
+           (pcase-dolist (`(,_ . ,fun) states)
+             (funcall fun 'setup nil)))
+          ('exit
+           (pcase-dolist (`(,_ . ,fun) states)
+             (funcall fun 'exit nil)))
+          ('preview
+           (let ((selected-fun (cdr (assq src states))))
+             ;; If the candidate source changed during preview communicate to
+             ;; the last source, that none of its candidates is previewed anymore.
+             (when (and last-fun (not (eq last-fun selected-fun)))
+               (funcall last-fun 'preview nil))
+             (setq last-fun selected-fun)
+             (when selected-fun
+               (funcall selected-fun 'preview cand))))
+          ('finish
+           (let ((selected-fun (cdr (assq src states))))
+             ;; Finish all the sources, except the selected one.
+             (pcase-dolist (`(,_ . ,fun) states)
+               (unless (eq fun selected-fun)
+                 (funcall fun 'finish nil)))
+             ;; Finish the source with the selected candidate
+             (when selected-fun
+               (funcall selected-fun 'finish cand)))))))))
 
 (defun consult--multi (sources &rest options)
   "Select from candidates taken from a list of SOURCES.
@@ -2374,8 +2405,9 @@ Optional source fields:
                  (consult--setup-keymap keymap nil nil preview-key)
                  (setq-local minibuffer-default-add-function
                              (apply-partially #'consult--add-history nil add-history))))
-    (car (consult--with-preview preview-key state
-                                (lambda (inp _) (funcall transform inp)) (lambda () t)
+    (car (consult--with-preview
+             preview-key state
+             (lambda (inp _) (funcall transform inp)) (lambda () t)
            (read-from-minibuffer prompt initial nil nil history default inherit-input-method)))))
 
 (cl-defun consult--prompt (&rest options &key prompt history add-history initial default
@@ -2422,17 +2454,21 @@ of functions and in `consult-completion-in-region'."
               (and (markerp start) (not (eq (marker-buffer start) (current-buffer))))
               (and (markerp end) (not (eq (marker-buffer end) (current-buffer)))))
     (let (ov)
-      (lambda (cand restore)
-        (if restore
-            (when ov (delete-overlay ov))
-          (unless ov (setq ov (consult--overlay start end
-                                                'invisible t
-                                                'window (selected-window))))
-          ;; Use `add-face-text-property' on a copy of "cand in order to merge face properties
-          (setq cand (copy-sequence cand))
-          (add-face-text-property 0 (length cand) 'consult-preview-insertion t cand)
-          ;; Use the `before-string' property since the overlay might be empty.
-          (overlay-put ov 'before-string cand))))))
+      (lambda (action cand)
+        (cond
+         ((and (not cand) ov)
+          (delete-overlay ov)
+          (setq ov nil))
+         ((and (eq action 'preview) cand)
+           (unless ov
+             (setq ov (consult--overlay start end
+                                        'invisible t
+                                        'window (selected-window))))
+           ;; Use `add-face-text-property' on a copy of "cand in order to merge face properties
+           (setq cand (copy-sequence cand))
+           (add-face-text-property 0 (length cand) 'consult-preview-insertion t cand)
+           ;; Use the `before-string' property since the overlay might be empty.
+           (overlay-put ov 'before-string cand)))))))
 
 ;;;###autoload
 (defun consult-completion-in-region (start end collection &optional predicate)
@@ -2782,19 +2818,18 @@ The symbol at point is added to the future history."
                             (+ consult--narrow min-level))))
          (narrow-keys (mapcar (lambda (c) (cons c (format "Level %c" c)))
                               (number-sequence ?1 ?9))))
-    (consult--with-location-upgrade candidates
-      (consult--read
-       candidates
-       :prompt "Go to heading: "
-       :annotate (consult--line-prefix)
-       :category 'consult-location
-       :sort nil
-       :require-match t
-       :lookup #'consult--line-match
-       :narrow `(:predicate ,narrow-pred :keys ,narrow-keys)
-       :history '(:input consult--line-history)
-       :add-history (thing-at-point 'symbol)
-       :state (consult--jump-state)))))
+    (consult--read
+     candidates
+     :prompt "Go to heading: "
+     :annotate (consult--line-prefix)
+     :category 'consult-location
+     :sort nil
+     :require-match t
+     :lookup #'consult--line-match
+     :narrow `(:predicate ,narrow-pred :keys ,narrow-keys)
+     :history '(:input consult--line-history)
+     :add-history (thing-at-point 'symbol)
+     :state (consult--location-state candidates))))
 
 ;;;;; Command: consult-mark
 
@@ -2979,25 +3014,24 @@ CAND is the currently selected candidate."
   "Select from from line CANDIDATES and jump to the match.
 CURR-LINE is the current line. See `consult--read' for the arguments PROMPT,
 INITIAL and GROUP."
-  (consult--with-location-upgrade candidates
-    (consult--read
-     candidates
-     :prompt prompt
-     :annotate (consult--line-prefix curr-line)
-     :group group
-     :category 'consult-location
-     :sort nil
-     :require-match t
-     ;; Always add last isearch string to future history
-     :add-history (list (thing-at-point 'symbol) isearch-string)
-     :history '(:input consult--line-history)
-     :lookup #'consult--line-match
-     :default (car candidates)
-     ;; Add isearch-string as initial input if starting from isearch
-     :initial (or initial
-                  (and isearch-mode
-                       (prog1 isearch-string (isearch-done))))
-     :state (consult--jump-state))))
+  (consult--read
+   candidates
+   :prompt prompt
+   :annotate (consult--line-prefix curr-line)
+   :group group
+   :category 'consult-location
+   :sort nil
+   :require-match t
+   ;; Always add last isearch string to future history
+   :add-history (list (thing-at-point 'symbol) isearch-string)
+   :history '(:input consult--line-history)
+   :lookup #'consult--line-match
+   :default (car candidates)
+   ;; Add isearch-string as initial input if starting from isearch
+   :initial (or initial
+                (and isearch-mode
+                     (prog1 isearch-string (isearch-done))))
+   :state (consult--location-state candidates)))
 
 ;;;###autoload
 (defun consult-line (&optional initial start)
@@ -3052,14 +3086,10 @@ QUERY can be set to a plist according to `consult--buffer-query'."
 
 (defun consult--keep-lines-state (filter)
   "State function for `consult-keep-lines' with FILTER function."
-  (let* ((lines)
-         (buffer-orig (current-buffer))
-         (font-lock-orig font-lock-mode)
-         (hl-line-orig (bound-and-true-p hl-line-mode))
-         (point-orig (point))
-         (content-orig)
-         (replace)
-         (last-input))
+  (let ((font-lock-orig font-lock-mode)
+        (hl-line-orig (bound-and-true-p hl-line-mode))
+        (point-orig (point))
+        lines content-orig replace last-input)
     (if (use-region-p)
         (save-restriction
           ;; Use the same behavior as `keep-lines'.
@@ -3089,49 +3119,48 @@ QUERY can be set to a plist according to `consult--buffer-query'."
       (consult--each-line beg end
         (push (consult--buffer-substring beg end) lines)))
     (setq lines (nreverse lines))
-    (lambda (input restore)
-      (with-current-buffer buffer-orig
-        ;; Restoring content and point position
-        (when (and restore last-input)
-          ;; No undo recording, modification hooks, buffer modified-status
-          (with-silent-modifications (funcall replace content-orig point-orig)))
-        ;; Committing or new input provided -> Update
-        (when (and input ;; Input has been povided
-                   (or
-                    ;; Committing, but not with empty input
-                    (and restore (not (string-match-p "\\`!? ?\\'" input)))
-                    ;; Input has changed
-                    (not (equal input last-input))))
-          (let ((filtered-content
-                 (if (string-match-p "\\`!? ?\\'" input)
-                     ;; Special case the empty input for performance.
-                     ;; Otherwise it could happen that the minibuffer is empty,
-                     ;; but the buffer has not been updated.
-                     content-orig
-                   (if restore
-                       (apply #'concat (mapcan (lambda (x) (list x "\n"))
-                                               (funcall filter input lines)))
-                     (while-no-input
-                       ;; Heavy computation is interruptible if *not* committing!
-                       ;; Allocate new string candidates since the matching function mutates!
-                       (apply #'concat (mapcan (lambda (x) (list x "\n"))
-                                               (funcall filter input (mapcar #'copy-sequence lines)))))))))
-            (when (stringp filtered-content)
-              (when font-lock-mode (font-lock-mode -1))
-              (when (bound-and-true-p hl-line-mode) (hl-line-mode -1))
-              (if restore
-                  (atomic-change-group
-                    ;; Disable modification hooks for performance
-                    (let ((inhibit-modification-hooks t))
-                      (funcall replace filtered-content)))
-                ;; No undo recording, modification hooks, buffer modified-status
-                (with-silent-modifications
-                  (funcall replace filtered-content)
-                  (setq last-input input))))))
-        ;; Restore modes
-        (when restore
-          (when hl-line-orig (hl-line-mode 1))
-          (when font-lock-orig (font-lock-mode 1)))))))
+    (lambda (action input)
+      ;; Restoring content and point position
+      (when (and (eq action 'finish) last-input)
+        ;; No undo recording, modification hooks, buffer modified-status
+        (with-silent-modifications (funcall replace content-orig point-orig)))
+      ;; Committing or new input provided -> Update
+      (when (and input ;; Input has been povided
+                 (or
+                  ;; Committing, but not with empty input
+                  (and (eq action 'finish) (not (string-match-p "\\`!? ?\\'" input)))
+                  ;; Input has changed
+                  (not (equal input last-input))))
+        (let ((filtered-content
+               (if (string-match-p "\\`!? ?\\'" input)
+                   ;; Special case the empty input for performance.
+                   ;; Otherwise it could happen that the minibuffer is empty,
+                   ;; but the buffer has not been updated.
+                   content-orig
+                 (if (eq action 'finish)
+                     (apply #'concat (mapcan (lambda (x) (list x "\n"))
+                                             (funcall filter input lines)))
+                   (while-no-input
+                     ;; Heavy computation is interruptible if *not* committing!
+                     ;; Allocate new string candidates since the matching function mutates!
+                     (apply #'concat (mapcan (lambda (x) (list x "\n"))
+                                             (funcall filter input (mapcar #'copy-sequence lines)))))))))
+          (when (stringp filtered-content)
+            (when font-lock-mode (font-lock-mode -1))
+            (when (bound-and-true-p hl-line-mode) (hl-line-mode -1))
+            (if (eq action 'finish)
+                (atomic-change-group
+                  ;; Disable modification hooks for performance
+                  (let ((inhibit-modification-hooks t))
+                    (funcall replace filtered-content)))
+              ;; No undo recording, modification hooks, buffer modified-status
+              (with-silent-modifications
+                (funcall replace filtered-content)
+                (setq last-input input))))))
+      ;; Restore modes
+      (when (eq action 'finish)
+        (when hl-line-orig (hl-line-mode 1))
+        (when font-lock-orig (font-lock-mode 1))))))
 
 ;;;###autoload
 (defun consult-keep-lines (&optional filter initial)
@@ -3195,13 +3224,13 @@ INITIAL is the initial input."
               (put-text-property 0 1 'consult--focus-line (cons (cl-incf i) beg) line)
               (push line lines)))
           (setq lines (nreverse lines)))))
-    (lambda (input restore)
+    (lambda (action input)
       ;; New input provided -> Update
       (when (and input (not (equal input last-input)))
         (let (new-overlays)
           (pcase (while-no-input
                    (unless (string-match-p "\\`!? ?\\'" input) ;; empty input.
-                     (let* ((inhibit-quit restore) ;; Non interruptible, when quitting!
+                     (let* ((inhibit-quit (eq action 'finish)) ;; Non interruptible, when quitting!
                             (not (string-prefix-p "! " input))
                             (stripped (string-remove-prefix "! " input))
                             (matches (funcall filter stripped lines))
@@ -3228,7 +3257,7 @@ INITIAL is the initial input."
              (mapc #'delete-overlay overlays)
              (setq last-input input overlays new-overlays))
             (_ (mapc #'delete-overlay new-overlays)))))
-      (when restore
+      (when (eq action 'finish)
         (cond
          ((not input)
           (mapc #'delete-overlay overlays)
@@ -3322,12 +3351,13 @@ narrowing and the settings `consult-goto-line-numbers' and
                            (consult--prompt
                             :prompt "Go to line: "
                             ;; goto-line-history is available on Emacs 28
-                            :history (and (boundp 'goto-line-history) 'goto-line-history)
-                            :state (let ((preview (consult--jump-preview)))
-                                     (lambda (str restore)
-                                       (funcall preview
-                                                (consult--goto-line-position str #'ignore)
-                                                restore))))
+                            :history
+                            (and (boundp 'goto-line-history) 'goto-line-history)
+                            :state
+                            (let ((preview (consult--jump-preview)))
+                              (lambda (action str)
+                                (funcall preview action
+                                         (consult--goto-line-position str #'ignore)))))
                            #'minibuffer-message))
                  (consult--jump pos)
                t)))))
@@ -3338,12 +3368,13 @@ narrowing and the settings `consult-goto-line-numbers' and
   "Create preview function for files."
   (let ((open (consult--temporary-files))
         (preview (consult--buffer-preview)))
-    (lambda (cand restore)
-      (if restore
-          (progn
-            (funcall preview nil t)
-            (funcall open))
-        (funcall preview (and cand (funcall open cand)) nil)))))
+    (lambda (action cand)
+      (when (eq action 'exit)
+        (funcall open))
+      (funcall preview action
+               (and cand
+                    (eq action 'preview)
+                    (funcall open cand))))))
 
 (defun consult--file-action (file)
   "Open FILE via `consult--buffer-action'."
@@ -3589,24 +3620,21 @@ There exists no equivalent of this command in Emacs 28."
   "Create preview function for bookmarks."
   (let ((preview (consult--jump-preview))
         (open (consult--temporary-files)))
-    (lambda (cand restore)
-      (if restore
-          (progn
-            (funcall open)
-            (funcall preview nil t))
-        (funcall
-         preview
-         (when-let (bm (and cand (assoc cand bookmark-alist)))
-           (let ((handler (or (bookmark-get-handler bm) #'bookmark-default-handler)))
-             ;; Only preview bookmarks with the default handler.
-             (if-let* ((file (and (eq handler #'bookmark-default-handler)
-                                  (bookmark-get-filename bm)))
-                       (pos (bookmark-get-position bm))
-                       (buf (funcall open file)))
-                 (set-marker (make-marker) pos buf)
-               (message "No preview for %s" handler)
-               nil)))
-         nil)))))
+    (lambda (action cand)
+      (when (eq action 'exit)
+        (funcall open))
+      (funcall
+       preview action
+       (when-let (bm (and cand (eq action 'preview) (assoc cand bookmark-alist)))
+         (let ((handler (or (bookmark-get-handler bm) #'bookmark-default-handler)))
+           ;; Only preview bookmarks with the default handler.
+           (if-let* ((file (and (eq handler #'bookmark-default-handler)
+                                (bookmark-get-filename bm)))
+                     (pos (bookmark-get-position bm))
+                     (buf (funcall open file)))
+               (set-marker (make-marker) pos buf)
+             (message "No preview for %s" handler)
+             nil)))))))
 
 (defun consult--bookmark-action (bm)
   "Open BM via `consult--buffer-action'."
@@ -3753,9 +3781,8 @@ as argument."
                 (and (minibufferp)
                      (eq minibuffer-history-variable 'extended-command-history)
                      'command)
-                :state
-                (consult--insertion-preview (point) (point))
-                :sort nil))))
+                :sort nil
+                :state (consult--insertion-preview (point) (point))))))
     (when (minibufferp)
       (delete-minibuffer-contents))
     (insert (substring-no-properties str))))
@@ -3858,8 +3885,8 @@ starts a new Isearch session otherwise."
             (lambda (_ candidates str)
               (if-let (found (member str candidates)) (substring (car found) 0 -1) str))
             :state
-            (lambda (cand restore)
-              (unless restore
+            (lambda (action cand)
+              (when (and (eq action 'preview) cand)
                 (setq isearch-string cand)
                 (isearch-update-from-string-properties cand)
                 (isearch-update)))
@@ -3945,26 +3972,28 @@ This is an alternative to `minor-mode-menu-from-indicator'."
 The command supports previewing the currently selected theme."
   (interactive
    (list
-    (let ((avail-themes (seq-filter (lambda (x) (or (not consult-themes)
-                                                    (memq x consult-themes)))
-                                    (cons nil (custom-available-themes))))
-          (saved-theme (car custom-enabled-themes)))
+    (let ((avail-themes
+           (seq-filter (lambda (x) (or (not consult-themes)
+                                       (memq x consult-themes)))
+                       (cons 'default (custom-available-themes))))
+          (saved-theme
+           (car custom-enabled-themes)))
       (consult--read
-       (mapcar (lambda (x) (if x (symbol-name x) "default")) avail-themes)
+       (mapcar #'symbol-name avail-themes)
        :prompt "Theme: "
        :require-match t
        :category 'theme
        :history 'consult--theme-history
        :lookup (lambda (_input _cands x)
-                 (unless (equal x "default")
-                   (or (when-let (cand (and x (intern-soft x)))
-                         (car (memq cand avail-themes)))
-                       saved-theme)))
-       :state (lambda (cand restore)
-                (consult-theme (if (and restore (not cand))
-                                   saved-theme
-                                 cand)))
+                 (or (when-let (cand (and x (intern-soft x)))
+                       (car (memq cand avail-themes)))
+                     saved-theme))
+       :state (lambda (action theme)
+                (pcase action
+                  ('finish (consult-theme (or theme saved-theme)))
+                  ((and 'preview (guard theme)) (consult-theme theme))))
        :default (symbol-name (or saved-theme 'default))))))
+  (when (eq theme 'default) (setq theme nil))
   (unless (eq theme (car custom-enabled-themes))
     (mapc #'disable-theme custom-enabled-themes)
     (when theme
@@ -4089,8 +4118,8 @@ Report progress and return a list of the results"
 (defun consult--buffer-preview ()
   "Buffer preview function."
   (let ((orig-buf (current-buffer)))
-    (lambda (cand restore)
-      (when (and (not restore)
+    (lambda (action cand)
+      (when (and (eq action 'preview)
                  ;; Only preview in current window and other window.
                  ;; Preview in frames and tabs is not possible since these don't get cleaned up.
                  (or (eq consult--buffer-display #'switch-to-buffer)
@@ -4401,15 +4430,14 @@ FIND-FILE is the file open function, defaulting to `find-file'."
        line col))))
 
 (defun consult--grep-state ()
-  "Grep preview state function."
+  "Grep state function."
   (let ((open (consult--temporary-files))
         (jump (consult--jump-state)))
-    (lambda (cand restore)
-      (when restore
-        (funcall open))
-      (funcall jump
-               (consult--grep-position cand (and (not restore) open))
-               restore))))
+    (lambda (action cand)
+      (when (eq action 'exit)
+        (funcall open)
+        (setq open nil))
+      (funcall jump action (consult--grep-position cand open)))))
 
 (defun consult--grep-group (cand transform)
   "Return title for CAND or TRANSFORM the candidate."

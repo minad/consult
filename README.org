@@ -608,30 +608,18 @@ UI experience.
   - =:state= State constructor for the source, must return the state function.
   - Other source fields can be added specifically to the use case.
 
-  The =:state= and =:action= fields of the sources deserve a longer explanation.
-  The =:action= function takes a single argument and is only called after
-  selection with the selected candidate, if the selection has not been aborted.
-  This functionality is provided for convenience and easy definition of sources.
-  The =:state= field is more complicated and general. The =:state= function is a
-  constructor function without arguments, which can perform some setup
-  necessary for the preview. It must return a closure with two arguments: The
-  first argument is the candidate string, the second argument is the restore
-  flag. The state function is called during preview, if a preview key has been
-  pressed, with the selected candidate or nil and the restore argument being
-  nil. Furthermore the state function is always called after selection with the
-  selected candidate or nil. The state function is called with nil for the
-  candidate if for example the selection process has been aborted or if the
-  original preview state should be restored during preview. The restore flag is
-  t for the final call. The final call happens even if preview is disabled. For
-  this reason you can also use the final call to the state function in a similar
-  way as =:action=. You probably only want to specify both =:state= and
-  =:action= if =:state= is purely responsible for preview and =:action= is then
-  responsible for the real action after selection.
+  The =:state= and =:action= fields of the sources deserve a longer explanation. The
+  =:action= function takes a single argument and is only called after selection
+  with the selected candidate, if the selection has not been aborted. This
+  functionality is provided for convenience and easy definition of sources. The
+  =:state= field is more general. The =:state= function is a constructor function
+  without arguments, which can perform some setup necessary for the preview. It
+  must return a closure which takes an ACTION and a CANDIDATE argument. See the
+  docstring of =consult--with-preview= for more details about the ACTION argument.
 
-  In order to avoid slowness, =consult-buffer= only preview buffers by default.
-  Loading recent files, bookmarks or views can result in expensive operations.
-  However it is possible to configure the bookmark and file sources to also
-  perform preview.
+  By default, =consult-buffer= previews buffers, bookmarks and files. Loading
+  recent files, bookmarks or views can result in expensive operations. However
+  it is possible to configure a manual preview as follows.
 
   #+begin_src emacs-lisp
     (consult-customize

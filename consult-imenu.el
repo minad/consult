@@ -175,10 +175,10 @@ this function can jump across buffers."
       :prompt prompt
       :state
       (let ((preview (consult--jump-preview)))
-        (lambda (cand restore)
+        (lambda (action cand)
           ;; Only preview simple menu items which are markers,
           ;; in order to avoid any bad side effects.
-          (funcall preview (and (markerp (cdr cand)) (cdr cand)) restore)))
+          (funcall preview action (and (markerp (cdr cand)) (cdr cand)))))
       :require-match t
       :group
       (when narrow
