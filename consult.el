@@ -1350,54 +1350,42 @@ FACE is the cursor face."
 
 See `consult--with-preview' for the arguments PREVIEW-KEY, STATE, TRANSFORM
 and CANDIDATE."
-  (let ((input "") (selected) (timer))
+  (let ((input "") selected timer last-preview
+        ;; symbol indirection because of bug#46407
+        (post-command-sym (make-symbol "consult--preview-post-command")))
     (consult--minibuffer-with-setup-hook
         (if (and state preview-key)
             (lambda ()
               (setq consult--preview-function
-                    (let ((last-preview))
-                      (lambda ()
-                        (when-let (cand (funcall candidate))
-                          (with-selected-window (active-minibuffer-window)
-                            (let ((input (minibuffer-contents-no-properties)))
-                              (with-selected-window (or (minibuffer-selected-window) (next-window))
-                                (let ((transformed (funcall transform input cand))
-                                      (new-preview (cons input cand)))
-                                  (when-let (debounce (consult--preview-key-debounce preview-key transformed))
-                                    (when timer
-                                      (cancel-timer timer)
-                                      (setq timer nil))
-                                    (unless (equal last-preview new-preview)
-                                      (if (> debounce 0)
-                                          (let ((win (selected-window)))
-                                            (setq timer
-                                                  (run-at-time
-                                                   debounce
-                                                   nil
-                                                   (lambda ()
-                                                     (when (window-live-p win)
-                                                       (with-selected-window win
-                                                         (funcall state transformed nil)
-                                                         (setq last-preview new-preview)))))))
-                                        (funcall state transformed nil)
-                                        (setq last-preview new-preview))))))))))))
-              ;; symbol indirection because of bug#46407
-              (let ((post-command-sym (make-symbol "consult--preview-post-command")))
-                (fset post-command-sym (lambda ()
-                                         (setq input (minibuffer-contents-no-properties))
-                                         (funcall consult--preview-function)))
-                ;; TODO Emacs 28 has a bug, where the hook--depth-alist is not cleaned up properly
-                ;; Do not use the broken add-hook here.
-                ;;(add-hook 'post-command-hook post-command-sym 'append 'local)
-                (setq-local post-command-hook
-                            (append
-                             (remove t post-command-hook)
-                             (list post-command-sym)
-                             (and (memq t post-command-hook) '(t))))))
-          (lambda ()
-            ;; symbol indirection because of bug#46407
-            (let ((post-command-sym (make-symbol "consult--preview-post-command")))
-              (fset post-command-sym (lambda () (setq input (minibuffer-contents-no-properties))))
+                    (lambda ()
+                      (when-let ((cand (funcall candidate))
+                                 (input (with-selected-window (active-minibuffer-window)
+                                          (minibuffer-contents-no-properties))))
+                        (with-selected-window (or (minibuffer-selected-window) (next-window))
+                          (let ((transformed (funcall transform input cand))
+                                (new-preview (cons input cand)))
+                            (when-let (debounce (consult--preview-key-debounce preview-key transformed))
+                              (when timer
+                                (cancel-timer timer)
+                                (setq timer nil))
+                              (unless (equal last-preview new-preview)
+                                (if (> debounce 0)
+                                    (let ((win (selected-window)))
+                                      (setq timer
+                                            (run-at-time
+                                             debounce
+                                             nil
+                                             (lambda ()
+                                               (when (window-live-p win)
+                                                 (with-selected-window win
+                                                   (funcall state transformed nil)
+                                                   (setq last-preview new-preview)))))))
+                                  (funcall state transformed nil)
+                                  (setq last-preview new-preview)))))))))
+              (fset post-command-sym
+                    (lambda ()
+                      (setq input (minibuffer-contents-no-properties))
+                      (funcall consult--preview-function)))
               ;; TODO Emacs 28 has a bug, where the hook--depth-alist is not cleaned up properly
               ;; Do not use the broken add-hook here.
               ;;(add-hook 'post-command-hook post-command-sym 'append 'local)
@@ -1405,7 +1393,17 @@ and CANDIDATE."
                           (append
                            (remove t post-command-hook)
                            (list post-command-sym)
-                           (and (memq t post-command-hook) '(t)))))))
+                           (and (memq t post-command-hook) '(t)))))
+          (lambda ()
+            (fset post-command-sym (lambda () (setq input (minibuffer-contents-no-properties))))
+            ;; TODO Emacs 28 has a bug, where the hook--depth-alist is not cleaned up properly
+            ;; Do not use the broken add-hook here.
+            ;;(add-hook 'post-command-hook post-command-sym 'append 'local)
+            (setq-local post-command-hook
+                        (append
+                         (remove t post-command-hook)
+                         (list post-command-sym)
+                         (and (memq t post-command-hook) '(t))))))
       (unwind-protect
           (cons (setq selected (when-let (result (funcall fun))
                                  (funcall transform input result)))
