@@ -4119,14 +4119,15 @@ Report progress and return a list of the results"
   "Buffer preview function."
   (let ((orig-buf (current-buffer)))
     (lambda (action cand)
-      (when (and (eq action 'preview)
-                 ;; Only preview in current window and other window.
-                 ;; Preview in frames and tabs is not possible since these don't get cleaned up.
-                 (or (eq consult--buffer-display #'switch-to-buffer)
-                     (eq consult--buffer-display #'switch-to-buffer-other-window)))
+      ;; Only preview in current window and other window.
+      ;; Preview in frames and tabs is not possible since these don't get cleaned up.
+      (when (or (eq consult--buffer-display #'switch-to-buffer)
+                (eq consult--buffer-display #'switch-to-buffer-other-window))
         (cond
-         ((and cand (get-buffer cand)) (consult--buffer-action cand 'norecord))
-         ((buffer-live-p orig-buf) (consult--buffer-action orig-buf 'norecord)))))))
+         ((and cand (eq action 'preview) (get-buffer cand))
+          (consult--buffer-action cand 'norecord))
+         ((and (memq action '(preview exit)) (buffer-live-p orig-buf))
+          (consult--buffer-action orig-buf 'norecord)))))))
 
 (defun consult--buffer-action (buffer &optional norecord)
   "Switch to BUFFER via `consult--buffer-display' function.
