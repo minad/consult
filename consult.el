@@ -1390,32 +1390,32 @@ PREVIEW-KEY, STATE, TRANSFORM and CANDIDATE."
                 (consult--protected-state-call state 'setup nil))
               (setq consult--preview-function
                     (lambda ()
-                      (when-let ((cand (funcall candidate))
-                                 (input (with-selected-window (active-minibuffer-window)
-                                          (minibuffer-contents-no-properties))))
-                        (with-selected-window (or (minibuffer-selected-window) (next-window))
-                          (let ((transformed (funcall transform input cand))
-                                (new-preview (cons input cand)))
-                            (when-let (debounce (consult--preview-key-debounce preview-key transformed))
-                              (when timer
-                                (cancel-timer timer)
-                                (setq timer nil))
-                              (unless (equal last-preview new-preview)
-                                (if (> debounce 0)
-                                    (let ((win (selected-window)))
-                                      (setq timer
-                                            (run-at-time
-                                             debounce nil
-                                             (lambda ()
-                                               (when (window-live-p win)
-                                                 (with-selected-window win
-                                                   ;; STEP 2: Preview candidate
-                                                   (consult--protected-state-call
-                                                    state 'preview transformed)
-                                                   (setq last-preview new-preview)))))))
-                                  ;; STEP 2: Preview candidate
-                                  (consult--protected-state-call state 'preview transformed)
-                                  (setq last-preview new-preview)))))))))
+                      (with-selected-window (active-minibuffer-window)
+                        (when-let ((cand (funcall candidate))
+                                   (input (minibuffer-contents-no-properties)))
+                          (with-selected-window (or (minibuffer-selected-window) (next-window))
+                            (let ((transformed (funcall transform input cand))
+                                  (new-preview (cons input cand)))
+                              (when-let (debounce (consult--preview-key-debounce preview-key transformed))
+                                (when timer
+                                  (cancel-timer timer)
+                                  (setq timer nil))
+                                (unless (equal last-preview new-preview)
+                                  (if (> debounce 0)
+                                      (let ((win (selected-window)))
+                                        (setq timer
+                                              (run-at-time
+                                               debounce nil
+                                               (lambda ()
+                                                 (when (window-live-p win)
+                                                   (with-selected-window win
+                                                     ;; STEP 2: Preview candidate
+                                                     (consult--protected-state-call
+                                                      state 'preview transformed)
+                                                     (setq last-preview new-preview)))))))
+                                    ;; STEP 2: Preview candidate
+                                    (consult--protected-state-call state 'preview transformed)
+                                    (setq last-preview new-preview))))))))))
               (consult--append-local-post-command-hook
                (lambda ()
                  (setq input (minibuffer-contents-no-properties))
