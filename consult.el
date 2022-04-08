@@ -1355,7 +1355,7 @@ FACE is the cursor face."
     (if (numberp keys) keys any)))
 
 ;; TODO Remove this function after upgrades of :state functions
-(defun consult--protected-preview-call (fun action cand)
+(defun consult--protected-state-call (fun action cand)
   "Call state FUN with ACTION and CAND and protect against errors."
   (condition-case err
       (funcall fun action cand)
@@ -1374,7 +1374,7 @@ PREVIEW-KEY, STATE, TRANSFORM and CANDIDATE."
             (lambda ()
               ;; STEP 1: Setup the preview function
               (with-selected-window (or (minibuffer-selected-window) (next-window))
-                (consult--protected-preview-call state 'setup nil))
+                (consult--protected-state-call state 'setup nil))
               (setq consult--preview-function
                     (lambda ()
                       (when-let ((cand (funcall candidate))
@@ -1398,11 +1398,11 @@ PREVIEW-KEY, STATE, TRANSFORM and CANDIDATE."
                                                (when (window-live-p win)
                                                  (with-selected-window win
                                                    ;; STEP 2: Preview candidate
-                                                   (consult--protected-preview-call
+                                                   (consult--protected-state-call
                                                     state 'preview transformed)
                                                    (setq last-preview new-preview)))))))
                                   ;; STEP 2: Preview candidate
-                                  (consult--protected-preview-call state 'preview transformed)
+                                  (consult--protected-state-call state 'preview transformed)
                                   (setq last-preview new-preview)))))))))
               (fset minibuffer-exit-sym
                     (lambda ()
@@ -1411,9 +1411,9 @@ PREVIEW-KEY, STATE, TRANSFORM and CANDIDATE."
                       (with-selected-window (or (minibuffer-selected-window) (next-window))
                         ;; STEP 3: Reset preview
                         (when last-preview
-                          (consult--protected-preview-call state 'preview nil))
+                          (consult--protected-state-call state 'preview nil))
                         ;; STEP 4: Notify the preview function of the minibuffer exit
-                        (consult--protected-preview-call state 'exit nil))))
+                        (consult--protected-state-call state 'exit nil))))
               (add-hook 'minibuffer-exit-hook minibuffer-exit-sym nil 'local)
               (fset post-command-sym
                     (lambda ()
@@ -1443,7 +1443,7 @@ PREVIEW-KEY, STATE, TRANSFORM and CANDIDATE."
                 input)
         (when state
           ;; STEP 5: The preview function should perform its final action
-          (consult--protected-preview-call state 'return selected))))))
+          (consult--protected-state-call state 'return selected))))))
 
 (defmacro consult--with-preview (preview-key state transform candidate &rest body)
   "Add preview support to BODY.
