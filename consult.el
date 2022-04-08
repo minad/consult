@@ -78,10 +78,6 @@ The key must be either a string or a vector.
 This is the key representation accepted by `define-key'."
   :type '(choice key-sequence (const nil)))
 
-(defvar consult-project-root-function nil)
-(make-obsolete-variable 'consult-project-root-function
-                        "Deprecated in favor of `consult-project-function'." "0.15")
-
 (defcustom consult-project-function
   #'consult--default-project-function
   "Function which returns project root directory.
@@ -515,13 +511,6 @@ We use invalid characters outside the Unicode range.")
   "Overlays used by `consult-focus-lines'.")
 
 ;;;; Customization helper
-
-;; TODO remove obsolete function `consult--customize-set'.
-;; The function exists to avoid issues with precompiled configurations,
-;; which still refer to `consult--customize-set'.
-(defun consult--customize-set (cmds prop val)
-  "Set property PROP to VAL of commands CMDS."
-  (consult--customize-put cmds prop `',val))
 
 (defun consult--customize-put (cmds prop form)
   "Set property PROP to FORM of commands CMDS."
