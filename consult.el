@@ -1445,11 +1445,11 @@ selected or if the selection was aborted. The function is called in
 sequence with the following arguments:
 
   1. 'setup nil         After entering the minibuffer (minibuffer-setup-hook).
-/ 2. 'preview CAND/nil  Preview candidate CAND or reset if CAND is nil.
-|    'preview CAND/nil
-|    'preview CAND/nil
-|    ...
-\ 3. 'preview nil       Reset preview.
+⎧ 2. 'preview CAND/nil  Preview candidate CAND or reset if CAND is nil.
+⎪    'preview CAND/nil
+⎪    'preview CAND/nil
+⎪    ...
+⎩ 3. 'preview nil       Reset preview.
   4. 'exit nil          Before exiting the minibuffer (minibuffer-exit-hook).
   5. 'return CAND/nil   After leaving the minibuffer, CAND has been selected.
 
