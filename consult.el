@@ -1379,11 +1379,23 @@ FACE is the cursor face."
   "Add preview support for FUN.
 See `consult--with-preview' for the arguments
 PREVIEW-KEY, STATE, TRANSFORM and CANDIDATE."
-  (let ((input "") selected timer last-preview
-        (minibuffer-exit-sym (make-symbol "consult--preview-minibuffer-exit")))
+  (let ((input "") selected timer last-preview)
     (consult--minibuffer-with-setup-hook
         (if (and state preview-key)
             (lambda ()
+              (let ((exit-hook (make-symbol "consult--preview-minibuffer-exit")))
+                (fset exit-hook
+                      (lambda ()
+                        (when timer
+                          (cancel-timer timer)
+                          (setq timer nil))
+                        (with-selected-window (or (minibuffer-selected-window) (next-window))
+                          ;; STEP 3: Reset preview
+                          (when last-preview
+                            (consult--protected-state-call state 'preview nil))
+                          ;; STEP 4: Notify the preview function of the minibuffer exit
+                          (consult--protected-state-call state 'exit nil))))
+                (add-hook 'minibuffer-exit-hook exit-hook nil 'local))
               ;; STEP 1: Setup the preview function
               (with-selected-window (or (minibuffer-selected-window) (next-window))
                 (consult--protected-state-call state 'setup nil))
@@ -1404,8 +1416,7 @@ PREVIEW-KEY, STATE, TRANSFORM and CANDIDATE."
                                     (let ((win (selected-window)))
                                       (setq timer
                                             (run-at-time
-                                             debounce
-                                             nil
+                                             debounce nil
                                              (lambda ()
                                                (when (window-live-p win)
                                                  (with-selected-window win
@@ -1416,17 +1427,6 @@ PREVIEW-KEY, STATE, TRANSFORM and CANDIDATE."
                                   ;; STEP 2: Preview candidate
                                   (consult--protected-state-call state 'preview transformed)
                                   (setq last-preview new-preview)))))))))
-              (fset minibuffer-exit-sym
-                    (lambda ()
-                      (when timer
-                        (cancel-timer timer))
-                      (with-selected-window (or (minibuffer-selected-window) (next-window))
-                        ;; STEP 3: Reset preview
-                        (when last-preview
-                          (consult--protected-state-call state 'preview nil))
-                        ;; STEP 4: Notify the preview function of the minibuffer exit
-                        (consult--protected-state-call state 'exit nil))))
-              (add-hook 'minibuffer-exit-hook minibuffer-exit-sym nil 'local)
               (consult--append-local-post-command-hook
                (lambda ()
                  (setq input (minibuffer-contents-no-properties))
