@@ -4128,9 +4128,9 @@ Report progress and return a list of the results"
     (lambda (action cand)
       ;; Only preview in current window and other window.
       ;; Preview in frames and tabs is not possible since these don't get cleaned up.
-      (when (or (eq action 'preview)
-                (eq consult--buffer-display #'switch-to-buffer)
-                (eq consult--buffer-display #'switch-to-buffer-other-window))
+      (when (and (eq action 'preview)
+                 (memq consult--buffer-display
+                       '(switch-to-buffer switch-to-buffer-other-window)))
         (cond
          ((and cand (get-buffer cand))
           (consult--buffer-action cand 'norecord))
