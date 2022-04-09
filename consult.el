@@ -4131,12 +4131,11 @@ Report progress and return a list of the results"
       (when (and (eq action 'preview)
                  (memq consult--buffer-display
                        '(switch-to-buffer switch-to-buffer-other-window)))
-        (cond
-         ((and cand (get-buffer cand))
-          (unless orig-conf
-            (setq orig-conf (current-window-configuration)))
-          (consult--buffer-action cand 'norecord))
-         (t (ignore-errors (set-window-configuration orig-conf))))))))
+        (if orig-conf
+            (ignore-errors (set-window-configuration orig-conf))
+          (setq orig-conf (current-window-configuration)))
+        (when (and cand (get-buffer cand))
+          (consult--buffer-action cand 'norecord))))))
 
 (defun consult--buffer-action (buffer &optional norecord)
   "Switch to BUFFER via `consult--buffer-display' function.
