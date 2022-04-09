@@ -366,7 +366,7 @@ their descriptions.
    candidates.
  - =consult-preview-at-point= and =consult-preview-at-point-mode=: Command and
    minor mode which previews the candidate at point in the =*Completions*= buffer.
-   This mode is relevant if you use [[https://gitlab.com/protesilaos/mct][Mct]] or the default =*Completions*= UI.
+   This mode is relevant if you use [[https://git.sr.ht/~protesilaos/mct][Mct]] or the default =*Completions*= UI.
  - =consult-completion-in-region=: In case you don't use [[https://github.com/minad/corfu][Corfu]] as your in-buffer
    completion UI, this function can be set as =completion-in-region-function=.
    Then your minibuffer completion UI (e.g., Vertico or Icomplete) will be used
@@ -1032,7 +1032,7 @@ by Consult. Give them a try and find out which interaction model fits best for
 you!
 
 - The builtin completion UI, which pops up the =*Completions*= buffer.
-- [[https://gitlab.com/protesilaos/mct][mct by Protesilaos Stavrou]]: Minibuffer and Completions in Tandem, which builds
+- [[https://git.sr.ht/~protesilaos/mct][mct by Protesilaos Stavrou]]: Minibuffer and Completions in Tandem, which builds
   on the default completion UI.
 - [[https://github.com/raxod502/selectrum][selectrum by Radon Rosborough]]: Alternative vertical completion system.
 - [[https://github.com/oantolin/icomplete-vertical][icomplete-vertical by Omar Antolín Camarena]]: Vertical completion system based on Icomplete.
@@ -1179,7 +1179,7 @@ Code contributions:
 Advice and useful discussions:
 - [[https://github.com/clemera/][Clemens Radermacher]]
 - [[https://github.com/oantolin/][Omar Antolín Camarena]]
-- [[https://gitlab.com/protesilaos/][Protesilaos Stavrou]]
+- [[https://protesilaos.com][Protesilaos Stavrou]]
 - [[https://github.com/purcell/][Steve Purcell]]
 - [[https://github.com/alphapapa/][Adam Porter]]
 - [[https://github.com/manuel-uberti/][Manuel Uberti]]
