@@ -4124,16 +4124,26 @@ Report progress and return a list of the results"
 
 (defun consult--buffer-preview ()
   "Buffer preview function."
-  (let ((orig-buf (current-buffer)))
-    (lambda (action cand)
-      ;; Only preview in current window and other window.
-      ;; Preview in frames and tabs is not possible since these don't get cleaned up.
-      (when (and (eq action 'preview) (eq consult--buffer-display #'switch-to-buffer))
-        (cond
-         ((and cand (get-buffer cand))
-          (consult--buffer-action cand 'norecord))
-         ((buffer-live-p orig-buf)
-          (consult--buffer-action orig-buf 'norecord)))))))
+  ;; Only preview in current window and other window.
+  ;; Preview in frames and tabs is not possible since these don't get cleaned up.
+  (if (memq consult--buffer-display
+            '(switch-to-buffer switch-to-buffer-other-window))
+      (let ((orig-buf (current-buffer)) other-win)
+        (lambda (action cand)
+          (when (eq action 'preview)
+            (when (and (eq consult--buffer-display #'switch-to-buffer-other-window)
+                       (not other-win))
+              (switch-to-buffer-other-window orig-buf)
+              (setq other-win (selected-window)))
+            (let ((win (or other-win (selected-window))))
+              (when (window-live-p win)
+                (with-selected-window win
+                  (cond
+                   ((and cand (get-buffer cand))
+                    (switch-to-buffer cand 'norecord))
+                   ((buffer-live-p orig-buf)
+                    (switch-to-buffer orig-buf 'norecord)))))))))
+    #'ignore))
 
 (defun consult--buffer-action (buffer &optional norecord)
   "Switch to BUFFER via `consult--buffer-display' function.
