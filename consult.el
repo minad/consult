@@ -1153,7 +1153,7 @@ ORIG is the original function, HOOKS the arguments."
                       (pcase-dolist (`(,k ,_ ,d ,v) vars)
                         (set-default k d)
                         (set k v)))))
-          (if (not (buffer-local-value 'so-long-detected-p buf))
+          (if (not (ignore-errors (buffer-local-value 'so-long-detected-p buf)))
               buf
             (kill-buffer buf)
             (message "File `%s' has long lines, not previewed" name)
