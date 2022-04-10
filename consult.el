@@ -1136,24 +1136,24 @@ ORIG is the original function, HOOKS the arguments."
                                 (message "consult-preview-variables: The variable `%s' is not bound" k)
                                 nil))
                             consult-preview-variables))))
-    (unwind-protect
-        (progn
-          (advice-add #'run-hooks :around #'consult--filter-find-file-hook)
-          (pcase-dolist (`(,k ,v . ,_) vars)
-            (set-default k v)
-            (set k v))
-          ;; file-attributes may throw permission denied error
-          (when-let* ((attrs (ignore-errors (file-attributes name)))
-                      (size (file-attribute-size attrs)))
-            (if (<= size consult-preview-max-size)
-                (find-file-noselect name 'nowarn (> size consult-preview-raw-size))
-              (message "File `%s' (%s) is too large for preview"
-                       name (file-size-human-readable size))
-              nil)))
-      (advice-remove #'run-hooks #'consult--filter-find-file-hook)
-      (pcase-dolist (`(,k ,_ ,d ,v) vars)
-        (set-default k d)
-        (set k v)))))
+    ;; file-attributes may throw permission denied error
+    (when-let* ((attrs (ignore-errors (file-attributes name)))
+                (size (file-attribute-size attrs)))
+      (if (<= size consult-preview-max-size)
+          (unwind-protect
+              (progn
+                (advice-add #'run-hooks :around #'consult--filter-find-file-hook)
+                (pcase-dolist (`(,k ,v . ,_) vars)
+                  (set-default k v)
+                  (set k v))
+                (find-file-noselect name 'nowarn (> size consult-preview-raw-size)))
+            (advice-remove #'run-hooks #'consult--filter-find-file-hook)
+            (pcase-dolist (`(,k ,_ ,d ,v) vars)
+              (set-default k d)
+              (set k v)))
+        (message "File `%s' (%s) is too large for preview"
+                 name (file-size-human-readable size))
+        nil))))
 
 (defun consult--temporary-files ()
   "Return a function to open files temporarily for preview."
