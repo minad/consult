@@ -1997,9 +1997,6 @@ argument list :command and a highlighting function :highlight."
 (defvar consult-crm-map (make-sparse-keymap)
   "Keymap added by `consult-completing-read-multiple'.")
 
-(defvar consult-preview-map (make-sparse-keymap)
-  "Keymap added for commands with preview.")
-
 (defvar consult-narrow-map
   (let ((map (make-sparse-keymap)))
     (define-key map " " consult--narrow-space)
@@ -2057,7 +2054,6 @@ PREVIEW-KEY are the preview keys."
       (delq nil (list keymap
                       (and async consult-async-map)
                       (and narrow consult-narrow-map)
-                      (and preview-key consult-preview-map)
                       map))
       old-map))))
 

@@ -20,6 +20,7 @@
 - BREAKING API CHANGE of =consult--read=, =consult--prompt=, =consult--multi=: The
   state function protocol changed. The function gets notified of more completion
   state changes. See the docstring of =consult--with-preview= for details.
+- Remove unused =consult-preview-map=.
 
 * Version 0.16 (2022-03-08)
 
