@@ -322,7 +322,8 @@ The dynamically computed arguments are appended."
     (?g "Gnus" ,#'gnus-summary-bookmark-jump)
     ;; Introduced on Emacs 28
     (?s "Eshell" eshell-bookmark-jump)
-    (?e "Eww" eww-bookmark-jump))
+    (?e "Eww" eww-bookmark-jump)
+    (?v "VC Directory" vc-dir-bookmark-jump))
   "Bookmark narrowing configuration.
 
 Each element of the list must have the form '(char name handler)."
