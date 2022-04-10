@@ -1638,7 +1638,9 @@ POINT is the point position."
 BIND is the asynchronous function binding."
   (declare (indent 1))
   (let ((async (car bind)))
-    `(let ((,async ,@(cdr bind)) (orig-chunk))
+    `(let ((,async ,@(cdr bind))
+           (new-chunk (max read-process-output-max consult--process-chunk))
+           orig-chunk)
        (consult--minibuffer-with-setup-hook
            ;; Append such that we overwrite the completion style setting of
            ;; `fido-mode'. See `consult--async-split' and
@@ -1647,7 +1649,7 @@ BIND is the asynchronous function binding."
             (lambda ()
               (when (functionp ,async)
                 (setq orig-chunk read-process-output-max
-                      read-process-output-max (max read-process-output-max consult--process-chunk))
+                      read-process-output-max new-chunk)
                 (funcall ,async 'setup)
                 ;; Push input string to request refresh.
                 ;; We use a symbol in order to avoid adding lambdas to the hook variable.
@@ -1660,7 +1662,7 @@ BIND is the asynchronous function binding."
            (unwind-protect
                ,(macroexp-progn body)
              (funcall ,async 'destroy)
-             (when orig-chunk
+             (when (and orig-chunk (eq read-process-output-max new-chunk))
                (setq read-process-output-max orig-chunk))))))))
 
 (defun consult--async-sink ()
@@ -4469,8 +4471,7 @@ BUILDER is the command builder.
 PROMPT is the prompt string.
 INITIAL is inital input."
   (let* ((prompt-dir (consult--directory-prompt prompt dir))
-         (default-directory (cdr prompt-dir))
-         (read-process-output-max (max read-process-output-max (* 1024 1024))))
+         (default-directory (cdr prompt-dir)))
     (consult--read
      (consult--async-command builder
        (consult--grep-format builder)
