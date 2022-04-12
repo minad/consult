@@ -933,7 +933,6 @@ an overview of all Consult variables and functions with their descriptions.
 | consult-preview-variables        | Alist of variables to bind during preview             |
 | consult-project-buffer-sources   | List of virtual project buffer sources                |
 | consult-project-function         | Function which returns current project root           |
-| consult-recent-file-filter       | Filter for =consult-recent-file=                        |
 | consult-register-prefix          | Prefix string for register keys during completion     |
 | consult-ripgrep-args             | Command line arguments for ripgrep                    |
 | consult-themes                   | List of themes to be presented for selection          |
