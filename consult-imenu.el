@@ -183,10 +183,12 @@ this function can jump across buffers."
       :group
       (when narrow
         (lambda (cand transform)
-          (when-let (type (get-text-property 0 'consult--type cand))
-            (if transform
-                (substring cand (1+ (next-single-property-change 0 'consult--type cand)))
-              (alist-get type narrow)))))
+          (let ((type (get-text-property 0 'consult--type cand)))
+            (cond
+             ((and transform type)
+              (substring cand (1+ (next-single-property-change 0 'consult--type cand))))
+             (transform cand)
+             (type (alist-get type narrow))))))
       :narrow
       (when narrow
         (list :predicate
