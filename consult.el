@@ -4197,6 +4197,7 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
               (ht (consult--buffer-file-hash)))
           (mapcar (lambda (file)
                     (let ((part (substring file len)))
+                      (when (equal part "") (setq part "./"))
                       (put-text-property 0 (length part)
                                          'multi-category `(file . ,file) part)
                       part))
