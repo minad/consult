@@ -4,6 +4,7 @@
 
 * Development
 
+- Bugfixes
 - Drop Emacs 26 support.
 - =consult-goto-line=: Use =goto-line-history= on Emacs 28.
 - =consult-customize=: Evaluate settings at runtime. This change makes it possible
