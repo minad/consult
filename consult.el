@@ -4073,37 +4073,37 @@ AS is a conversion function."
   ;; This function is the backbone of most `consult-buffer' source. The
   ;; function supports filtering by various criteria which are used throughout
   ;; Consult.
-  (when-let (root (or (consult--normalize-directory directory) t))
-    (let ((buffers (buffer-list)))
-      (when sort
-        (setq buffers (funcall (intern (format "consult--buffer-sort-%s" sort)) buffers)))
-      (when (or filter mode as (stringp root))
-        (let ((mode (consult--ensure-list mode))
-              (exclude-re (consult--regexp-filter exclude))
-              (include-re (consult--regexp-filter include)))
-          (consult--keep! buffers
-            (and
-             (or (not mode)
-                 (apply #'provided-mode-derived-p
-                        (buffer-local-value 'major-mode it) mode))
-             (pcase-exhaustive filter
-               ('nil t)
-               ((or 't 'invert)
-                (eq (eq filter t)
-                    (and
-                     (or (not exclude)
-                         (not (string-match-p exclude-re (buffer-name it))))
-                     (or (not include)
-                         (not (not (string-match-p include-re (buffer-name it)))))))))
-             (or (not (stringp root))
-                 (when-let (dir (buffer-local-value 'default-directory it))
-                   (string-prefix-p root
-                                    (if (and (/= 0 (length dir)) (eq (aref dir 0) ?/))
-                                        dir
-                                      (expand-file-name dir)))))
-             (or (not predicate) (funcall predicate it))
-             (if as (funcall as it) it)))))
-      buffers)))
+  (let ((root (consult--normalize-directory directory))
+        (buffers (buffer-list)))
+    (when sort
+      (setq buffers (funcall (intern (format "consult--buffer-sort-%s" sort)) buffers)))
+    (when (or filter mode as root)
+      (let ((mode (consult--ensure-list mode))
+            (exclude-re (consult--regexp-filter exclude))
+            (include-re (consult--regexp-filter include)))
+        (consult--keep! buffers
+          (and
+           (or (not mode)
+               (apply #'provided-mode-derived-p
+                      (buffer-local-value 'major-mode it) mode))
+           (pcase-exhaustive filter
+             ('nil t)
+             ((or 't 'invert)
+              (eq (eq filter t)
+                  (and
+                   (or (not exclude)
+                       (not (string-match-p exclude-re (buffer-name it))))
+                   (or (not include)
+                       (not (not (string-match-p include-re (buffer-name it)))))))))
+           (or (not root)
+               (when-let (dir (buffer-local-value 'default-directory it))
+                 (string-prefix-p root
+                                  (if (and (/= 0 (length dir)) (eq (aref dir 0) ?/))
+                                      dir
+                                    (expand-file-name dir)))))
+           (or (not predicate) (funcall predicate it))
+           (if as (funcall as it) it)))))
+    buffers))
 
 (defun consult--buffer-map (buffer &rest app)
   "Run function application APP for each BUFFER.
