@@ -4175,9 +4175,10 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
     :enabled  ,(lambda () consult-project-function)
     :items
     ,(lambda ()
-       (consult--buffer-query :sort 'visibility
-                              :directory 'project
-                              :as #'buffer-name)))
+       (when-let (root (consult--project-root))
+         (consult--buffer-query :sort 'visibility
+                                :directory root
+                                :as #'buffer-name))))
   "Project buffer candidate source for `consult-buffer'.")
 
 (defvar consult--source-project-recent-file
