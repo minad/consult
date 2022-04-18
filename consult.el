@@ -2284,6 +2284,9 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
     (if (consult--tofu-p (aref cand (1- (length cand))))
         (cons (if-let (found (member cand candidates))
                   (cdr (get-text-property 0 'multi-category (car found)))
+                ;; Non-existing tofu'ed candidates can occur due an
+                ;; interaction of Consult preview and Embark.
+                ;; See https://github.com/oantolin/embark/issues/490.
                 (substring cand 0 -1))
               (consult--multi-source sources cand))
       ;; TODO return source with :new field, depending on current narrowing
