@@ -2286,6 +2286,7 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
                   (cdr (get-text-property 0 'multi-category (car found)))
                 (substring cand 0 -1))
               (consult--multi-source sources cand))
+      ;; TODO return source with :new field, depending on current narrowing
       (list cand))))
 
 (defun consult--multi-candidates (sources)
