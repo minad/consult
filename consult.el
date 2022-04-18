@@ -2065,13 +2065,16 @@ PREVIEW-KEY are the preview keys."
                       map))
       old-map))))
 
+(defsubst consult--tofu-p (char)
+  "Return non-nil if CHAR is a tofu."
+  (<= consult--tofu-char char (+ consult--tofu-char consult--tofu-range -1)))
+
 (defun consult--fry-the-tofus (&rest _)
   "Fry the tofus in the minibuffer."
   (let* ((min (minibuffer-prompt-end))
          (max (point-max))
-         (pos max)
-         (high (+ consult--tofu-char consult--tofu-range -1)))
-    (while (and (> pos min) (<= consult--tofu-char (char-before pos) high))
+         (pos max))
+    (while (and (> pos min) (consult--tofu-p (char-before pos)))
       (setq pos (1- pos)))
     (when (< pos max)
       (add-text-properties pos max '(invisible t rear-nonsticky t cursor-intangible t)))))
@@ -2277,10 +2280,12 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
 
 (defun consult--multi-lookup (sources _ candidates cand)
   "Lookup CAND in CANDIDATES given SOURCES."
-  (if-let (found (member cand candidates))
-      (cons (cdr (get-text-property 0 'multi-category (car found)))
-            (consult--multi-source sources cand))
-    (unless (string-blank-p cand)
+  (unless (string-blank-p cand)
+    (if (consult--tofu-p (aref cand (1- (length cand))))
+        (cons (if-let (found (member cand candidates))
+                  (cdr (get-text-property 0 'multi-category (car found)))
+                (substring cand 0 -1))
+              (consult--multi-source sources cand))
       (list cand))))
 
 (defun consult--multi-candidates (sources)
@@ -2977,10 +2982,9 @@ CAND is the currently selected candidate."
             (eq consult-line-point-placement 'line-beginning))
         pos
       (let ((beg 0)
-            (end (length cand))
-            (high (+ consult--tofu-char consult--tofu-range -1)))
+            (end (length cand)))
         ;; Ignore tofu-encoded unique line number suffix
-        (while (and (> end 0) (<= consult--tofu-char (aref cand (1- end)) high))
+        (while (and (> end 0) (consult--tofu-p (aref cand (1- end))))
           (setq end (1- end)))
         ;; Find match end position, remove characters from line end until
         ;; matching fails
