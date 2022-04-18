@@ -2,7 +2,7 @@
 #+author: Daniel Mendler
 #+language: en
 #+export_file_name: consult.texi
-#+texinfo_dir_category: Emacs
+#+texinfo_dir_category: Emacs misc features
 #+texinfo_dir_title: Consult: (consult).
 #+texinfo_dir_desc: Useful commands built on completing-read.
 
