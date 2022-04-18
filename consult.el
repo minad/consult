@@ -1201,7 +1201,9 @@ ORIG is the original function, HOOKS the arguments."
                    (unless (or (memq buf temporary-buffers) (memq buf orig-buffers))
                      (add-hook 'window-selection-change-functions hook)
                      (push buf temporary-buffers)
-                     (with-current-buffer buf (setq buffer-read-only t))
+                     (with-current-buffer buf
+                       (setq mode-name `("Preview:" ,mode-name)
+                             buffer-read-only t))
                      ;; Only keep a few buffers alive
                      (while (> (length temporary-buffers) consult-preview-max-count)
                        (kill-buffer (car (last temporary-buffers)))
