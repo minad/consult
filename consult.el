@@ -200,12 +200,12 @@ character, the *Completions* buffer and a few log buffers."
   :type '(repeat regexp))
 
 (defcustom consult-buffer-sources
-  '(consult--source-buffer
+  '(consult--source-hidden-buffer
+    consult--source-buffer
     consult--source-recent-file
     consult--source-bookmark
     consult--source-project-buffer
-    consult--source-project-recent-file
-    consult--source-hidden-buffer)
+    consult--source-project-recent-file)
   "Sources used by `consult-buffer'.
 See also `consult-project-buffer-sources'.
 See `consult--multi' for a description of the source data structure."
@@ -958,26 +958,27 @@ selection change to full Emacs markers."
       (setcar loc (set-marker (make-marker) (cdar loc) (caar loc))))
     loc))
 
-(defun consult--lookup-member (_ candidates cand)
-  "Lookup CAND in CANDIDATES list, return original element."
-  (car (member cand candidates)))
+(cl-defun consult--lookup-member (&key selected candidates &allow-other-keys)
+  "Lookup SELECTED in CANDIDATES list, return original element."
+  (car (member selected candidates)))
 
-(defun consult--lookup-cons (_ candidates cand)
-  "Lookup CAND in CANDIDATES alist, return cons."
-  (assoc cand candidates))
+(cl-defun consult--lookup-cons (&key selected candidates &allow-other-keys)
+  "Lookup SELECTED in CANDIDATES alist, return cons."
+  (assoc selected candidates))
 
-(defun consult--lookup-cdr (_ candidates cand)
-  "Lookup CAND in CANDIDATES alist, return cdr of element."
-  (cdr (assoc cand candidates)))
+(cl-defun consult--lookup-cdr (&key selected candidates &allow-other-keys)
+  "Lookup SELECTED in CANDIDATES alist, return cdr of element."
+  (cdr (assoc selected candidates)))
 
-(defun consult--lookup-location (_ candidates cand)
-  "Lookup CAND in CANDIDATES list of 'consult-location category, return the marker."
-  (when-let (found (member cand candidates))
+(cl-defun consult--lookup-location (&key selected candidates &allow-other-keys)
+  "Lookup SELECTED in CANDIDATES list of `consult-location' category.
+Return the location marker."
+  (when-let (found (member selected candidates))
     (car (consult--get-location (car found)))))
 
-(defun consult--lookup-candidate (_ candidates cand)
-  "Lookup CAND in CANDIDATES list and return property 'consult--candidate."
-  (when-let (found (member cand candidates))
+(cl-defun consult--lookup-candidate (&key selected candidates &allow-other-keys)
+  "Lookup SELECTED in CANDIDATES list and return property `consult--candidate'."
+  (when-let (found (member selected candidates))
     (get-text-property 0 'consult--candidate (car found))))
 
 (defun consult--forbid-minibuffer ()
@@ -1393,7 +1394,7 @@ FACE is the cursor face."
   "Add preview support for FUN.
 See `consult--with-preview' for the arguments
 PREVIEW-KEY, STATE, TRANSFORM and CANDIDATE."
-  (let ((input "") selected timer last-preview)
+  (let ((input "") narrow selected timer last-preview)
     (consult--minibuffer-with-setup-hook
         (if (and state preview-key)
             (lambda ()
@@ -1419,7 +1420,7 @@ PREVIEW-KEY, STATE, TRANSFORM and CANDIDATE."
                         (with-selected-window (active-minibuffer-window)
                           (let ((input (minibuffer-contents-no-properties)))
                             (with-selected-window (or (minibuffer-selected-window) (next-window))
-                              (let ((transformed (funcall transform input cand))
+                              (let ((transformed (funcall transform narrow input cand))
                                     (new-preview (cons input cand)))
                                 (when-let (debounce (consult--preview-key-debounce preview-key transformed))
                                   (when timer
@@ -1443,14 +1444,16 @@ PREVIEW-KEY, STATE, TRANSFORM and CANDIDATE."
                                       (setq last-preview new-preview)))))))))))
               (consult--append-local-post-command-hook
                (lambda ()
-                 (setq input (minibuffer-contents-no-properties))
+                 (setq input (minibuffer-contents-no-properties)
+                       narrow consult--narrow)
                  (funcall consult--preview-function))))
           (lambda ()
             (consult--append-local-post-command-hook
-             (lambda () (setq input (minibuffer-contents-no-properties))))))
+             (lambda () (setq input (minibuffer-contents-no-properties)
+                              narrow consult--narrow)))))
       (unwind-protect
           (cons (setq selected (when-let (result (funcall fun))
-                                 (funcall transform input result)))
+                                 (funcall transform narrow input result)))
                 input)
         (when state
           ;; STEP 5: The preview function should perform its final action
@@ -2173,8 +2176,13 @@ PREVIEW-KEY are the preview keys."
              (result
               (consult--with-preview
                   preview-key state
-                  (lambda (input cand)
-                    (funcall lookup input (funcall async nil) cand))
+                  (lambda (narrow input cand)
+                    (condition-case nil
+                        (funcall lookup :input input :narrow narrow :candidates (funcall async nil) :selected cand)
+                      (wrong-number-of-arguments
+                       ;; TODO Remove the condition-case after upgrades of :lookup functions
+                       (message "consult--read: The :lookup function protocol changed")
+                       (funcall lookup input (funcall async nil) cand))))
                   (apply-partially #'run-hook-with-args-until-success
                                    'consult--completion-candidate-hook)
                 (completing-read prompt
@@ -2236,7 +2244,7 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
           (list :prompt "Select: "
                 :preview-key consult-preview-key
                 :sort t
-                :lookup (lambda (_input _cands x) x)))))
+                :lookup (lambda (&rest args) (plist-get args :selected))))))
 
 ;;;; Internal API: consult--multi
 
@@ -2295,20 +2303,23 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
                          (consult--ensure-list key)))
                      sources))))
 
-(defun consult--multi-lookup (sources _ candidates cand)
-  "Lookup CAND in CANDIDATES given SOURCES."
-  (unless (string-blank-p cand)
-    (if-let (found (member cand candidates))
+(cl-defun consult--multi-lookup (sources &key candidates selected narrow &allow-other-keys)
+  "Lookup SELECTED in CANDIDATES given SOURCES."
+  (unless (string-blank-p selected)
+    (if-let (found (member selected candidates))
         (cons (cdr (get-text-property 0 'multi-category (car found)))
-              (consult--multi-source sources cand))
-      (let* ((tofu (consult--tofu-p (aref cand (1- (length cand)))))
-             (source (if tofu
-                         (consult--multi-source sources cand)
-                       ;; TODO Use narrowed source here or fallback to source
-                       ;; with :default=t. Take source 0 only as last resort.
-                       (aref sources 0))))
-        `(,(if tofu (substring cand 0 -1) cand)
-          :new t :action ,(plist-get source :new) ,@source)))))
+              (consult--multi-source sources selected))
+      (let* ((tofu (consult--tofu-p (aref selected (1- (length selected)))))
+             (src (cond
+                   (tofu (consult--multi-source sources selected))
+                   (narrow (seq-find (lambda (src)
+                                       (let ((n (plist-get src :narrow)))
+                                         (eq (or (car-safe n) n -1) narrow)))
+                                     sources))
+                   ((seq-find (lambda (src) (plist-get src :default)) sources))
+                   ((aref sources 0)))))
+        `(,(if tofu (substring selected 0 -1) selected)
+          :new t :action ,(plist-get src :new) ,@src)))))
 
 (defun consult--multi-candidates (sources)
   "Return `consult--multi' candidates from SOURCES."
@@ -2451,7 +2462,7 @@ Optional source fields:
                              (apply-partially #'consult--add-history nil add-history))))
     (car (consult--with-preview
              preview-key state
-             (lambda (inp _) (funcall transform inp)) (lambda () t)
+             (lambda (_narrow inp _cand) (funcall transform inp)) (lambda () t)
            (read-from-minibuffer prompt initial nil nil history default inherit-input-method)))))
 
 (cl-defun consult--prompt (&rest options &key prompt history add-history initial default
@@ -2585,18 +2596,18 @@ These configuration options are supported:
                            (cond
                             ;; Transform absolute file names
                             ((file-name-absolute-p initial)
-                             (lambda (_inp cand)
+                             (lambda (_narrow _inp cand)
                                (substitute-in-file-name cand)))
                             ;; Ensure that ./ prefix is kept for the shell (#356)
                             ((string-match-p "\\`\\.\\.?/" initial)
-                             (lambda (_inp cand)
+                             (lambda (_narrow _inp cand)
                                (setq cand (file-relative-name (substitute-in-file-name cand)))
                                (if (string-match-p "\\`\\.\\.?/" cand) cand (concat "./" cand))))
                             ;; Simplify relative file names
                             (t
-                             (lambda (_inp cand)
+                             (lambda (_narrow _inp cand)
                                (file-relative-name (substitute-in-file-name cand)))))
-                         (lambda (_inp cand) cand))
+                         (lambda (_narrow _inp cand) cand))
                        ;; candidate function
                        (apply-partially #'run-hook-with-args-until-success
                                         'consult--completion-candidate-hook)
@@ -2997,20 +3008,20 @@ CURR-LINE is the current line number."
            (setcdr default-cand nil)
            (nconc before candidates)))))))
 
-(defun consult--line-match (input candidates cand)
+(cl-defun consult--line-match (&rest args &key input selected &allow-other-keys)
   "Lookup position of match.
 
+ARGS is the argument list.
 INPUT is the input string entered by the user.
-CANDIDATES is the line candidates alist.
-CAND is the currently selected candidate."
-  (when-let (pos (consult--lookup-location input candidates cand))
+SELECTED is the currently selected candidate."
+  (when-let (pos (apply #'consult--lookup-location args))
     (if (or (string-blank-p input)
             (eq consult-line-point-placement 'line-beginning))
         pos
       (let ((beg 0)
-            (end (length cand)))
+            (end (length selected)))
         ;; Ignore tofu-encoded unique line number suffix
-        (while (and (> end 0) (consult--tofu-p (aref cand (1- end))))
+        (while (and (> end 0) (consult--tofu-p (aref selected (1- end))))
           (setq end (1- end)))
         ;; Find match end position, remove characters from line end until
         ;; matching fails
@@ -3023,7 +3034,7 @@ CAND is the currently selected candidate."
                         ;; candidate, since setting up deferred highlighting is
                         ;; costly.
                         (consult--completion-filter input
-                                                    (list (substring cand 0 (- end step)))
+                                                    (list (substring selected 0 (- end step)))
                                                     'consult-location 'highlight))
               (setq end (- end step)))
             (setq step (/ step 2))))
@@ -3035,7 +3046,7 @@ CAND is the currently selected candidate."
               (while (and (< (+ beg step) end)
                           ;; See comment above, call to `consult--completion-filter'.
                           (consult--completion-filter input
-                                                      (list (substring cand (+ beg step) end))
+                                                      (list (substring selected (+ beg step) end))
                                                       'consult-location 'highlight))
                 (setq beg (+ beg step)))
               (setq step (/ step 2)))
@@ -3921,8 +3932,10 @@ starts a new Isearch session otherwise."
                   cand
                 (alist-get (consult--tofu-get cand) consult--isearch-history-narrow)))
             :lookup
-            (lambda (_ candidates str)
-              (if-let (found (member str candidates)) (substring (car found) 0 -1) str))
+            (lambda (&rest args)
+              (if-let (found (member (plist-get args :selected) (plist-get args :candidates)))
+                  (substring (car found) 0 -1)
+                (plist-get args :selected)))
             :state
             (lambda (action cand)
               (when (and (eq action 'preview) cand)
@@ -4023,9 +4036,10 @@ The command supports previewing the currently selected theme."
        :require-match t
        :category 'theme
        :history 'consult--theme-history
-       :lookup (lambda (_input _cands x)
-                 (or (when-let (cand (and x (intern-soft x)))
-                       (car (memq cand avail-themes)))
+       :lookup (lambda (&rest selected)
+                 (setq selected (plist-get selected :selected)
+                       selected (and selected (intern-soft selected)))
+                 (or (and selected (car (memq selected avail-themes)))
                      saved-theme))
        :state (lambda (action theme)
                 (pcase action
