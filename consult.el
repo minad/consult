@@ -3011,14 +3011,13 @@ CURR-LINE is the current line number."
            (setcdr default-cand nil)
            (nconc before candidates)))))))
 
-(defun consult--line-match (selected candidates input &rest rest)
+(defun consult--line-match (selected candidates input &rest _)
   "Lookup position of match.
 
 SELECTED is the currently selected candidate.
 CANDIDATES is the list of candidates.
-INPUT is the input string entered by the user.
-REST are the remaining arguments passed to lookup."
-  (when-let (pos (apply #'consult--lookup-location selected candidates input rest))
+INPUT is the input string entered by the user."
+  (when-let (pos (consult--lookup-location selected candidates))
     (if (or (string-blank-p input)
             (eq consult-line-point-placement 'line-beginning))
         pos
