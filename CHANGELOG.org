@@ -21,9 +21,15 @@
 - BREAKING API CHANGE of =consult--read=, =consult--prompt=, =consult--multi=: The
   state function protocol changed. The function gets notified of more completion
   state changes. See the docstring of =consult--with-preview= for details.
+- BREAKING API CHANGE of =consult--read=: The lookup function protocol changed.
+  The lookup function must now take keyword arguments.
 - Remove unused =consult-preview-map=.
 - Remove unnecessary =consult-recent-file-filter=. Use =recentf-exclude= instead.
-- =consult--multi= sources can have a =:new= function now to create candidates.
+- =consult--multi= sources can have a =:new= function to create candidates.
+  When narrowed to a source, new candidates will be created by calling the
+  respective =:new= function.
+- =consult--multi= returns =:match= information. =:match= can be nil, t, or new,
+  depending on if the candidate does not exist, exists or has been created.
 
 * Version 0.16 (2022-03-08)
 
