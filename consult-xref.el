@@ -51,11 +51,11 @@
 
 (defun consult-xref--preview (display)
   "Xref preview with DISPLAY function."
-  (let ((open (consult--previewed-files))
+  (let ((open (consult--temporary-files))
         (preview (consult--jump-preview)))
     (lambda (action cand)
       (unless cand
-        (funcall open nil))
+        (funcall open))
       (let ((consult--buffer-display display))
         (funcall preview action
                  (when-let (loc (and cand (eq action 'preview)

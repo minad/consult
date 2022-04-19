@@ -24,7 +24,6 @@
 - Remove unused =consult-preview-map=.
 - Remove unnecessary =consult-recent-file-filter=. Use =recentf-exclude= instead.
 - =consult--multi= sources can have a =:new= function now to create candidates.
-- Rename =consult--temporary-files= to =consult--previewed-files=.
 
 * Version 0.16 (2022-03-08)
 

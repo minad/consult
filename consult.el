@@ -1127,7 +1127,7 @@ ORIG is the original function, HOOKS the arguments."
         (apply orig hooks))
     (apply orig hooks)))
 
-(defun consult--find-file-for-preview (name)
+(defun consult--find-file-temporarily (name)
   "Open file NAME temporarily for preview."
   ;; file-attributes may throw permission denied error
   (when-let* ((attrs (ignore-errors (file-attributes name)))
@@ -1161,10 +1161,10 @@ ORIG is the original function, HOOKS the arguments."
                name (file-size-human-readable size))
       nil)))
 
-(defun consult--previewed-files ()
+(defun consult--temporary-files ()
   "Return a function to open files temporarily for preview."
   (let ((dir default-directory)
-        (hook (make-symbol "consult--previewed-files"))
+        (hook (make-symbol "consult--temporary-files"))
         (orig-buffers (buffer-list))
         temporary-buffers)
     (fset hook
@@ -1189,7 +1189,7 @@ ORIG is the original function, HOOKS the arguments."
                     (pcase-dolist (`(,win . ,state) wins)
                       (setf (car (alist-get 'buffer state)) buf)
                       (window-state-put state win))))))))
-    (lambda (name)
+    (lambda (&optional name)
       (if name
           (let ((default-directory dir))
             (setq name (abbreviate-file-name (expand-file-name name)))
@@ -1199,7 +1199,7 @@ ORIG is the original function, HOOKS the arguments."
              ;; returns nil instead of returning the Dired buffer.
              (get-file-buffer name)
              (cdr (assoc name temporary-buffers))
-             (when-let (buf (consult--find-file-for-preview name))
+             (when-let (buf (consult--find-file-temporarily name))
                ;; Only add new buffer if not already in the list
                (unless (or (rassq buf temporary-buffers) (memq buf orig-buffers))
                  (add-hook 'window-selection-change-functions hook)
@@ -3405,11 +3405,11 @@ narrowing and the settings `consult-goto-line-numbers' and
 
 (defun consult--file-preview ()
   "Create preview function for files."
-  (let ((open (consult--previewed-files))
+  (let ((open (consult--temporary-files))
         (preview (consult--buffer-preview)))
     (lambda (action cand)
       (unless cand
-        (funcall open nil))
+        (funcall open))
       (funcall preview action
                (and cand
                     (eq action 'preview)
@@ -3654,10 +3654,10 @@ There exists no equivalent of this command in Emacs 28."
 (defun consult--bookmark-preview ()
   "Create preview function for bookmarks."
   (let ((preview (consult--jump-preview))
-        (open (consult--previewed-files)))
+        (open (consult--temporary-files)))
     (lambda (action cand)
       (unless cand
-        (funcall open nil))
+        (funcall open))
       (funcall
        preview action
        (when-let (bm (and cand (eq action 'preview) (assoc cand bookmark-alist)))
@@ -4476,11 +4476,11 @@ FIND-FILE is the file open function, defaulting to `find-file'."
 
 (defun consult--grep-state ()
   "Grep state function."
-  (let ((open (consult--previewed-files))
+  (let ((open (consult--temporary-files))
         (jump (consult--jump-state)))
     (lambda (action cand)
       (unless cand
-        (funcall open nil))
+        (funcall open))
       (funcall jump action (consult--grep-position
                             cand
                             (and (not (eq action 'exit)) open))))))
