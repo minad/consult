@@ -958,25 +958,25 @@ selection change to full Emacs markers."
       (setcar loc (set-marker (make-marker) (cdar loc) (caar loc))))
     loc))
 
-(cl-defun consult--lookup-member (&key selected candidates &allow-other-keys)
+(defun consult--lookup-member (selected candidates &rest _)
   "Lookup SELECTED in CANDIDATES list, return original element."
   (car (member selected candidates)))
 
-(cl-defun consult--lookup-cons (&key selected candidates &allow-other-keys)
+(defun consult--lookup-cons (selected candidates &rest _)
   "Lookup SELECTED in CANDIDATES alist, return cons."
   (assoc selected candidates))
 
-(cl-defun consult--lookup-cdr (&key selected candidates &allow-other-keys)
+(defun consult--lookup-cdr (selected candidates &rest _)
   "Lookup SELECTED in CANDIDATES alist, return cdr of element."
   (cdr (assoc selected candidates)))
 
-(cl-defun consult--lookup-location (&key selected candidates &allow-other-keys)
+(defun consult--lookup-location (selected candidates &rest _)
   "Lookup SELECTED in CANDIDATES list of `consult-location' category.
 Return the location marker."
   (when-let (found (member selected candidates))
     (car (consult--get-location (car found)))))
 
-(cl-defun consult--lookup-candidate (&key selected candidates &allow-other-keys)
+(defun consult--lookup-candidate (selected candidates &rest _)
   "Lookup SELECTED in CANDIDATES list and return property `consult--candidate'."
   (when-let (found (member selected candidates))
     (get-text-property 0 'consult--candidate (car found))))
@@ -2178,7 +2178,7 @@ PREVIEW-KEY are the preview keys."
                   preview-key state
                   (lambda (narrow input cand)
                     (condition-case nil
-                        (funcall lookup :input input :narrow narrow :candidates (funcall async nil) :selected cand)
+                        (funcall lookup cand (funcall async nil) input narrow)
                       (wrong-number-of-arguments
                        ;; TODO Remove the condition-case after upgrades of :lookup functions
                        (message "consult--read: The :lookup function protocol changed")
@@ -2217,7 +2217,7 @@ DEFAULT is the default selected value.
 ADD-HISTORY is a list of items to add to the history.
 CATEGORY is the completion category.
 SORT should be set to nil if the candidates are already sorted.
-LOOKUP is a lookup function passed the :input, :selected, :narrow and :candidates keys.
+LOOKUP is a lookup function passed selected, candidates, input and narrow.
 ANNOTATE is a function passed a candidate string to return an annotation.
 INITIAL is the initial input.
 STATE is the state function, see `consult--with-preview'.
@@ -2244,7 +2244,7 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
           (list :prompt "Select: "
                 :preview-key consult-preview-key
                 :sort t
-                :lookup (lambda (&rest args) (plist-get args :selected))))))
+                :lookup (lambda (selected &rest _) selected)))))
 
 ;;;; Internal API: consult--multi
 
@@ -2303,8 +2303,8 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
                          (consult--ensure-list key)))
                      sources))))
 
-(cl-defun consult--multi-lookup (sources &key candidates selected narrow &allow-other-keys)
-  "Lookup SELECTED in CANDIDATES given SOURCES."
+(defun consult--multi-lookup (sources selected candidates _input narrow &rest _)
+  "Lookup SELECTED in CANDIDATES given SOURCES, with potential NARROW."
   (unless (string-blank-p selected)
     (if-let (found (member selected candidates))
         (cons (cdr (get-text-property 0 'multi-category (car found)))
@@ -3011,13 +3011,14 @@ CURR-LINE is the current line number."
            (setcdr default-cand nil)
            (nconc before candidates)))))))
 
-(cl-defun consult--line-match (&rest args &key input selected &allow-other-keys)
+(defun consult--line-match (selected candidates input &rest rest)
   "Lookup position of match.
 
-ARGS is the argument list.
+SELECTED is the currently selected candidate.
+CANDIDATES is the list of candidates.
 INPUT is the input string entered by the user.
-SELECTED is the currently selected candidate."
-  (when-let (pos (apply #'consult--lookup-location args))
+REST are the remaining arguments passed to lookup."
+  (when-let (pos (apply #'consult--lookup-location selected candidates input rest))
     (if (or (string-blank-p input)
             (eq consult-line-point-placement 'line-beginning))
         pos
@@ -3935,10 +3936,10 @@ starts a new Isearch session otherwise."
                   cand
                 (alist-get (consult--tofu-get cand) consult--isearch-history-narrow)))
             :lookup
-            (lambda (&rest args)
-              (if-let (found (member (plist-get args :selected) (plist-get args :candidates)))
+            (lambda (selected candidates &rest _)
+              (if-let (found (member selected candidates))
                   (substring (car found) 0 -1)
-                (plist-get args :selected)))
+                selected))
             :state
             (lambda (action cand)
               (when (and (eq action 'preview) cand)
@@ -4039,9 +4040,8 @@ The command supports previewing the currently selected theme."
        :require-match t
        :category 'theme
        :history 'consult--theme-history
-       :lookup (lambda (&rest selected)
-                 (setq selected (plist-get selected :selected)
-                       selected (and selected (intern-soft selected)))
+       :lookup (lambda (selected &rest _)
+                 (setq selected (and selected (intern-soft selected)))
                  (or (and selected (car (memq selected avail-themes)))
                      saved-theme))
        :state (lambda (action theme)

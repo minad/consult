@@ -22,7 +22,7 @@
   state function protocol changed. The function gets notified of more completion
   state changes. See the docstring of =consult--with-preview= for details.
 - BREAKING API CHANGE of =consult--read=: The lookup function protocol changed.
-  The lookup function must now take keyword arguments.
+  The function must now accept four or more arguments.
 - Remove unused =consult-preview-map=.
 - Remove unnecessary =consult-recent-file-filter=. Use =recentf-exclude= instead.
 - =consult--multi= sources can have a =:new= function to create candidates.
