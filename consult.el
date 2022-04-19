@@ -4205,6 +4205,7 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
     :face     consult-buffer
     :history  buffer-name-history
     :state    ,#'consult--buffer-state
+    :new      ,#'consult--buffer-action
     :enabled  ,(lambda () consult-project-function)
     :items
     ,(lambda ()
