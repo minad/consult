@@ -4322,6 +4322,7 @@ configuration of the virtual buffer sources."
                                   :prompt "Switch to: "
                                   :history 'consult--buffer-history
                                   :sort nil)))
+    ;; For non-matching candidates, fall back to buffer creation.
     (unless (plist-get (cdr selected) :match)
       (consult--buffer-action (car selected)))))
 
