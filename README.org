@@ -653,39 +653,31 @@ from a library like https://github.com/minad/bookmark-view/.
                              bookmark-alist)))))
 #+end_src
 
-Other useful sources allow the creation of terminal and eshell
-buffers if they do not exist yet.
+Another useful source lists all Org buffers and lets you create new ones. One
+can create similar sources for other major modes, e.g., for Eshell.
 
 #+begin_src emacs-lisp
-(defun mode-buffer-exists-p (mode)
-  (seq-some (lambda (buf)
-              (provided-mode-derived-p
-               (buffer-local-value 'major-mode buf)
-               mode))
-            (buffer-list)))
+  (defvar org-source
+    (list :category 'buffer
+          :face     'font-lock-constant-face
+          :name     "Org buffers"
+          :narrow   ?o
+          :state    #'consult--buffer-state
+          :new
+          (lambda (name)
+            (with-current-buffer (get-buffer-create name)
+              (insert "#+title: " name "\n\n")
+              (org-mode)
+              (consult--buffer-action (current-buffer))))
+          :items
+          (lambda ()
+            (mapcar #'buffer-name
+                    (seq-filter
+                     (lambda (x)
+                       (eq (buffer-local-value 'major-mode x) 'org-mode))
+                     (buffer-list))))))
 
-(defvar eshell-source
-  `(:category 'consult-new
-    :face     'font-lock-constant-face
-    :action   ,(lambda (_) (eshell))
-    :items
-    ,(lambda ()
-       (unless (mode-buffer-exists-p 'eshell-mode)
-         '("*eshell* (new)")))))
-
-(defvar term-source
-  `(:category 'consult-new
-    :face     'font-lock-constant-face
-    :action
-    ,(lambda (_)
-       (ansi-term (or (getenv "SHELL") "/bin/sh")))
-    :items
-    ,(lambda ()
-       (unless (mode-buffer-exists-p 'term-mode)
-         '("*ansi-term* (new)")))))
-
-(add-to-list 'consult-buffer-sources 'eshell-source 'append)
-(add-to-list 'consult-buffer-sources 'term-source 'append)
+  (add-to-list 'consult-buffer-sources 'org-source 'append)
 #+end_src
 
 For more details, see the documentation of =consult-buffer= and of the
