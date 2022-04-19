@@ -9,10 +9,10 @@
 - =consult-goto-line=: Use =goto-line-history= on Emacs 28.
 - =consult-customize=: Evaluate settings at runtime. This change makes it possible
   to use =thing-at-point= to overwrite the =:initial= and =:add-history= settings.
-- =consult--read-config= renamed to =consult--customize-alist= and changed the
-  format. The configuration is an alist. The car must be a command symbol. The
-  cdr must be a plist of keys and expressions, where the expressions evaluate
-  to the actual configuration values.
+- Rename =consult--read-config= to =consult--customize-alist= and change the format.
+  The configuration is an alist. The car must be a command symbol. The cdr must
+  be a plist of keys and expressions, where the expressions evaluate to the
+  actual configuration values.
 - Mode hooks in previewed file buffers are delayed. The buffer is only fully
   initialized when leaving the minibuffer for recursive editing.
 - Increase =consult-preview-raw-size=.
@@ -23,6 +23,8 @@
   state changes. See the docstring of =consult--with-preview= for details.
 - Remove unused =consult-preview-map=.
 - Remove unnecessary =consult-recent-file-filter=. Use =recentf-exclude= instead.
+- =consult--multi= sources can have a =:new= function now to create candidates.
+- Rename =consult--temporary-files= to =consult--previewed-files=.
 
 * Version 0.16 (2022-03-08)
 
