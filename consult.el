@@ -2305,8 +2305,8 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
              (source (if tofu
                          (consult--multi-source sources cand)
                        (aref sources 0))))
-        (cons (if tofu (substring cand 0 -1) cand)
-              `(:new t :action ,(plist-get source :new) ,@source))))))
+        `(,(if tofu (substring cand 0 -1) cand)
+          :new t :action ,(plist-get source :new) ,@source)))))
 
 (defun consult--multi-candidates (sources)
   "Return `consult--multi' candidates from SOURCES."
@@ -2387,8 +2387,8 @@ options are supported: :require-match, :history, :keymap, :initial,
 be overwritten only in special scenarios.
 
 The function returns the selected candidate in the form (cons candidate
-source-plist). For non-existing candidates the plist contains the entry
-`:new t'. The sources of the source list can either be symbols of source
+source-plist). For non-existing candidates the plist has the entry `:new
+t'. The sources of the source list can either be symbols of source
 variables or source values. Source values must be plists with the
 following fields:
 
@@ -2433,7 +2433,9 @@ Optional source fields:
       (add-to-history history (car selected)))
     (when-let (action (plist-get (cdr selected) :action))
       (funcall action (car selected)))
-    selected))
+    (if (eq (plist-get (cdr selected) :new) t)
+        selected
+      `(,(car selected) :new nil ,@(cdr selected)))))
 
 ;;;; Internal API: consult--prompt
 
