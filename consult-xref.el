@@ -55,7 +55,7 @@
         (preview (consult--jump-preview)))
     (lambda (action cand)
       (unless cand
-        (funcall open))
+        (funcall open nil))
       (let ((consult--buffer-display display))
         (funcall preview action
                  (when-let (loc (and cand (eq action 'preview)

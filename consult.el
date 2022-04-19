@@ -1189,7 +1189,7 @@ ORIG is the original function, HOOKS the arguments."
                     (pcase-dolist (`(,win . ,state) wins)
                       (setf (car (alist-get 'buffer state)) buf)
                       (window-state-put state win))))))))
-    (lambda (&optional name)
+    (lambda (name)
       (if name
           (let ((default-directory dir))
             (setq name (abbreviate-file-name (expand-file-name name)))
@@ -3416,7 +3416,7 @@ narrowing and the settings `consult-goto-line-numbers' and
         (preview (consult--buffer-preview)))
     (lambda (action cand)
       (unless cand
-        (funcall open))
+        (funcall open nil))
       (funcall preview action
                (and cand
                     (eq action 'preview)
@@ -3664,7 +3664,7 @@ There exists no equivalent of this command in Emacs 28."
         (open (consult--previewed-files)))
     (lambda (action cand)
       (unless cand
-        (funcall open))
+        (funcall open nil))
       (funcall
        preview action
        (when-let (bm (and cand (eq action 'preview) (assoc cand bookmark-alist)))
@@ -4486,7 +4486,7 @@ FIND-FILE is the file open function, defaulting to `find-file'."
         (jump (consult--jump-state)))
     (lambda (action cand)
       (unless cand
-        (funcall open))
+        (funcall open nil))
       (funcall jump action (consult--grep-position
                             cand
                             (and (not (eq action 'exit)) open))))))
