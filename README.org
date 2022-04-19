@@ -600,7 +600,8 @@ Optional source fields:
 - =:annotate= Annotation function called for each candidate, returns string.
 - =:history= Name of history variable to add selected candidate.
 - =:default= Must be t if the first item of the source is the default value.
-- =:action= Action function called with the selected candidate.
+- =:action= Function called with the selected candidate.
+- =:new= Function called with new candidate name, only if =:require-match= is nil.
 - =:state= State constructor for the source, must return the state function.
 - Other source fields can be added specifically to the use case.
 
