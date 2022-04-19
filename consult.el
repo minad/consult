@@ -2318,8 +2318,7 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
                                      sources))
                    ((seq-find (lambda (src) (plist-get src :default)) sources))
                    ((aref sources 0)))))
-        `(,(if tofu (substring selected 0 -1) selected)
-          :new t :action ,(plist-get src :new) ,@src)))))
+        `(,(if tofu (substring selected 0 -1) selected) :match nil ,@src)))))
 
 (defun consult--multi-candidates (sources)
   "Return `consult--multi' candidates from SOURCES."
@@ -2396,14 +2395,15 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
 OPTIONS is the plist of options passed to `consult--read'. The following
 options are supported: :require-match, :history, :keymap, :initial,
 :add-history, :sort and :inherit-input-method. The other options of
-`consult--read' are used by the implementation of `consult--multi' and should
-be overwritten only in special scenarios.
+`consult--read' are used by the implementation of `consult--multi' and
+should be overwritten only in special scenarios.
 
 The function returns the selected candidate in the form (cons candidate
-source-plist). For non-existing candidates the plist has the entry `:new
-t'. The sources of the source list can either be symbols of source
-variables or source values. Source values must be plists with the
-following fields:
+source-plist). The plist has the key :match with a value nil if the
+candidate does not exist, t if the candidate exists and `new' if the
+candidate has been created. The sources of the source list can either be
+symbols of source variables or source values. Source values must be
+plists with the following fields:
 
 Required source fields:
 * :category - Completion category.
@@ -2444,11 +2444,14 @@ Optional source fields:
                             :state       (consult--multi-state sources))))))
     (when-let (history (plist-get (cdr selected) :history))
       (add-to-history history (car selected)))
-    (when-let (action (plist-get (cdr selected) :action))
-      (funcall action (car selected)))
-    (if (eq (plist-get (cdr selected) :new) t)
-        selected
-      `(,(car selected) :new nil ,@(cdr selected)))))
+    (if (plist-member (cdr selected) :match)
+        (when-let (fun (plist-get (cdr selected) :new))
+          (funcall fun (car selected))
+          (plist-put (cdr selected) :match 'new))
+      (when-let (fun (plist-get (cdr selected) :action))
+        (funcall fun (car selected)))
+      (setq selected `(,(car selected) :match t ,@(cdr selected))))
+    selected))
 
 ;;;; Internal API: consult--prompt
 
@@ -4216,7 +4219,6 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
     :face     consult-buffer
     :history  buffer-name-history
     :state    ,#'consult--buffer-state
-    :new      ,#'consult--buffer-action
     :enabled  ,(lambda () consult-project-function)
     :items
     ,(lambda ()
@@ -4280,7 +4282,6 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
     :face     consult-buffer
     :history  buffer-name-history
     :state    ,#'consult--buffer-state
-    :new      ,#'consult--buffer-action
     :default  t
     :items
     ,(lambda () (consult--buffer-query :sort 'visibility
@@ -4315,12 +4316,14 @@ keys. In order to determine the project-specific files and buffers, the
 default to `consult-buffer-sources'. See `consult--multi' for the
 configuration of the virtual buffer sources."
   (interactive)
-  (consult--multi (or sources consult-buffer-sources)
-                  :require-match
-                  (confirm-nonexistent-file-or-buffer)
-                  :prompt "Switch to: "
-                  :history 'consult--buffer-history
-                  :sort nil))
+  (let ((selected (consult--multi (or sources consult-buffer-sources)
+                                  :require-match
+                                  (confirm-nonexistent-file-or-buffer)
+                                  :prompt "Switch to: "
+                                  :history 'consult--buffer-history
+                                  :sort nil)))
+    (unless (plist-get (cdr selected) :match)
+      (consult--buffer-action (car selected)))))
 
 ;; Populate `consult-project-buffer-sources'.
 (setq consult-project-buffer-sources
