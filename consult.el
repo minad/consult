@@ -2304,6 +2304,8 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
       (let* ((tofu (consult--tofu-p (aref cand (1- (length cand)))))
              (source (if tofu
                          (consult--multi-source sources cand)
+                       ;; TODO Use narrowed source here or fallback to source
+                       ;; with :default=t. Take source 0 only as last resort.
                        (aref sources 0))))
         `(,(if tofu (substring cand 0 -1) cand)
           :new t :action ,(plist-get source :new) ,@source)))))
