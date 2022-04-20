@@ -147,8 +147,10 @@ nil shows all `custom-available-themes'."
 (defcustom consult-after-jump-hook '(recenter)
   "Function called after jumping to a location.
 
-Commonly used functions for this hook are `recenter' and `reposition-window'.
-This is called during preview and for the jump after selection."
+Commonly used functions for this hook are `recenter' and
+`reposition-window'. You may want to add a function which pulses the
+current line, e.g., `pulse-momentary-highlight-one-line'. The hook
+called during preview and for the jump after selection."
   :type 'hook)
 
 (defcustom consult-line-start-from-top nil
