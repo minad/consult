@@ -1226,8 +1226,8 @@ ORIG is the original function, HOOKS the arguments."
                                 (when (buffer-live-p buf)
                                   (with-current-buffer buf
                                     (remove-hook 'pre-command-hook hook)
-                                    (set-visited-file-name nil)
-                                    (setq buffer-read-only t)))))
+                                    (setq buffer-read-only t
+                                          buffer-file-name nil)))))
                    (add-hook 'pre-command-hook hook))
                  ;; Only keep a few buffers alive
                  (while (> (length temporary-buffers) consult-preview-max-count)
