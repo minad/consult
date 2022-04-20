@@ -1208,19 +1208,27 @@ ORIG is the original function, HOOKS the arguments."
                (unless (or (rassq buf temporary-buffers) (memq buf orig-buffers))
                  (add-hook 'window-selection-change-functions hook)
                  (push (cons name buf) temporary-buffers)
+                 ;; Disassociate buffer from file by setting
+                 ;; `buffer-file-name' to nil and rename the buffer.
+                 ;; This lets us open an already previewed buffer with
+                 ;; the Embark default action C-. RET.
                  (with-current-buffer buf
-                   ;; Disassociate buffer from file by setting
-                   ;; `buffer-file-name' to nil and rename the buffer.
-                   ;; This lets us open an already previewed buffer with
-                   ;; the Embark default action C-. RET. We cannot use
-                   ;; (set-visited-file-name nil) since then the mode
-                   ;; hooks will not run.
                    (rename-buffer
                     (format "Preview:%s"
                             (file-name-nondirectory (directory-file-name name)))
-                    'unique)
-                   (setq buffer-file-name nil
-                         buffer-read-only t))
+                    'unique))
+                 ;; The buffer disassociation is delayed to avoid breaking
+                 ;; modes like pdf-view-mode or doc-view-mode which rely on
+                 ;; buffer-file-name. Executing (set-visited-file-name nil)
+                 ;; early also prevents the major mode initialization.
+                 (let ((hook (make-symbol "consult--temporary-files-disassociate")))
+                   (fset hook (lambda ()
+                                (when (buffer-live-p buf)
+                                  (with-current-buffer buf
+                                    (remove-hook 'pre-command-hook hook)
+                                    (set-visited-file-name nil)
+                                    (setq buffer-read-only t)))))
+                   (add-hook 'pre-command-hook hook))
                  ;; Only keep a few buffers alive
                  (while (> (length temporary-buffers) consult-preview-max-count)
                    (kill-buffer (cdar (last temporary-buffers)))
