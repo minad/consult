@@ -30,6 +30,7 @@
   respective =:new= function.
 - =consult--multi= returns =:match= information. =:match= can be nil, t, or new,
   depending on if the candidate does not exist, exists or has been created.
+- =consult-locate= treats the input literally to take advantage of the db index.
 
 * Version 0.16 (2022-03-08)
 
