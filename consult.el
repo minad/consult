@@ -261,7 +261,7 @@ The dynamically computed arguments are appended."
   :type 'string)
 
 (defcustom consult-locate-args
-  "locate --ignore-case --existing --regex"
+  "locate --ignore-case --existing"
   "Command line arguments for locate, see `consult-locate'.
 The dynamically computed arguments are appended."
   :type 'string)
@@ -4731,22 +4731,22 @@ See `consult-grep' for more details regarding the asynchronous search."
 ;;;;; Command: consult-locate
 
 (defun consult--locate-builder (input)
-  "Build command line given INPUT."
-  (pcase-let* ((cmd (split-string-and-unquote consult-locate-args))
-               (`(,arg . ,opts) (consult--command-split input))
-               (`(,re . ,hl) (funcall consult--regexp-compiler arg 'basic
-                                      (member "--ignore-case" cmd))))
-    (when re
-      (list :command
-            (append cmd (list (consult--join-regexps re 'basic)) opts)
-            :highlight hl))))
+  "Build command line given CONFIG and INPUT."
+  (pcase-let ((`(,arg . ,opts) (consult--command-split input)))
+    (unless (string-blank-p arg)
+      (list :command (append (split-string-and-unquote consult-locate-args)
+                             (list arg) opts)
+            :highlight (cdr (consult--default-regexp-compiler input 'basic t))))))
 
 ;;;###autoload
 (defun consult-locate (&optional initial)
-  "Search for regexp with locate with INITIAL input.
+  "Search with `locate' for files which match input given INITIAL input.
 
-The locate process is started asynchronously, similar to `consult-grep'.
-See `consult-grep' for more details regarding the asynchronous search."
+The input is treated literally such that locate can take advantage of
+the locate database index. Regular expressions would often force a slow
+linear search through the entire database. The locate process is started
+asynchronously, similar to `consult-grep'. See `consult-grep' for more
+details regarding the asynchronous search."
   (interactive)
   (find-file (consult--find "Locate: " #'consult--locate-builder initial)))
 
