@@ -4566,7 +4566,9 @@ INITIAL is inital input."
 
 ;;;###autoload
 (defun consult-grep (&optional dir initial)
-  "Search for regexp with grep in DIR with INITIAL input.
+  "Search with `grep' for files in DIR where the content matches a regexp.
+
+The initial input is given by the INITIAL argument.
 
 The input string is split, the first part of the string (grep input) is
 passed to the asynchronous grep process and the second part of the string is
@@ -4620,9 +4622,9 @@ Otherwise the `default-directory' is searched."
 
 ;;;###autoload
 (defun consult-git-grep (&optional dir initial)
-  "Search for regexp with grep in DIR with INITIAL input.
-
-See `consult-grep' for more details."
+  "Search with `git grep' for files in DIR where the content matches a regexp.
+The initial input is given by the INITIAL argument. See `consult-grep'
+for more details."
   (interactive "P")
   (consult--grep "Git-grep" #'consult--git-grep-builder dir initial))
 
@@ -4656,16 +4658,16 @@ See `consult-grep' for more details."
 
 ;;;###autoload
 (defun consult-ripgrep (&optional dir initial)
-  "Search for regexp with rg in DIR with INITIAL input.
-
-See `consult-grep' for more details."
+  "Search with `rg' for files in DIR where the content matches a regexp.
+The initial input is given by the INITIAL argument. See `consult-grep'
+for more details."
   (interactive "P")
   (consult--grep "Ripgrep" #'consult--ripgrep-builder dir initial))
 
 ;;;;; Command: consult-find
 
 (defun consult--find (prompt builder initial)
-  "Run find in current directory.
+  "Run find command in current directory.
 
 The function returns the selected file.
 The filename at point is added to the future history.
@@ -4719,7 +4721,7 @@ INITIAL is inital input."
 
 ;;;###autoload
 (defun consult-find (&optional dir initial)
-  "Search for regexp with find in DIR with INITIAL input.
+  "Search for files in DIR matching input regexp given INITIAL input.
 
 The find process is started asynchronously, similar to `consult-grep'.
 See `consult-grep' for more details regarding the asynchronous search."
@@ -4779,10 +4781,12 @@ details regarding the asynchronous search."
 
 ;;;###autoload
 (defun consult-man (&optional initial)
-  "Search for regexp with man with INITIAL input.
+  "Search for man page given INITIAL input.
 
-The man process is started asynchronously, similar to `consult-grep'.
-See `consult-grep' for more details regarding the asynchronous search."
+The input string is not preprocessed and passed literally to the
+underlying man commands. The man process is started asynchronously,
+similar to `consult-grep'. See `consult-grep' for more details regarding
+the asynchronous search."
   (interactive)
   (man (consult--read
         (consult--async-command #'consult--man-builder
