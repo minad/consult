@@ -305,6 +305,11 @@ The dynamically computed arguments are appended."
   "List of `find-file' hooks, which should be executed during file preview."
   :type '(repeat symbol))
 
+(defcustom consult-preview-excluded-extensions
+  '(".gpg")
+  "List of file extensions which are ignored during file preview."
+  :type '(repeat string))
+
 (defcustom consult-preview-variables
   '((inhibit-message . t)
     (enable-dir-local-variables . nil)
