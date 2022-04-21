@@ -3598,7 +3598,6 @@ If no MODES are specified, use currently active major and minor modes."
   ;; to obtain the original candidate which may be propertized with
   ;; yank-specific properties, like 'yank-handler.
   (consult--lookup-member
-   nil kill-ring
    (consult--read
     (consult--remove-dups
      (or kill-ring (user-error "Kill ring is empty")))
@@ -3611,7 +3610,8 @@ If no MODES are specified, use currently active major and minor modes."
     (consult--insertion-preview
      (point)
      ;; If previous command is yank, hide previously yanked string
-     (or (and (eq last-command 'yank) (mark t)) (point))))))
+     (or (and (eq last-command 'yank) (mark t)) (point))))
+   kill-ring))
 
 ;; Adapted from the Emacs `yank-from-kill-ring' function.
 ;;;###autoload
