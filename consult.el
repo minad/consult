@@ -186,10 +186,6 @@ This is necessary in order to prevent a large startup time
 for navigation commands like `consult-line'."
   :type 'integer)
 
-(defvar consult-recent-file-filter nil)
-(make-obsolete-variable 'consult-recent-file-filter
-                        "Deprecated in favor of `recentf-exclude'." "0.16")
-
 (defcustom consult-buffer-filter
   '("\\` "
     "\\`\\*Completions\\*\\'"
@@ -294,10 +290,6 @@ The dynamically computed arguments are appended."
 (defcustom consult-preview-max-count 10
   "Number of files to keep open at once during preview."
   :type 'integer)
-
-(defvar consult-preview-excluded-hooks nil)
-(make-obsolete-variable 'consult-preview-excluded-hooks
-                        "Deprecated in favor of `consult-preview-allowed-hooks'." "0.16")
 
 (defcustom consult-preview-allowed-hooks
   '(global-font-lock-mode-check-buffers
@@ -1380,13 +1372,6 @@ FACE is the cursor face."
     (setq keys (lookup-key map keys))
     (if (numberp keys) keys any)))
 
-;; TODO Remove this function after upgrades of :state functions
-(defun consult--protected-state-call (fun action cand)
-  "Call state FUN with ACTION and CAND and protect against errors."
-  (condition-case err
-      (funcall fun action cand)
-    (t (message "consult--read: No preview, the :state function protocol changed: %S" err))))
-
 (defun consult--append-local-post-command-hook (fun)
   "Append FUN to local `post-command-hook' list."
   ;; Symbol indirection because of bug#46407.
@@ -1418,13 +1403,13 @@ PREVIEW-KEY, STATE, TRANSFORM and CANDIDATE."
                         (with-selected-window (or (minibuffer-selected-window) (next-window))
                           ;; STEP 3: Reset preview
                           (when last-preview
-                            (consult--protected-state-call state 'preview nil))
+                            (funcall state 'preview nil))
                           ;; STEP 4: Notify the preview function of the minibuffer exit
-                          (consult--protected-state-call state 'exit nil))))
+                          (funcall state 'exit nil))))
                 (add-hook 'minibuffer-exit-hook exit-hook nil 'local))
               ;; STEP 1: Setup the preview function
               (with-selected-window (or (minibuffer-selected-window) (next-window))
-                (consult--protected-state-call state 'setup nil))
+                (funcall state 'setup nil))
               (setq consult--preview-function
                     (lambda ()
                       (when-let ((cand (funcall candidate)))
@@ -1447,11 +1432,10 @@ PREVIEW-KEY, STATE, TRANSFORM and CANDIDATE."
                                                    (when (window-live-p win)
                                                      (with-selected-window win
                                                        ;; STEP 2: Preview candidate
-                                                       (consult--protected-state-call
-                                                        state 'preview transformed)
+                                                       (funcall state 'preview transformed)
                                                        (setq last-preview new-preview)))))))
                                       ;; STEP 2: Preview candidate
-                                      (consult--protected-state-call state 'preview transformed)
+                                      (funcall state 'preview transformed)
                                       (setq last-preview new-preview)))))))))))
               (consult--append-local-post-command-hook
                (lambda ()
@@ -1468,7 +1452,7 @@ PREVIEW-KEY, STATE, TRANSFORM and CANDIDATE."
                 input)
         (when state
           ;; STEP 5: The preview function should perform its final action
-          (consult--protected-state-call state 'return selected))))))
+          (funcall state 'return selected))))))
 
 (defmacro consult--with-preview (preview-key state transform candidate &rest body)
   "Add preview support to BODY.
@@ -2188,12 +2172,7 @@ PREVIEW-KEY are the preview keys."
               (consult--with-preview
                   preview-key state
                   (lambda (narrow input cand)
-                    (condition-case nil
-                        (funcall lookup cand (funcall async nil) input narrow)
-                      (wrong-number-of-arguments
-                       ;; TODO Remove the condition-case after upgrades of :lookup functions
-                       (message "consult--read: The :lookup function protocol changed")
-                       (funcall lookup input (funcall async nil) cand))))
+                    (funcall lookup cand (funcall async nil) input narrow))
                   (apply-partially #'run-hook-with-args-until-success
                                    'consult--completion-candidate-hook)
                 (completing-read prompt
