@@ -2,7 +2,7 @@
 #+author: Daniel Mendler
 #+language: en
 
-* Development
+* Version 0.17 (2022-04-22)
 
 - Bugfixes
 - Drop Emacs 26 support.

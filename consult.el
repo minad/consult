@@ -5,7 +5,7 @@
 ;; Author: Daniel Mendler and Consult contributors
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2020
-;; Version: 0.16
+;; Version: 0.17
 ;; Package-Requires: ((emacs "27.1"))
 ;; Homepage: https://github.com/minad/consult
 
