@@ -29,9 +29,10 @@
 (require 'xref)
 
 (defvar consult-xref--history nil)
+(defvar consult-xref--fetcher nil)
 
-(defun consult-xref--candidates (xrefs)
-  "Return candidate list from XREFS."
+(defun consult-xref--candidates ()
+  "Return xref candidate list."
   (let ((root (consult--project-root)))
     (mapcar (lambda (xref)
               (let* ((loc (xref-item-location xref))
@@ -47,7 +48,7 @@
                 (add-text-properties
                  0 1 `(consult-xref ,xref consult-xref--group ,group) cand)
                 cand))
-            xrefs)))
+            (funcall consult-xref--fetcher))))
 
 (defun consult-xref--preview (display)
   "Xref preview with DISPLAY function."
@@ -87,9 +88,9 @@
 This function can be used for `xref-show-xrefs-function'.
 See `xref-show-xrefs-function' for the description of the
 FETCHER and ALIST arguments."
-  (let ((candidates (consult--with-increased-gc
-                     (consult-xref--candidates (funcall fetcher))))
-        (display (alist-get 'display-action alist)))
+  (let* ((consult-xref--fetcher fetcher)
+         (candidates (consult--with-increased-gc (consult-xref--candidates)))
+         (display (alist-get 'display-action alist)))
     (xref-pop-to-location
      (if (cdr candidates)
          (apply
