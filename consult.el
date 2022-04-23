@@ -6,7 +6,7 @@
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2020
 ;; Version: 0.17
-;; Package-Requires: ((emacs "27.1"))
+;; Package-Requires: ((emacs "27.1") (compat "28.1"))
 ;; Homepage: https://github.com/minad/consult
 
 ;; This file is part of GNU Emacs.
@@ -51,6 +51,8 @@
 (require 'kmacro)
 (require 'recentf)
 (require 'seq)
+(require 'compat)
+(require 'compat-28)
 
 (defgroup consult nil
   "Consulting `completing-read'."
@@ -646,7 +648,7 @@ matches case insensitively."
    ((eq type 'basic)
     (string-join regexps ".*"))
    (t
-    (when (> (length regexps) 3)
+    (when (length> regexps 3)
       (message "Too many regexps, %S ignored. Use post-filtering!"
                (string-join (seq-drop regexps 3) " "))
       (setq regexps (seq-take regexps 3)))
@@ -763,11 +765,6 @@ The line beginning/ending BEG/END is bound in BODY."
            ,@body
            (setq ,beg (1+ ,end)))))))
 
-(defmacro consult--static-if (cond then &rest else)
-  "If COND yields non-nil at compile time, do THEN, else do ELSE."
-  (declare (indent 2))
-  (if (eval cond 'lexical) then (macroexp-progn else)))
-
 (defun consult--display-width (string)
   "Compute width of STRING taking display and invisible properties into account."
   (let ((pos 0) (width 0) (end (length string)))
@@ -780,15 +777,7 @@ The line beginning/ending BEG/END is bound in BODY."
           (while (< pos nextd)
             (let ((nexti (next-single-property-change pos 'invisible string nextd)))
               (unless (get-text-property pos 'invisible string)
-                (setq width (+ width
-                               ;; bug#47712: Emacs 28 can compute `string-width' of substrings
-                               (consult--static-if (eq 3 (cdr (func-arity #'string-width)))
-                                   (string-width string pos nexti)
-                                 (string-width
-                                  ;; Avoid allocation for the full string.
-                                  (if (and (= pos 0) (= nexti end))
-                                      string
-                                    (substring-no-properties string pos nexti)))))))
+                (setq width (+ width (compat-string-width string pos nexti))))
               (setq pos nexti))))))
     width))
 
@@ -1226,7 +1215,7 @@ ORIG is the original function, HOOKS the arguments."
                                           buffer-file-name nil)))))
                    (add-hook 'pre-command-hook hook))
                  ;; Only keep a few buffers alive
-                 (while (> (length temporary-buffers) consult-preview-max-count)
+                 (while (length> temporary-buffers consult-preview-max-count)
                    (kill-buffer (cdar (last temporary-buffers)))
                    (setq temporary-buffers (nbutlast temporary-buffers))))
                buf)))
@@ -1353,7 +1342,7 @@ FACE is the cursor face."
   "Normalize PREVIEW-KEY, return alist of keys and debounce times."
   (let ((keys)
         (debounce 0))
-    (setq preview-key (consult--ensure-list preview-key))
+    (setq preview-key (ensure-list preview-key))
     (while preview-key
       (if (eq (car preview-key) :debounce)
           (setq debounce (cadr preview-key)
@@ -1547,7 +1536,7 @@ This command is used internally by the narrowing system of `consult--read'."
     "" nil :filter
     ,(lambda (&optional _)
        (let ((str (minibuffer-contents-no-properties)))
-         (when-let (pair (or (and (= 1 (length str))
+         (when-let (pair (or (and (length= str 1)
                                   (assoc (aref str 0) consult--narrow-keys))
                              (and (string= str "")
                                   (assoc 32 consult--narrow-keys))))
@@ -1982,10 +1971,6 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
   "Filter candidates of ASYNC by FUN."
   (consult--async-transform async seq-filter fun))
 
-(defun consult--ensure-list (list)
-  "Ensure that LIST is a list."
-  (if (listp list) list (list list))) ;; Emacs 28 ensure-list
-
 (defun consult--command-builder (builder)
   "Return command line builder given CMD.
 BUILDER is the command line builder function."
@@ -2040,9 +2025,9 @@ ASYNC must be non-nil for async completion functions."
   (delete-dups
    (append
     ;; the defaults are at the beginning of the future history
-    (consult--ensure-list minibuffer-default)
+    (ensure-list minibuffer-default)
     ;; then our custom items
-    (remove "" (remq nil (consult--ensure-list items)))
+    (remove "" (remq nil (ensure-list items)))
     ;; Add all the completions for non-async commands. For async commands this feature
     ;; is not useful, since if one selects a completion candidate, the async search is
     ;; restarted using that candidate string. This usually does not yield a desired
@@ -2294,7 +2279,7 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
                        (let ((key (if (plist-member src :preview-key)
                                       (plist-get src :preview-key)
                                     consult-preview-key)))
-                         (consult--ensure-list key)))
+                         (ensure-list key)))
                      sources))))
 
 (defun consult--multi-lookup (sources selected candidates _input narrow &rest _)
@@ -4057,8 +4042,8 @@ The command supports previewing the currently selected theme."
   (sort buffers
         (lambda (x y)
           (setq x (buffer-name x) y (buffer-name y))
-          (let ((a (and (> (length x) 0) (eq (aref x 0) ?*)))
-                (b (and (> (length y) 0) (eq (aref y 0) ?*))))
+          (let ((a (and (length> x 0) (eq (aref x 0) ?*)))
+                (b (and (length> y 0) (eq (aref y 0) ?*))))
             (if (eq a b)
                 (string< x y)
               (not a))))))
@@ -4461,7 +4446,7 @@ BUILDER is the command argument builder."
                        (content (substring str (match-end 0)))
                        (file-len (length file))
                        (line-len (length line)))
-                  (when (> (length content) consult-grep-max-columns)
+                  (when (length> content consult-grep-max-columns)
                     (setq content (substring content 0 consult-grep-max-columns)))
                   (when highlight
                     (funcall highlight content))

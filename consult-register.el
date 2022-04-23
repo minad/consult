@@ -143,7 +143,7 @@ If COMPLETION is non-nil format the register for completion."
                (key-str (propertize (single-key-description key) 'face 'consult-key))
                (key-len (max 3 (length key-str)))
                (`(,str . ,props) (consult-register--describe val)))
-    (when (string-match-p "\n" str)
+    (when (string-search "\n" str)
       (let* ((lines (seq-take (seq-remove #'string-blank-p (split-string str "\n")) 3))
              (space (apply #'min most-positive-fixnum
                            (mapcar (lambda (x) (string-match-p "[^ ]" x)) lines))))
@@ -216,9 +216,7 @@ for the meaning of prefix ARG."
   (condition-case err
       (jump-to-register reg arg)
     (user-error
-     (unless (string-match-p
-              "access aborted"
-              (error-message-string err) )
+     (unless (string-search "access aborted" (error-message-string err))
        (insert-register reg (not arg))))))
 
 (defun consult-register--action (action-list)
