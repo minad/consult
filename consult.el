@@ -971,10 +971,14 @@ Return the location marker."
   (when-let (found (member selected candidates))
     (car (consult--get-location (car found)))))
 
+(defun consult--lookup-prop (prop selected candidates &rest _)
+  "Lookup SELECTED in CANDIDATES list and return PROP value."
+  (when-let (found (member selected candidates))
+    (get-text-property 0 prop (car found))))
+
 (defun consult--lookup-candidate (selected candidates &rest _)
   "Lookup SELECTED in CANDIDATES list and return property `consult--candidate'."
-  (when-let (found (member selected candidates))
-    (get-text-property 0 'consult--candidate (car found))))
+  (consult--lookup-prop 'consult--candidate selected candidates))
 
 (defun consult--forbid-minibuffer ()
   "Raise an error if executed from the minibuffer."

@@ -45,7 +45,7 @@
                             (or (xref-location-line loc) 0)
                             (xref-item-summary xref))))
                 (add-text-properties
-                 0 1 `(consult--candidate ,xref consult-xref--group ,group) cand)
+                 0 1 `(consult-xref ,xref consult-xref--group ,group) cand)
                 cand))
             xrefs)))
 
@@ -102,7 +102,7 @@ FETCHER and ALIST arguments."
             :history 'consult-xref--history
             :require-match t
             :sort nil
-            :category 'xref-location
+            :category 'consult-xref
             :group #'consult-xref--group
             :state
             ;; do not preview other frame
@@ -111,8 +111,8 @@ FETCHER and ALIST arguments."
                              ('window #'switch-to-buffer-other-window)
                              ('nil #'switch-to-buffer)))
               (consult-xref--preview fun))
-            :lookup #'consult--lookup-candidate)))
-       (get-text-property 0 'consult--candidate (car candidates)))
+            :lookup (apply-partially #'consult--lookup-prop 'consult-xref))))
+       (get-text-property 0 'consult-xref (car candidates)))
      display)))
 
 (provide 'consult-xref)
