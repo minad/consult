@@ -353,6 +353,7 @@ their descriptions.
 #+findex: consult-man
 #+findex: consult-preview-at-point
 #+findex: consult-preview-at-point-mode
+#+findex: consult-git-commit-message
 - =consult-apropos=: Replacement for =apropos= with completion. As a better
   alternative, you can run =embark-export= from commands like =M-x= or
   =describe-symbol=.
@@ -394,6 +395,8 @@ their descriptions.
   =completing-read-multiple= which works better for long candidates. You can
   select/deselect multiple candidates by pressing ~RET~. Afterwards the selections
   are confirmed by pressing ~RET~ again.
+- =consult-git-commit-message=: Select and insert a commit message from recent
+  history. Uses =git-commit= and =log-edit-comment-ring=.
 
 * Special features
 :properties:
