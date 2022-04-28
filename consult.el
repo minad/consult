@@ -2918,7 +2918,7 @@ The symbol at point is added to the future history."
   (consult--read
    (consult--with-increased-gc
     (consult--mark-candidates
-     (or markers (cons (copy-marker (mark-marker)) mark-ring))))
+     (or markers (cons (mark-marker) mark-ring))))
    :prompt "Go to mark: "
    :annotate (consult--line-prefix)
    :category 'consult-location
