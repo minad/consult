@@ -1283,6 +1283,9 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
     ;; When the marker is in the same buffer,
     ;; record previous location such that the user can jump back quickly.
     (unless (and (markerp pos) (not (eq (current-buffer) (marker-buffer pos))))
+      ;; push-mark mutates markers in the mark-ring and the mark-marker.
+      ;; Therefore we copy the marker to be safe. We all love side effects!
+      (setq pos (copy-marker pos))
       (push-mark (point) t))
     (consult--jump-1 pos)
     (consult--invisible-open-permanently)
