@@ -1301,8 +1301,6 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
     (run-hooks 'consult-after-jump-hook))
   nil)
 
-;; Matched strings are not highlighted as of now.
-;; see https://github.com/minad/consult/issues/7
 (defun consult--jump-preview (&optional face)
   "The preview function used if selecting from a list of candidate positions.
 The function can be used as the `:state' argument of `consult--read'.
@@ -2816,7 +2814,6 @@ See `completing-read-multiple' for the documentation of the arguments."
 
 ;;;;; Command: consult-multi-occur
 
-;; see https://github.com/raxod502/selectrum/issues/226
 ;;;###autoload
 (defun consult-multi-occur (bufs regexp &optional nlines)
   "Improved version of `multi-occur' based on `completing-read-multiple'.
