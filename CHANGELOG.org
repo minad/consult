@@ -6,6 +6,7 @@
 
 - Bugfixes
 - Removed obsolete =consult-recent-file-filter= and =consult-preview-excluded-hooks=
+- =consult--read=: Align annotations (prefixes and suffixes)
 
 * Version 0.17 (2022-04-22)
 

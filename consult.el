@@ -1057,8 +1057,8 @@ CURR-LINE is the current line number."
   (let* ((width (length (number-to-string (line-number-at-pos
                                            (point-max)
                                            consult-line-numbers-widen))))
-         (before (format #("%%%dd " 0 6 (face consult-line-number-wrapped)) width))
-         (after (format #("%%%dd " 0 6 (face consult-line-number-prefix)) width)))
+         (before (format #("%%%dd" 0 5 (face consult-line-number-wrapped)) width))
+         (after (format #("%%%dd" 0 5 (face consult-line-number-prefix)) width)))
     (lambda (cand)
       (let ((line (cdr (get-text-property 0 'consult-location cand))))
         (list cand (format (if (< line curr-line) before after) line) "")))))
@@ -2137,23 +2137,35 @@ PREVIEW-KEY are the preview keys."
 (defun consult--read-annotate (fun cand)
   "Annotate CAND with annotation function FUN."
   (pcase (funcall fun cand)
-    (`(,_ ,_ ,suffix) suffix)
-    (ann ann)))
+    (`(,_ ,_ "") nil)
+    (`(,_ ,_ ,suffix) (concat " " suffix))
+    (ann (and ann (concat " " ann)))))
 
-(defun consult--read-affixate (fun cands)
+(defun consult--read-affixate (fun cands) ;; TODO
   "Affixate CANDS with annotation function FUN."
-  (mapcar (lambda (cand)
-            (let ((ann (funcall fun cand)))
-              (if (consp ann)
-                  ann
-                (setq ann (or ann ""))
-                (list cand ""
-                      ;; The default completion UI adds the `completions-annotations' face
-                      ;; if no other faces are present.
-                      (if (text-property-not-all 0 (length ann) 'face nil ann)
-                          ann
-                        (propertize ann 'face 'completions-annotations))))))
-          cands))
+  (let* ((affixated (cl-loop
+                     for cand in cands
+                     for ann = (funcall fun cand) collect
+                     (if (consp ann)
+                         ann
+                       (setq ann (or ann ""))
+                       (list cand ""
+                             ;; The default completion UI adds the `completions-annotations' face
+                             ;; if no other faces are present.
+                             (if (text-property-not-all 0 (length ann) 'face nil ann)
+                                 ann
+                               (propertize ann 'face 'completions-annotations))))))
+         (cand-width (cl-loop for (c _p _s) in affixated maximize (consult--display-width c)))
+         (prefix-width (cl-loop for (_c p _s) in affixated maximize (consult--display-width p)))
+         (prefix-align (propertize " " 'display `(space :align-to (+ left ,prefix-width))))
+         (suffix-align (propertize " " 'display `(space :align-to (+ left ,(+ 1 prefix-width cand-width))))))
+    (cl-loop for (c p s) in affixated collect
+             (progn
+               (unless (equal s "")
+                 (setq s (concat suffix-align s)))
+               (when (> prefix-width 0)
+                 (setq p (concat p prefix-align)))
+               (list c p s)))))
 
 (cl-defun consult--read-1 (candidates &key
                                       prompt predicate require-match history default
@@ -2276,14 +2288,13 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
     (delq nil)
     (delete-dups)))
 
-(defun consult--multi-annotate (sources align cand)
-  "Annotate candidate CAND with `consult--multi' type, given SOURCES and ALIGN."
+(defun consult--multi-annotate (sources cand)
+  "Annotate candidate CAND with `consult--multi' type given SOURCES."
   (let* ((src (consult--multi-source sources cand))
-         (annotate (plist-get src :annotate))
-         (ann (if annotate
-                  (funcall annotate (cdr (get-text-property 0 'multi-category cand)))
-                (plist-get src :name))))
-    (and ann (concat align ann))))
+         (annotate (plist-get src :annotate)))
+    (if annotate
+        (funcall annotate (cdr (get-text-property 0 'multi-category cand)))
+      (plist-get src :name))))
 
 (defun consult--multi-group (sources cand transform)
   "Return title of candidate CAND or TRANSFORM the candidate given SOURCES."
@@ -2326,7 +2337,7 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
 
 (defun consult--multi-candidates (sources)
   "Return `consult--multi' candidates from SOURCES."
-  (let ((def) (idx 0) (max-width 0) (candidates))
+  (let ((idx 0) candidates def)
     (seq-doseq (src sources)
       (let* ((face (and (plist-member src :face) `(face ,(plist-get src :face))))
              (cat (plist-get src :category))
@@ -2335,18 +2346,16 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
         (when (and (not def) (plist-get src :default) items)
           (setq def (consult--tofu-append (car items) idx)))
         (dolist (item items)
-          (let ((cand (consult--tofu-append item idx))
-                (width (consult--display-width item)))
+          (let ((cand (consult--tofu-append item idx)))
             ;; Preserve existing `multi-category' datum of the candidate.
             (if (get-text-property 0 'multi-category cand)
                 (when face (add-text-properties 0 (length item) face cand))
               ;; Attach `multi-category' datum and face.
               (add-text-properties 0 (length item)
                                    `(multi-category (,cat . ,item) ,@face) cand))
-            (when (> width max-width) (setq max-width width))
             (push cand candidates))))
       (setq idx (1+ idx)))
-    (list def (+ 3 max-width) (nreverse candidates))))
+    (cons def (nreverse candidates))))
 
 (defun consult--multi-enabled-sources (sources)
   "Return vector of enabled SOURCES."
@@ -2419,7 +2428,7 @@ Optional source fields:
 * :enabled - Function which must return t if the source is enabled.
 * :hidden - When t candidates of this source are hidden by default.
 * :face - Face used for highlighting the candidates.
-* :annotate - Annotation function called for each candidate, returns string.
+* :annotate - Function called for each candidate, return string or list.
 * :history - Name of history variable to add selected candidate.
 * :default - Must be t if the first item of the source is the default value.
 * :action - Function called with the selected candidate.
@@ -2429,18 +2438,15 @@ Optional source fields:
   (let* ((sources (consult--multi-enabled-sources sources))
          (candidates (consult--with-increased-gc
                       (consult--multi-candidates sources)))
-         (align (propertize
-                 " " 'display
-                 `(space :align-to (+ left ,(cadr candidates)))))
          (selected (apply #'consult--read
-                          (caddr candidates)
+                          (cdr candidates)
                           (append
                            options
                            (list
                             :default     (car candidates)
                             :category    'multi-category
                             :predicate   (apply-partially #'consult--multi-predicate sources)
-                            :annotate    (apply-partially #'consult--multi-annotate sources align)
+                            :annotate    (apply-partially #'consult--multi-annotate sources)
                             :group       (apply-partially #'consult--multi-group sources)
                             :lookup      (apply-partially #'consult--multi-lookup sources)
                             :preview-key (consult--multi-preview-key sources)
@@ -3873,30 +3879,25 @@ as argument."
   ;; NOTE: Do not throw an error on empty history,
   ;; in order to allow starting a search.
   ;; We do not :require-match here!
-  (let ((history (if (eq t search-default-mode)
-                     (append regexp-search-ring search-ring)
-                   (append search-ring regexp-search-ring))))
-    (cons
-     (delete-dups
-      (mapcar
-       (lambda (cand)
-         ;; The search type can be distinguished via text properties.
-         (let* ((props (plist-member (text-properties-at 0 cand)
-                                     'isearch-regexp-function))
-                (type (pcase (cadr props)
-                        ((and 'nil (guard (not props))) ?r)
-                        ('nil                           ?l)
-                        ('word-search-regexp            ?w)
-                        ('isearch-symbol-regexp         ?s)
-                        ('char-fold-to-regexp           ?c)
-                        (_                              ?u))))
-           ;; Disambiguate history items. The same string could
-           ;; occur with different search types.
-           (consult--tofu-append cand type)))
-       history))
-     (if history
-         (+ 4 (apply #'max (mapcar #'length history)))
-       0))))
+  (delete-dups
+   (mapcar
+    (lambda (cand)
+      ;; The search type can be distinguished via text properties.
+      (let* ((props (plist-member (text-properties-at 0 cand)
+                                  'isearch-regexp-function))
+             (type (pcase (cadr props)
+                     ((and 'nil (guard (not props))) ?r)
+                     ('nil                           ?l)
+                     ('word-search-regexp            ?w)
+                     ('isearch-symbol-regexp         ?s)
+                     ('char-fold-to-regexp           ?c)
+                     (_                              ?u))))
+        ;; Disambiguate history items. The same string could
+        ;; occur with different search types.
+        (consult--tofu-append cand type)))
+    (if (eq t search-default-mode)
+        (append regexp-search-ring search-ring)
+      (append search-ring regexp-search-ring)))))
 
 (defconst consult--isearch-history-narrow
   '((?c . "Char")
@@ -3916,13 +3917,12 @@ starts a new Isearch session otherwise."
   (consult--forbid-minibuffer)
   (let* ((isearch-message-function 'ignore) ;; Avoid flicker in echo area
          (inhibit-redisplay t)              ;; Avoid flicker in mode line
-         (candidates (consult--isearch-history-candidates))
-         (align (propertize " " 'display `(space :align-to (+ left ,(cdr candidates))))))
+         (candidates (consult--isearch-history-candidates)))
     (unless isearch-mode (isearch-mode t))
     (with-isearch-suspended
      (setq isearch-new-string
            (consult--read
-            (car candidates)
+            candidates
             :prompt "I-search: "
             :category 'consult-isearch
             :history t ;; disable history
@@ -3931,7 +3931,7 @@ starts a new Isearch session otherwise."
             :keymap consult-isearch-history-map
             :annotate
             (lambda (cand)
-              (concat align (alist-get (consult--tofu-get cand) consult--isearch-history-narrow)))
+              (alist-get (consult--tofu-get cand) consult--isearch-history-narrow))
             :group
             (lambda (cand transform)
               (if transform
@@ -4401,9 +4401,9 @@ outside a project. See `consult-buffer' for more details."
                ;; then increments it to 0.
                (cond
                 ((not (string= format "%d")) ;; show counter for non-default format
-                 (format " (counter=%d, format=%s) " counter format))
+                 (format "counter=%-4d format=%s" counter format))
                 ((/= counter 0) ;; show counter if non-zero
-                 (format " (counter=%d)" counter))))))
+                 (format "counter=%d" counter))))))
     (delete-dups)))
 
 ;;;###autoload

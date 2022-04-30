@@ -597,7 +597,7 @@ Optional source fields:
 - =:enabled= Function which must return t if the source is enabled.
 - =:hidden= When t candidates of this source are hidden by default.
 - =:face= Face used for highlighting the candidates.
-- =:annotate= Annotation function called for each candidate, returns string.
+- =:annotate= Annotation function called for each candidate, return string or list.
 - =:history= Name of history variable to add selected candidate.
 - =:default= Must be t if the first item of the source is the default value.
 - =:action= Function called with the selected candidate.
