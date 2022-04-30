@@ -4,6 +4,7 @@
 
 * Development
 
+- Bugfixes
 - Removed obsolete =consult-recent-file-filter= and =consult-preview-excluded-hooks=
 
 * Version 0.17 (2022-04-22)

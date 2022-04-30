@@ -1057,11 +1057,11 @@ CURR-LINE is the current line number."
   (let* ((width (length (number-to-string (line-number-at-pos
                                            (point-max)
                                            consult-line-numbers-widen))))
-         (fmt-before (propertize (format "%%%dd " width) 'face 'consult-line-number-wrapped))
-         (fmt-after (propertize (format "%%%dd " width) 'face 'consult-line-number-prefix)))
+         (before (format #("%%%dd " 0 6 (face consult-line-number-wrapped)) width))
+         (after (format #("%%%dd " 0 6 (face consult-line-number-prefix)) width)))
     (lambda (cand)
       (let ((line (cdr (get-text-property 0 'consult-location cand))))
-        (list cand (format (if (< line curr-line) fmt-before fmt-after) line) "")))))
+        (list cand (format (if (< line curr-line) before after) line) "")))))
 
 (defun consult--location-candidate (cand marker line &rest props)
   "Add MARKER and LINE as 'consult-location text property to CAND.
