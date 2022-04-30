@@ -2283,9 +2283,7 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
          (ann (if annotate
                   (funcall annotate (cdr (get-text-property 0 'multi-category cand)))
                 (plist-get src :name))))
-    (pcase ann
-      ((pred stringp) (concat align ann))
-      (`(,c ,p ,s) (list c p (concat align s))))))
+    (and ann (concat align ann))))
 
 (defun consult--multi-group (sources cand transform)
   "Return title of candidate CAND or TRANSFORM the candidate given SOURCES."
