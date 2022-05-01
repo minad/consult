@@ -1033,13 +1033,13 @@ on your preferences and requirements.
 - [[https://gitlab.com/OlMon/consult-flyspell][consult-flyspell]]: Additional Flyspell integration.
 - [[https://github.com/gagbo/consult-lsp][consult-lsp]]: Integration with Lsp-mode (LSP client).
 - [[https://codeberg.org/jao/consult-notmuch][consult-notmuch]]: Access the [[https://notmuchmail.org/][Notmuch]] email system using Consult.
-- [[https://github.com/jgru/consult-org-roam][consult-org-roam]]: Integration with org-roam.
+- [[https://github.com/jgru/consult-org-roam][consult-org-roam]]: Integration with [[https://github.com/org-roam/org-roam][Org-roam]].
 - [[https://github.com/Qkessler/consult-project-extra/][consult-project-extra]]: Additional project.el extras and buffer sources.
-- [[https://gitlab.com/OlMon/consult-projectile/][consult-projectile]]: Additional Projectile integration and buffer sources.
+- [[https://gitlab.com/OlMon/consult-projectile/][consult-projectile]]: Additional [[https://github.com/bbatsov/projectile][Projectile]] integration and buffer sources.
 - [[https://codeberg.org/jao/consult-recoll][consult-recoll]]: Access the [[https://www.lesbonscomptes.com/recoll/][Recoll]] desktop full-text search using Consult.
 - [[https://codeberg.org/jao/espotify][consult-spotify]]: Access the Spotify API and control your local music player.
-- [[https://github.com/mohkale/consult-yasnippet][consult-yasnippet]]: Integration with yasnippet.
-- [[https://github.com/minad/affe][affe]]: Asynchronous Fuzzy Finder for Emacs (uses Consult under the hood).
+- [[https://github.com/mohkale/consult-yasnippet][consult-yasnippet]]: Integration with Yasnippet.
+- [[https://github.com/minad/affe][affe]]: Asynchronous Fuzzy Finder for Emacs based on Consult.
 
 Not directly related to Consult, but maybe still of interest are the following
 packages. These packages should work well with Consult, follow a similar spirit or
@@ -1049,7 +1049,7 @@ offer functionality based on ~completing-read~.
 - [[https://github.com/minad/cape][cape]]: Completion At Point Extensions, which can be used with =consult-completion-in-region= and [[https://github.com/minad/corfu][Corfu]].
 - [[https://github.com/minad/bookmark-view][bookmark-view]]: Store window configuration as bookmarks, possible integration with =consult-buffer=.
 - [[https://github.com/bdarcus/citar][citar]]: Versatile package for citation insertion and bibliography management.
-- [[https://github.com/astoff/devdocs.el][devdocs]]: Emacs viewer for DevDocs with a convenient completion interface.
+- [[https://github.com/astoff/devdocs.el][devdocs]]: Emacs viewer for [[https://devdocs.io/][DevDocs]] with a convenient completion interface.
 - [[https://github.com/d12frosted/flyspell-correct][flyspell-correct]]: Apply spelling corrections by selecting via =completing-read=.
 - [[https://github.com/mhayashi1120/Emacs-wgrep][wgrep]]: Editing of grep buffers, use together with =consult-grep= via =embark-export=.
 - [[https://github.com/iyefrat/all-the-icons-completion][all-the-icons-completion]]: Icons for the completion UI.
@@ -1060,7 +1060,7 @@ to get started with only default completion and Consult and add more components
 later to the mix. For example you can omit Marginalia if you don't need
 annotations. I highly recommend the Embark package, but in order to familarize
 yourself with the other components, you can first start without it - or you could
-even start with Embark right away and add the other components later on.
+use with Embark right away and add the other components later on.
 
 * Bug reports
 :properties:
@@ -1104,15 +1104,16 @@ Please provide the necessary important information with your bug report:
 
 - The minimal configuration snippet used to reproduce the issue.
 - Your completion UI (Default completion, Vertico, Mct, Selectrum or Icomplete).
-- The full stack trace in case the bug triggers an exception.
+- A stack trace in case the bug triggers an exception.
 - Your Emacs version, since bugs may be fixed or introduced in newer versions.
 - Your operating system, since Emacs behavior varies between Linux, Mac and
   Windows.
 - The package manager, e.g., straight.el or package.el, used to install
   the Emacs packages, in order to exclude update issues. Did you install
   Consult as part of the Doom or Spacemacs Emacs distributions?
-- If you are using Evil or other packages which change Emacs fundamentally,
-  since Consult does not provide Evil integration out of the box.
+- Do you use Evil or other packages which apply deep changes?
+  Consult does not provide Evil integration out of the box, but there is some
+  support in [[https://github.com/emacs-evil/evil-collection][evil-collection]].
 
 When evaluating Consult-related code snippets you should enable [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Lexical-Binding.html][lexical binding]].
 Consult often relies on lambdas and lexical closures.
