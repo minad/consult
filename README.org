@@ -275,16 +275,12 @@ their descriptions.
 
 #+findex: consult-compile-error
 #+findex: consult-flymake
-#+findex: consult-flycheck
 #+findex: consult-xref
 - =consult-compile-error=: Jump to a compilation error. Supports live preview
   narrowing and recursive editing.
 - =consult-flymake=: Jump to flymake diagnostic. Supports live preview and
   recursive editing. The command supports narrowing. Press =e SPC=, =w SPC=, =n SPC=
   to only show errors, warnings and notes respectively.
-- =consult-flycheck=: Jump to flycheck error, similar to =consult-flymake=. This
-  command requires the installation of the additional =consult-flycheck= package
-  since the main =consult= package only depends on Emacs core components.
 - =consult-xref=: Integration with xref. This function can be set as as
   =xref-show-xrefs-function= and =xref-show-definitions-function=.
 
@@ -301,9 +297,11 @@ their descriptions.
   =command-history=. This command is a =completing-read= version of
   =repeat-complex-command= and is also a replacement for the =command-history=
   command from chistory.el.
-- =consult-history=: Insert a string from the current buffer history. You can
-  invoke this command from the minibuffer. In that case =consult-history= uses the
-  history stored in the =minibuffer-history-variable=.
+- =consult-history=: Insert a string from the current buffer history, for example
+  the Eshell or Comint history. You can also invoke this command from the
+  minibuffer. In that case =consult-history= uses the history stored in the
+  =minibuffer-history-variable=. If you prefer =completion-at-point=, take a look at
+  =cape-history= from the [[https://github.com/minad/cape][Cape]] package.
 - =consult-isearch-history=: During an Isearch session, this command picks a
   search string from history and continues the search with the newly selected
   string. Outside of Isearch, the command allows you to pick a string from the
@@ -368,8 +366,8 @@ their descriptions.
 - =consult-completion-in-region=: In case you don't use [[https://github.com/minad/corfu][Corfu]] as your in-buffer
   completion UI, this function can be set as =completion-in-region-function=. Then
   your minibuffer completion UI (e.g., Vertico or Icomplete) will be used for
-  =completion-at-point=. Note that Selectrum provides its own function similar to
-  =consult-completion-in-region=. If you use Mct, you may want to use the
+  =completion-at-point=. Note that Selectrum provides its own variant of
+  =consult-completion-in-region=. If you use Mct, you may want to try
   =mct-region-mode= instead.
   #+begin_src emacs-lisp
     ;; Use `consult-completion-in-region' if Vertico is enabled.
@@ -382,14 +380,14 @@ their descriptions.
                    args)))
   #+end_src
   Instead of =consult-completion-in-region=, you may prefer to see the
-  completions directly in the buffer as a small popup. In that case, I
-  recommend either the [[https://github.com/minad/corfu][Corfu]] or the [[https://github.com/company-mode/company-mode][Company]] package. There is a technical
-  caveat of =consult-completion-in-region= in combination with Lsp-mode or Eglot.
-  The Lsp server relies on the input at point, in order to generate refined
-  candidate strings. Since the completion is transferred from the original
-  buffer to the minibuffer, the server does not receive the updated input. Lsp
-  completion should work with Corfu or Company though, which perform the
-  completion directly in the original buffer.
+  completions directly in the buffer as a small popup. In that case, I recommend
+  either the [[https://github.com/minad/corfu][Corfu]] or the [[https://github.com/company-mode/company-mode][Company]] package. There is a technical limitation of
+  =consult-completion-in-region= in combination with Lsp-mode or Eglot. The Lsp
+  server relies on the input at point, in order to generate refined candidate
+  strings. Since the completion is transferred from the original buffer to the
+  minibuffer, the server does not receive the updated input. LSP completion
+  works with Corfu or Company though, which perform the completion directly in
+  the original buffer.
 - =consult-completing-read-multiple=: Enhanced drop-in replacement for
   =completing-read-multiple= which works better for long candidates. You can
   select/deselect multiple candidates by pressing ~RET~. Afterwards the selections
@@ -1028,18 +1026,18 @@ wider Emacs ecosystem. You may want to install some of theses packages depending
 on your preferences and requirements.
 
 - [[https://github.com/yadex205/consult-ag][consult-ag]]: Support for the [[https://github.com/ggreer/the_silver_searcher][Silver Searcher]] in the style of =consult-grep=.
-- [[https://github.com/mohkale/consult-company][consult-company]]: Completion at point using the company backends.
+- [[https://github.com/mohkale/consult-company][consult-company]]: Completion at point using the [[https://github.com/company-mode/company-mode][Company]] backends.
 - [[https://github.com/karthink/consult-dir][consult-dir]]: Directory jumper using Consult multi sources.
-- [[https://github.com/mohkale/consult-eglot][consult-eglot]]: Integration with eglot (lsp client).
-- [[https://github.com/minad/consult-flycheck][consult-flycheck]]: Provides the =consult-flycheck= command.
+- [[https://github.com/mohkale/consult-eglot][consult-eglot]]: Integration with Eglot (LSP client).
+- [[https://github.com/minad/consult-flycheck][consult-flycheck]]: Additional Flycheck integration.
 - [[https://gitlab.com/OlMon/consult-flyspell][consult-flyspell]]: Additional Flyspell integration.
-- [[https://github.com/gagbo/consult-lsp][consult-lsp]]: Integration with lsp-mode (lsp client).
+- [[https://github.com/gagbo/consult-lsp][consult-lsp]]: Integration with Lsp-mode (LSP client).
 - [[https://codeberg.org/jao/consult-notmuch][consult-notmuch]]: Access the [[https://notmuchmail.org/][Notmuch]] email system using Consult.
 - [[https://github.com/jgru/consult-org-roam][consult-org-roam]]: Integration with org-roam.
-- [[https://codeberg.org/jao/espotify][consult-spotify]]: Access the Spotify API and control your local music player.
 - [[https://github.com/Qkessler/consult-project-extra/][consult-project-extra]]: Additional project.el extras and buffer sources.
 - [[https://gitlab.com/OlMon/consult-projectile/][consult-projectile]]: Additional Projectile integration and buffer sources.
 - [[https://codeberg.org/jao/consult-recoll][consult-recoll]]: Access the [[https://www.lesbonscomptes.com/recoll/][Recoll]] desktop full-text search using Consult.
+- [[https://codeberg.org/jao/espotify][consult-spotify]]: Access the Spotify API and control your local music player.
 - [[https://github.com/mohkale/consult-yasnippet][consult-yasnippet]]: Integration with yasnippet.
 - [[https://github.com/minad/affe][affe]]: Asynchronous Fuzzy Finder for Emacs (uses Consult under the hood).
 
@@ -1047,7 +1045,7 @@ Not directly related to Consult, but maybe still of interest are the following
 packages. These packages should work well with Consult, follow a similar spirit or
 offer functionality based on ~completing-read~.
 
-- [[https://github.com/minad/corfu][corfu]]: Completion systems for =completion-at-point= using small popups (Alternative to [[https://github.com/company-mode/company-mode][company]]).
+- [[https://github.com/minad/corfu][corfu]]: Completion systems for =completion-at-point= using small popups (Alternative to [[https://github.com/company-mode/company-mode][Company]]).
 - [[https://github.com/minad/cape][cape]]: Completion At Point Extensions, which can be used with =consult-completion-in-region= and [[https://github.com/minad/corfu][Corfu]].
 - [[https://github.com/minad/bookmark-view][bookmark-view]]: Store window configuration as bookmarks, possible integration with =consult-buffer=.
 - [[https://github.com/bdarcus/citar][citar]]: Versatile package for citation insertion and bibliography management.
@@ -1077,7 +1075,7 @@ out the following steps:
    and Orderless.
 2. Either use the default completion UI or ensure that exactly one of
    =vertico-mode=, =mct-mode=, =selectrum-mode=, or =icomplete-mode= is enabled.
-   Furthermore =ivy-mode= and =helm-mode= must be disabled.
+   The unsupported modes =ivy-mode=, =helm-mode= and =ido-ubiquitous-mode= must be disabled.
 3. Ensure that the =completion-styles= variable is properly configured. Try to set
    =completion-styles= to a list including =substring= or =orderless=.
 4. Try to reproduce the issue by starting a bare bone Emacs instance with =emacs -Q=

@@ -3823,9 +3823,8 @@ for which the command history is used."
 ;;;###autoload
 (defun consult-history (&optional history)
   "Insert string from HISTORY of current buffer.
-
 In order to select from a specific HISTORY, pass the history variable
-as argument."
+as argument. See also `cape-history' from the Cape package."
   (interactive)
   (let ((str (consult--local-let ((enable-recursive-minibuffers t))
                (consult--read
