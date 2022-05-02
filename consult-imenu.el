@@ -153,7 +153,6 @@ TYPES is the mode-specific types configuration."
 
 (defun consult-imenu--jump (item)
   "Jump to imenu ITEM via `consult--jump'.
-
 In contrast to the builtin `imenu' jump function,
 this function can jump across buffers."
   (pcase item
@@ -161,45 +160,50 @@ this function can jump across buffers."
     (`(,_ . ,pos) (consult--jump pos))
     (_ (error "Unknown imenu item: %S" item))))
 
+(defun consult-imenu--narrow ()
+  "Return narrowing configuration for the current buffer."
+  (mapcar (lambda (x) (cons (car x) (cadr x)))
+          (plist-get (cdr (seq-find (lambda (x) (derived-mode-p (car x)))
+                                    consult-imenu-config))
+                     :types)))
+
+(defun consult-imenu--group ()
+  "Create a imenu group function for the current buffer."
+  (when-let (narrow (consult-imenu--narrow))
+    (lambda (cand transform)
+      (let ((type (get-text-property 0 'consult--type cand)))
+        (cond
+         ((and transform type)
+          (substring cand (1+ (next-single-property-change 0 'consult--type cand))))
+         (transform cand)
+         (type (alist-get type narrow)))))))
+
 (defun consult-imenu--select (prompt items)
   "Select from imenu ITEMS given PROMPT string."
-  (let ((narrow
-         (mapcar (lambda (x) (cons (car x) (cadr x)))
-                 (plist-get (cdr (seq-find (lambda (x) (derived-mode-p (car x)))
-                                           consult-imenu-config))
-                            :types))))
-    (consult-imenu--deduplicate items)
-    (consult-imenu--jump
-     (consult--read
-      (or items (user-error "Imenu is empty"))
-      :prompt prompt
-      :state
-      (let ((preview (consult--jump-preview)))
-        (lambda (action cand)
-          ;; Only preview simple menu items which are markers,
-          ;; in order to avoid any bad side effects.
-          (funcall preview action (and (markerp (cdr cand)) (cdr cand)))))
-      :require-match t
-      :group
-      (when narrow
-        (lambda (cand transform)
-          (let ((type (get-text-property 0 'consult--type cand)))
-            (cond
-             ((and transform type)
-              (substring cand (1+ (next-single-property-change 0 'consult--type cand))))
-             (transform cand)
-             (type (alist-get type narrow))))))
-      :narrow
-      (when narrow
-        (list :predicate
-              (lambda (cand)
-                (eq (get-text-property 0 'consult--type (car cand)) consult--narrow))
-              :keys narrow))
-      :category 'imenu
-      :lookup #'consult--lookup-cons
-      :history 'consult-imenu--history
-      :add-history (thing-at-point 'symbol)
-      :sort nil))))
+  (consult-imenu--deduplicate items)
+  (consult-imenu--jump
+   (consult--read
+    (or items (user-error "Imenu is empty"))
+    :state
+    (let ((preview (consult--jump-preview)))
+      (lambda (action cand)
+        ;; Only preview simple menu items which are markers,
+        ;; in order to avoid any bad side effects.
+        (funcall preview action (and (markerp (cdr cand)) (cdr cand)))))
+    :narrow
+    (when-let (narrow (consult-imenu--narrow))
+      (list :predicate
+            (lambda (cand)
+              (eq (get-text-property 0 'consult--type (car cand)) consult--narrow))
+            :keys narrow))
+    :group (consult-imenu--group)
+    :prompt prompt
+    :require-match t
+    :category 'imenu
+    :lookup #'consult--lookup-cons
+    :history 'consult-imenu--history
+    :add-history (thing-at-point 'symbol)
+    :sort nil)))
 
 ;;;###autoload
 (defun consult-imenu ()
