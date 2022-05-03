@@ -427,7 +427,6 @@ Used by `consult-completion-in-region', `consult-yank' and `consult-history'.")
 (defvar consult--minor-mode-menu-history nil)
 (defvar consult--kmacro-history nil)
 (defvar consult--buffer-history nil)
-(defvar consult--crm-history nil)
 
 ;;;; Internal variables
 
@@ -2643,6 +2642,8 @@ These configuration options are supported:
           nil)))))
 
 ;;;;; Function: consult-completing-read-multiple
+
+(define-obsolete-function-alias 'consult--crm-selected 'ignore "0.17")
 
 ;;;###autoload
 (defun consult-completing-read-multiple (&rest args)
