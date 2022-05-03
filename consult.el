@@ -324,11 +324,6 @@ The dynamically computed arguments are appended."
 Each element of the list must have the form '(char name handler)."
   :type '(repeat (list character string function)))
 
-(defcustom consult-crm-prefix
-  (cons "  " (propertize "✓ " 'face 'success))
-  "Prefix for `consult-completing-read-multiple' candidates."
-  :type '(cons (string :tag "Not selected") (string :tag "Selected")))
-
 ;;;; Faces
 
 (defgroup consult-faces nil
@@ -404,10 +399,6 @@ Used by `consult-completion-in-region', `consult-yank' and `consult-history'.")
 (defface consult-buffer
   '((t))
   "Face used to highlight buffers in `consult-buffer'.")
-
-(defface consult-crm-selected
-  '((t :inherit secondary-selection))
-  "Face used to highlight selected items in `consult-completing-read-multiple'.")
 
 (defface consult-line-number-prefix
   '((t :inherit line-number))
@@ -2031,9 +2022,6 @@ argument list :command and a highlighting function :highlight."
     map)
   "Keymap added for commands with asynchronous candidates.")
 
-(defvar consult-crm-map (make-sparse-keymap)
-  "Keymap added by `consult-completing-read-multiple'.")
-
 (defvar consult-narrow-map
   (let ((map (make-sparse-keymap)))
     (define-key map " " consult--narrow-space)
@@ -2656,159 +2644,12 @@ These configuration options are supported:
 
 ;;;;; Function: consult-completing-read-multiple
 
-(defun consult--crm-selected ()
-  "Return selected candidates from `consult-completing-read-multiple'."
-  (when (eq minibuffer-history-variable 'consult--crm-history)
-    (mapcar
-     (apply-partially #'get-text-property 0 'consult--crm-selected)
-     (all-completions
-      "" minibuffer-completion-table
-      (lambda (cand)
-        (and (stringp cand)
-             (get-text-property 0 'consult--crm-selected cand)
-             (or (not minibuffer-completion-predicate)
-                 (funcall minibuffer-completion-predicate cand))))))))
-
 ;;;###autoload
-(defun consult-completing-read-multiple (prompt table &optional
-                                                pred require-match initial-input
-                                                hist def inherit-input-method)
-  "Enhanced replacement for `completing-read-multiple'.
-See `completing-read-multiple' for the documentation of the arguments."
-  (let* ((orig-items (all-completions "" table pred))
-         (prefixed-orig-items
-          (funcall
-           (if-let (prefix (car consult-crm-prefix))
-               (apply-partially #'mapcar (lambda (item) (propertize item 'line-prefix prefix)))
-             #'identity)
-           orig-items))
-         (format-item
-          (lambda (item)
-            ;; Restore original candidate in order to preserve formatting
-            (setq item (or (car (member item orig-items)) item)
-                  item (propertize item 'consult--crm-selected item
-                                   'line-prefix (cdr consult-crm-prefix)))
-            (add-face-text-property 0 (length item) 'consult-crm-selected 'append item)
-            item))
-         (separator (or (bound-and-true-p crm-separator) "[ \t]*,[ \t]*"))
-         (hist-sym (pcase hist
-                     ('nil 'minibuffer-history)
-                     ('t 'consult--crm-history)
-                     (`(,sym . ,_) sym) ;; ignore history position
-                     (_ hist)))
-         (hist-val (symbol-value hist-sym))
-         (selected
-          (and initial-input
-               (or
-                ;; initial-input is multiple items
-                (string-match-p separator initial-input)
-                ;; initial-input is a single candidate
-                (member initial-input orig-items))
-               (prog1
-                   (mapcar format-item
-                           (split-string initial-input separator 'omit-nulls))
-                 (setq initial-input nil))))
-         (consult--crm-history (append (mapcar #'substring-no-properties selected) hist-val))
-         (items (append selected
-                        (seq-remove (lambda (x) (member x selected))
-                                    prefixed-orig-items)))
-         (orig-md (and (functionp table) (cdr (funcall table "" nil 'metadata))))
-         (group-fun (alist-get 'group-function orig-md))
-         (sort-fun
-          (lambda (sort)
-            (pcase (alist-get sort orig-md)
-              ('identity `((,sort . identity)))
-              ((and sort (guard sort))
-               `((,sort . ,(lambda (cands)
-                             (setq cands (funcall sort cands))
-                             (nconc
-                              (seq-filter (lambda (x) (member x selected)) cands)
-                              (seq-remove (lambda (x) (member x selected)) cands)))))))))
-         (md
-          `(metadata
-            (group-function
-             . ,(lambda (cand transform)
-                  (if (get-text-property 0 'consult--crm-selected cand)
-                      (if transform cand "Selected")
-                    (or (and group-fun (funcall group-fun cand transform))
-                        (if transform cand "Select multiple")))))
-            ,@(funcall sort-fun 'cycle-sort-function)
-            ,@(funcall sort-fun 'display-sort-function)
-            ,@(seq-filter (lambda (x) (memq (car x) '(annotation-function
-                                                      affixation-function
-                                                      category)))
-                          orig-md)))
-         (overlay)
-         (command)
-         (depth (1+ (recursion-depth)))
-         (hook (make-symbol "consult--crm-pre-command-hook"))
-         (wrapper (make-symbol "consult--crm-command-wrapper")))
-    (fset wrapper
-          (lambda ()
-            (interactive)
-            (pcase (catch 'exit
-                     (call-interactively (setq this-command command))
-                     'consult--continue)
-              ('nil
-               (with-selected-window (active-minibuffer-window)
-                 (let ((item (minibuffer-contents-no-properties)))
-                   (when (equal item "")
-                     (throw 'exit nil))
-                   (setq selected (if (member item selected)
-                                      ;; Multi selections are not possible.
-                                      ;; This is probably no problem, since this is rarely desired.
-                                      (delete item selected)
-                                    (nconc selected (list (funcall format-item item))))
-                         consult--crm-history (append (mapcar #'substring-no-properties selected) hist-val)
-                         items (append selected
-                                       (seq-remove (lambda (x) (member x selected))
-                                                   prefixed-orig-items)))
-                   (when overlay
-                     (overlay-put overlay 'display
-                                  (when selected
-                                    (format " (%s selected): " (length selected)))))
-                   (delete-minibuffer-contents)
-                   (run-hook-with-args 'consult--completion-refresh-hook 'reset))))
-              ('consult--continue nil)
-              (other (throw 'exit other)))))
-    (fset hook (lambda ()
-                 (when (and this-command (= depth (recursion-depth)))
-                   (setq command this-command this-command wrapper))))
-    (consult--minibuffer-with-setup-hook
-        (:append
-         (lambda ()
-           (when-let (pos (string-match-p "\\(?: (default[^)]+)\\)?: \\'" prompt))
-             (setq overlay (make-overlay (+ (point-min) pos) (+ (point-min) (length prompt))))
-             (when selected
-               (overlay-put overlay 'display (format " (%s selected): " (length selected)))))
-           (use-local-map (make-composed-keymap (list consult-crm-map) (current-local-map)))))
-      (unwind-protect
-          (progn
-            (add-hook 'pre-command-hook hook 90)
-            (let ((result
-                   (completing-read
-                    prompt
-                    (lambda (str pred action)
-                      (if (eq action 'metadata)
-                          md
-                        (complete-with-action action items str pred)))
-                    nil ;; predicate
-                    require-match
-                    initial-input
-                    'consult--crm-history
-                    "" ;; default
-                    inherit-input-method)))
-              (unless (or (equal result "") selected)
-                (setq selected (split-string result separator 'omit-nulls)
-                      consult--crm-history (append (mapcar #'substring-no-properties selected) hist-val)))))
-        (remove-hook 'pre-command-hook hook)))
-    (when (consp def)
-      (setq def (car def)))
-    (if (and def (not (equal "" def)) (not selected))
-        (split-string def separator 'omit-nulls)
-      (setq selected (mapcar #'substring-no-properties selected))
-      (set hist-sym (append selected (symbol-value hist-sym)))
-      selected)))
+(defun consult-completing-read-multiple (&rest args)
+  "Deprecated function; call `completing-read-multiple' with ARGS."
+  (advice-remove #'completing-read-multiple #'consult-completing-read-multiple)
+  (run-at-time 0 nil #'message "`consult-completing-read-multiple' has been deprecated")
+  (apply #'completing-read-multiple args))
 
 ;;;; Commands
 
