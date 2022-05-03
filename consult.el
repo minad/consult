@@ -2643,8 +2643,6 @@ These configuration options are supported:
 
 ;;;;; Function: consult-completing-read-multiple
 
-(define-obsolete-function-alias 'consult--crm-selected 'ignore "0.17")
-
 ;;;###autoload
 (defun consult-completing-read-multiple (&rest args)
   "Deprecated function; call `completing-read-multiple' with ARGS."
