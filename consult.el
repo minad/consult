@@ -1247,16 +1247,17 @@ ORIG is the original function, HOOKS the arguments."
 
 (defun consult--invisible-open-permanently ()
   "Open overlays which hide the current line.
-See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
+ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
   (dolist (ov (let ((inhibit-field-text-motion t))
                 (overlays-in (line-beginning-position) (line-end-position))))
     (when-let (fun (overlay-get ov 'isearch-open-invisible))
       (when (invisible-p (overlay-get ov 'invisible))
-        (funcall fun ov)))))
+        (funcall fun ov))))
+  (if (featurep 'org-fold) (org-fold-show-set-visibility 'local)))
 
 (defun consult--invisible-open-temporarily ()
   "Temporarily open overlays which hide the current line.
-See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
+ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
   (let (restore)
     (dolist (ov (let ((inhibit-field-text-motion t))
                   (overlays-in (line-beginning-position) (line-end-position))))
@@ -1269,7 +1270,11 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
                   (overlay-put ov 'invisible nil)
                   (lambda () (overlay-put ov 'invisible inv)))
                 restore))))
-    restore))
+    restore)
+  (if (featurep 'org-fold)
+      (save-excursion
+        (org-fold-save-outline-visibility nil
+          (org-fold-show-set-visibility 'local)))))
 
 (defun consult--jump-1 (pos)
   "Go to POS and recenter."
