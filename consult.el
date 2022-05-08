@@ -621,10 +621,10 @@ matches case insensitively."
 (defun consult--split-escaped (str)
   "Split STR at spaces, which can be escaped with backslash."
   (mapcar
-   (lambda (x) (replace-regexp-in-string (string 0) " " x))
+   (lambda (x) (string-replace "\0" " " x))
    (split-string (replace-regexp-in-string
                   "\\\\\\\\\\|\\\\ "
-                  (lambda (x) (if (equal x "\\ ") (string 0) x))
+                  (lambda (x) (if (equal x "\\ ") "\0" x))
                   str 'fixedcase 'literal)
                  " +" t)))
 
