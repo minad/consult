@@ -3951,7 +3951,7 @@ AS is a conversion function."
     (when sort
       (setq buffers (funcall (intern (format "consult--buffer-sort-%s" sort)) buffers)))
     (when (or filter mode as root)
-      (let ((mode (consult--ensure-list mode))
+      (let ((mode (ensure-list mode))
             (exclude-re (consult--regexp-filter exclude))
             (include-re (consult--regexp-filter include)))
         (consult--keep! buffers
