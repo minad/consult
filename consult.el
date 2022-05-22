@@ -202,6 +202,7 @@ character, the *Completions* buffer and a few log buffers."
 
 (defcustom consult-buffer-sources
   '(consult--source-hidden-buffer
+    consult--source-modified-buffer
     consult--source-buffer
     consult--source-recent-file
     consult--source-bookmark
@@ -4100,6 +4101,23 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
                                        :filter 'invert
                                        :as #'buffer-name)))
   "Hidden buffer candidate source for `consult-buffer'.")
+
+(defvar consult--source-modified-buffer
+  `(:name     "Modified Buffer"
+    :narrow   ?*
+    :hidden   t
+    :category buffer
+    :face     consult-buffer
+    :history  buffer-name-history
+    :state    ,#'consult--buffer-state
+    :items
+    ,(lambda () (consult--buffer-query :sort 'visibility
+                                       :as #'buffer-name
+                                       :predicate
+                                       (lambda (buf)
+                                         (and (buffer-modified-p buf)
+                                              (buffer-file-name buf))))))
+  "Modified buffer candidate source for `consult-buffer'.")
 
 (defvar consult--source-buffer
   `(:name     "Buffer"

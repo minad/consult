@@ -99,6 +99,8 @@ their descriptions.
   order to narrow to recent files. Press =SPC= to show ephemeral buffers.
   Supported narrowing keys:
   - b Buffers
+  - SPC Hidden buffers
+  - * Modified buffers
   - f Files (Requires =recentf-mode=)
   - m Bookmarks
   - p Project
