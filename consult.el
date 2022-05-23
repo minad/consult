@@ -851,7 +851,7 @@ When no project is found and MAY-PROMPT is non-nil ask the user."
 (defun consult--project-root (&optional may-prompt)
   "Return project root as absolute path.
 When no project is found and MAY-PROMPT is non-nil ask the user."
-  ;; Preserve this-command across `read-directory-name' call,
+  ;; Preserve this-command across project selection,
   ;; such that `consult-customize' continues to work.
   (let ((this-command this-command))
     (when-let (root (and consult-project-function
