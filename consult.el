@@ -823,9 +823,8 @@ Otherwise the `default-directory' is returned."
           (cond
            ((stringp dir) dir)
            (dir
-            ;; HACK Preserve this-command across `read-directory-name' call,
+            ;; Preserve this-command across `read-directory-name' call,
             ;; such that `consult-customize' continues to work.
-            ;; TODO Find a better and more general solution which preserves `this-command'.
             (let ((this-command this-command))
               (read-directory-name "Directory: " nil nil t)))
            (t (or (consult--project-root) default-directory))))
@@ -852,9 +851,12 @@ When no project is found and MAY-PROMPT is non-nil ask the user."
 (defun consult--project-root (&optional may-prompt)
   "Return project root as absolute path.
 When no project is found and MAY-PROMPT is non-nil ask the user."
-  (when-let (root (and consult-project-function
-                       (funcall consult-project-function may-prompt)))
-    (expand-file-name root)))
+  ;; Preserve this-command across `read-directory-name' call,
+  ;; such that `consult-customize' continues to work.
+  (let ((this-command this-command))
+    (when-let (root (and consult-project-function
+                         (funcall consult-project-function may-prompt)))
+      (expand-file-name root))))
 
 (defun consult--project-name (dir)
   "Return the project name for DIR."
