@@ -2444,7 +2444,7 @@ Optional source fields:
                              (apply-partially #'consult--add-history nil add-history))))
     (car (consult--with-preview
              preview-key state
-             (lambda (_narrow inp _cand) (funcall transform inp)) (lambda () t)
+             (lambda (_narrow inp _cand) (funcall transform inp)) #'always
            (read-from-minibuffer prompt initial nil nil history default inherit-input-method)))))
 
 (cl-defun consult--prompt (&rest options &key prompt history add-history initial default
