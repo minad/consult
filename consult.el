@@ -2629,15 +2629,6 @@ These configuration options are supported:
           (message "No completion")
           nil)))))
 
-;;;;; Function: consult-completing-read-multiple
-
-;;;###autoload
-(defun consult-completing-read-multiple (&rest args)
-  "Deprecated function; call `completing-read-multiple' with ARGS."
-  (advice-remove #'completing-read-multiple #'consult-completing-read-multiple)
-  (run-at-time 0 nil #'message "`consult-completing-read-multiple' has been deprecated")
-  (apply #'completing-read-multiple args))
-
 ;;;; Commands
 
 ;;;;; Command: consult-multi-occur

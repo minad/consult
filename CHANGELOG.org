@@ -2,6 +2,10 @@
 #+author: Daniel Mendler
 #+language: en
 
+* Development
+
+- Remove deprecated =consult-completing-read-multiple=
+
 * Version 0.18 (2022-05-25)
 
 - Bugfixes
