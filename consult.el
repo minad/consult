@@ -275,7 +275,7 @@ The dynamically computed arguments are appended."
   :type 'string)
 
 (defcustom consult-preview-key 'any
-  "Preview trigger keys, can be nil, 'any, a single key or a list of keys."
+  "Preview trigger keys, can be nil, \\='any, a single key or a list of keys."
   :type '(choice (const :tag "Any key" any)
                  (list :tag "Debounced" (const :debounce) (float :tag "Seconds" 0.1) (const any))
                  (const :tag "No preview" nil)
@@ -324,7 +324,7 @@ The dynamically computed arguments are appended."
     (?v "VC Directory" vc-dir-bookmark-jump))
   "Bookmark narrowing configuration.
 
-Each element of the list must have the form '(char name handler)."
+Each element of the list must have the form \\='(char name handler)."
   :type '(repeat (list character string function)))
 
 ;;;; Faces
@@ -1046,7 +1046,7 @@ CURR-LINE is the current line number."
         (list cand (format (if (< line curr-line) before after) line) "")))))
 
 (defun consult--location-candidate (cand marker line &rest props)
-  "Add MARKER and LINE as 'consult-location text property to CAND.
+  "Add MARKER and LINE as \\='consult-location text property to CAND.
 Furthermore add the additional text properties PROPS, and append
 tofu-encoded MARKER suffix for disambiguation."
   ;; Handle cheap marker
@@ -1463,14 +1463,14 @@ selected candidate. The candidate argument can be nil if no candidate is
 selected or if the selection was aborted. The function is called in
 sequence with the following arguments:
 
-  1. 'setup nil         After entering the minibuffer (minibuffer-setup-hook).
-⎧ 2. 'preview CAND/nil  Preview candidate CAND or reset if CAND is nil.
-⎪    'preview CAND/nil
-⎪    'preview CAND/nil
+  1. \\='setup nil         After entering the minibuffer (minibuffer-setup-hook).
+⎧ 2. \\='preview CAND/nil  Preview candidate CAND or reset if CAND is nil.
+⎪    \\='preview CAND/nil
+⎪    \\='preview CAND/nil
 ⎪    ...
-⎩ 3. 'preview nil       Reset preview.
-  4. 'exit nil          Before exiting the minibuffer (minibuffer-exit-hook).
-  5. 'return CAND/nil   After leaving the minibuffer, CAND has been selected.
+⎩ 3. \\='preview nil       Reset preview.
+  4. \\='exit nil          Before exiting the minibuffer (minibuffer-exit-hook).
+  5. \\='return CAND/nil   After leaving the minibuffer, CAND has been selected.
 
 The state function is always executed with the original window selected,
 see `minibuffer-selected-window'. The state function is called once in
@@ -1687,14 +1687,14 @@ BIND is the asynchronous function binding."
 (defun consult--async-sink ()
   "Create ASYNC sink function.
 
-An async function must accept a single action argument. For the 'setup action
+An async function must accept a single action argument. For the \\='setup action
 it is guaranteed that the call originates from the minibuffer. For the other
 actions no assumption about the context can be made.
 
-'setup   Setup the internal closure state. Return nil.
-'destroy Destroy the internal closure state. Return nil.
-'flush   Flush the list of candidates. Return nil.
-'refresh Request UI refresh. Return nil.
+\\='setup   Setup the internal closure state. Return nil.
+\\='destroy Destroy the internal closure state. Return nil.
+\\='flush   Flush the list of candidates. Return nil.
+\\='refresh Request UI refresh. Return nil.
 nil      Return the list of candidates.
 list     Append the list to the already existing candidates list and return it.
 string   Update with the current user input string. Return nil."
@@ -2201,7 +2201,7 @@ ANNOTATE is a function passed a candidate string to return an annotation.
 INITIAL is the initial input.
 STATE is the state function, see `consult--with-preview'.
 GROUP is a completion metadata `group-function'.
-PREVIEW-KEY are the preview keys (nil, 'any, a single key or a list of keys).
+PREVIEW-KEY are the preview keys (nil, \\='any, a single key or a list of keys).
 NARROW is an alist of narrowing prefix strings and description.
 KEYMAP is a command-specific keymap.
 INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
@@ -2460,7 +2460,7 @@ INITIAL is initial input.
 DEFAULT is the default selected value.
 ADD-HISTORY is a list of items to add to the history.
 STATE is the state function, see `consult--with-preview'.
-PREVIEW-KEY are the preview keys (nil, 'any, a single key or a list of keys).
+PREVIEW-KEY are the preview keys (nil, \\='any, a single key or a list of keys).
 KEYMAP is a command-specific keymap."
   (ignore prompt history add-history initial default
           keymap state preview-key transform inherit-input-method)
