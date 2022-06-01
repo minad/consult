@@ -1586,7 +1586,7 @@ to make it available for commands with narrowing."
 
 ;;;; Splitting completion style
 
-(defun consult--split-perl (_plist str point)
+(defun consult--split-perl (str point &optional _plist)
   "Split input STR in async input and filtering part.
 
 The function returns a list with four elements: The async string, the
@@ -1607,11 +1607,11 @@ separator. Examples: \"/async/filter\", \"#async#filter\"."
             ,@(and (match-end 2) `((,(match-beginning 2) . ,(match-end 2)))))))
     `(,str "" 0)))
 
-(defun consult--split-nil (_plist str _point)
+(defun consult--split-nil (str _point &optional _plist)
   "Treat the complete input STR as async input."
   `(,str "" 0))
 
-(defun consult--split-separator (plist str point)
+(defun consult--split-separator (str point plist)
   "Split input STR in async input and filtering part at first separator.
 POINT is the point position.
 PLIST is the splitter configuration, including the separator."
@@ -1746,8 +1746,9 @@ INITIAL is the additional initial string."
 ASYNC is the async sink.
 SPLIT is the splitting function."
   (unless split
-    (let ((style (consult--async-split-style)))
-      (setq split (apply-partially (plist-get style :function) style))))
+    (let* ((style (consult--async-split-style))
+           (fn (plist-get style :function)))
+      (setq split (lambda (str pt) (funcall fn str pt style)))))
   (lambda (action)
     (pcase action
       ('setup
