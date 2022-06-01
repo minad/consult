@@ -126,10 +126,10 @@ This applies to asynchronous commands, e.g., `consult-grep'."
                  (const :tag "Perl" perl)))
 
 (defcustom consult-async-split-styles-alist
-  '((nil :type nil)
-    (comma :separator ?, :type separator)
-    (semicolon :separator ?\; :type separator)
-    (perl :initial "#" :type perl))
+  '((nil :function consult--split-nil)
+    (comma :separator ?, :function consult--split-separator)
+    (semicolon :separator ?\; :function consult--split-separator)
+    (perl :initial "#" :function consult--split-perl))
   "Async splitting styles."
   :type '(alist :key-type symbol :value-type plist))
 
@@ -1586,7 +1586,7 @@ to make it available for commands with narrowing."
 
 ;;;; Splitting completion style
 
-(defun consult--split-perl (str point)
+(defun consult--split-perl (_plist str point)
   "Split input STR in async input and filtering part.
 
 The function returns a list with four elements: The async string, the
@@ -1607,24 +1607,25 @@ separator. Examples: \"/async/filter\", \"#async#filter\"."
             ,@(and (match-end 2) `((,(match-beginning 2) . ,(match-end 2)))))))
     `(,str "" 0)))
 
-(defun consult--split-nil (str _point)
+(defun consult--split-nil (_plist str _point)
   "Treat the complete input STR as async input."
   `(,str "" 0))
 
-(defun consult--split-separator (sep str point)
-  "Split input STR in async input and filtering part at the first separator SEP.
-POINT is the point position."
-  (setq sep (regexp-quote (char-to-string sep)))
-  (save-match-data
-    (if (string-match (format "^\\([^%s]+\\)\\(%s\\)?" sep sep) str)
-        `(,(match-string 1 str)
-          ,(substring str (match-end 0))
-          ,(max 0 (- point (match-end 0)))
-          ;; Force update it space is entered.
-          ,(match-end 2)
-          ;; List of highlights
-          (0 . ,(match-end 1)))
-      `(,str "" 0))))
+(defun consult--split-separator (plist str point)
+  "Split input STR in async input and filtering part at first separator.
+POINT is the point position.
+PLIST is the splitter configuration, including the separator."
+  (let ((sep (regexp-quote (char-to-string (plist-get plist :separator)))))
+    (save-match-data
+      (if (string-match (format "^\\([^%s]+\\)\\(%s\\)?" sep sep) str)
+          `(,(match-string 1 str)
+            ,(substring str (match-end 0))
+            ,(max 0 (- point (match-end 0)))
+            ;; Force update it space is entered.
+            ,(match-end 2)
+            ;; List of highlights
+            (0 . ,(match-end 1)))
+        `(,str "" 0)))))
 
 (defun consult--split-setup (split)
   "Setup splitting completion style with splitter function SPLIT."
@@ -1746,12 +1747,7 @@ ASYNC is the async sink.
 SPLIT is the splitting function."
   (unless split
     (let ((style (consult--async-split-style)))
-      (setq split (pcase (plist-get style :type)
-                    ('separator (apply-partially #'consult--split-separator
-                                                 (plist-get style :separator)))
-                    ('perl #'consult--split-perl)
-                    ('nil #'consult--split-nil)
-                    (type (user-error "Invalid style type `%s'" type))))))
+      (setq split (apply-partially (plist-get style :function) style))))
   (lambda (action)
     (pcase action
       ('setup
