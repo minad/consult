@@ -1154,6 +1154,7 @@ Code contributions:
 - [[https://github.com/mohamed-abdelnour][Mohamed Abdelnour]]
 - [[https://github.com/thisirs][Sylvain Rousseau]]
 - [[https://github.com/jdtsmith][J.D. Smith]]
+- [[https://github.com/mohkale][Mohsin Kaleem]]
 
 Advice and useful discussions:
 - [[https://github.com/clemera/][Clemens Radermacher]]
