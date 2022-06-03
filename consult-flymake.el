@@ -33,15 +33,10 @@
     (?w . "Warning")
     (?n . "Note")))
 
-(defun consult-flymake--candidates ()
-  "Return Flymake errors as alist."
-  (consult--forbid-minibuffer)
-  (let* ((raw-diags (or (flymake-diagnostics)
-                        (user-error "No flymake errors (Status: %s)"
-                                    (if (seq-difference (flymake-running-backends)
-                                                        (flymake-reporting-backends))
-                                        'running 'finished))))
-         (diags
+(defun consult-flymake--candidates (diags)
+  "Return Flymake errors from DIAGS as formatted candidates.
+DIAGS should be a list of diagnostics as returned from `flymake-diagnostics'."
+  (let* ((diags
           (mapcar
            (lambda (diag)
              (let ((buffer (flymake-diagnostic-buffer diag))
@@ -60,7 +55,7 @@
                               ('flymake-error ?e)
                               ('flymake-warning ?w)
                               (_ ?n))))))))
-           raw-diags))
+           diags))
          (buffer-width (apply #'max (mapcar (lambda (x) (length (nth 0 x))) diags)))
          (line-width (apply #'max (mapcar (lambda (x) (length (number-to-string (nth 1 x)))) diags)))
          (fmt (format "%%-%ds %%-%dd %%-7s %%s" buffer-width line-width)))
@@ -74,18 +69,38 @@
                            text)
                    'consult--candidate marker
                    'consult--type narrow))
+     ;; Sort by buffer, severity and position.
      (sort diags
-           (pcase-lambda (`(_ _ ,t1 _ ,m1 _) `(_ _ ,t2 _ ,m2 _))
+           (pcase-lambda (`(,b1 _ ,t1 _ ,m1 _) `(,b2 _ ,t2 _ ,m2 _))
              (let ((s1 (flymake--severity t1))
                    (s2 (flymake--severity t2)))
-               (or (> s1 s2) (and (= s1 s2) (< m1 m2)))))))))
+               (or
+                (string-lessp b1 b2)
+                (and (string-equal b1 b2)
+                     (or
+                      (> s1 s2)
+                      (and (= s1 s2)
+                           (< m1 m2)))))))))))
 
 ;;;###autoload
-(defun consult-flymake ()
-  "Jump to Flymake diagnostic."
-  (interactive)
+(defun consult-flymake (&optional project)
+  "Jump to Flymake diagnostic.
+When PROJECT is non-nil then prompt with diagnostics from all
+buffers in the current project instead of just the current buffer."
+  (interactive "P")
+  (consult--forbid-minibuffer)
   (consult--read
-   (consult--with-increased-gc (consult-flymake--candidates))
+   (consult--with-increased-gc
+    (consult-flymake--candidates
+     (or
+      (if-let (((and project (fboundp 'flymake--project-diagnostics)))
+               (project (project-current)))
+          (flymake--project-diagnostics project)
+        (flymake-diagnostics))
+      (user-error "No flymake errors (Status: %s)"
+                  (if (seq-difference (flymake-running-backends)
+                                      (flymake-reporting-backends))
+                      'running 'finished)))))
    :prompt "Flymake diagnostic: "
    :category 'consult-flymake-error
    :history t ;; disable history
