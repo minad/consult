@@ -89,7 +89,7 @@ This function can be used for `xref-show-xrefs-function'.
 See `xref-show-xrefs-function' for the description of the
 FETCHER and ALIST arguments."
   (let* ((consult-xref--fetcher fetcher)
-         (candidates (consult--with-increased-gc (consult-xref--candidates)))
+         (candidates (consult-xref--candidates))
          (display (alist-get 'display-action alist)))
     (xref-pop-to-location
      (if (cdr candidates)

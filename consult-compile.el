@@ -107,12 +107,11 @@ buffers related to the current buffer.  The command supports
 preview of the currently selected error."
   (interactive)
   (consult--read
-   (consult--with-increased-gc
-    (or (mapcan #'consult-compile--error-candidates
-                (or (consult-compile--compilation-buffers
-                     default-directory)
-                    (user-error "No compilation buffers found for the current buffer")))
-        (user-error "No compilation errors found")))
+   (or (mapcan #'consult-compile--error-candidates
+               (or (consult-compile--compilation-buffers
+                    default-directory)
+                   (user-error "No compilation buffers found for the current buffer")))
+       (user-error "No compilation errors found"))
    :prompt "Go to error: "
    :category 'consult-compile-error
    :sort nil

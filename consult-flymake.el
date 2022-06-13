@@ -90,17 +90,16 @@ buffers in the current project instead of just the current buffer."
   (interactive "P")
   (consult--forbid-minibuffer)
   (consult--read
-   (consult--with-increased-gc
-    (consult-flymake--candidates
-     (or
-      (if-let (((and project (fboundp 'flymake--project-diagnostics)))
-               (project (project-current)))
-          (flymake--project-diagnostics project)
-        (flymake-diagnostics))
-      (user-error "No flymake errors (Status: %s)"
-                  (if (seq-difference (flymake-running-backends)
-                                      (flymake-reporting-backends))
-                      'running 'finished)))))
+   (consult-flymake--candidates
+    (or
+     (if-let (((and project (fboundp 'flymake--project-diagnostics)))
+              (project (project-current)))
+         (flymake--project-diagnostics project)
+       (flymake-diagnostics))
+     (user-error "No flymake errors (Status: %s)"
+                 (if (seq-difference (flymake-running-backends)
+                                     (flymake-reporting-backends))
+                     'running 'finished))))
    :prompt "Flymake diagnostic: "
    :category 'consult-flymake-error
    :history t ;; disable history

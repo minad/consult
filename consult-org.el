@@ -92,7 +92,7 @@ buffer are offered."
                  (user-error "Must be called from an Org buffer")))
   (let ((prefix (not (memq scope '(nil tree region region-start-level file)))))
     (consult--read
-     (consult--with-increased-gc (consult-org--headings prefix match scope))
+     (consult-org--headings prefix match scope)
      :prompt "Go to heading: "
      :category 'consult-org-heading
      :sort nil

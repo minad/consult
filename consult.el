@@ -2683,8 +2683,7 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
 This command supports narrowing to a heading level and candidate preview.
 The symbol at point is added to the future history."
   (interactive)
-  (let* ((candidates
-          (consult--with-increased-gc (consult--outline-candidates)))
+  (let* ((candidates (consult--outline-candidates))
          (min-level (- (apply #'min (mapcar
                                      (lambda (cand)
                                        (get-text-property 0 'consult--outline-level cand))
@@ -2741,9 +2740,8 @@ The command supports preview of the currently selected marker position.
 The symbol at point is added to the future history."
   (interactive)
   (consult--read
-   (consult--with-increased-gc
-    (consult--mark-candidates
-     (or markers (cons (mark-marker) mark-ring))))
+   (consult--mark-candidates
+    (or markers (cons (mark-marker) mark-ring)))
    :prompt "Go to mark: "
    :annotate (consult--line-prefix)
    :category 'consult-location
@@ -2789,9 +2787,8 @@ The command supports preview of the currently selected marker position.
 The symbol at point is added to the future history."
   (interactive)
   (consult--read
-   (consult--with-increased-gc
-    (consult--global-mark-candidates
-     (or markers global-mark-ring)))
+   (consult--global-mark-candidates
+    (or markers global-mark-ring))
    :prompt "Go to global mark: "
    ;; Despite `consult-global-mark' formating the candidates in grep-like
    ;; style, we are not using the 'consult-grep category, since the candidates
