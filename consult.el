@@ -439,7 +439,11 @@ Used by `consult-completion-in-region', `consult-yank' and `consult-history'.")
 The function must return a list of regular expressions and a highlighter
 function.")
 
-(defvar consult--customize-alist nil
+(defvar consult--customize-alist
+  ;; Disable preview in frames, since frames do not get up cleaned
+  ;; properly. Preview is only supported by `consult-buffer' and
+  ;; `consult-buffer-other-window'.
+  `((,#'consult-buffer-other-frame :preview-key nil))
   "Command configuration alist for fine-grained configuration.
 
 Each element of the list must have the form (command-name plist...). The
@@ -3987,26 +3991,21 @@ Report progress and return a list of the results"
 
 (defun consult--buffer-preview ()
   "Buffer preview function."
-  ;; Only preview in current window and other window.
-  ;; Preview in frames and tabs is not possible since these don't get cleaned up.
-  (if (memq consult--buffer-display
-            '(switch-to-buffer switch-to-buffer-other-window))
-      (let ((orig-buf (current-buffer)) other-win)
-        (lambda (action cand)
-          (when (eq action 'preview)
-            (when (and (eq consult--buffer-display #'switch-to-buffer-other-window)
-                       (not other-win))
-              (switch-to-buffer-other-window orig-buf)
-              (setq other-win (selected-window)))
-            (let ((win (or other-win (selected-window))))
-              (when (window-live-p win)
-                (with-selected-window win
-                  (cond
-                   ((and cand (get-buffer cand))
-                    (switch-to-buffer cand 'norecord))
-                   ((buffer-live-p orig-buf)
-                    (switch-to-buffer orig-buf 'norecord)))))))))
-    #'ignore))
+  (let ((orig-buf (current-buffer)) other-win)
+    (lambda (action cand)
+      (when (eq action 'preview)
+        (when (and (eq consult--buffer-display #'switch-to-buffer-other-window)
+                   (not other-win))
+          (switch-to-buffer-other-window orig-buf)
+          (setq other-win (selected-window)))
+        (let ((win (or other-win (selected-window))))
+          (when (window-live-p win)
+            (with-selected-window win
+              (cond
+               ((and cand (get-buffer cand))
+                (switch-to-buffer cand 'norecord))
+               ((buffer-live-p orig-buf)
+                (switch-to-buffer orig-buf 'norecord))))))))))
 
 (defun consult--buffer-action (buffer &optional norecord)
   "Switch to BUFFER via `consult--buffer-display' function.
