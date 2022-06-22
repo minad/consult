@@ -1160,7 +1160,7 @@ ORIG is the original function, HOOKS the arguments."
 (defun consult--temporary-files ()
   "Return a function to open files temporarily for preview."
   (let ((dir default-directory)
-        (hook (make-symbol "consult--temporary-files"))
+        (hook (make-symbol "consult--temporary-files-window-selection-change"))
         (orig-buffers (buffer-list))
         temporary-buffers)
     (fset hook
