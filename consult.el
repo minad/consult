@@ -1371,9 +1371,9 @@ FACE is the cursor face."
     (dolist (x (consult--preview-key-normalize preview-key))
       (if (eq (car x) 'any)
           (setq any (cdr x))
-        (define-key map (car x) (cdr x))))
+        (define-key map (car x) `(lambda () ,(cdr x)))))
     (setq keys (lookup-key map keys))
-    (if (numberp keys) keys any)))
+    (if (functionp keys) (funcall keys) any)))
 
 (defun consult--append-local-post-command-hook (fun)
   "Append FUN to local `post-command-hook' list."
