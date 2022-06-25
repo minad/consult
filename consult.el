@@ -2104,12 +2104,13 @@ PREVIEW-KEY are the preview keys."
 ;; By doing that, no accidential matching can occur.
 (defun consult--tofu-encode (n)
   "Return tofu-encoded number N."
-  (let ((str ""))
+  (let (str tofu)
     (while (progn
-             (setq str (concat (char-to-string (+ consult--tofu-char
-                                                  (% n consult--tofu-range)))
-                               str))
-             (and (>= n consult--tofu-range) (setq n (/ n consult--tofu-range)))))
+             (setq tofu (char-to-string
+                         (+ consult--tofu-char (% n consult--tofu-range)))
+                   str (if str (concat tofu str) tofu))
+             (and (>= n consult--tofu-range)
+                  (setq n (/ n consult--tofu-range)))))
     (add-text-properties 0 (length str) '(invisible t consult-strip t) str)
     str))
 
