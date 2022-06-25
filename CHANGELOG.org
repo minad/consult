@@ -4,6 +4,7 @@
 
 * Development
 
+- Bugfixes
 - Allow =consult-flymake= to work across all buffers in a project
 - Remove deprecated =consult-completing-read-multiple=
 
