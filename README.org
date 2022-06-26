@@ -610,8 +610,8 @@ must return a closure which takes an ACTION and a CANDIDATE argument. See the
 docstring of =consult--with-preview= for more details about the ACTION argument.
 
 By default, =consult-buffer= previews buffers, bookmarks and files. Loading recent
-files, bookmarks or views can result in expensive operations. However it is
-possible to configure a manual preview as follows.
+files or bookmarks can result in expensive operations. However it is possible to
+configure a manual preview as follows.
 
 #+begin_src emacs-lisp
   (consult-customize
@@ -619,9 +619,9 @@ possible to configure a manual preview as follows.
    consult--source-project-recent-file :preview-key (kbd "M-."))
 #+end_src
 
-Sources can be added directly to the =consult-buffer-source= list for
-convenience. For example views can be added to the list of virtual buffers
-from a library like https://github.com/minad/bookmark-view/.
+Sources can be added directly to the =consult-buffer-source= list for convenience.
+For example views/perspectives can be added to the list of virtual buffers from
+a library like https://github.com/minad/bookmark-view/.
 
 #+begin_src emacs-lisp
 ;; Configure new bookmark-view source
