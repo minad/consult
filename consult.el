@@ -1417,29 +1417,29 @@ PREVIEW-KEY, STATE, TRANSFORM and CANDIDATE."
                     (lambda ()
                       (when-let ((cand (funcall candidate)))
                         (with-selected-window (active-minibuffer-window)
-                          (let ((input (minibuffer-contents-no-properties)))
+                          (let* ((input (minibuffer-contents-no-properties))
+                                 (transformed (funcall transform narrow input cand))
+                                 (new-preview (cons input cand)))
                             (with-selected-window (or (minibuffer-selected-window) (next-window))
-                              (let ((transformed (funcall transform narrow input cand))
-                                    (new-preview (cons input cand)))
-                                (when-let (debounce (consult--preview-key-debounce preview-key transformed))
-                                  (when timer
-                                    (cancel-timer timer)
-                                    (setq timer nil))
-                                  (unless (equal last-preview new-preview)
-                                    (if (> debounce 0)
-                                        (let ((win (selected-window)))
-                                          (setq timer
-                                                (run-at-time
-                                                 debounce nil
-                                                 (lambda ()
-                                                   (when (window-live-p win)
-                                                     (with-selected-window win
-                                                       ;; STEP 2: Preview candidate
-                                                       (funcall state 'preview transformed)
-                                                       (setq last-preview new-preview)))))))
-                                      ;; STEP 2: Preview candidate
-                                      (funcall state 'preview transformed)
-                                      (setq last-preview new-preview)))))))))))
+                              (when-let (debounce (consult--preview-key-debounce preview-key transformed))
+                                (when timer
+                                  (cancel-timer timer)
+                                  (setq timer nil))
+                                (unless (equal last-preview new-preview)
+                                  (if (> debounce 0)
+                                      (let ((win (selected-window)))
+                                        (setq timer
+                                              (run-at-time
+                                               debounce nil
+                                               (lambda ()
+                                                 (when (window-live-p win)
+                                                   (with-selected-window win
+                                                     ;; STEP 2: Preview candidate
+                                                     (funcall state 'preview transformed)
+                                                     (setq last-preview new-preview)))))))
+                                    ;; STEP 2: Preview candidate
+                                    (funcall state 'preview transformed)
+                                    (setq last-preview new-preview))))))))))
               (consult--append-local-post-command-hook
                (lambda ()
                  (setq input (minibuffer-contents-no-properties)
@@ -2881,7 +2881,9 @@ INPUT is the input string entered by the user."
         ;; Marker can be dead, therefore ignore errors. Create a new marker instead of an integer,
         ;; since the location may be in another buffer, e.g., for `consult-line-all'.
         (ignore-errors
-          (if (or (not (markerp pos)) (eq (marker-buffer pos) (current-buffer)))
+          (if (or (not (markerp pos))
+                  (eq (marker-buffer pos)
+                      (window-buffer (or (minibuffer-selected-window) (next-window)))))
               (+ pos end)
             ;; Only create a new marker when jumping across buffers, to avoid
             ;; creating unnecessary markers, when scrolling through candidates.
