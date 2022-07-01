@@ -1159,10 +1159,12 @@ ORIG is the original function, HOOKS the arguments."
 
 (defun consult--temporary-files ()
   "Return a function to open files temporarily for preview."
-  (let* ((orig-buffers (buffer-list))
-         (temporary-buffers nil)
-         (upgrade-buffers
-          (lambda ()
+  (let ((dir default-directory)
+        (hook (make-symbol "consult--temporary-files-window-selection-change"))
+        (orig-buffers (buffer-list))
+        temporary-buffers)
+    (fset hook
+          (lambda (_)
             ;; Fully initialize previewed files and keep them alive.
             (unless (consult--completion-window-p)
               (let (live-files)
@@ -1183,11 +1185,6 @@ ORIG is the original function, HOOKS the arguments."
                     (pcase-dolist (`(,win . ,state) wins)
                       (setf (car (alist-get 'buffer state)) buf)
                       (window-state-put state win))))))))
-         (dir default-directory)
-         (hook (make-symbol "consult--temporary-files-window-selection-change")))
-    ;; Run the buffer upgrade not within the window-selection-change-hook,
-    ;; since the hook is called during redisplay.
-    (fset hook (lambda (_) (run-at-time 0 nil upgrade-buffers)))
     (lambda (&optional name)
       (if name
           (let ((default-directory dir))
