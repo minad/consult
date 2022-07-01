@@ -4338,7 +4338,7 @@ FIND-FILE is the file open function, defaulting to `find-file'."
         (funcall open))
       (funcall jump action (consult--grep-position
                             cand
-                            (and (not (eq action 'exit)) open))))))
+                            (and (not (eq action 'return)) open))))))
 
 (defun consult--grep-group (cand transform)
   "Return title for CAND or TRANSFORM the candidate."
