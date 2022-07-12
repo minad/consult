@@ -547,21 +547,23 @@ pairs."
       ;; split-string-and-unquote fails if the quotes are invalid. Ignore it.
       (cons str (and opts (ignore-errors (split-string-and-unquote opts)))))))
 
-(defun consult--highlight-regexps (regexps str)
+(defun consult--highlight-regexps (regexps ignore-case str)
   "Highlight REGEXPS in STR.
 If a regular expression contains capturing groups, only these are highlighted.
-If no capturing groups are used highlight the whole match."
-  (dolist (re regexps)
-    (when (string-match re str)
-      ;; Unfortunately there is no way to avoid the allocation of the match
-      ;; data, since the number of capturing groups is unknown.
-      (let ((m (match-data)))
-        (setq m (or (cddr m) m))
-        (while m
-          (when (car m)
-            (add-face-text-property (car m) (cadr m)
-                                    'consult-preview-match nil str))
-          (setq m (cddr m)))))))
+If no capturing groups are used highlight the whole match. Case is ignored
+if IGNORE-CASE is non-nil."
+  (let ((case-fold-search ignore-case))
+    (dolist (re regexps)
+      (when (string-match re str)
+        ;; Unfortunately there is no way to avoid the allocation of the match
+        ;; data, since the number of capturing groups is unknown.
+        (let ((m (match-data)))
+          (setq m (or (cddr m) m))
+          (while m
+            (when (car m)
+              (add-face-text-property (car m) (cadr m)
+                                      'consult-preview-match nil str))
+            (setq m (cddr m))))))))
 
 (defconst consult--convert-regexp-table
   (append
@@ -619,9 +621,7 @@ matches case insensitively."
   (setq input (consult--split-escaped input))
   (cons (mapcar (lambda (x) (consult--convert-regexp x type)) input)
         (when-let (regexps (seq-filter #'consult--valid-regexp-p input))
-          (lambda (str)
-            (let ((case-fold-search ignore-case))
-              (consult--highlight-regexps regexps str))))))
+          (apply-partially #'consult--highlight-regexps regexps ignore-case))))
 
 (defun consult--split-escaped (str)
   "Split STR at spaces, which can be escaped with backslash."
@@ -4386,17 +4386,22 @@ INITIAL is inital input."
 (defun consult--grep-builder (input)
   "Build command line given INPUT."
   (pcase-let* ((cmd (split-string-and-unquote consult-grep-args))
-               (type (consult--grep-regexp-type (car cmd)))
                (`(,arg . ,opts) (consult--command-split input))
-               (`(,re . ,hl) (funcall consult--regexp-compiler arg type
-                                      (member "--ignore-case" cmd))))
-    (when re
-      (list :command
-            (append cmd
-                    (list (if (eq type 'pcre) "--perl-regexp" "--extended-regexp")
-                          "-e" (consult--join-regexps re type))
-                    opts)
-            :highlight hl))))
+               (flags (append cmd opts))
+               (ignore-case (or (member "-i" flags) (member "--ignore-case" flags))))
+    (if (or (member "-F" flags) (member "--fixed-strings" flags))
+        `(:command (,@cmd "-e" ,arg ,@opts) :highlight
+                   ,(apply-partially #'consult--highlight-regexps
+                                     (list (regexp-quote arg)) ignore-case))
+      (pcase-let* ((type (consult--grep-regexp-type (car cmd)))
+                   (`(,re . ,hl) (funcall consult--regexp-compiler arg type ignore-case)))
+        (when re
+          `(:command
+            (,@cmd
+             ,(if (eq type 'pcre) "--perl-regexp" "--extended-regexp")
+             "-e" ,(consult--join-regexps re type)
+             ,@opts)
+            :highlight ,hl))))))
 
 ;;;###autoload
 (defun consult-grep (&optional dir initial)
@@ -4445,14 +4450,17 @@ Otherwise the `default-directory' is searched."
   "Build command line given CONFIG and INPUT."
   (pcase-let* ((cmd (split-string-and-unquote consult-git-grep-args))
                (`(,arg . ,opts) (consult--command-split input))
-               (`(,re . ,hl) (funcall consult--regexp-compiler arg 'extended
-                                      (member "--ignore-case" cmd))))
-    (when re
-      (list :command
-            (append cmd
-                    (cdr (mapcan (lambda (x) (list "--and" "-e" x)) re))
-                    opts)
-            :highlight hl))))
+               (flags (append cmd opts))
+               (ignore-case (or (member "-i" flags) (member "--ignore-case" flags))))
+    (if (or (member "-F" flags) (member "--fixed-strings" flags))
+        `(:command (,@cmd "-e" ,arg ,@opts) :highlight
+                   ,(apply-partially #'consult--highlight-regexps
+                                     (list (regexp-quote arg)) ignore-case))
+      (pcase-let ((`(,re . ,hl) (funcall consult--regexp-compiler arg 'extended ignore-case)))
+        (when re
+          `(:command
+            (,@cmd ,@(cdr (mapcan (lambda (x) (list "--and" "-e" x)) re)) ,@opts)
+            :highlight ,hl))))))
 
 ;;;###autoload
 (defun consult-git-grep (&optional dir initial)
@@ -4474,21 +4482,25 @@ for more details."
 (defun consult--ripgrep-builder (input)
   "Build command line given INPUT."
   (pcase-let* ((cmd (split-string-and-unquote consult-ripgrep-args))
-               (type (consult--ripgrep-regexp-type (car cmd)))
                (`(,arg . ,opts) (consult--command-split input))
-               (`(,re . ,hl) (funcall consult--regexp-compiler arg type
-                                      (if (member "--smart-case" cmd)
-                                          (let ((case-fold-search nil))
-                                           ;; Case insensitive if there are no uppercase letters
-                                           (not (string-match-p "[[:upper:]]" input)))
-                                        (member "--ignore-case" cmd)))))
-    (when re
-      (list :command
-            (append cmd
-                    (and (eq type 'pcre) '("-P"))
-                    (list  "-e" (consult--join-regexps re type))
-                    opts)
-            :highlight hl))))
+               (flags (append cmd opts))
+               (ignore-case (if (or (member "-S" flags) (member "--smart-case" flags))
+                                (let (case-fold-search)
+                                  ;; Case insensitive if there are no uppercase letters
+                                  (not (string-match-p "[[:upper:]]" arg)))
+                              (or (member "-i" flags) (member "--ignore-case" flags)))))
+    (if (or (member "-F" flags) (member "--fixed-strings" flags))
+        `(:command (,@cmd "-e" ,arg ,@opts) :highlight
+                   ,(apply-partially #'consult--highlight-regexps
+                                     (list (regexp-quote arg)) ignore-case))
+      (pcase-let* ((type (consult--ripgrep-regexp-type (car cmd)))
+                   (`(,re . ,hl) (funcall consult--regexp-compiler arg type ignore-case)))
+        (when re
+          `(:command
+            (,@cmd ,@(and (eq type 'pcre) '("-P"))
+                   "-e" ,(consult--join-regexps re type)
+                   ,@opts)
+            :highlight ,hl))))))
 
 ;;;###autoload
 (defun consult-ripgrep (&optional dir initial)
