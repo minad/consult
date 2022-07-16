@@ -1593,28 +1593,27 @@ to make it available for commands with narrowing."
 (defun consult--split-perl (str &optional _plist)
   "Split input STR in async input and filtering part.
 
-The function returns a list with four elements: The async string,
-the completion filter string, the start position of the
-completion filter string and a force flag. If the first character
-is a punctuation character it determines the separator. Examples:
-\"/async/filter\", \"#async#filter\"."
+The function returns a list with three elements: The async
+string, the start position of the completion filter string and a
+force flag. If the first character is a punctuation character it
+determines the separator. Examples: \"/async/filter\",
+\"#async#filter\"."
   (if (string-match-p "^[[:punct:]]" str)
       (save-match-data
         (let ((q (regexp-quote (substring str 0 1))))
           (string-match (concat "^" q "\\([^" q "]*\\)\\(" q "\\)?") str)
           `(,(match-string 1 str)
-            ,(substring str (match-end 0))
             ,(match-end 0)
             ;; Force update it two punctuation characters are entered.
             ,(match-end 2)
             ;; List of highlights
             (0 . ,(match-beginning 1))
             ,@(and (match-end 2) `((,(match-beginning 2) . ,(match-end 2)))))))
-    `(,str "" ,(length str))))
+    `(,str ,(length str))))
 
 (defun consult--split-nil (str &optional _plist)
   "Treat the complete input STR as async input."
-  `(,str "" ,(length str)))
+  `(,str ,(length str)))
 
 (defun consult--split-separator (str plist)
   "Split input STR in async input and filtering part at first separator.
@@ -1623,13 +1622,12 @@ PLIST is the splitter configuration, including the separator."
     (save-match-data
       (if (string-match (format "^\\([^%s]+\\)\\(%s\\)?" sep sep) str)
           `(,(match-string 1 str)
-            ,(substring str (match-end 0))
             ,(match-end 0)
             ;; Force update it space is entered.
             ,(match-end 2)
             ;; List of highlights
             ,@(and (match-end 2) `((,(match-beginning 2) . ,(match-end 2)))))
-        `(,str "" ,(length str))))))
+        `(,str ,(length str))))))
 
 (defun consult--split-setup (split)
   "Setup splitting completion style with splitter function SPLIT."
@@ -1640,20 +1638,20 @@ PLIST is the splitter configuration, including the separator."
                 (let ((completion-styles styles)
                       (completion-category-defaults catdef)
                       (completion-category-overrides catovr)
-                      (parts (funcall split str)))
-                  (pcase (completion-try-completion (cadr parts) table pred
-                                                    (max 0 (- point (caddr parts))))
+                      (pos (cadr (funcall split str))))
+                  (pcase (completion-try-completion (substring str pos) table pred
+                                                    (max 0 (- point pos)))
                     ('t t)
                     (`(,newstr . ,newpt)
-                     (cons (concat (substring str 0 (caddr parts)) newstr)
-                           (+ (caddr parts) newpt)))))))
+                     (cons (concat (substring str 0 pos) newstr)
+                           (+ pos newpt)))))))
          (all (lambda (str table pred point)
                 (let ((completion-styles styles)
                       (completion-category-defaults catdef)
                       (completion-category-overrides catovr)
-                      (parts (funcall split str)))
-                  (completion-all-completions (cadr parts) table pred
-                                              (max 0 (- point (caddr parts))))))))
+                      (pos (cadr (funcall split str))))
+                  (completion-all-completions (substring str pos) table pred
+                                              (max 0 (- point pos)))))))
     (setq-local completion-styles-alist (cons `(consult--split ,try ,all "")
                                               completion-styles-alist)
                 completion-styles '(consult--split)
@@ -1765,7 +1763,7 @@ SPLIT is the splitting function."
        (consult--split-setup split)
        (funcall async 'setup))
       ((pred stringp)
-       (pcase-let* ((`(,async-str ,_ ,_ ,force . ,highlights)
+       (pcase-let* ((`(,async-str ,_ ,force . ,highlights)
                      (funcall split action))
                     (async-len (length async-str))
                     (input-len (length action))
