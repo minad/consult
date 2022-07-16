@@ -71,7 +71,7 @@ and HIGHLIGHT."
   "Wrap candidates highlight/refinement ORIG function.
 The input is split by the SPLIT function."
   (lambda (str cands)
-    (funcall orig (cadr (funcall split str)) cands)))
+    (funcall orig (substring str (cadr (funcall split str))) cands)))
 
 (defun consult-selectrum--split-setup-adv (orig split)
   "Advice for `consult--split-setup' to be used by Selectrum.
