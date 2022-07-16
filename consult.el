@@ -2010,6 +2010,10 @@ argument list :command and a highlighting function :highlight."
   (let ((map (make-sparse-keymap)))
     ;; Async keys overwriting some unusable defaults for the default completion
     (define-key map [remap minibuffer-complete-word] #'self-insert-command)
+    ;; Remap Emacs 29 history and default completion for now.
+    ;; See https://github.com/minad/consult/issues/613
+    (define-key map [remap minibuffer-complete-defaults] #'ignore)
+    (define-key map [remap minibuffer-complete-history] #'consult-history)
     map)
   "Keymap added for commands with asynchronous candidates.")
 
