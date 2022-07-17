@@ -967,7 +967,7 @@ Useful options are:
 
 The configuration values are evaluated at runtime, just before the completion
 session is started. Therefore you can use for example =thing-at-point= to adjust
-the initial input or the future hitory.
+the initial input or the future history.
 
 #+begin_src emacs-lisp
   (consult-customize
@@ -1053,7 +1053,7 @@ Note that all packages are independent and can be exchanged with alternative
 components, since there exist no hard dependencies. Furthermore it is possible
 to get started with only default completion and Consult and add more components
 later to the mix. For example you can omit Marginalia if you don't need
-annotations. I highly recommend the Embark package, but in order to familarize
+annotations. I highly recommend the Embark package, but in order to familiarize
 yourself with the other components, you can first start without it - or you could
 use with Embark right away and add the other components later on.
 
