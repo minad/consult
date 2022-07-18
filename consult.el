@@ -3659,10 +3659,15 @@ as argument. See also `cape-history' from the Cape package."
                     (user-error "History is empty"))
                 :prompt "History: "
                 :history t ;; disable history
-                :category ;; Report command category for M-x history
+                :category ;; Report category depending on history variable
                 (and (minibufferp)
-                     (eq minibuffer-history-variable 'extended-command-history)
-                     'command)
+                     (pcase minibuffer-history-variable
+                       ('extended-command-history 'command)
+                       ('buffer-name-history 'buffer)
+                       ('face-name-history 'face)
+                       ('read-envvar-name-history 'environment-variable)
+                       ('bookmark-history 'bookmark)
+                       ('file-name-history 'file)))
                 :sort nil
                 :state (consult--insertion-preview (point) (point))))))
     (when (minibufferp)
