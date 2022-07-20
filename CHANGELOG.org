@@ -8,6 +8,7 @@
 - Allow =consult-flymake= to work across all buffers in a project
 - Remove deprecated =consult-completing-read-multiple=
 - =consult-grep/git-grep/ripgrep=: Add =--fixed-strings= support
+- =consult-grep=: Respect =grep-find-ignored-directories/files=
 
 * Version 0.18 (2022-05-25)
 

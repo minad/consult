@@ -236,8 +236,7 @@ See `consult--multi' for a description of the source data structure."
   "Regexp used to match file and line of grep output.")
 
 (defcustom consult-grep-args
-  "grep --null --line-buffered --color=never --ignore-case\
-   --exclude-dir=.git --line-number -I -r ."
+  "grep --null --line-buffered --color=never --ignore-case --line-number -I -r ."
   "Command line arguments for grep, see `consult-grep'.
 The dynamically computed arguments are appended."
   :type 'string)
@@ -4392,7 +4391,12 @@ INITIAL is inital input."
 
 (defun consult--grep-builder (input)
   "Build command line given INPUT."
-  (pcase-let* ((cmd (split-string-and-unquote consult-grep-args))
+  (unless (boundp 'grep-find-ignored-files) (require 'grep))
+  (pcase-let* ((cmd (append (split-string-and-unquote consult-grep-args)
+                            (mapcar (lambda (s) (concat "--exclude=" s))
+                                    (bound-and-true-p grep-find-ignored-files))
+                            (mapcar (lambda (s) (concat "--exclude-dir=" s))
+                                    (bound-and-true-p grep-find-ignored-directories))))
                (`(,arg . ,opts) (consult--command-split input))
                (flags (append cmd opts))
                (ignore-case (or (member "-i" flags) (member "--ignore-case" flags))))
