@@ -4410,7 +4410,7 @@ INITIAL is inital input."
         (when re
           `(:command
             (,@cmd
-             ,(if (eq type 'pcre) "--perl-regexp" "--extended-regexp")
+             ,(if (eq type 'pcre) "-P" "-E") ;; perl or extended
              "-e" ,(consult--join-regexps re type)
              ,@opts)
             :highlight ,hl))))))
