@@ -12,12 +12,6 @@
 #+html: <a href="https://melpa.org/#/consult"><img alt="MELPA" src="https://melpa.org/packages/consult-badge.svg"/></a>
 #+html: <a href="https://stable.melpa.org/#/consult"><img alt="MELPA Stable" src="https://stable.melpa.org/packages/consult-badge.svg"/></a>
 
-* Introduction
-:properties:
-:description: Why Consult?
-:end:
-#+cindex: introduction
-
 Consult provides practical commands based on the Emacs completion function
 [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Minibuffer-Completion.html][completing-read]]. Completion allows you to quickly select an item from a list of
 candidates. Consult offers in particular an advanced buffer switching command
@@ -49,7 +43,9 @@ Additionally Embark offers a facility to collect completion candidates in a
 collect buffer. The section [[#embark-integration][Embark integration]] documents in greater detail how
 Consult and Embark work together.
 
-** Screenshots                                                     :noexport:
+#+toc: headlines 8
+
+* Screenshots :noexport:
 
 #+caption: consult-grep
 [[https://github.com/minad/consult/blob/screenshots/consult-grep.gif?raw=true]]
