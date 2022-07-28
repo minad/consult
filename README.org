@@ -1004,11 +1004,11 @@ by Consult. Give them a try and find out which interaction model fits best for
 you!
 
 - The builtin completion UI, which pops up the =*Completions*= buffer.
+- [[https://github.com/radian-software/selectrum][selectrum by Radon Rosborough]]: Alternative vertical UI, predecessor of Vertico.
+- [[https://github.com/oantolin/icomplete-vertical][icomplete-vertical by Omar Antolín Camarena]]: Vertical completion system based
+  on Icomplete (superseded by =icomplete-vertical-mode= on Emacs 28).
 - [[https://git.sr.ht/~protesilaos/mct][mct by Protesilaos Stavrou]]: Minibuffer and Completions in Tandem, which builds
-  on the default completion UI.
-- [[https://github.com/raxod502/selectrum][selectrum by Radon Rosborough]]: Alternative vertical completion system.
-- [[https://github.com/oantolin/icomplete-vertical][icomplete-vertical by Omar Antolín Camarena]]: Vertical completion system based on Icomplete.
-  Icomplete-vertical is only needed for Emacs 27, built-in on Emacs 28.
+  on the default completion UI (development [[https://protesilaos.com/codelog/2022-04-14-emacs-discontinue-mct/][discontinued]]).
 
 You can integrated Consult with special programs or with other packages in the
 wider Emacs ecosystem. You may want to install some of theses packages depending
