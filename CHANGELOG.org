@@ -9,6 +9,7 @@
 - Remove deprecated =consult-completing-read-multiple=
 - =consult-grep/git-grep/ripgrep=: Add =--fixed-strings= support
 - =consult-grep=: Respect =grep-find-ignored-directories/files=
+- =consult-org-heading=: Add tags to completion candidates
 
 * Version 0.18 (2022-05-25)
 
