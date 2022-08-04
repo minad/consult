@@ -908,6 +908,7 @@ an overview of all Consult variables and functions with their descriptions.
 | consult-narrow-key               | Narrowing prefix key during completion                |
 | consult-preview-key              | Keys which triggers preview                           |
 | consult-preview-allowed-hooks    | List of =find-file= hooks to enable during preview      |
+| consult-preview-excluded-files   | Regexps matched against file names during preview     |
 | consult-preview-max-count        | Maximum number of files to keep open during preview   |
 | consult-preview-max-size         | Files larger than this size are not previewed         |
 | consult-preview-raw-size         | Files larger than this size are previewed in raw form |

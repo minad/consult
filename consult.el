@@ -293,6 +293,10 @@ The dynamically computed arguments are appended."
   "Number of files to keep open at once during preview."
   :type 'integer)
 
+(defcustom consult-preview-excluded-files nil
+  "List of regexps matched against names of files, which are not previewed."
+  :type '(repeat regexp))
+
 (defcustom consult-preview-allowed-hooks
   '(global-font-lock-mode-check-buffers
     save-place-find-file-hook)
@@ -1114,8 +1118,10 @@ ORIG is the original function, HOOKS the arguments."
 
 (defun consult--find-file-temporarily (name)
   "Open file NAME temporarily for preview."
-  ;; file-attributes may throw permission denied error
-  (when-let* ((attrs (ignore-errors (file-attributes name)))
+  (when-let* (((not (seq-find (lambda (x) (string-match-p x name))
+                              consult-preview-excluded-files)))
+              ;; file-attributes may throw permission denied error
+              (attrs (ignore-errors (file-attributes name)))
               (size (file-attribute-size attrs)))
     (if (> size consult-preview-max-size)
         (progn
