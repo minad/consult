@@ -75,8 +75,7 @@
                          (xref-location-line loc)
                          (if (eq type 'xref-file-location)
                              (xref-file-location-column loc)
-                           0)))
-                       (_ (message "No preview for %s" type) nil)))))))))
+                           0)))))))))))
 
 (defun consult-xref--group (cand transform)
   "Return title for CAND or TRANSFORM the candidate."

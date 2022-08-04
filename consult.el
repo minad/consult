@@ -3507,16 +3507,15 @@ There exists no equivalent of this command in Emacs 28."
         (funcall open))
       (funcall
        preview action
-       (when-let (bm (and cand (eq action 'preview) (assoc cand bookmark-alist)))
-         (let ((handler (or (bookmark-get-handler bm) #'bookmark-default-handler)))
-           ;; Only preview bookmarks with the default handler.
-           (if-let* ((file (and (eq handler #'bookmark-default-handler)
-                                (bookmark-get-filename bm)))
-                     (pos (bookmark-get-position bm))
-                     (buf (funcall open file)))
-               (set-marker (make-marker) pos buf)
-             (message "No preview for %s" handler)
-             nil)))))))
+       ;; Only preview bookmarks with the default handler.
+       (when-let* ((bm (and cand (eq action 'preview) (assoc cand bookmark-alist)))
+                   (handler (bookmark-get-handler bm))
+                   (file (and (or (not handler)
+                                  (eq handler #'bookmark-default-handler))
+                              (bookmark-get-filename bm)))
+                   (pos (bookmark-get-position bm))
+                   (buf (funcall open file)))
+         (set-marker (make-marker) pos buf))))))
 
 (defun consult--bookmark-action (bm)
   "Open BM via `consult--buffer-action'."
