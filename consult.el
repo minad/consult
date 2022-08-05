@@ -459,7 +459,7 @@ as the public API.")
   "Buffer display function.")
 
 (defvar consult--completion-candidate-hook
-  (list #'consult--default-completion-mb-candidate
+  (list #'consult--default-completion-minibuffer-candidate
         #'consult--default-completion-list-candidate)
   "Get candidate from completion system.")
 
@@ -2086,8 +2086,19 @@ PREVIEW-KEY are the preview keys."
   "Return non-nil if CHAR is a tofu."
   (<= consult--tofu-char char (+ consult--tofu-char consult--tofu-range -1)))
 
-(defun consult--fry-the-tofus (&rest _)
-  "Fry the tofus in the minibuffer."
+(defun consult--tofu-hide (str)
+  "Hide the tofus in STR."
+  (let* ((max (length str))
+         (end max))
+    (while (and (> end 0) (consult--tofu-p (aref str (1- end))))
+      (setq end (1- end)))
+    (when (< end max)
+      (setq str (copy-sequence str))
+      (put-text-property end max 'invisible t str))
+    str))
+
+(defun consult--tofu-hide-in-minibuffer (&rest _)
+  "Hide the tofus in the minibuffer."
   (let* ((min (minibuffer-prompt-end))
          (max (point-max))
          (pos max))
@@ -2151,7 +2162,7 @@ PREVIEW-KEY are the preview keys."
   "See `consult--read' for the documentation of the arguments."
   (consult--minibuffer-with-setup-hook
       (:append (lambda ()
-                 (add-hook 'after-change-functions #'consult--fry-the-tofus nil 'local)
+                 (add-hook 'after-change-functions #'consult--tofu-hide-in-minibuffer nil 'local)
                  (consult--setup-keymap keymap (functionp candidates) narrow preview-key)
                  (setq-local minibuffer-default-add-function
                              (apply-partially #'consult--add-history (functionp candidates) add-history))))
@@ -3637,7 +3648,7 @@ for which the command history is used."
    ((minibufferp)
     (if (eq minibuffer-history-variable t)
         (user-error "Minibuffer history is disabled for `%s'" this-command)
-      (setq history (symbol-value minibuffer-history-variable))))
+      (setq history (mapcar #'consult--tofu-hide (symbol-value minibuffer-history-variable)))))
    ;; Otherwise we use a mode-specific history, see `consult-mode-histories'.
    (t (when-let (found
                  (or (seq-find (lambda (ring)
@@ -4678,7 +4689,7 @@ automatically previewed."
 
 ;;;; Integration with the default completion system
 
-(defun consult--default-completion-mb-candidate ()
+(defun consult--default-completion-minibuffer-candidate ()
   "Return current minibuffer candidate from default completion system or Icomplete."
   (when (and (minibufferp)
              (eq completing-read-function #'completing-read-default))
