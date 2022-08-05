@@ -24,7 +24,7 @@ the command =consult-imenu= presents a flat list of the Imenu with [[#live-previ
 
 Consult is fully compatible with completion systems based on the standard Emacs
 =completing-read= API, notably the default completion system, [[https://github.com/minad/vertico][Vertico]], [[https://github.com/protesilaos/mct][Mct]],
-[[https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html][Icomplete]] and [[https://github.com/raxod502/selectrum][Selectrum]].
+[[https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html][Icomplete]] and [[https://github.com/radian-software/selectrum][Selectrum]].
 
 This package keeps the completion system specifics to a minimum. The ability of
 the Consult commands to work well with arbitrary completion systems is one of
@@ -1005,9 +1005,8 @@ by Consult. Give them a try and find out which interaction model fits best for
 you!
 
 - The builtin completion UI, which pops up the =*Completions*= buffer.
+- The builtin =icomplete-vertical-mode= in Emacs 28.
 - [[https://github.com/radian-software/selectrum][selectrum by Radon Rosborough]]: Alternative vertical UI, predecessor of Vertico.
-- [[https://github.com/oantolin/icomplete-vertical][icomplete-vertical by Omar Antolín Camarena]]: Vertical completion system based
-  on Icomplete (superseded by =icomplete-vertical-mode= on Emacs 28).
 - [[https://git.sr.ht/~protesilaos/mct][mct by Protesilaos Stavrou]]: Minibuffer and Completions in Tandem, which builds
   on the default completion UI (development [[https://protesilaos.com/codelog/2022-04-14-emacs-discontinue-mct/][discontinued]]).
 
@@ -1131,10 +1130,9 @@ small configuration or command snippets.
 :description: Contributors and Sources of Inspiration
 :end:
 
-You probably guessed from the name that this package took inspiration from
-[[https://github.com/abo-abo/swiper#counsel][Counsel]] by Oleh Krehel. Some of the Consult commands originated in the Counsel
-package or the [[https://github.com/raxod502/selectrum/wiki/Useful-Commands][Selectrum wiki]]. The commands have been rewritten and greatly
-enhanced in comparison to the original versions.
+This package took inspiration from [[https://github.com/abo-abo/swiper#counsel][Counsel]] by Oleh Krehel. Some of the Consult
+commands originated in the Counsel package or the [[https://github.com/radian-software/selectrum/wiki/Useful-Commands][Selectrum wiki]]. The commands
+have been rewritten and greatly enhanced in comparison to the original versions.
 
 Code contributions:
 - [[https://github.com/oantolin/][Omar Antolín Camarena]]
