@@ -3816,7 +3816,7 @@ starts a new Isearch session otherwise."
       'consult--candidate sym
       'consult--minor-mode-narrow
       (logior
-       (lsh (if (local-variable-if-set-p sym) ?l ?g) 8)
+       (ash (if (local-variable-if-set-p sym) ?l ?g) 8)
        (if (and (boundp sym) (symbol-value sym)) ?i ?o))
       'consult--minor-mode-group
       (concat
@@ -3861,7 +3861,7 @@ This is an alternative to `minor-mode-menu-from-indicator'."
           (lambda (cand)
             (let ((narrow (get-text-property 0 'consult--minor-mode-narrow cand)))
               (or (= (logand narrow 255) consult--narrow)
-                  (= (lsh narrow -8) consult--narrow))))
+                  (= (ash narrow -8) consult--narrow))))
           :keys
           consult--minor-mode-menu-narrow)
     :lookup #'consult--lookup-candidate
