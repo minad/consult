@@ -116,8 +116,12 @@ buffer are offered."
   "Jump to an Org contacts heading using files defined in `org-contacts-files'.
 
 By default, all contacts file entries are offered. MATCH is as in
-`org-map-entries' and can be used to refine this."
+`org-map-entries' and can be used to refine this. This function requires that
+the library `org-contacts.el' be installed and the variable `org-contacts-files'
+be set."
   (interactive)
+  (unless (locate-library "org-contacts")
+    (user-error "org-contacts must be installed to use this function."))
   (unless org-contacts-files
     (user-error "No contacts files defined."))
   (consult-org-heading match org-contacts-files))
