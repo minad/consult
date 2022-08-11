@@ -112,6 +112,17 @@ buffer are offered."
      :lookup #'consult--lookup-candidate)))
 
 ;;;###autoload
+(defun consult-org-contacts (&optional match)
+  "Jump to an Org contacts heading using files defined in `org-contacts-files'.
+
+By default, all contacts file entries are offered. MATCH is as in
+`org-map-entries' and can be used to refine this."
+  (interactive)
+  (unless org-contacts-files
+    (user-error "No contacts files defined."))
+  (consult-org-heading match org-contacts-files))
+
+;;;###autoload
 (defun consult-org-agenda (&optional match)
   "Jump to an Org agenda heading.
 
