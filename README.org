@@ -1024,6 +1024,7 @@ on your preferences and requirements.
 - [[https://github.com/rcj/consult-ls-git][consult-ls-git]]: List files from git via Consult.
 - [[https://github.com/gagbo/consult-lsp][consult-lsp]]: Integration with Lsp-mode (LSP client).
 - [[https://codeberg.org/jao/consult-notmuch][consult-notmuch]]: Access the [[https://notmuchmail.org/][Notmuch]] email system using Consult.
+- [[https://github.com/mclear-tools/consult-notes][consult-notes]]: Searching notes with Consult.
 - [[https://github.com/jgru/consult-org-roam][consult-org-roam]]: Integration with [[https://github.com/org-roam/org-roam][Org-roam]].
 - [[https://github.com/Qkessler/consult-project-extra/][consult-project-extra]]: Additional project.el extras and buffer sources.
 - [[https://gitlab.com/OlMon/consult-projectile/][consult-projectile]]: Additional [[https://github.com/bbatsov/projectile][Projectile]] integration and buffer sources.
@@ -1180,6 +1181,7 @@ Authors of supplementary =consult-*= packages:
 - [[https://github.com/yadex205][Kanon Kakuno]] ([[https://github.com/yadex205/consult-ag][consult-ag]])
 - [[https://github.com/rcj][Robin Joy]] ([[https://github.com/rcj/consult-ls-git][consult-ls-git]])
 - [[https://codeberg.org/ravi][Ravi R Kiran]] [[https://codeberg.org/ravi/consult-dash][(consult-dash]])
+- [[https://github.com/mclearc][Colin McLear]] ([[https://github.com/mclear-tools/consult-notes][consult-notes]])
 
 #+html: <!--
 
