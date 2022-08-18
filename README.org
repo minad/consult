@@ -427,8 +427,13 @@ following settings are possible:
 - Disabled =nil=
 
 A safe recommendation is to leave automatic immediate previews enabled in
-general and disable the automatic preview only for commands, where the preview
-may be expensive due to file loading.
+general and disable the automatic preview only for commands where the preview
+may be expensive due to file loading. Internally, Consult uses the
+value of =this-command= to determine the =:preview-key=
+customized. This means that if you wrap a =consult-*= command within
+your own function or command, you will also need to add the name of
+/your custom command/ to the =consult-customize= call in order for it
+to be considered.
 
 #+begin_src emacs-lisp
   (consult-customize
@@ -436,6 +441,7 @@ may be expensive due to file loading.
    consult-bookmark consult-recent-file consult-xref
    consult--source-bookmark consult--source-recent-file
    consult--source-project-recent-file
+   ;; my/command-wrapping-consult       ;; disable auto previews inside my command
    ;; :preview-key '(:debounce 0.2 any) ;; Option 1: Delay preview
    :preview-key (kbd "M-."))            ;; Option 2: Manual preview
 #+end_src
