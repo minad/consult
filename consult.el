@@ -142,9 +142,9 @@ The histories can be rings or lists."
   :type '(alist :key-type symbol :value-type symbol))
 
 (defcustom consult-themes nil
-  "List of themes to be presented for selection.
+  "List of themes (symbols or regexps) to be presented for selection.
 nil shows all `custom-available-themes'."
-  :type '(repeat symbol))
+  :type '(repeat (choice symbol regexp)))
 
 (defcustom consult-after-jump-hook '(recenter)
   "Function called after jumping to a location.
@@ -3876,12 +3876,13 @@ This is an alternative to `minor-mode-menu-from-indicator'."
 The command supports previewing the currently selected theme."
   (interactive
    (list
-    (let ((avail-themes
-           (seq-filter (lambda (x) (or (not consult-themes)
-                                       (memq x consult-themes)))
-                       (cons 'default (custom-available-themes))))
-          (saved-theme
-           (car custom-enabled-themes)))
+    (let* ((regexp (consult--regexp-filter
+                    (mapcar (lambda (x) (if (stringp x) x (format "\\`%s\\'" x)))
+                            consult-themes)))
+           (avail-themes (seq-filter
+                          (lambda (x) (string-match-p regexp (symbol-name x)))
+                          (cons 'default (custom-available-themes))))
+           (saved-theme (car custom-enabled-themes)))
       (consult--read
        (mapcar #'symbol-name avail-themes)
        :prompt "Theme: "
