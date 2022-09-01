@@ -1203,7 +1203,7 @@ ORIG is the original function, HOOKS the arguments."
              ;; one fully initialized. In this case we prefer the fully
              ;; initialized buffer. For directories `get-file-buffer' returns nil,
              ;; therefore we have to special case Dired.
-             (if (and (string-suffix-p "/" name) (fboundp 'dired-find-buffer-nocreate))
+             (if (and (fboundp 'dired-find-buffer-nocreate) (file-directory-p name))
                  (dired-find-buffer-nocreate name)
                (get-file-buffer name))
              ;; Find existing previewed buffer. Previewed buffers are not fully
