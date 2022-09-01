@@ -1216,10 +1216,10 @@ ORIG is the original function, HOOKS the arguments."
                (unless (or (rassq buf temporary-buffers) (memq buf orig-buffers))
                  (add-hook 'window-selection-change-functions hook)
                  (push (cons name buf) temporary-buffers)
-                 ;; Disassociate buffer from file by setting
-                 ;; `buffer-file-name' to nil and rename the buffer.
-                 ;; This lets us open an already previewed buffer with
-                 ;; the Embark default action C-. RET.
+                 ;; Disassociate buffer from file by setting `buffer-file-name'
+                 ;; and `dired-directory' to nil and rename the buffer. This
+                 ;; lets us open an already previewed buffer with the Embark
+                 ;; default action C-. RET.
                  (with-current-buffer buf
                    (rename-buffer
                     (format "Preview:%s"
