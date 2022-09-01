@@ -1222,7 +1222,7 @@ ORIG is the original function, HOOKS the arguments."
                  ;; default action C-. RET.
                  (with-current-buffer buf
                    (rename-buffer
-                    (format "Preview:%s"
+                    (format " Preview:%s"
                             (file-name-nondirectory (directory-file-name name)))
                     'unique))
                  ;; The buffer disassociation is delayed to avoid breaking modes
