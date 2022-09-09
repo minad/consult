@@ -2,7 +2,7 @@
 #+author: Daniel Mendler
 #+language: en
 
-* Development
+* Version 0.19 (2022-09-09)
 
 - Bugfixes
 - Allow =consult-flymake= to work across all buffers in a project
