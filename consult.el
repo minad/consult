@@ -1696,13 +1696,24 @@ BIND is the asynchronous function binding."
                 (setq orig-chunk read-process-output-max
                       read-process-output-max new-chunk)
                 (funcall ,async 'setup)
-                ;; Push input string to request refresh.
-                ;; We use a symbol in order to avoid adding lambdas to the hook variable.
-                ;; Symbol indirection because of bug#46407.
-                (let ((sym (make-symbol "consult--async-after-change")))
-                  (fset sym (lambda (&rest _) (funcall ,async (minibuffer-contents-no-properties))))
-                  (run-at-time 0 nil sym)
-                  (add-hook 'after-change-functions sym nil 'local)))))
+                (let* ((mb (current-buffer))
+                       (fun (lambda ()
+                              (when-let (win (active-minibuffer-window))
+                                (when (eq (window-buffer win) mb)
+                                  (with-current-buffer mb
+                                    (let ((inhibit-modification-hooks t))
+                                      ;; Push input string to request refresh.
+                                      (funcall ,async (minibuffer-contents-no-properties))))))))
+                       ;; We use a symbol in order to avoid adding lambdas to
+                       ;; the hook variable. Symbol indirection because of
+                       ;; bug#46407.
+                       (sym (make-symbol "consult--async-after-change")))
+                  ;; Delay modification hook to ensure that minibuffer is still
+                  ;; alive after the change, such that we don't restart a new
+                  ;; asynchronous search right before exiting the minibuffer.
+                  (fset sym (lambda (&rest _) (run-at-time 0 nil fun)))
+                  (add-hook 'after-change-functions sym nil 'local)
+                  (funcall sym)))))
          (let ((,async (if (functionp ,async) ,async (lambda (_) ,async))))
            (unwind-protect
                ,(macroexp-progn body)
