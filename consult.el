@@ -2921,8 +2921,9 @@ INPUT is the input string entered by the user."
                 (setq beg (+ beg step)))
               (setq step (/ step 2)))
             (setq end beg)))
-        ;; Marker can be dead, therefore ignore errors. Create a new marker instead of an integer,
-        ;; since the location may be in another buffer, e.g., for `consult-line-all'.
+        ;; Marker can be dead, therefore ignore errors. Create a new marker
+        ;; instead of an integer, since the location may be in another buffer,
+        ;; e.g., for `consult-line-multi'.
         (ignore-errors
           (if (or (not (markerp pos))
                   (eq (marker-buffer pos)
