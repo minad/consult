@@ -917,11 +917,10 @@ When no project is found and MAY-PROMPT is non-nil ask the user."
   (or (eq (selected-window) (active-minibuffer-window))
       (eq #'completion-list-mode (buffer-local-value 'major-mode (window-buffer)))))
 
-(defun consult--upgrading-location-state (candidates jump)
+(defun consult--location-upgrading-state (candidates state)
   "Location state function transformer.
-Transform the JUMP state function by upgrading the cheap location
-markers from CANDIDATES window selection change to full Emacs
-markers."
+Transform the STATE function. The cheap location markers from CANDIDATES are
+upgraded on window selection change to full Emacs markers."
   (let ((hook (make-symbol "consult--location-upgrade")))
     (fset hook
           (lambda (_)
@@ -932,13 +931,13 @@ markers."
       (pcase action
         ('setup (add-hook 'window-selection-change-functions hook))
         ('exit (remove-hook 'window-selection-change-functions hook)))
-      (funcall jump action cand))))
+      (funcall state action cand))))
 
 (defun consult--location-state (candidates)
   "Location state function.
 The cheap location markers from CANDIDATES are upgraded on window
 selection change to full Emacs markers."
-  (consult--upgrading-location-state candidates (consult--jump-state)))
+  (consult--location-upgrading-state candidates (consult--jump-state)))
 
 (defun consult--get-location (cand)
   "Return location from CAND."
