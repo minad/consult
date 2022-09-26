@@ -917,12 +917,12 @@ When no project is found and MAY-PROMPT is non-nil ask the user."
   (or (eq (selected-window) (active-minibuffer-window))
       (eq #'completion-list-mode (buffer-local-value 'major-mode (window-buffer)))))
 
-(defun consult--location-state (candidates)
-  "Location state function.
-The cheap location markers from CANDIDATES are upgraded on window
-selection change to full Emacs markers."
-  (let ((jump (consult--jump-state))
-        (hook (make-symbol "consult--location-upgrade")))
+(defun consult--upgrading-location-state (candidates jump)
+  "Location state function transformer.
+Transform the JUMP state function by upgrading the cheap location
+markers from CANDIDATES window selection change to full Emacs
+markers."
+  (let ((hook (make-symbol "consult--location-upgrade")))
     (fset hook
           (lambda (_)
             (unless (consult--completion-window-p)
@@ -933,6 +933,12 @@ selection change to full Emacs markers."
         ('setup (add-hook 'window-selection-change-functions hook))
         ('exit (remove-hook 'window-selection-change-functions hook)))
       (funcall jump action cand))))
+
+(defun consult--location-state (candidates)
+  "Location state function.
+The cheap location markers from CANDIDATES are upgraded on window
+selection change to full Emacs markers."
+  (consult--upgrading-location-state candidates (consult--jump-state)))
 
 (defun consult--get-location (cand)
   "Return location from CAND."
@@ -1343,15 +1349,21 @@ FACE is the cursor face."
                                         'window (selected-window))))
           (run-hooks 'consult-after-jump-hook))))))
 
+(defun consult--jump-state-with-preview (preview)
+  "Transform the PREVIEW state function by jumping.
+This function can be used as the `:state' argument of
+`consult--read'.  It transforms its argument by calling
+`consult--jump' when the action is 'return."
+  (lambda (action cand)
+    (funcall preview action cand)
+    (when (and cand (eq action 'return))
+      (consult--jump cand))))
+
 (defun consult--jump-state (&optional face)
   "The state function used if selecting from a list of candidate positions.
-The function can be used as the `:state' argument of `consult--read'.
-FACE is the cursor face."
-  (let ((preview (consult--jump-preview face)))
-    (lambda (action cand)
-      (funcall preview action cand)
-      (when (and cand (eq action 'return))
-        (consult--jump cand)))))
+The function can be used as the `:state' argument of
+`consult--read'.  FACE is the cursor face."
+  (consult--jump-state-with-preview (consult--jump-preview face)))
 
 (defmacro consult--define-state (type)
   "Define state function for TYPE."
