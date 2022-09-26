@@ -1348,30 +1348,24 @@ FACE is the cursor face."
                                         'window (selected-window))))
           (run-hooks 'consult-after-jump-hook))))))
 
-(defun consult--jump-state-with-preview (preview)
-  "Transform the PREVIEW state function by jumping.
-This function can be used as the `:state' argument of
-`consult--read'.  It transforms its argument by calling
-`consult--jump' when the action is 'return."
-  (lambda (action cand)
-    (funcall preview action cand)
-    (when (and cand (eq action 'return))
-      (consult--jump cand))))
-
 (defun consult--jump-state (&optional face)
   "The state function used if selecting from a list of candidate positions.
-The function can be used as the `:state' argument of
-`consult--read'.  FACE is the cursor face."
-  (consult--jump-state-with-preview (consult--jump-preview face)))
+The function can be used as the `:state' argument of `consult--read'.
+FACE is the cursor face."
+  (consult--state-with-return (consult--jump-preview face) #'consult--jump))
+
+(defun consult--state-with-return (state return)
+  "Compose STATE function with RETURN function."
+  (lambda (action cand)
+    (funcall state action cand)
+    (when (and cand (eq action 'return))
+      (funcall return cand))))
 
 (defmacro consult--define-state (type)
   "Define state function for TYPE."
   `(defun ,(intern (format "consult--%s-state" type)) ()
-     (let ((preview (,(intern (format "consult--%s-preview" type)))))
-       (lambda (action cand)
-         (funcall preview action cand)
-         (when (and cand (eq action 'return))
-           (,(intern (format "consult--%s-action" type)) cand))))))
+     (consult--state-with-return (,(intern (format "consult--%s-preview" type)))
+                                 ',(intern (format "consult--%s-action" type)))))
 
 (defun consult--preview-key-normalize (preview-key)
   "Normalize PREVIEW-KEY, return alist of keys and debounce times."
