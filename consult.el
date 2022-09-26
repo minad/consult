@@ -1364,6 +1364,8 @@ FACE is the cursor face."
 (defmacro consult--define-state (type)
   "Define state function for TYPE."
   `(defun ,(intern (format "consult--%s-state" type)) ()
+     ,(format "State function for %ss with preview.
+The result can be passed as :state argument to `consult--read'." type)
      (consult--state-with-return (,(intern (format "consult--%s-preview" type)))
                                  #',(intern (format "consult--%s-action" type)))))
 
