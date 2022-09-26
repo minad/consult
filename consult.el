@@ -1365,7 +1365,7 @@ FACE is the cursor face."
   "Define state function for TYPE."
   `(defun ,(intern (format "consult--%s-state" type)) ()
      (consult--state-with-return (,(intern (format "consult--%s-preview" type)))
-                                 ',(intern (format "consult--%s-action" type)))))
+                                 #',(intern (format "consult--%s-action" type)))))
 
 (defun consult--preview-key-normalize (preview-key)
   "Normalize PREVIEW-KEY, return alist of keys and debounce times."
