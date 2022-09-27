@@ -1159,6 +1159,7 @@ Code contributions:
 - [[https://github.com/jdtsmith][J.D. Smith]]
 - [[https://github.com/mohkale][Mohsin Kaleem]]
 - [[https://github.com/jyp][Jean-Philippe Bernardy]]
+- [[https://github.com/aagon][Aymeric Agon-Rambosson]]
 
 Advice and useful discussions:
 - [[https://github.com/clemera/][Clemens Radermacher]]

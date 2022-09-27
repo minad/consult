@@ -236,42 +236,49 @@ See `consult--multi' for a description of the source data structure."
   "Regexp used to match file and line of grep output.")
 
 (defcustom consult-grep-args
-  "grep --null --line-buffered --color=never --ignore-case --line-number -I -r ."
+  '("grep" (consult--grep-exclude-args)
+    "--null --line-buffered --color=never --ignore-case --line-number -I -r .")
   "Command line arguments for grep, see `consult-grep'.
-The dynamically computed arguments are appended."
-  :type 'string)
+The dynamically computed arguments are appended.
+Can be either a string, or a list of strings or expressions."
+  :type '(choice string (repeat (choice string expression))))
 
 (defcustom consult-git-grep-args
   "git --no-pager grep --null --color=never --ignore-case\
    --extended-regexp --line-number -I"
   "Command line arguments for git-grep, see `consult-git-grep'.
-The dynamically computed arguments are appended."
-  :type 'string)
+The dynamically computed arguments are appended.
+Can be either a string, or a list of strings or expressions."
+  :type '(choice string (repeat (choice string expression))))
 
 (defcustom consult-ripgrep-args
   "rg --null --line-buffered --color=never --max-columns=1000 --path-separator /\
    --smart-case --no-heading --line-number ."
   "Command line arguments for ripgrep, see `consult-ripgrep'.
-The dynamically computed arguments are appended."
-  :type 'string)
+The dynamically computed arguments are appended.
+Can be either a string, or a list of strings or expressions."
+  :type '(choice string (repeat (choice string expression))))
 
 (defcustom consult-find-args
   "find . -not ( -wholename */.* -prune )"
   "Command line arguments for find, see `consult-find'.
-The dynamically computed arguments are appended."
-  :type 'string)
+The dynamically computed arguments are appended.
+Can be either a string, or a list of strings or expressions."
+  :type '(choice string (repeat (choice string expression))))
 
 (defcustom consult-locate-args
   "locate --ignore-case --existing"
   "Command line arguments for locate, see `consult-locate'.
-The dynamically computed arguments are appended."
-  :type 'string)
+The dynamically computed arguments are appended.
+Can be either a string, or a list of strings or expressions."
+  :type '(choice string (repeat (choice string expression))))
 
 (defcustom consult-man-args
   "man -k"
   "Command line arguments for man, see `consult-man'.
-The dynamically computed arguments are appended."
-  :type 'string)
+The dynamically computed arguments are appended.
+Can be either a string, or a list of strings or expressions."
+  :type '(choice string (repeat (choice string expression))))
 
 (defcustom consult-preview-key 'any
   "Preview trigger keys, can be nil, \\='any, a single key or a list of keys."
@@ -540,6 +547,18 @@ pairs."
           (alist-get (or cmd this-command) consult--customize-alist)))
 
 ;;;; Helper functions and macros
+
+(defun consult--build-args (arg)
+  "Return ARG as a flat list of split strings.
+
+Turn ARG into a list, and for each element either:
+- split it if it a string.
+- eval it if it is an expression."
+  (mapcan (lambda (x)
+            (if (stringp x)
+                (split-string-and-unquote x)
+              (ensure-list (eval x 'lexical))))
+          (ensure-list arg)))
 
 (defun consult--command-split (str)
   "Return command argument and options list given input STR."
@@ -4405,6 +4424,16 @@ FIND-FILE is the file open function, defaulting to `find-file'."
       (substring cand (1+ (length (get-text-property 0 'consult--grep-file cand))))
     (get-text-property 0 'consult--grep-file cand)))
 
+(defun consult--grep-exclude-args ()
+  "Produce grep exclude arguments.
+Take the variables `grep-find-ignored-directories' and
+`grep-find-ignored-files' into account."
+  (unless (boundp 'grep-find-ignored-files) (require 'grep))
+  (nconc (mapcar (lambda (s) (concat "--exclude=" s))
+                 (bound-and-true-p grep-find-ignored-files))
+         (mapcar (lambda (s) (concat "--exclude-dir=" s))
+                 (bound-and-true-p grep-find-ignored-directories))))
+
 (defun consult--grep (prompt builder dir initial)
   "Run grep in DIR.
 
@@ -4440,11 +4469,7 @@ INITIAL is inital input."
 (defun consult--grep-builder (input)
   "Build command line given INPUT."
   (unless (boundp 'grep-find-ignored-files) (require 'grep))
-  (pcase-let* ((cmd (append (split-string-and-unquote consult-grep-args)
-                            (mapcar (lambda (s) (concat "--exclude=" s))
-                                    (bound-and-true-p grep-find-ignored-files))
-                            (mapcar (lambda (s) (concat "--exclude-dir=" s))
-                                    (bound-and-true-p grep-find-ignored-directories))))
+  (pcase-let* ((cmd (consult--build-args consult-grep-args))
                (`(,arg . ,opts) (consult--command-split input))
                (flags (append cmd opts))
                (ignore-case (or (member "-i" flags) (member "--ignore-case" flags))))
@@ -4509,7 +4534,7 @@ Otherwise the `default-directory' is searched."
 
 (defun consult--git-grep-builder (input)
   "Build command line given CONFIG and INPUT."
-  (pcase-let* ((cmd (split-string-and-unquote consult-git-grep-args))
+  (pcase-let* ((cmd (consult--build-args consult-git-grep-args))
                (`(,arg . ,opts) (consult--command-split input))
                (flags (append cmd opts))
                (ignore-case (or (member "-i" flags) (member "--ignore-case" flags))))
@@ -4537,7 +4562,7 @@ for more details."
 
 (defun consult--ripgrep-builder (input)
   "Build command line given INPUT."
-  (pcase-let* ((cmd (split-string-and-unquote consult-ripgrep-args))
+  (pcase-let* ((cmd (consult--build-args consult-ripgrep-args))
                (`(,arg . ,opts) (consult--command-split input))
                (flags (append cmd opts))
                (ignore-case (if (or (member "-S" flags) (member "--smart-case" flags))
@@ -4596,7 +4621,7 @@ INITIAL is inital input."
 
 (defun consult--find-builder (input)
   "Build command line given INPUT."
-  (pcase-let* ((cmd (split-string-and-unquote consult-find-args))
+  (pcase-let* ((cmd (consult--build-args consult-find-args))
                (type (or consult--find-regexp-type
                          (setq consult--find-regexp-type
                                (if (eq 0 (call-process-shell-command
@@ -4637,7 +4662,7 @@ See `consult-grep' for more details regarding the asynchronous search."
   "Build command line given CONFIG and INPUT."
   (pcase-let ((`(,arg . ,opts) (consult--command-split input)))
     (unless (string-blank-p arg)
-      (list :command (append (split-string-and-unquote consult-locate-args)
+      (list :command (append (consult--build-args consult-locate-args)
                              (list arg) opts)
             :highlight (cdr (consult--default-regexp-compiler input 'basic t))))))
 
@@ -4659,7 +4684,7 @@ details regarding the asynchronous search."
   "Build command line given CONFIG and INPUT."
   (pcase-let ((`(,arg . ,opts) (consult--command-split input)))
     (unless (string-blank-p arg)
-      (list :command (append (split-string-and-unquote consult-man-args)
+      (list :command (append (consult--build-args consult-man-args)
                              (list arg) opts)
             :highlight (cdr (consult--default-regexp-compiler input 'basic t))))))
 
