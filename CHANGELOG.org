@@ -6,6 +6,11 @@
 
 - Bugfixes
 - Allow =consult-*-args= to be a string, or a list of strings or expressions.
+- Introduce face =consult-highlight-match= to highlight grep matches in the
+  completion buffer.
+- Highlight full matches in =consult-line=, =consult-outline=, =consult-*grep= and
+  =consult-flymake=.
+- Remove face =consult-preview-error=.
 
 * Version 0.19 (2022-09-09)
 

@@ -348,17 +348,17 @@ Each element of the list must have the form \\='(char name handler)."
   '((t :inherit consult-preview-insertion :extend t))
   "Face used for line previews.")
 
-(defface consult-preview-match
+(defface consult-highlight-match
   '((t :inherit match))
-  "Face used for match previews in `consult-grep'.")
+  "Face used to highlight matches in the completion candidates, e.g., in `consult-grep'.")
+
+(defface consult-preview-match
+  '((t :inherit isearch))
+  "Face used for match previews, e.g., in `consult-line'.")
 
 (defface consult-preview-cursor
-  '((t :inherit consult-preview-match))
-  "Face used for cursor previews and marks in `consult-mark'.")
-
-(defface consult-preview-error
-  '((t :inherit isearch-fail))
-  "Face used for cursor previews and marks in `consult-compile-error'.")
+  '((t :inherit cursor))
+  "Face used for cursor previews and marks, e.g., in `consult-mark'.")
 
 (defface consult-preview-insertion
   '((t :inherit region))
@@ -584,7 +584,7 @@ if IGNORE-CASE is non-nil."
           (while m
             (when (car m)
               (add-face-text-property (car m) (cadr m)
-                                      'consult-preview-match nil str))
+                                      'consult-highlight-match nil str))
             (setq m (cddr m))))))))
 
 (defconst consult--convert-regexp-table
@@ -936,11 +936,12 @@ When no project is found and MAY-PROMPT is non-nil ask the user."
   (or (eq (selected-window) (active-minibuffer-window))
       (eq #'completion-list-mode (buffer-local-value 'major-mode (window-buffer)))))
 
-(defun consult--location-upgrading-state (candidates state)
-  "Location state function transformer.
-Transform the STATE function. The cheap location markers from CANDIDATES are
-upgraded on window selection change to full Emacs markers."
-  (let ((hook (make-symbol "consult--location-upgrade")))
+(defun consult--location-state (candidates)
+  "Location state function.
+The cheap location markers from CANDIDATES are upgraded on window
+selection change to full Emacs markers."
+  (let ((jump (consult--jump-state))
+        (hook (make-symbol "consult--location-upgrade")))
     (fset hook
           (lambda (_)
             (unless (consult--completion-window-p)
@@ -950,13 +951,7 @@ upgraded on window selection change to full Emacs markers."
       (pcase action
         ('setup (add-hook 'window-selection-change-functions hook))
         ('exit (remove-hook 'window-selection-change-functions hook)))
-      (funcall state action cand))))
-
-(defun consult--location-state (candidates)
-  "Location state function.
-The cheap location markers from CANDIDATES are upgraded on window
-selection change to full Emacs markers."
-  (consult--location-upgrading-state candidates (consult--jump-state)))
+      (funcall jump action cand))))
 
 (defun consult--get-location (cand)
   "Return location from CAND."
@@ -1315,6 +1310,8 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
 (defun consult--jump (pos)
   "Push current position to mark ring, go to POS and recenter."
   (when pos
+    ;; Extract marker from list with with overlay positions, see `consult--line-match'
+    (when (consp pos) (setq pos (car pos)))
     ;; When the marker is in the same buffer, record previous location
     ;; such that the user can jump back quickly.
     (when (or (not (markerp pos)) (eq (current-buffer) (marker-buffer pos)))
@@ -1328,12 +1325,10 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
     (run-hooks 'consult-after-jump-hook))
   nil)
 
-(defun consult--jump-preview (&optional face)
+(defun consult--jump-preview ()
   "The preview function used if selecting from a list of candidate positions.
-The function can be used as the `:state' argument of `consult--read'.
-FACE is the cursor face."
-  (let ((face (or face 'consult-preview-cursor))
-        (saved-min (point-min-marker))
+The function can be used as the `:state' argument of `consult--read'."
+  (let ((saved-min (point-min-marker))
         (saved-max (point-max-marker))
         (saved-pos (point-marker))
         overlays invisible)
@@ -1351,27 +1346,31 @@ FACE is the cursor face."
                 (set-buffer saved-buffer)
                 (narrow-to-region saved-min saved-max)
                 (goto-char saved-pos)))
-          ;; Jump to position
-          (consult--jump-1 cand)
-          (setq invisible (consult--invisible-open-temporarily)
-                overlays
-                (list (save-excursion
-                        (let ((vbeg (progn (beginning-of-visual-line) (point)))
-                              (vend (progn (end-of-visual-line) (point)))
-                              (end (line-end-position)))
-                          (consult--overlay vbeg (if (= vend end) (1+ end) vend)
-                                            'face 'consult-preview-line
-                                            'window (selected-window))))
-                      (consult--overlay (point) (1+ (point))
-                                        'face face
-                                        'window (selected-window))))
-          (run-hooks 'consult-after-jump-hook))))))
+            ;; Handle positions with overlay information
+            (consult--jump-1 (or (car-safe cand) cand))
+            (setq invisible (consult--invisible-open-temporarily)
+                  overlays
+                  (list (save-excursion
+                          (let ((vbeg (progn (beginning-of-visual-line) (point)))
+                                (vend (progn (end-of-visual-line) (point)))
+                                (end (line-end-position)))
+                            (consult--overlay vbeg (if (= vend end) (1+ end) vend)
+                                              'face 'consult-preview-line
+                                              'window (selected-window))))
+                        (consult--overlay (point) (1+ (point))
+                                          'face 'consult-preview-cursor
+                                          'window (selected-window))))
+            (dolist (match (cdr-safe cand))
+              (push (consult--overlay (+ (point) (car match))
+                                      (+ (point) (cdr match))
+                                      'face 'consult-preview-match
+                                      'window (selected-window))
+                    overlays))
+            (run-hooks 'consult-after-jump-hook))))))
 
-(defun consult--jump-state (&optional face)
-  "The state function used if selecting from a list of candidate positions.
-The function can be used as the `:state' argument of `consult--read'.
-FACE is the cursor face."
-  (consult--state-with-return (consult--jump-preview face) #'consult--jump))
+(defun consult--jump-state ()
+  "The state function used if selecting from a list of candidate positions."
+  (consult--state-with-return (consult--jump-preview) #'consult--jump))
 
 (defun consult--state-with-return (state return)
   "Compose STATE function with RETURN function."
@@ -1465,7 +1464,7 @@ PREVIEW-KEY, STATE, TRANSFORM and CANDIDATE."
                                 (when timer
                                   (cancel-timer timer)
                                   (setq timer nil))
-                                (unless (equal last-preview new-preview)
+                                (unless (equal-including-properties last-preview new-preview)
                                   (if (> debounce 0)
                                       (let ((win (selected-window)))
                                         (setq timer
@@ -1761,14 +1760,14 @@ actions no assumption about the context can be made.
 nil      Return the list of candidates.
 list     Append the list to the already existing candidates list and return it.
 string   Update with the current user input string. Return nil."
-  (let (candidates last buffer previewed)
+  (let (candidates last buffer)
     (lambda (action)
       (pcase-exhaustive action
         ('setup
          (setq buffer (current-buffer))
          nil)
         ((or (pred stringp) 'destroy) nil)
-        ('flush (setq candidates nil last nil previewed nil))
+        ('flush (setq candidates nil last nil))
         ('refresh
          ;; Refresh the UI when the current minibuffer window belongs
          ;; to the current asynchronous completion session.
@@ -1779,8 +1778,7 @@ string   Update with the current user input string. Return nil."
                ;; Interaction between asynchronous completion tables and
                ;; preview: We have to trigger preview immediately when
                ;; candidates arrive (Issue #436).
-               (when (and consult--preview-function candidates (not previewed))
-                 (setq previewed t)
+               (when (and consult--preview-function candidates)
                  (funcall consult--preview-function)))))
          nil)
         ('nil candidates)
@@ -2911,57 +2909,54 @@ SELECTED is the currently selected candidate.
 CANDIDATES is the list of candidates.
 INPUT is the input string entered by the user."
   (when-let (pos (consult--lookup-location selected candidates))
-    (if (or (string-blank-p input)
-            (eq consult-line-point-placement 'line-beginning))
+    (if (string-blank-p input)
         pos
-      (let ((beg 0)
-            (end (length selected)))
+      (let ((beg 0) (end (length selected)) (step 16))
         ;; Ignore tofu-encoded unique line number suffix
         (while (and (> end 0) (consult--tofu-p (aref selected (1- end))))
           (setq end (1- end)))
         ;; Find match end position, remove characters from line end until
         ;; matching fails
-        (let ((step 16))
-          (while (> step 0)
-            (while (and (> (- end step) 0)
-                        ;; Use consult-location completion category when
-                        ;; filtering lines. Highlighting is not necessary here,
-                        ;; but it is actually cheaper to highlight a single
-                        ;; candidate, since setting up deferred highlighting is
-                        ;; costly.
-                        (consult--completion-filter input
-                                                    (list (substring selected 0 (- end step)))
-                                                    'consult-location 'highlight))
-              (setq end (- end step)))
-            (setq step (/ step 2))))
+        (while (> step 0)
+          (while (and (> (- end step) 0)
+                      ;; Use consult-location completion category when
+                      ;; filtering lines. Highlighting is not necessary here,
+                      ;; but it is actually cheaper to highlight a single
+                      ;; candidate, since setting up deferred highlighting is
+                      ;; costly.
+                      (consult--completion-filter input
+                                                  (list (substring selected 0 (- end step)))
+                                                  'consult-location 'highlight))
+            (setq end (- end step)))
+          (setq step (/ step 2)))
         ;; Find match beginning position, remove characters from line beginning
         ;; until matching fails
-        (when (eq consult-line-point-placement 'match-beginning)
-          (let ((step 16))
-            (while (> step 0)
-              (while (and (< (+ beg step) end)
-                          ;; See comment above, call to `consult--completion-filter'.
-                          (consult--completion-filter input
-                                                      (list (substring selected (+ beg step) end))
-                                                      'consult-location 'highlight))
-                (setq beg (+ beg step)))
-              (setq step (/ step 2)))
-            (setq end beg)))
+        (setq step 16)
+        (while (> step 0)
+          (while (and (< (+ beg step) end)
+                      ;; See comment above, call to `consult--completion-filter'.
+                      (consult--completion-filter input
+                                                  (list (substring selected (+ beg step) end))
+                                                  'consult-location 'highlight))
+            (setq beg (+ beg step)))
+          (setq step (/ step 2)))
         ;; Marker can be dead, therefore ignore errors. Create a new marker
         ;; instead of an integer, since the location may be in another buffer,
         ;; e.g., for `consult-line-multi'.
         (ignore-errors
-          (if (or (not (markerp pos))
-                  (eq (marker-buffer pos)
-                      (window-buffer (or (minibuffer-selected-window) (next-window)))))
-              (+ pos end)
+          (setq beg (+ pos beg) end (+ pos end))
+          (let ((dest (pcase-exhaustive consult-line-point-placement
+                        ('match-beginning beg)
+                        ('match-end end)
+                        ('line-beginning pos))))
             ;; Only create a new marker when jumping across buffers, to avoid
             ;; creating unnecessary markers, when scrolling through candidates.
             ;; Creating markers is not free.
-            (move-marker
-             (make-marker)
-             (+ pos end)
-             (marker-buffer pos))))))))
+            (when (and (not (markerp dest)) (markerp pos)
+                       (not (eq (marker-buffer pos)
+                                (window-buffer (or (minibuffer-selected-window) (next-window))))))
+              (setq dest (move-marker (make-marker) dest (marker-buffer pos))))
+            (list dest (cons (- beg dest) (- end dest)))))))))
 
 (cl-defun consult--line (candidates &key curr-line prompt initial group)
   "Select from from line CANDIDATES and jump to the match.
@@ -4399,13 +4394,19 @@ FIND-FILE is the file open function, defaulting to `find-file'."
   (when cand
     (let* ((file-end (next-single-property-change 0 'face cand))
            (line-end (next-single-property-change (+ 1 file-end) 'face cand))
-           (col (next-single-property-change (+ 1 line-end) 'face cand))
+           (first-match (next-single-property-change (+ 1 line-end) 'face cand))
+           (match-beg first-match)
+           (col (if match-beg (- match-beg line-end 1) 0))
            (file (substring-no-properties cand 0 file-end))
-           (line (string-to-number (substring-no-properties cand (+ 1 file-end) line-end))))
-      (setq col (if col (- col line-end 1) 0))
-      (consult--position-marker
-       (funcall (or find-file #'find-file) file)
-       line col))))
+           (line (string-to-number (substring-no-properties cand (+ 1 file-end) line-end)))
+           matches)
+      (while (when-let (match-end (and match-beg (next-single-property-change match-beg 'face cand)))
+               (push (cons (- match-beg first-match) (- match-end first-match)) matches)
+               (setq match-beg (next-single-property-change match-end 'face cand))))
+      (cons (consult--position-marker
+             (funcall (or find-file #'find-file) file)
+             line col)
+            matches))))
 
 (defun consult--grep-state ()
   "Grep state function."

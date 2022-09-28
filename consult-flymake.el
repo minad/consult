@@ -51,6 +51,7 @@ DIAGS should be a list of diagnostics as returned from `flymake-diagnostics'."
                            type
                            (flymake-diagnostic-text diag)
                            (point-marker)
+                           (flymake-diagnostic-end diag)
                            (pcase (flymake--lookup-type-property type 'flymake-category)
                               ('flymake-error ?e)
                               ('flymake-warning ?w)
@@ -60,14 +61,14 @@ DIAGS should be a list of diagnostics as returned from `flymake-diagnostics'."
          (line-width (apply #'max (mapcar (lambda (x) (length (number-to-string (nth 1 x)))) diags)))
          (fmt (format "%%-%ds %%-%dd %%-7s %%s" buffer-width line-width)))
     (mapcar
-     (pcase-lambda (`(,buffer ,line ,type ,text ,marker ,narrow))
+     (pcase-lambda (`(,buffer ,line ,type ,text ,beg ,end ,narrow))
        (propertize (format fmt buffer line
                            (propertize (format "%s" (flymake--lookup-type-property
                                                      type 'flymake-type-name type))
                                        'face (flymake--lookup-type-property
                                               type 'mode-line-face 'flymake-error))
                            text)
-                   'consult--candidate marker
+                   'consult--candidate (list beg (cons 0 (- end beg)))
                    'consult--type narrow))
      ;; Sort by buffer, severity and position.
      (sort diags
@@ -108,7 +109,7 @@ buffers in the current project instead of just the current buffer."
    :group (consult--type-group consult-flymake--narrow)
    :narrow (consult--type-narrow consult-flymake--narrow)
    :lookup #'consult--lookup-candidate
-   :state (consult--jump-state 'consult-preview-error)))
+   :state (consult--jump-state)))
 
 (provide 'consult-flymake)
 ;;; consult-flymake.el ends here

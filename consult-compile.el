@@ -87,7 +87,7 @@
 
 (defun consult-compile--state ()
   "Like `consult--jump-state', also setting the current compilation error."
-  (let ((state (consult--jump-state 'consult-preview-error)))
+  (let ((state (consult--jump-state)))
     (lambda (action marker)
       (let ((pos (consult-compile--lookup marker)))
         (when-let (buffer (and (eq action 'return)
