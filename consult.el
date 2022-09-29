@@ -572,12 +572,16 @@ Turn ARG into a list, and for each element either:
 (defun consult--find-highlights (str start)
   "Find highlighted regions (face property non-nil) in STR from position START."
   (let (highlights
-        (len (length str))
-        (beg start) end)
-    (while (and beg (setq beg (text-property-not-all beg len 'face nil str)))
-      (setq end (text-property-any beg len 'face nil str))
-      (push (cons (- beg start) (- (or end len) start)) highlights)
-      (setq beg end))
+        (end (length str))
+        (beg start))
+    (while (< beg end)
+      (let ((next (next-single-property-change beg 'face str end))
+            (val (get-text-property beg 'face str)))
+        (when (and val
+                   (not (eq val 'completions-first-difference))
+                   (not (and (listp val) (memq 'completions-first-difference val))))
+          (push (cons (- beg start) (- next start)) highlights))
+        (setq beg next)))
     (nreverse highlights)))
 
 (defun consult--highlight-regexps (regexps ignore-case str)
