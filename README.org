@@ -905,13 +905,13 @@ an overview of all Consult variables and functions with their descriptions.
 | consult-grep-args                | Command line arguments for grep                       |
 | consult-imenu-config             | Mode-specific configuration for =consult-imenu=         |
 | consult-line-numbers-widen       | Show absolute line numbers when narrowing is active.  |
-| consult-line-point-placement     | Placement of the point used by =consult-line=           |
 | consult-line-start-from-top      | Start the =consult-line= search from the top            |
 | consult-locate-args              | Command line arguments for locate                     |
 | consult-man-args                 | Command line arguments for man                        |
 | consult-mode-command-filter      | Filter for =consult-mode-command=                       |
 | consult-mode-histories           | Mode-specific history variables                       |
 | consult-narrow-key               | Narrowing prefix key during completion                |
+| consult-point-placement          | Placement of the point when jumping to matches        |
 | consult-preview-key              | Keys which triggers preview                           |
 | consult-preview-allowed-hooks    | List of =find-file= hooks to enable during preview      |
 | consult-preview-excluded-files   | Regexps matched against file names during preview     |

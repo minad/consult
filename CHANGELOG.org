@@ -11,6 +11,8 @@
 - Highlight full matches in =consult-line=, =consult-outline=, =consult-*grep= and
   =consult-flymake=.
 - Remove face =consult-preview-error=.
+- Deprecate =consult-line-point-placement= in favor of more general
+  =consult-point-placement=, which is also used by the =consult-*grep= commands.
 
 * Version 0.19 (2022-09-09)
 
