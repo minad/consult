@@ -569,6 +569,17 @@ Turn ARG into a list, and for each element either:
       ;; split-string-and-unquote fails if the quotes are invalid. Ignore it.
       (cons str (and opts (ignore-errors (split-string-and-unquote opts)))))))
 
+(defun consult--find-highlights (str start)
+  "Find highlighted regions (face property non-nil) in STR from position START."
+  (let (highlights
+        (len (length str))
+        (beg start) end)
+    (while (and beg (setq beg (text-property-not-all beg len 'face nil str)))
+      (setq end (text-property-any beg len 'face nil str))
+      (push (cons (- beg start) (- (or end len) start)) highlights)
+      (setq beg end))
+    (nreverse highlights)))
+
 (defun consult--highlight-regexps (regexps ignore-case str)
   "Highlight REGEXPS in STR.
 If a regular expression contains capturing groups, only these are highlighted.
@@ -2911,52 +2922,31 @@ INPUT is the input string entered by the user."
   (when-let (pos (consult--lookup-location selected candidates))
     (if (string-blank-p input)
         pos
-      (let ((beg 0) (end (length selected)) (step 16))
-        ;; Ignore tofu-encoded unique line number suffix
-        (while (and (> end 0) (consult--tofu-p (aref selected (1- end))))
-          (setq end (1- end)))
-        ;; Find match end position, remove characters from line end until
-        ;; matching fails
-        (while (> step 0)
-          (while (and (> (- end step) 0)
-                      ;; Use consult-location completion category when
-                      ;; filtering lines. Highlighting is not necessary here,
-                      ;; but it is actually cheaper to highlight a single
-                      ;; candidate, since setting up deferred highlighting is
-                      ;; costly.
-                      (consult--completion-filter input
-                                                  (list (substring selected 0 (- end step)))
-                                                  'consult-location 'highlight))
-            (setq end (- end step)))
-          (setq step (/ step 2)))
-        ;; Find match beginning position, remove characters from line beginning
-        ;; until matching fails
-        (setq step 16)
-        (while (> step 0)
-          (while (and (< (+ beg step) end)
-                      ;; See comment above, call to `consult--completion-filter'.
-                      (consult--completion-filter input
-                                                  (list (substring selected (+ beg step) end))
-                                                  'consult-location 'highlight))
-            (setq beg (+ beg step)))
-          (setq step (/ step 2)))
+      (let* ((highlighted (consult--completion-filter
+                           input
+                           (list (substring-no-properties selected))
+                           'consult-location 'highlight))
+             (matches (and highlighted (consult--find-highlights (car highlighted) 0))))
         ;; Marker can be dead, therefore ignore errors. Create a new marker
         ;; instead of an integer, since the location may be in another buffer,
         ;; e.g., for `consult-line-multi'.
         (ignore-errors
-          (setq beg (+ pos beg) end (+ pos end))
-          (let ((dest (pcase-exhaustive consult-line-point-placement
-                        ('match-beginning beg)
-                        ('match-end end)
-                        ('line-beginning pos))))
+          (let* ((off (pcase-exhaustive consult-line-point-placement
+                        ('match-beginning (or (caar matches) 0))
+                        ('match-end (or (cdar (last matches)) 0))
+                        ('line-beginning 0)))
+                 (dest (+ pos off)))
             ;; Only create a new marker when jumping across buffers, to avoid
             ;; creating unnecessary markers, when scrolling through candidates.
             ;; Creating markers is not free.
-            (when (and (not (markerp dest)) (markerp pos)
+            (when (and (markerp pos)
                        (not (eq (marker-buffer pos)
                                 (window-buffer (or (minibuffer-selected-window) (next-window))))))
               (setq dest (move-marker (make-marker) dest (marker-buffer pos))))
-            (list dest (cons (- beg dest) (- end dest)))))))))
+            (cons dest
+                  (mapcar (pcase-lambda (`(,x . ,y))
+                            (cons (- x off) (- y off)))
+                          matches))))))))
 
 (cl-defun consult--line (candidates &key curr-line prompt initial group)
   "Select from from line CANDIDATES and jump to the match.
@@ -4393,20 +4383,15 @@ BUILDER is the command argument builder."
 FIND-FILE is the file open function, defaulting to `find-file'."
   (when cand
     (let* ((file-end (next-single-property-change 0 'face cand))
-           (line-end (next-single-property-change (+ 1 file-end) 'face cand))
-           (first-match (next-single-property-change (+ 1 line-end) 'face cand))
-           (match-beg first-match)
-           (col (if match-beg (- match-beg line-end 1) 0))
+           (line-end (next-single-property-change (1+ file-end) 'face cand))
+           (matches (consult--find-highlights cand (1+ line-end)))
+           (col (or (caar matches) 0))
            (file (substring-no-properties cand 0 file-end))
-           (line (string-to-number (substring-no-properties cand (+ 1 file-end) line-end)))
-           matches)
-      (while (when-let (match-end (and match-beg (next-single-property-change match-beg 'face cand)))
-               (push (cons (- match-beg first-match) (- match-end first-match)) matches)
-               (setq match-beg (next-single-property-change match-end 'face cand))))
-      (cons (consult--position-marker
-             (funcall (or find-file #'find-file) file)
-             line col)
-            matches))))
+           (line (string-to-number (substring-no-properties cand (+ 1 file-end) line-end))))
+      (cons
+       (consult--position-marker (funcall (or find-file #'find-file) file)
+                                 line col)
+       (mapcar (pcase-lambda (`(,x . ,y)) (cons (- x col) (- y col))) matches)))))
 
 (defun consult--grep-state ()
   "Grep state function."
