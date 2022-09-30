@@ -355,7 +355,8 @@ Each element of the list must have the form \\='(char name handler)."
 
 (defface consult-highlight-match
   '((t :inherit match))
-  "Face used to highlight matches in the completion candidates, e.g., in `consult-grep'.")
+  "Face used to highlight matches in the completion candidates.
+Used for example in `consult-grep'.")
 
 (defface consult-preview-match
   '((t :inherit isearch))
