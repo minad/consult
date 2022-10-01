@@ -1470,19 +1470,22 @@ PREVIEW-KEY, STATE, TRANSFORM and CANDIDATE."
     (consult--minibuffer-with-setup-hook
         (if (and state preview-key)
             (lambda ()
-              (let ((exit-hook (make-symbol "consult--preview-minibuffer-exit")))
+              (let ((exit-hook (make-symbol "consult--preview-minibuffer-exit"))
+                    (depth (recursion-depth)))
                 (fset exit-hook
                       (lambda ()
-                        (when timer
-                          (cancel-timer timer)
-                          (setq timer nil))
-                        (with-selected-window (or (minibuffer-selected-window) (next-window))
-                          ;; STEP 3: Reset preview
-                          (when last-preview
-                            (funcall state 'preview nil))
-                          ;; STEP 4: Notify the preview function of the minibuffer exit
-                          (funcall state 'exit nil))))
-                (add-hook 'minibuffer-exit-hook exit-hook nil 'local))
+                        (when (= (recursion-depth) depth)
+                          (remove-hook 'minibuffer-exit-hook exit-hook)
+                          (when timer
+                            (cancel-timer timer)
+                            (setq timer nil))
+                          (with-selected-window (or (minibuffer-selected-window) (next-window))
+                            ;; STEP 3: Reset preview
+                            (when last-preview
+                              (funcall state 'preview nil))
+                            ;; STEP 4: Notify the preview function of the minibuffer exit
+                            (funcall state 'exit nil)))))
+                (add-hook 'minibuffer-exit-hook exit-hook))
               ;; STEP 1: Setup the preview function
               (with-selected-window (or (minibuffer-selected-window) (next-window))
                 (funcall state 'setup nil))
