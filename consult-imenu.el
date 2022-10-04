@@ -161,7 +161,9 @@ In contrast to the builtin `imenu' jump function,
 this function can jump across buffers."
   (pcase item
     (`(,name ,pos ,fn . ,args) (apply fn name pos args))
-    (`(,_ . ,pos) (consult--jump pos))
+    (`(,name . ,pos) (if (eq imenu-default-goto-function 'imenu-default-goto-function)
+		         (consult--jump pos)
+		       (funcall imenu-default-goto-function name pos)))
     (_ (error "Unknown imenu item: %S" item))))
 
 (defun consult-imenu--narrow ()
