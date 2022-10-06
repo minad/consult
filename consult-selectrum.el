@@ -86,11 +86,16 @@ SPLIT is the splitter function."
      selectrum-highlight-candidates-function
      (consult-selectrum--split-wrap selectrum-highlight-candidates-function split))))
 
+(defun consult-selectrum--deprecated (&rest _)
+  (warn "%s: Selectrum support has been deprecated in favor of Vertico" this-command)
+  (advice-remove #'consult--read #'consult-selectrum--deprecated))
+
 (add-hook 'consult--completion-candidate-hook #'consult-selectrum--candidate)
 (add-hook 'consult--completion-refresh-hook #'consult-selectrum--refresh)
 (advice-add #'consult--completion-filter :around #'consult-selectrum--filter-adv)
 (advice-add #'consult--split-setup :around #'consult-selectrum--split-setup-adv)
 (define-key consult-async-map [remap selectrum-insert-current-candidate] 'selectrum-next-page)
+(advice-add #'consult--read :before #'consult-selectrum--deprecated)
 
 (provide 'consult-selectrum)
 ;;; consult-selectrum.el ends here
