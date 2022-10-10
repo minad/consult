@@ -1136,14 +1136,14 @@ small configuration or command snippets.
 :end:
 
 This package took inspiration from [[https://github.com/abo-abo/swiper#counsel][Counsel]] by Oleh Krehel. Some of the Consult
-commands originated in the Counsel package or the wiki from the Selectrum
-package. The commands have been rewritten and greatly enhanced in comparison to
-the original versions.
+commands originated in the Counsel package or the wiki of the Selectrum package.
+This package exists only thanks to the help of these great contributors and
+thanks to the feedback of many users. Thank you!
 
 Code contributions:
 - [[https://github.com/oantolin/][Omar Antolín Camarena]]
 - [[https://github.com/s-kostyaev/][Sergey Kostyaev]]
-- [[https://github.com/okamsn/][okamsn]]
+- [[https://github.com/okamsn/][Earl Hyatt]]
 - [[https://github.com/clemera/][Clemens Radermacher]]
 - [[https://github.com/tomfitzhenry/][Tom Fitzhenry]]
 - [[https://github.com/jakanakaevangeli][jakanakaevangeli]]
@@ -1159,6 +1159,8 @@ Code contributions:
 - [[https://github.com/mohkale][Mohsin Kaleem]]
 - [[https://github.com/jyp][Jean-Philippe Bernardy]]
 - [[https://github.com/aagon][Aymeric Agon-Rambosson]]
+- [[https://github.com/geolessel][Geoffrey Lessel]]
+- [[https://github.com/piotrkwiecinski][Piotr Kwiecinski]]
 
 Advice and useful discussions:
 - [[https://github.com/clemera/][Clemens Radermacher]]
@@ -1175,6 +1177,7 @@ Advice and useful discussions:
 - [[https://github.com/bdarcus][Bruce d'Arcus]]
 - [[https://github.com/jdtsmith][J.D. Smith]]
 - [[https://github.com/Qkessler][Enrique Kessler Martínez]]
+- [[https://github.com/raxod502][Radon Rosborough]]
 
 Authors of supplementary =consult-*= packages:
 
