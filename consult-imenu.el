@@ -50,19 +50,38 @@ type specified by :toplevel."
 (defvar consult-imenu--history nil)
 (defvar-local consult-imenu--cache nil)
 
-(defun consult-imenu--switch-buffer (_name pos buf name fn &rest args)
+(defun consult-imenu--switch-buffer (name pos buf fn &rest args)
   "Switch buffer before invoking special menu items.
+NAME is the item name.
 POS is the position.
 BUF is the buffer.
-NAME is the item name.
 FN is the original special item function.
 ARGS are the arguments to the special item function."
   (funcall consult--buffer-display buf)
   (apply fn name pos args))
 
+(defun consult-imenu--normalize (pos)
+  "Return normalized imenu POS."
+  (pcase pos
+    ;; Simple marker item
+    ((pred markerp) nil)
+    ;; Simple integer item
+    ((pred integerp) (setq pos (copy-marker pos)))
+    ;; Semantic uses overlay for positions
+    ((pred overlayp) (setq pos (copy-marker (overlay-start pos))))
+    ;; Wrap special item
+    (`(,pos ,fn . ,args)
+     (setq pos `(,pos ,#'consult-imenu--switch-buffer ,(current-buffer)
+                      ,fn ,@args)))
+    (_ (error "Unknown imenu item: %S" pos)))
+  (if (or (consp pos)
+          (eq imenu-default-goto-function #'imenu-default-goto-function))
+      pos
+    (list pos #'consult-imenu--switch-buffer (current-buffer)
+          imenu-default-goto-function)))
+
 (defun consult-imenu--flatten (prefix face list types)
   "Flatten imenu LIST.
-
 PREFIX is prepended in front of all items.
 FACE is the item face.
 TYPES is the mode-specific types configuration."
@@ -80,27 +99,14 @@ TYPES is the mode-specific types configuration."
                (put-text-property 0 (length name) 'consult--type (car type) name)
                (setq next-face (cadr type))))
            (consult-imenu--flatten next-prefix next-face (cdr item) types))
-       (let ((name (car item))
-             (payload (cdr item)))
-         (list (cons
-                (if prefix
-                    (let ((key (concat prefix " " name)))
-                      (add-face-text-property (1+ (length prefix)) (length key)
-                                              face 'append key)
-                      key)
-                  name)
-                (pcase payload
-                  ;; Simple marker item
-                  ((pred markerp) payload)
-                  ;; Simple integer item
-                  ((pred integerp) (copy-marker payload))
-                  ;; Semantic uses overlay for positions
-                  ((pred overlayp) (copy-marker (overlay-start payload)))
-                  ;; Wrap special item
-                  (`(,pos ,fn . ,args)
-                   `(,pos ,#'consult-imenu--switch-buffer
-                          ,(current-buffer) ,name ,fn ,@args))
-                  (_ (error "Unknown imenu item: %S" item))))))))
+       (list (cons
+              (if prefix
+                  (let ((key (concat prefix " " (car item))))
+                    (add-face-text-property (1+ (length prefix)) (length key)
+                                            face 'append key)
+                    key)
+                (car item))
+              (consult-imenu--normalize (cdr item))))))
    list))
 
 (defun consult-imenu--compute ()
