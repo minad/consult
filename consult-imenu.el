@@ -50,9 +50,8 @@ type specified by :toplevel."
 (defvar consult-imenu--history nil)
 (defvar-local consult-imenu--cache nil)
 
-(defun consult-imenu--special (_name pos buf name fn &rest args)
-  "Wrapper function for special imenu items.
-
+(defun consult-imenu--switch-buffer (_name pos buf name fn &rest args)
+  "Switch buffer before invoking special menu items.
 POS is the position.
 BUF is the buffer.
 NAME is the item name.
@@ -99,9 +98,8 @@ TYPES is the mode-specific types configuration."
                   ((pred overlayp) (copy-marker (overlay-start payload)))
                   ;; Wrap special item
                   (`(,pos ,fn . ,args)
-                   (nconc
-                    (list pos #'consult-imenu--special (current-buffer) name fn)
-                    args))
+                   `(,pos ,#'consult-imenu--switch-buffer
+                          ,(current-buffer) ,name ,fn ,@args))
                   (_ (error "Unknown imenu item: %S" item))))))))
    list))
 
@@ -160,9 +158,13 @@ TYPES is the mode-specific types configuration."
 In contrast to the builtin `imenu' jump function,
 this function can jump across buffers."
   (pcase item
-    (`(,name ,pos ,fn . ,args) (apply fn name pos args))
-    (`(,_ . ,pos) (consult--jump pos))
-    (_ (error "Unknown imenu item: %S" item))))
+    (`(,name ,pos ,fn . ,args)
+     (push-mark nil t)
+     (apply fn name pos args))
+    (`(,_ . ,pos)
+     (consult--jump pos))
+    (_ (error "Unknown imenu item: %S" item)))
+  (run-hooks 'imenu-after-jump-hook))
 
 (defun consult-imenu--narrow ()
   "Return narrowing configuration for the current buffer."
