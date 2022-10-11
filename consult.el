@@ -4408,10 +4408,10 @@ FIND-FILE is the file open function, defaulting to `find-file'."
            (matches (consult--point-placement cand (1+ line-end)))
            (file (substring-no-properties cand 0 file-end))
            (line (string-to-number (substring-no-properties cand (+ 1 file-end) line-end))))
-      (cons
-       (consult--position-marker (funcall (or find-file #'find-file) file)
-                                 line (or (car matches) 0))
-       (cdr matches)))))
+      (when-let (pos (consult--position-marker
+                      (funcall (or find-file #'find-file) file)
+                      line (or (car matches) 0)))
+        (cons pos (cdr matches))))))
 
 (defun consult--grep-state ()
   "Grep state function."
