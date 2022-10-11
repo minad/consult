@@ -576,8 +576,10 @@ Turn ARG into a list, and for each element either:
       ;; split-string-and-unquote fails if the quotes are invalid. Ignore it.
       (cons str (and opts (ignore-errors (split-string-and-unquote opts)))))))
 
-(defun consult--find-highlights (str start)
-  "Find highlighted regions (face property non-nil) in STR from position START."
+(defun consult--find-highlights (str start &rest ignored-faces)
+  "Find highlighted regions in STR from position START.
+Highlighted regions have a non-nil face property.
+IGNORED-FACES are ignored when searching for matches."
   (let (highlights
         (end (length str))
         (beg start))
@@ -585,16 +587,18 @@ Turn ARG into a list, and for each element either:
       (let ((next (next-single-property-change beg 'face str end))
             (val (get-text-property beg 'face str)))
         (when (and val
-                   (not (eq val 'completions-first-difference))
-                   (not (and (listp val) (memq 'completions-first-difference val))))
+                   (not (memq val ignored-faces))
+                   (not (and (consp val)
+                             (seq-some (lambda (x) (memq x ignored-faces)) val))))
           (push (cons (- beg start) (- next start)) highlights))
         (setq beg next)))
     (nreverse highlights)))
 
-(defun consult--point-placement (str start)
+(defun consult--point-placement (str start &rest ignored-faces)
   "Compute point placement from STR with START offset.
+IGNORED-FACES are ignored when searching for matches.
 Return cons of point position and a list of match begin/end pairs."
-  (let* ((matches (consult--find-highlights str start))
+  (let* ((matches (apply #'consult--find-highlights str start ignored-faces))
          (pos (pcase-exhaustive consult-point-placement
                 ('match-beginning (or (caar matches) 0))
                 ('match-end (or (cdar (last matches)) 0))
@@ -2957,7 +2961,11 @@ INPUT is the input string entered by the user."
                            (list (substring-no-properties selected))
                            'consult-location 'highlight))
              (matches (and highlighted
-                           (consult--point-placement (car highlighted) 0))))
+                           ;; Ignore `completions-first-difference' when
+                           ;; matching, since this face doesn't yield a
+                           ;; meaningful jump position.
+                           (consult--point-placement (car highlighted) 0
+                                                     'completions-first-difference))))
         ;; Marker can be dead, therefore ignore errors. Create a new marker
         ;; instead of an integer, since the location may be in another buffer,
         ;; e.g., for `consult-line-multi'.
@@ -4408,7 +4416,7 @@ FIND-FILE is the file open function, defaulting to `find-file'."
   (when cand
     (let* ((file-end (next-single-property-change 0 'face cand))
            (line-end (next-single-property-change (1+ file-end) 'face cand))
-           (matches (consult--point-placement cand (1+ line-end)))
+           (matches (consult--point-placement cand (1+ line-end) 'consult-grep-context))
            (file (substring-no-properties cand 0 file-end))
            (line (string-to-number (substring-no-properties cand (+ 1 file-end) line-end))))
       (when-let (pos (consult--position-marker
