@@ -1391,15 +1391,18 @@ The function can be used as the `:state' argument of `consult--read'."
                                 (end (line-end-position)))
                             (consult--overlay vbeg (if (= vend end) (1+ end) vend)
                                               'face 'consult-preview-line
-                                              'window (selected-window))))
+                                              'window (selected-window)
+                                              'priority 1)))
                         (consult--overlay (point) (1+ (point))
                                           'face 'consult-preview-cursor
-                                          'window (selected-window))))
+                                          'window (selected-window)
+                                          'priority 3)))
             (dolist (match (cdr-safe cand))
               (push (consult--overlay (+ (point) (car match))
                                       (+ (point) (cdr match))
                                       'face 'consult-preview-match
-                                      'window (selected-window))
+                                      'window (selected-window)
+                                      'priority 2)
                     overlays))
             (run-hooks 'consult-after-jump-hook))))))
 
