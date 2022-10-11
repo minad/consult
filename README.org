@@ -7,8 +7,8 @@
 #+texinfo_dir_desc: Useful commands built on completing-read.
 
 #+html: <a href="https://www.gnu.org/software/emacs/"><img alt="GNU Emacs" src="https://github.com/minad/corfu/blob/screenshots/emacs.svg?raw=true"/></a>
-#+html: <a href="http://elpa.gnu.org/packages/consult.html"><img alt="GNU ELPA" src="https://elpa.gnu.org/packages/consult.svg"/></a>
-#+html: <a href="http://elpa.gnu.org/devel/consult.html"><img alt="GNU-devel ELPA" src="https://elpa.gnu.org/devel/consult.svg"/></a>
+#+html: <a href="https://elpa.gnu.org/packages/consult.html"><img alt="GNU ELPA" src="https://elpa.gnu.org/packages/consult.svg"/></a>
+#+html: <a href="https://elpa.gnu.org/devel/consult.html"><img alt="GNU-devel ELPA" src="https://elpa.gnu.org/devel/consult.svg"/></a>
 #+html: <a href="https://melpa.org/#/consult"><img alt="MELPA" src="https://melpa.org/packages/consult-badge.svg"/></a>
 #+html: <a href="https://stable.melpa.org/#/consult"><img alt="MELPA Stable" src="https://stable.melpa.org/packages/consult-badge.svg"/></a>
 
@@ -621,7 +621,7 @@ configure a manual preview as follows.
 
 Sources can be added directly to the =consult-buffer-source= list for convenience.
 For example views/perspectives can be added to the list of virtual buffers from
-a library like https://github.com/minad/bookmark-view/.
+a library like [[https://github.com/minad/bookmark-view/][bookmark-view]].
 
 #+begin_src emacs-lisp
 ;; Configure new bookmark-view source
@@ -723,7 +723,7 @@ if the [[https://github.com/mhayashi1120/Emacs-wgrep][wgrep]] package is install
 :description: Example configuration and customization variables
 :end:
 
-Consult can be installed from [[http://elpa.gnu.org/packages/consult.html][ELPA]] or [[https://melpa.org/#/consult][MELPA]] via the Emacs built-in package
+Consult can be installed from [[https://elpa.gnu.org/packages/consult.html][ELPA]] or [[https://melpa.org/#/consult][MELPA]] via the Emacs built-in package
 manager. Alternatively it can be directly installed from the development
 repository via other non-standard package managers.
 
@@ -1012,7 +1012,6 @@ you!
 - The builtin =icomplete-vertical-mode= in Emacs 28.
 - [[https://git.sr.ht/~protesilaos/mct][mct by Protesilaos Stavrou]]: Minibuffer and Completions in Tandem, which builds
   on the default completion UI (development currently [[https://protesilaos.com/codelog/2022-04-14-emacs-discontinue-mct/][discontinued]]).
-- [[https://github.com/radian-software/selectrum][selectrum by Radon Rosborough]]: Superseded by Vertico (deprecated).
 
 You can integrated Consult with special programs or with other packages in the
 wider Emacs ecosystem. You may want to install some of theses packages depending
@@ -1121,7 +1120,7 @@ Consult often relies on lambdas and lexical closures.
 
 Consult is a community effort, please participate in the discussions.
 Contributions are welcome, but you may want to discuss potential contributions
-first. Since this package is part of [[http://elpa.gnu.org/packages/consult.html][GNU ELPA]] contributions require a copyright
+first. Since this package is part of [[https://elpa.gnu.org/packages/consult.html][GNU ELPA]] contributions require a copyright
 assignment to the FSF.
 
 If you have a proposal, take a look at the [[https://github.com/consult/issues][Consult issue tracker]] and the [[https://github.com/minad/consult/issues/6][Consult
