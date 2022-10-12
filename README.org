@@ -22,16 +22,15 @@ Consult commands are enhanced versions of built-in Emacs commands. For example
 the command =consult-imenu= presents a flat list of the Imenu with [[#live-previews][live preview]],
 [[#narrowing-and-grouping][grouping and narrowing]]. Please take a look at the [[#available-commands][full list of commands]].
 
-Consult is fully compatible with completion systems based on the standard Emacs
-=completing-read= API, notably the default completion system, [[https://github.com/minad/vertico][Vertico]], [[https://github.com/protesilaos/mct][Mct]],
+Consult is fully compatible with completion systems centered around the standard
+Emacs =completing-read= API, notably the default completion system, [[https://github.com/minad/vertico][Vertico]], [[https://github.com/protesilaos/mct][Mct]],
 and [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html][Icomplete]].
 
 This package keeps the completion system specifics to a minimum. The ability of
 the Consult commands to work well with arbitrary completion systems is one of
 the main advantages of the package. Consult fits well into existing setups and
 it helps you to create a full completion environment out of small and
-independent components. Note that, if you use [[https://github.com/abo-abo/swiper#ivy][Ivy]] or [[https://github.com/emacs-helm/helm][Helm]], you probably don't
-need Consult, since both packages bring their own Consult-like functionality.
+independent components.
 
 You can combine the complementary packages [[https://github.com/minad/marginalia/][Marginalia]], [[https://github.com/oantolin/embark/][Embark]] and [[https://github.com/oantolin/orderless][Orderless]] with
 Consult. Marginalia enriches the completion display with annotations, e.g.,
@@ -1069,8 +1068,8 @@ out the following steps:
    This includes Consult, Vertico or other completion UIs, Marginalia, Embark
    and Orderless.
 2. Either use the default completion UI or ensure that exactly one of
-   =vertico-mode=, =mct-mode=, or =icomplete-mode= is enabled.
-   The unsupported modes =ivy-mode=, =helm-mode= and =ido-ubiquitous-mode= must be disabled.
+   =vertico-mode=, =mct-mode=, or =icomplete-mode= is enabled. The unsupported modes
+   =ivy-mode=, =helm-mode= and =ido-ubiquitous-mode= must be disabled.
 3. Ensure that the =completion-styles= variable is properly configured. Try to set
    =completion-styles= to a list including =substring= or =orderless=.
 4. Try to reproduce the issue by starting a bare bone Emacs instance with =emacs -Q=
