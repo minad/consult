@@ -555,6 +555,29 @@ pairs."
 
 ;;;; Helper functions and macros
 
+(defun consult--in-buffer (fun &optional buffer)
+  "Ensure that FUN is executed inside BUFFER."
+  (unless buffer (setq buffer (current-buffer)))
+  (lambda (&rest args)
+    (with-current-buffer buffer
+      (apply fun args))))
+
+(defun consult--completion-table-in-buffer (table &optional buffer)
+  "Ensure that completion TABLE is executed inside BUFFER."
+  (if (functionp table)
+      (consult--in-buffer
+       (lambda (str pred action)
+         (if (eq action 'metadata)
+             (mapcar
+              (lambda (x)
+                (if (string-suffix-p (symbol-name (car-safe x)) "-function")
+                    (cons (car x) (consult--in-buffer (cdr x)))
+                  x))
+              (funcall table str pred action))
+           (funcall table str pred action)))
+       buffer)
+    table))
+
 (defun consult--build-args (arg)
   "Return ARG as a flat list of split strings.
 
@@ -2662,16 +2685,22 @@ These configuration options are supported:
              (metadata (completion-metadata initial collection predicate))
              (threshold (or (plist-get config :cycle-threshold) (completion--cycle-threshold metadata)))
              (all (completion-all-completions initial collection predicate (length initial)))
-             ;; Provide `:annotation-function' if `:company-docsig' is specified
+             ;; Wrap all annotation functions to ensure that they are executed
+             ;; in the original buffer.
+             (exit-fun (plist-get completion-extra-properties :exit-function))
+             (ann-fun (plist-get completion-extra-properties :annotation-function))
+             (aff-fun (plist-get completion-extra-properties :affixation-function))
+             (docsig-fun (plist-get completion-extra-properties :company-docsig))
              (completion-extra-properties
-              (if-let (fun (and (not (plist-get completion-extra-properties :annotation-function))
-                                (plist-get completion-extra-properties :company-docsig)))
-                  `(:annotation-function
-                    ,(lambda (cand)
-                       (concat (propertize " " 'display '(space :align-to center))
-                               (funcall fun cand)))
-                    ,@completion-extra-properties)
-                completion-extra-properties)))
+              `(,@(and ann-fun (list :annotation-function (consult--in-buffer ann-fun)))
+                ,@(and aff-fun (list :affixation-function (consult--in-buffer aff-fun)))
+                ;; Provide `:annotation-function' if `:company-docsig' is specified.
+                ,@(and docsig-fun (not ann-fun) (not aff-fun)
+                       (list :annotation-function
+                             (consult--in-buffer
+                              (lambda (cand)
+                                (concat (propertize " " 'display '(space :align-to center))
+                                        (funcall docsig-fun cand)))))))))
     ;; error if `threshold' is t or the improper list `all' is too short
     (if (and threshold
              (or (not (consp (ignore-errors (nthcdr threshold all))))
@@ -2679,7 +2708,6 @@ These configuration options are supported:
         (completion--in-region start end collection predicate)
       (let* ((limit (car (completion-boundaries initial collection predicate "")))
              (category (completion-metadata-get metadata 'category))
-             (buffer (current-buffer))
              (completion
               (cond
                ((atom all) nil)
@@ -2721,23 +2749,19 @@ These configuration options are supported:
                            (consult--minibuffer-with-setup-hook
                                (lambda () (insert initial))
                              (read-file-name prompt nil initial require-match nil predicate))
+                         ;; Evaluate completion table in the original buffer.
+                         ;; This is a reasonable thing to do and required by
+                         ;; some completion tables in particular by lsp-mode.
+                         ;; See https://github.com/minad/vertico/issues/61.
                          (completing-read prompt
-                                          ;; Evaluate completion table in the original buffer.
-                                          ;; This is a reasonable thing to do and required
-                                          ;; by some completion tables in particular by lsp-mode.
-                                          ;; See https://github.com/minad/vertico/issues/61.
-                                          (if (functionp collection)
-                                              (lambda (&rest args)
-                                                (with-current-buffer buffer
-                                                  (apply collection args)))
-                                            collection)
+                                          (consult--completion-table-in-buffer collection)
                                           predicate require-match initial)))))))))
         (if completion
             (progn
               ;; bug#55205: completion--replace removes properties!
               (completion--replace start end (setq completion (concat completion)))
-              (when-let (exit (plist-get completion-extra-properties :exit-function))
-                (funcall exit completion
+              (when exit-fun
+                (funcall exit-fun completion
                          ;; If completion is finished and cannot be further completed,
                          ;; return 'finished. Otherwise return 'exact.
                          (if (eq (try-completion completion collection predicate) t)
