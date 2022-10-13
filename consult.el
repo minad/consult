@@ -570,7 +570,7 @@ pairs."
          (if (eq action 'metadata)
              (mapcar
               (lambda (x)
-                (if (string-suffix-p (symbol-name (car-safe x)) "-function")
+                (if (and (string-suffix-p (symbol-name (car-safe x)) "-function") (cdr x))
                     (cons (car x) (consult--in-buffer (cdr x)))
                   x))
               (funcall table str pred action))
