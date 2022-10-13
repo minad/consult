@@ -259,7 +259,7 @@ their descriptions.
   =consult-grep= is invoked with prefix argument =C-u M-s g=, you can specify the
   directory manually.
 - =consult-find=, =consult-locate=: Find file by matching the path against a regexp.
-  Like for =consult-grep,= either the project root or the current directory is the
+  Like for =consult-grep=, either the project root or the current directory is the
   root directory for the search. The input string is treated similarly to
   =consult-grep=, where the first part is passed to find, and the second part is
   used for Emacs filtering.
