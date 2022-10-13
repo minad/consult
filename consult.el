@@ -272,6 +272,10 @@ The dynamically computed arguments are appended.
 Can be either a string, or a list of strings or expressions."
   :type '(choice string (repeat (choice string expression))))
 
+(defcustom consult-fd-args
+  "fd --color never --path-separator / --strip-cwd-prefix"
+  "fd args")
+
 (defcustom consult-locate-args
   "locate --ignore-case --existing"
   "Command line arguments for locate, see `consult-locate'.
@@ -4696,6 +4700,39 @@ See `consult-grep' for more details regarding the asynchronous search."
   (let* ((prompt-dir (consult--directory-prompt "Find" dir))
          (default-directory (cdr prompt-dir)))
     (find-file (consult--find (car prompt-dir) #'consult--find-builder initial))))
+
+;;;;; Command: consult-fd
+
+(defun consult--fd (prompt builder initial)
+  (consult--read
+   (consult--async-command builder
+     (consult--async-highlight builder)
+     :file-handler t)
+   :prompt prompt
+   :sort nil
+   :require-match t
+   :initial (consult--async-split-initial initial)
+   :add-history (consult--async-split-thingatpt 'filename)
+   :category 'file
+   :history '(:input consult--fd-history)))
+
+(defvar consult--fd-regexp-type nil)
+
+(defun consult--fd-builder (input)
+  "Build command line given INPUT."
+  (pcase-let* ((cmd (consult--build-args consult-fd-args))
+               (`(,arg . ,opts) (consult--command-split input))
+               (`(,re . ,hl) (funcall consult--regexp-compiler arg 'basic t)))
+    (when re
+      (list :command (append cmd re opts '("."))
+            :highlight hl))))
+
+;;;###autoload
+(defun consult-fd (&optional dir initial)
+  (interactive "P")
+  (let* ((prompt-dir (consult--directory-prompt "Fd" dir))
+         (default-directory (cdr prompt-dir)))
+    (find-file (consult--fd (car prompt-dir) #'consult--fd-builder initial))))
 
 ;;;;; Command: consult-locate
 
