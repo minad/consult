@@ -1197,37 +1197,17 @@ ORIG is the original function, HOOKS the arguments."
         (apply orig hooks))
     (apply orig hooks)))
 
-(defun consult--find-file-temporarily (name)
-  "Open file NAME temporarily for preview."
+(defun consult--find-file-temporarily-1 (name)
+  "Open file NAME, helper function for `consult--find-file-temporarily'."
   (when-let* (((not (seq-find (lambda (x) (string-match-p x name))
                               consult-preview-excluded-files)))
               ;; file-attributes may throw permission denied error
               (attrs (ignore-errors (file-attributes name)))
               (size (file-attribute-size attrs)))
     (if (> size consult-preview-max-size)
-        (progn
-          (message "File `%s' (%s) is too large for preview"
-                   name (file-size-human-readable size))
-          nil)
-      (let* ((vars (delq nil
-                         (mapcar
-                          (pcase-lambda (`(,k . ,v))
-                            (if (boundp k)
-                                (list k v (default-value k) (symbol-value k))
-                              (message "consult-preview-variables: The variable `%s' is not bound" k)
-                              nil))
-                          consult-preview-variables)))
-             (buf (unwind-protect
-                      (progn
-                        (advice-add #'run-hooks :around #'consult--filter-find-file-hook)
-                        (pcase-dolist (`(,k ,v . ,_) vars)
-                          (set-default k v)
-                          (set k v))
-                        (find-file-noselect name 'nowarn (> size consult-preview-raw-size)))
-                    (advice-remove #'run-hooks #'consult--filter-find-file-hook)
-                    (pcase-dolist (`(,k ,_ ,d ,v) vars)
-                      (set-default k d)
-                      (set k v)))))
+        (format "File `%s' (%s) is too large for preview"
+                name (file-size-human-readable size))
+      (let ((buf (find-file-noselect name 'nowarn (> size consult-preview-raw-size))))
         (cond
          ((and (> size consult-preview-raw-size)
                (with-current-buffer buf
@@ -1235,13 +1215,35 @@ ORIG is the original function, HOOKS the arguments."
                    (goto-char (point-min))
                    (search-forward "\0" nil 'noerror))))
           (kill-buffer buf)
-          (message "Binary file `%s' not previewed literally" name)
-          nil)
+          (format "Binary file `%s' not previewed literally" name))
          ((ignore-errors (buffer-local-value 'so-long-detected-p buf))
           (kill-buffer buf)
-          (message "File `%s' with long lines not previewed" name)
-          nil)
+          (format "File `%s' with long lines not previewed" name))
          (t buf))))))
+
+(defun consult--find-file-temporarily (name)
+  "Open file NAME temporarily for preview."
+  (let ((vars (delq nil
+                    (mapcar
+                     (pcase-lambda (`(,k . ,v))
+                       (if (boundp k)
+                           (list k v (default-value k) (symbol-value k))
+                         (message "consult-preview-variables: The variable `%s' is not bound" k)
+                         nil))
+                     consult-preview-variables)))
+        buf)
+    (unwind-protect
+        (progn
+          (advice-add #'run-hooks :around #'consult--filter-find-file-hook)
+          (pcase-dolist (`(,k ,v . ,_) vars)
+            (set-default k v)
+            (set k v))
+          (setq buf (consult--find-file-temporarily-1 name)))
+      (advice-remove #'run-hooks #'consult--filter-find-file-hook)
+      (pcase-dolist (`(,k ,_ ,d ,v) vars)
+        (set-default k d)
+        (set k v)))
+    (if (stringp buf) (progn (message "%s" buf) nil) buf)))
 
 (defun consult--temporary-files ()
   "Return a function to open files temporarily for preview."
