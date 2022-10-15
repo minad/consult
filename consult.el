@@ -135,18 +135,12 @@ This applies to asynchronous commands, e.g., `consult-grep'."
   :type '(alist :key-type symbol :value-type plist))
 
 (defcustom consult-mode-histories
-  '((eshell-mode eshell-history-ring eshell-history-index)
-    (comint-mode comint-input-ring   comint-input-ring-index)
-    (term-mode   term-input-ring     term-input-ring-index))
-  "Alist of mode histories as (mode . history) or (mode history index).
-The histories can be rings or lists.  INDEX, if provided, is a
-variable to set to the index of the selection within the ring or
-list."
-  :type '(alist :key-type symbol
-		:value-type (choice (symbol :tag "List or Ring Name")
-				    (group :tag "Include Index"
-					   (symbol :tag "List/Ring")
-					   (symbol :tag "Index Var")))))
+  '((eshell-mode . eshell-history-ring)
+    (comint-mode . comint-input-ring)
+    (term-mode   . term-input-ring))
+  "Alist of (mode . history) pairs of mode histories.
+The histories can be rings or lists."
+  :type '(alist :key-type symbol :value-type symbol))
 
 (defcustom consult-themes nil
   "List of themes (symbols or regexps) to be presented for selection.
@@ -3730,40 +3724,35 @@ This command can act as a drop-in replacement for `repeat-complex-command'."
 (defun consult--current-history (&optional history)
   "Return the normalized HISTORY or the history relevant to the current buffer.
 
-Returns the cons (HISTORY . INDEX).  If the minibuffer is active,
-HISTORY is the minibuffer history, otherwise the history
-corresponding to the mode.  There is a special case for
-`repeat-complex-command', for which the command history is used.
-INDEX is the name of the index variable to update, if any."
-  (let (index)
-    (cond
-     (history)
-     ;; If pressing "C-x M-:", i.e., `repeat-complex-command',
-     ;; we are instead querying the `command-history' and get a full s-expression.
-     ;; Alternatively you might want to use `consult-complex-command',
-     ;; which can also be bound to "C-x M-:"!
-     ((eq last-command 'repeat-complex-command)
-      (setq history (mapcar #'prin1-to-string command-history)))
-     ;; In the minibuffer we use the current minibuffer history,
-     ;; which can be configured by setting `minibuffer-history-variable'.
-     ((minibufferp)
-      (if (eq minibuffer-history-variable t)
-	  (user-error "Minibuffer history is disabled for `%s'" this-command)
-	(setq history (mapcar #'consult--tofu-hide (symbol-value minibuffer-history-variable)))))
-     ;; Otherwise we use a mode-specific history, see `consult-mode-histories'.
-     (t (when-let (found
-		   (or (seq-find (lambda (ring)
-				   (and (derived-mode-p (car ring))
-					(boundp (let (c (cdr ring)) (if (consp c) (car c) c)))))
-				 consult-mode-histories)
-		       (user-error
-			"No history configured for `%s', see `consult-mode-histories'"
-			major-mode)))
-	  (if (consp (cdr found))
-	      (setq history (symbol-value (cadr found))
-		    index (caddr found))
-	    (setq history (symbol-value (cdr found)))))))
-    (cons history index)))
+If the minibuffer is active, returns the minibuffer history,
+otherwise the history corresponding to the mode is returned.
+There is a special case for `repeat-complex-command',
+for which the command history is used."
+  (cond
+   (history)
+   ;; If pressing "C-x M-:", i.e., `repeat-complex-command',
+   ;; we are instead querying the `command-history' and get a full s-expression.
+   ;; Alternatively you might want to use `consult-complex-command',
+   ;; which can also be bound to "C-x M-:"!
+   ((eq last-command 'repeat-complex-command)
+    (setq history (mapcar #'prin1-to-string command-history)))
+   ;; In the minibuffer we use the current minibuffer history,
+   ;; which can be configured by setting `minibuffer-history-variable'.
+   ((minibufferp)
+    (if (eq minibuffer-history-variable t)
+        (user-error "Minibuffer history is disabled for `%s'" this-command)
+      (setq history (mapcar #'consult--tofu-hide (symbol-value minibuffer-history-variable)))))
+   ;; Otherwise we use a mode-specific history, see `consult-mode-histories'.
+   (t (when-let (found
+                 (or (seq-find (lambda (ring)
+                                 (and (derived-mode-p (car ring))
+                                      (boundp (cdr ring))))
+                               consult-mode-histories)
+                     (user-error
+                      "No history configured for `%s', see `consult-mode-histories'"
+                      major-mode)))
+        (setq history (symbol-value (cdr found))))))
+  (consult--remove-dups (if (ring-p history) (ring-elements history) history)))
 
 ;; This command has been adopted from https://github.com/oantolin/completing-history/.
 ;;;###autoload
@@ -3772,32 +3761,25 @@ INDEX is the name of the index variable to update, if any."
 In order to select from a specific HISTORY, pass the history variable
 as argument. See also `cape-history' from the Cape package."
   (interactive)
-  (pcase-let*
-      ((`(,history . ,index-var)
-	(or (consult--current-history history)
-	    (user-error "History is empty")))
-       (str (consult--local-let ((enable-recursive-minibuffers t))
-	      (consult--read
-	       (consult--remove-dups (if (ring-p history) (ring-elements history) history))
-	       :prompt "History: "
-	       :history t ;; disable history
-	       :category ;; Report category depending on history variable
-	       (and (minibufferp)
-		    (pcase minibuffer-history-variable
-		      ('extended-command-history 'command)
-		      ('buffer-name-history 'buffer)
-		      ('face-name-history 'face)
-		      ('read-envvar-name-history 'environment-variable)
-		      ('bookmark-history 'bookmark)
-		      ('file-name-history 'file)))
-	       :sort nil
-	       :state (consult--insertion-preview (point) (point))))))
+  (let ((str (consult--local-let ((enable-recursive-minibuffers t))
+               (consult--read
+                (or (consult--current-history history)
+                    (user-error "History is empty"))
+                :prompt "History: "
+                :history t ;; disable history
+                :category ;; Report category depending on history variable
+                (and (minibufferp)
+                     (pcase minibuffer-history-variable
+                       ('extended-command-history 'command)
+                       ('buffer-name-history 'buffer)
+                       ('face-name-history 'face)
+                       ('read-envvar-name-history 'environment-variable)
+                       ('bookmark-history 'bookmark)
+                       ('file-name-history 'file)))
+                :sort nil
+                :state (consult--insertion-preview (point) (point))))))
     (when (minibufferp)
-      (delete-minibuffer-contents)) 
-    (if index-var
-	(set index-var (if (ring-p history)
-			   (ring-member history str)
-			 (seq-position history str))))
+      (delete-minibuffer-contents))
     (insert (substring-no-properties str))))
 
 ;;;;; Command: consult-isearch-history
