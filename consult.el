@@ -139,14 +139,14 @@ This applies to asynchronous commands, e.g., `consult-grep'."
     (comint-mode comint-input-ring   comint-input-ring-index)
     (term-mode   term-input-ring     term-input-ring-index))
   "Alist of mode histories as (mode . history) or (mode history index).
-The histories can be rings or lists.  INDEX, if provided, is a
+The histories can be rings or lists. INDEX, if provided, is a
 variable to set to the index of the selection within the ring or
 list."
   :type '(alist :key-type symbol
                 :value-type (choice (symbol :tag "List or Ring Name")
                                     (group :tag "Include Index"
                                            (symbol :tag "List/Ring")
-                                           (symbol :tag "Index Var")))))
+                                           (symbol :tag "Index Variable")))))
 
 (defcustom consult-themes nil
   "List of themes (symbols or regexps) to be presented for selection.
@@ -3727,15 +3727,14 @@ This command can act as a drop-in replacement for `repeat-complex-command'."
 ;;;;; Command: consult-history
 
 (declare-function ring-elements "ring")
-(defun consult--current-history (history index)
-  "Return the HISTORY or the history relevant to the current buffer.
-Returns the cons (HISTORY . INDEX).  If the minibuffer is active,
-HISTORY is the minibuffer history, otherwise the history
-corresponding to the mode.  There is a special case for
-`repeat-complex-command', for which the command history is used.
-INDEX is the name of the index variable to update, if any."
+
+(defun consult--current-history ()
+  "Return the history and index variable relevant to the current buffer.
+If the minibuffer is active, the minibuffer history is returned,
+otherwise the history corresponding to the mode. There is a
+special case for `repeat-complex-command', for which the command
+history is used."
   (cond
-   (history (cons history index))
    ;; If pressing "C-x M-:", i.e., `repeat-complex-command',
    ;; we are instead querying the `command-history' and get a full s-expression.
    ;; Alternatively you might want to use `consult-complex-command',
@@ -3749,16 +3748,16 @@ INDEX is the name of the index variable to update, if any."
       (user-error "Minibuffer history is disabled for `%s'" this-command))
     (list (mapcar #'consult--tofu-hide (symbol-value minibuffer-history-variable))))
    ;; Otherwise we use a mode-specific history, see `consult-mode-histories'.
-   (t (setq history (seq-find (lambda (h)
-                                (and (derived-mode-p (car h))
-                                     (boundp (if (consp (cdr h)) (cadr h) (cdr h)))))
-                              consult-mode-histories))
-      (unless history
-        (user-error "No history configured for `%s', see `consult-mode-histories'"
-                    major-mode))
-      (if (consp (cdr history))
-          (cons (symbol-value (cadr history)) (caddr history))
-        (list (symbol-value (cdr history)))))))
+   (t (let ((found (seq-find (lambda (h)
+                               (and (derived-mode-p (car h))
+                                    (boundp (if (consp (cdr h)) (cadr h) (cdr h)))))
+                             consult-mode-histories)))
+        (unless found
+          (user-error "No history configured for `%s', see `consult-mode-histories'"
+                      major-mode))
+        (if (consp (cdr found))
+            (cons (symbol-value (cadr found)) (caddr found))
+          (list (symbol-value (cdr found))))))))
 
 ;;;###autoload
 (defun consult-history (&optional history index)
@@ -3767,7 +3766,7 @@ In order to select from a specific HISTORY, pass the history variable
 as argument. INDEX is the name of the index variable to update, if any.
 See also `cape-history' from the Cape package."
   (interactive)
-  (let* ((pair (consult--current-history history index))
+  (let* ((pair (if history (cons history index) (consult--current-history)))
          (history (if (ring-p (car pair)) (ring-elements (car pair)) (car pair)))
          (index (cdr pair))
          (str (consult--local-let ((enable-recursive-minibuffers t))
