@@ -469,7 +469,7 @@ called from the corresponding command. Note that the options depend on
 the private `consult--read' API and should not be considered as stable
 as the public API.")
 
-(defvar consult--buffer-display #'switch-to-buffer
+(defvar consult--buffer-display #'display-buffer
   "Buffer display function.")
 
 (defvar consult--completion-candidate-hook
