@@ -1357,22 +1357,36 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
                 restore))))
     restore))
 
-(defun consult--jump-1 (pos)
-  "Go to POS and recenter."
-  (if (and (markerp pos) (not (marker-buffer pos)))
-      ;; Only print a message, no error in order to not mess
-      ;; with the minibuffer update hook.
-      (message "Buffer is dead")
-    ;; Switch to buffer if it is not visible
-    (when (and (markerp pos) (not (eq (current-buffer) (marker-buffer pos))))
-      (consult--buffer-action (marker-buffer pos) 'norecord))
-    ;; Widen if we cannot jump to the position (idea from flycheck-jump-to-error)
-    (unless (= (goto-char pos) (point))
-      (widen)
-      (goto-char pos))))
+(defmacro consult--with-jump (pos &rest body)
+  "Go to POS."
+  (declare (indent 1))
+  `(if (and (markerp ,pos) (not (marker-buffer ,pos)))
+       ;; Only print a message, no error in order to not mess
+       ;; with the minibuffer update hook.
+       (message "Buffer is dead")
+     (let* ((goto-other (and (markerp ,pos) (not (eq (current-buffer) (marker-buffer ,pos)))))
+            (w (cond (goto-other
+                      (consult--buffer-action (marker-buffer ,pos) 'norecord)
+                      (get-buffer-window (marker-buffer ,pos)))
+                     (t
+                      (get-buffer-window (current-buffer)))))
+            (f (lambda ()
+                 (unless (= (goto-char ,pos) (point))
+                   (widen) ;; Widen if we cannot jump to the position (idea from flycheck-jump-to-error)
+                   (goto-char ,pos))
+                 ,@body
+                 (run-hooks 'consult-after-jump-hook))))
+       (if (window-live-p w)
+           (with-selected-window w (funcall f))
+         (funcall f)))))
+
+(defvar consult--preview-previous-invisibles nil)
+(defvar consult--preview-previous-overlays nil)
 
 (defun consult--jump (pos)
   "Push current position to mark ring, go to POS and recenter."
+  (mapc #'funcall consult--preview-previous-invisibles)
+  (mapc #'delete-overlay consult--preview-previous-overlays)
   (when pos
     ;; Extract marker from list with with overlay positions, see `consult--line-match'
     (when (consp pos) (setq pos (car pos)))
@@ -1384,9 +1398,8 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
       ;; We all love side effects!
       (setq pos (+ pos 0))
       (push-mark (point) t))
-    (consult--jump-1 pos)
-    (consult--invisible-open-permanently)
-    (run-hooks 'consult-after-jump-hook))
+    (consult--with-jump pos
+      (consult--invisible-open-permanently)))
   nil)
 
 (defun consult--jump-preview ()
@@ -1394,14 +1407,14 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
 The function can be used as the `:state' argument of `consult--read'."
   (let ((saved-min (point-min-marker))
         (saved-max (point-max-marker))
-        (saved-pos (point-marker))
-        overlays invisible)
+        (saved-pos (point-marker)))
     (set-marker-insertion-type saved-max t) ;; Grow when text is inserted
     (lambda (action cand)
       (when (eq action 'preview)
-        (mapc #'funcall invisible)
-        (mapc #'delete-overlay overlays)
-        (setq invisible nil overlays nil)
+        (mapc #'funcall consult--preview-previous-invisibles)
+        (mapc #'delete-overlay consult--preview-previous-overlays)
+        (setq consult--preview-previous-invisibles nil
+              consult--preview-previous-overlays nil)
         (if (not cand)
             ;; If position cannot be previewed, return to saved position
             (let ((saved-buffer (marker-buffer saved-pos)))
@@ -1410,10 +1423,10 @@ The function can be used as the `:state' argument of `consult--read'."
                 (set-buffer saved-buffer)
                 (narrow-to-region saved-min saved-max)
                 (goto-char saved-pos)))
-            ;; Handle positions with overlay information
-            (consult--jump-1 (or (car-safe cand) cand))
-            (setq invisible (consult--invisible-open-temporarily)
-                  overlays
+          ;; Handle positions with overlay information
+          (consult--with-jump (or (car-safe cand) cand)
+            (setq consult--preview-previous-invisibles (consult--invisible-open-temporarily)
+                  consult--preview-previous-overlays
                   (list (save-excursion
                           (let ((vbeg (progn (beginning-of-visual-line) (point)))
                                 (vend (progn (end-of-visual-line) (point)))
@@ -1432,8 +1445,7 @@ The function can be used as the `:state' argument of `consult--read'."
                                       'face 'consult-preview-match
                                       'window (selected-window)
                                       'priority 2)
-                    overlays))
-            (run-hooks 'consult-after-jump-hook))))))
+                    consult--preview-previous-overlays))))))))
 
 (defun consult--jump-state ()
   "The state function used if selecting from a list of candidate positions."
