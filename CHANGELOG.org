@@ -15,6 +15,8 @@
   =consult-point-placement=, which is also used by the =consult-*grep= commands.
 - =consult-imenu=: Support imenu-after-jump-hook and non-default
   =imenu-default-goto-function=
+- =consult-history=: Add support for history index variables, which are updated
+  after selection.
 - Deprecate support for Selectrum in favor of Vertico. If you use Selectrum
   consider switching to Vertico, Icomplete, Mct or default completion.
 
