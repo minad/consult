@@ -4125,21 +4125,15 @@ Report progress and return a list of the results"
 
 (defun consult--buffer-preview ()
   "Buffer preview function."
-  (let ((orig-buf (current-buffer)) other-win)
+  (let (wc)
     (lambda (action cand)
       (when (eq action 'preview)
-        (when (and (eq consult--buffer-display #'switch-to-buffer-other-window)
-                   (not other-win))
-          (switch-to-buffer-other-window orig-buf)
-          (setq other-win (selected-window)))
-        (let ((win (or other-win (selected-window))))
-          (when (window-live-p win)
-            (with-selected-window win
-              (cond
-               ((and cand (get-buffer cand))
-                (switch-to-buffer cand 'norecord))
-               ((buffer-live-p orig-buf)
-                (switch-to-buffer orig-buf 'norecord))))))))))
+        (when wc
+          (set-window-configuration wc 'no-frame 'no-miniwindow)
+          (setq wc nil))
+        (when (and cand (get-buffer cand))
+          (setq wc (current-window-configuration wc))
+          (consult--buffer-action cand 'norecord))))))
 
 (defun consult--buffer-action (buffer &optional norecord)
   "Switch to BUFFER via `consult--buffer-display' function.
