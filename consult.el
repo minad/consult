@@ -1365,17 +1365,27 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
 
 (defun consult--jump-1 (pos)
   "Go to POS and recenter."
-  (if (and (markerp pos) (not (marker-buffer pos)))
-      ;; Only print a message, no error in order to not mess
-      ;; with the minibuffer update hook.
-      (message "Buffer is dead")
-    ;; Switch to buffer if it is not visible
-    (when (and (markerp pos) (not (eq (current-buffer) (marker-buffer pos))))
-      (consult--buffer-action (marker-buffer pos) 'norecord))
-    ;; Widen if we cannot jump to the position (idea from flycheck-jump-to-error)
-    (unless (= (goto-char pos) (point))
-      (widen)
-      (goto-char pos))))
+  (let (restore)
+    (if (and (markerp pos) (not (marker-buffer pos)))
+        ;; Only print a message, no error in order to not mess
+        ;; with the minibuffer update hook.
+        (message "Buffer is dead")
+      ;; Switch to buffer if it is not visible
+      (when (and (markerp pos) (not (get-buffer-window (marker-buffer pos))))
+        (let ((wc (current-window-configuration)))
+          ;; TODO can this fail if a buffer is dead? Handle error?
+          (push (apply-partially #'set-window-configuration wc 'no-frame 'no-window) restore))
+        (consult--buffer-action (marker-buffer pos) 'norecord))
+      (push (apply-partially #'goto-char (point-marker)) restore) ;; TODO check marker alive?
+      ;; Widen if we cannot jump to the position
+      (unless (= (goto-char pos) (point))
+        (let ((saved-min (point-min-marker))
+              (saved-max (point-max-marker)))
+          (set-marker-insertion-type saved-max t) ;; Grow when text is inserted
+        (push (apply-partially #'narrow-to-region saved-min saved-max) restore)  ;; TODO check marker alive?
+        (widen)
+        (goto-char pos))))
+    restore))
 
 (defun consult--jump (pos)
   "Push current position to mark ring, go to POS and recenter."
@@ -1395,51 +1405,43 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
     (run-hooks 'consult-after-jump-hook))
   nil)
 
+(defmacro consult--overlay-restore (&rest args)
+  `(let ((ov (consult--overlay ,@args)))
+     (lambda () (delete-overlay ov))))
+
 (defun consult--jump-preview ()
   "The preview function used if selecting from a list of candidate positions.
 The function can be used as the `:state' argument of `consult--read'."
-  (let ((saved-min (point-min-marker))
-        (saved-max (point-max-marker))
-        (saved-pos (point-marker))
-        overlays invisible)
-    (set-marker-insertion-type saved-max t) ;; Grow when text is inserted
+  (let (restore)
     (lambda (action cand)
       (when (eq action 'preview)
-        (mapc #'funcall invisible)
-        (mapc #'delete-overlay overlays)
-        (setq invisible nil overlays nil)
-        (if (not cand)
-            ;; If position cannot be previewed, return to saved position
-            (let ((saved-buffer (marker-buffer saved-pos)))
-              (if (not saved-buffer)
-                  (message "Buffer is dead")
-                (set-buffer saved-buffer)
-                (narrow-to-region saved-min saved-max)
-                (goto-char saved-pos)))
-            ;; Handle positions with overlay information
-            (consult--jump-1 (or (car-safe cand) cand))
-            (setq invisible (consult--invisible-open-temporarily)
-                  overlays
-                  (list (save-excursion
-                          (let ((vbeg (progn (beginning-of-visual-line) (point)))
-                                (vend (progn (end-of-visual-line) (point)))
-                                (end (line-end-position)))
-                            (consult--overlay vbeg (if (= vend end) (1+ end) vend)
+        (mapc #'funcall restore)
+        (setq restore nil)
+        (when cand
+          (setq restore (consult--jump-1 (or (car-safe cand) cand)))
+          (setq restore (nconc (consult--invisible-open-temporarily) restore))
+          (save-excursion
+            (let ((vbeg (progn (beginning-of-visual-line) (point)))
+                  (vend (progn (end-of-visual-line) (point)))
+                  (end (line-end-position)))
+              (push (consult--overlay-restore vbeg (if (= vend end) (1+ end) vend)
                                               'face 'consult-preview-line
                                               'window (selected-window)
-                                              'priority 1)))
-                        (consult--overlay (point) (1+ (point))
+                                              'priority 1)
+                    restore)))
+          (push (consult--overlay-restore (point) (1+ (point))
                                           'face 'consult-preview-cursor
                                           'window (selected-window)
-                                          'priority 3)))
-            (dolist (match (cdr-safe cand))
-              (push (consult--overlay (+ (point) (car match))
-                                      (+ (point) (cdr match))
-                                      'face 'consult-preview-match
-                                      'window (selected-window)
-                                      'priority 2)
-                    overlays))
-            (run-hooks 'consult-after-jump-hook))))))
+                                          'priority 3)
+                restore)
+          (dolist (match (cdr-safe cand))
+            (push (consult--overlay-restore (+ (point) (car match))
+                                            (+ (point) (cdr match))
+                                            'face 'consult-preview-match
+                                            'window (selected-window)
+                                            'priority 2)
+                  restore))
+          (run-hooks 'consult-after-jump-hook))))))
 
 (defun consult--jump-state ()
   "The state function used if selecting from a list of candidate positions."
@@ -4129,6 +4131,7 @@ Report progress and return a list of the results"
     (lambda (action cand)
       (when (eq action 'preview)
         (when wc
+          ;; TODO can this fail with an error if a buffer has been killed?
           (set-window-configuration wc 'no-frame 'no-miniwindow)
           (setq wc nil))
         (when (and cand (get-buffer cand))
