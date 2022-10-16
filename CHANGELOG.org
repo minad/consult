@@ -2,7 +2,7 @@
 #+author: Daniel Mendler
 #+language: en
 
-* Development
+* Version 0.20 (2022-10-16)
 
 - Bugfixes
 - Allow =consult-*-args= to be a string, or a list of strings or expressions.
