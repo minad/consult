@@ -4269,7 +4269,7 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
     :category file
     :state    ,#'consult--file-state
     :enabled  ,(lambda () (seq-some #'consult--file-register-p register-alist))
-    :items ,(lambda () (consult-register--candidates #'consult--file-register-p)))
+    :items    ,(lambda () (consult-register--candidates #'consult--file-register-p)))
   "File register source.")
 
 (defvar consult--source-recent-file
