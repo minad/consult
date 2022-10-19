@@ -1375,8 +1375,9 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
       ;; with the minibuffer update hook.
       (message "Buffer is dead")
     ;; Switch to buffer if it is not visible
-    (when (and (markerp pos) (not (eq (current-buffer) (marker-buffer pos))))
-      (consult--buffer-action (marker-buffer pos) 'norecord))
+    (when-let (buf (and (markerp pos) (marker-buffer pos)))
+      (unless (and (eq (current-buffer) buf) (eq (window-buffer) buf))
+        (consult--buffer-action buf 'norecord)))
     ;; Widen if we cannot jump to the position (idea from flycheck-jump-to-error)
     (unless (= (goto-char pos) (point))
       (widen)
