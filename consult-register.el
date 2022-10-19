@@ -160,13 +160,21 @@ If COMPLETION is non-nil format the register for completion."
        str))
     str))
 
-(defun consult-register--alist (&optional noerror)
-  "Return sorted register list.
+(defun consult-register--alist (&optional noerror filter)
+  "Return register list, sorted and filtered with FILTER.
 Raise an error if the list is empty and NOERROR is nil."
-  ;; Sometimes, registers are made without a `cdr'.
-  ;; Such registers don't do anything, and can be ignored.
-  (or (sort (seq-filter #'cdr register-alist) #'car-less-than-car)
+  (or (sort (seq-filter
+             ;; Sometimes, registers are made without a `cdr'.
+             ;; Such registers don't do anything, and can be ignored.
+             (lambda (x) (and (cdr x) (or (not filter) (funcall filter x))))
+             register-alist)
+            #'car-less-than-car)
       (and (not noerror) (user-error "All registers are empty"))))
+
+(defun consult-register--candidates (&optional filter)
+  "Return formatted completion candidates, filtered with FILTER."
+  (mapcar (lambda (reg) (consult-register-format reg 'completion))
+          (consult-register--alist nil filter)))
 
 ;;;###autoload
 (defun consult-register (&optional arg)
@@ -181,9 +189,7 @@ built-in register access functions. The command supports narrowing, see
   (interactive "P")
   (consult-register-load
    (consult--read
-    (mapcar (lambda (reg)
-              (consult-register-format reg 'completion))
-            (consult-register--alist))
+    (consult-register--candidates)
     :prompt "Register: "
     :category 'multi-category
     :state

@@ -97,6 +97,7 @@ their descriptions.
   - SPC Hidden buffers
   - * Modified buffers
   - f Files (Requires =recentf-mode=)
+  - r File registers
   - m Bookmarks
   - p Project
   - Custom [[#multiple-sources][other sources]] configured in =consult-buffer-sources=.
@@ -436,8 +437,8 @@ to be considered.
   (consult-customize
    consult-ripgrep consult-git-grep consult-grep
    consult-bookmark consult-recent-file consult-xref
-   consult--source-bookmark consult--source-recent-file
-   consult--source-project-recent-file
+   consult--source-bookmark consult--source-file-register
+   consult--source-recent-file consult--source-project-recent-file
    ;; my/command-wrapping-consult       ;; disable auto previews inside my command
    ;; :preview-key '(:debounce 0.2 any) ;; Option 1: Delay preview
    :preview-key (kbd "M-."))            ;; Option 2: Manual preview
@@ -614,8 +615,9 @@ configure a manual preview as follows.
 
 #+begin_src emacs-lisp
   (consult-customize
-   consult--source-bookmark consult--source-recent-file
-   consult--source-project-recent-file :preview-key (kbd "M-."))
+   consult--source-bookmark consult--source-file-register
+   consult--source-recent-file consult--source-project-recent-file
+   :preview-key (kbd "M-."))
 #+end_src
 
 Sources can be added directly to the =consult-buffer-source= list for convenience.
@@ -843,8 +845,8 @@ configuration examples.
      :preview-key '(:debounce 0.2 any)
      consult-ripgrep consult-git-grep consult-grep
      consult-bookmark consult-recent-file consult-xref
-     consult--source-bookmark consult--source-recent-file
-     consult--source-project-recent-file
+     consult--source-bookmark consult--source-file-register
+     consult--source-recent-file consult--source-project-recent-file
      :preview-key (kbd "M-."))
 
     ;; Optionally configure the narrowing key.

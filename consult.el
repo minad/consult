@@ -221,6 +221,7 @@ character, the *Completions* buffer and a few log buffers."
     consult--source-modified-buffer
     consult--source-buffer
     consult--source-recent-file
+    consult--source-file-register
     consult--source-bookmark
     consult--source-project-buffer
     consult--source-project-recent-file)
@@ -4255,6 +4256,20 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
     ,(lambda () (consult--buffer-query :sort 'visibility
                                        :as #'buffer-name)))
   "Buffer candidate source for `consult-buffer'.")
+
+(defun consult--file-register-p (reg)
+  "Return non-nil if REG is a file register."
+  (memq (car-safe (cdr reg)) '(file-query file)))
+
+(autoload 'consult-register--candidates "consult-register")
+(defvar consult--source-file-register
+  `(:name     "File Register"
+    :narrow   (?r . "Register")
+    :category file
+    :state    ,#'consult--file-state
+    :enabled  ,(lambda () (seq-some #'consult--file-register-p register-alist))
+    :items ,(lambda () (consult-register--candidates #'consult--file-register-p)))
+  "File register source.")
 
 (defvar consult--source-recent-file
   `(:name     "File"

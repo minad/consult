@@ -2,6 +2,12 @@
 #+author: Daniel Mendler
 #+language: en
 
+* Development
+
+- Add =consult--source-file-register=, and make the registers available in
+  =consult-buffer=.Registers are often used as quick access keys for files, e.g.,
+  =(add-to-list 'register-alist '(?i file . "~/.emacs.d/init.el")))=.
+
 * Version 0.20 (2022-10-16)
 
 - Bugfixes
