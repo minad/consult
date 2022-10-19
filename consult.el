@@ -172,10 +172,6 @@ after selection."
 Otherwise start the search at the current line and wrap around."
   :type 'boolean)
 
-(define-obsolete-variable-alias
-  'consult-line-point-placement
-  'consult-point-placement "0.19")
-
 (defcustom consult-point-placement 'match-beginning
   "Where to leave point when jumping to a match.
 This setting affects the command `consult-line' and the `consult-grep' variants."

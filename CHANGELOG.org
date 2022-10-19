@@ -8,6 +8,7 @@
 - Add =consult--source-file-register=, and make the registers available in
   =consult-buffer=.Registers are often used as quick access keys for files, e.g.,
   =(add-to-list 'register-alist '(?i file . "~/.emacs.d/init.el")))=.
+- Remove obsolete =consult-line-point-placement=
 
 * Version 0.20 (2022-10-16)
 
@@ -77,7 +78,7 @@
 
 * Version 0.16 (2022-03-08)
 
-- Bug fixes
+- Bugfixes
 - Deprecate =consult-project-root-function= in favor of =consult-project-function=.
 - Preconfigure =consult-project-function= with a default function based
   on project.el.
@@ -211,7 +212,7 @@
 - Rename =consult-error= to =consult-compile-error=
 - =consult-compile-error=: Allow calling the command from any buffer,
   use the errors from all compilation buffers related to the current buffer.
-- =consult-man=: Handle aggreated entries returned by mandoc
+- =consult-man=: Handle aggregated entries returned by mandoc
 - =consult-completion-in-region=: Added preview and =consult-preview-region= face
 - Added =consult-completion-in-region-styles= customization variable
 - Added =consult-xref=. The function can be set as =xref-show-xrefs-function=
