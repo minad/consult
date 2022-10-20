@@ -544,9 +544,12 @@ We use invalid characters outside the Unicode range.")
 
 (defmacro consult-customize (&rest args)
   "Set properties of commands or sources.
-ARGS is a list of commands or sources followed by the list of keyword-value
-pairs."
-  (let ((setter))
+ARGS is a list of commands or sources followed by the list of
+keyword-value pairs. For `consult-customize' to succeed, the
+customized sources and commands must exist. When a command is
+invoked, the value of `this-command' is used to lookup the
+corresponding customization options."
+  (let (setter)
     (while args
       (let ((cmds (seq-take-while (lambda (x) (not (keywordp x))) args)))
         (setq args (seq-drop-while (lambda (x) (not (keywordp x))) args))
