@@ -87,8 +87,7 @@ SPLIT is the splitter function."
      (consult-selectrum--split-wrap selectrum-highlight-candidates-function split))))
 
 (defun consult-selectrum--deprecated (&rest _)
-  (warn "%s: Selectrum support has been deprecated in favor of Vertico" this-command)
-  (advice-remove #'consult--read #'consult-selectrum--deprecated))
+  (warn (propertize "Consult (%s): Selectrum support has been deprecated in favor of Vertico" 'face 'warning) this-command))
 
 (add-hook 'consult--completion-candidate-hook #'consult-selectrum--candidate)
 (add-hook 'consult--completion-refresh-hook #'consult-selectrum--refresh)
