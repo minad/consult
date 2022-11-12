@@ -1007,14 +1007,14 @@ I use and recommend this combination of packages:
 
 There exist many other fine completion UIs beside Vertico, which are supported
 by Consult. Give them a try and find out which interaction model fits best for
-you!
+you.
 
 - The builtin completion UI, which pops up the =*Completions*= buffer.
 - The builtin =icomplete-vertical-mode= in Emacs 28.
 - [[https://git.sr.ht/~protesilaos/mct][mct by Protesilaos Stavrou]]: Minibuffer and Completions in Tandem, which builds
   on the default completion UI (development currently [[https://protesilaos.com/codelog/2022-04-14-emacs-discontinue-mct/][discontinued]]).
 
-You can integrated Consult with special programs or with other packages in the
+You can integrate Consult with special programs or with other packages in the
 wider Emacs ecosystem. You may want to install some of theses packages depending
 on your preferences and requirements.
 
