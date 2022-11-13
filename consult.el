@@ -3569,6 +3569,8 @@ version supports preview of the selected string."
     (push-mark)
     (insert-for-yank string)
     (setq this-command 'yank)
+    (setq kill-ring (delete string kill-ring))
+    (kill-new string)
     (when (consp arg)
       ;; Swap point and mark like in `yank'.
       (goto-char (prog1 (mark t)
