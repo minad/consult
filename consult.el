@@ -1049,7 +1049,9 @@ selection change to full Emacs markers."
   "Lookup SELECTED in CANDIDATES list of `consult-location' category.
 Return the location marker."
   (when-let (found (member selected candidates))
-    (car (consult--get-location (car found)))))
+    (setq found (car (consult--get-location (car found))))
+    ;; Check that marker is alive
+    (and (or (not (markerp found)) (marker-buffer found)) found)))
 
 (defun consult--lookup-prop (prop selected candidates &rest _)
   "Lookup SELECTED in CANDIDATES list and return PROP value."
@@ -2991,29 +2993,23 @@ SELECTED is the currently selected candidate.
 CANDIDATES is the list of candidates.
 INPUT is the input string entered by the user."
   (when-let (pos (consult--lookup-location selected candidates))
-    (if (string-blank-p input)
-        pos
-      (let* ((highlighted (consult--completion-filter
-                           input
-                           (list (substring-no-properties selected))
-                           'consult-location 'highlight))
-             (matches (and highlighted
-                           ;; Ignore `completions-first-difference' when
-                           ;; matching, since this face doesn't yield a
-                           ;; meaningful jump position.
-                           (consult--point-placement (car highlighted) 0
-                                                     'completions-first-difference))))
-        ;; Marker can be dead, therefore ignore errors. Create a new marker
-        ;; instead of an integer, since the location may be in another buffer,
-        ;; e.g., for `consult-line-multi'.
-        (ignore-errors
-          (let ((dest (+ pos (car matches))))
-            ;; Only create a new marker when jumping across buffers, to avoid
-            ;; creating unnecessary markers, when scrolling through candidates.
-            ;; Creating markers is not free.
-            (when (and (markerp pos) (not (eq (marker-buffer pos) (current-buffer))))
-              (setq dest (move-marker (make-marker) dest (marker-buffer pos))))
-            (cons dest (cdr matches))))))))
+    (if-let* (((not (string-blank-p input)))
+              (highlighted (consult--completion-filter
+                            input
+                            (list (substring-no-properties selected))
+                            'consult-location 'highlight)))
+        ;; Ignore `completions-first-difference' when matching, since
+        ;; this face doesn't yield a meaningful jump position.
+        (let* ((matches (consult--point-placement (car highlighted) 0
+                                                  'completions-first-difference))
+               (dest (+ pos (car matches))))
+          ;; Only create a new marker when jumping across buffers (for example
+          ;; `consult-line-multi'). Avoid creating unnecessary markers, when
+          ;; scrolling through candidates, since creating markers is not free.
+          (when (and (markerp pos) (not (eq (marker-buffer pos) (current-buffer))))
+            (setq dest (move-marker (make-marker) dest (marker-buffer pos))))
+          (cons dest (cdr matches)))
+      pos)))
 
 (cl-defun consult--line (candidates &key curr-line prompt initial group)
   "Select from from line CANDIDATES and jump to the match.
