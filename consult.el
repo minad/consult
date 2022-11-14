@@ -2341,22 +2341,32 @@ PREVIEW-KEY are the preview keys."
                                     state preview-key sort lookup group inherit-input-method)
   "Enhanced completing read function selecting from CANDIDATES.
 
+The function is a thin wrapper around `completing-read'. On top
+of `completing-read' it additionally supports asynchronous
+completion list computations, candidate preview and narrowing.
+
 Keyword OPTIONS:
 
 PROMPT is the string which is shown as prompt message in the minibuffer.
-PREDICATE is a filter function called for each candidate.
+PREDICATE is a filter function called for each candidate, returns nil or t.
 REQUIRE-MATCH equals t means that an exact match is required.
 HISTORY is the symbol of the history variable.
 DEFAULT is the default selected value.
 ADD-HISTORY is a list of items to add to the history.
 CATEGORY is the completion category.
 SORT should be set to nil if the candidates are already sorted.
-LOOKUP is a lookup function passed selected, candidates, input and narrow.
-ANNOTATE is a function passed a candidate string to return an annotation.
-INITIAL is the initial input.
+LOOKUP is a lookup function passed the selected candidate string,
+the list of candidates, the current input string and the current
+narrowing value.
+ANNOTATE is a function passed a candidate string. The function
+should either return an annotation string or a list of three
+strings (candidate prefix postfix).
+INITIAL is the initial input string.
 STATE is the state function, see `consult--with-preview'.
-GROUP is a completion metadata `group-function'.
-PREVIEW-KEY are the preview keys (nil, \\='any, a single key or a list of keys).
+GROUP is a completion metadata `group-function' as documented in
+the Elisp manual.
+PREVIEW-KEY are the preview keys. Can be nil, \\='any, a single
+key or a list of keys.
 NARROW is an alist of narrowing prefix strings and description.
 KEYMAP is a command-specific keymap.
 INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
