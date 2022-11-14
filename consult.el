@@ -1537,11 +1537,11 @@ PREVIEW-KEY, STATE, TRANSFORM and CANDIDATE."
                     (lambda ()
                       (when-let ((cand (funcall candidate)))
                         (with-selected-window (active-minibuffer-window)
-                          (let* ((input (minibuffer-contents-no-properties))
-                                 (transformed (funcall transform narrow input cand))
-                                 (new-preview (cons input cand)))
+                          (let ((input (minibuffer-contents-no-properties))
+                                (new-preview (cons input cand)))
                             (with-selected-window (or (minibuffer-selected-window) (next-window))
-                              (when-let (debounce (consult--preview-key-debounce preview-key transformed))
+                              (when-let* ((transformed (funcall transform narrow input cand))
+                                          (debounce (consult--preview-key-debounce preview-key transformed)))
                                 (when timer
                                   (cancel-timer timer)
                                   (setq timer nil))
@@ -3011,9 +3011,7 @@ INPUT is the input string entered by the user."
             ;; Only create a new marker when jumping across buffers, to avoid
             ;; creating unnecessary markers, when scrolling through candidates.
             ;; Creating markers is not free.
-            (when (and (markerp pos)
-                       (not (eq (marker-buffer pos)
-                                (window-buffer (or (minibuffer-selected-window) (next-window))))))
+            (when (and (markerp pos) (not (eq (marker-buffer pos) (current-buffer))))
               (setq dest (move-marker (make-marker) dest (marker-buffer pos))))
             (cons dest (cdr matches))))))))
 
