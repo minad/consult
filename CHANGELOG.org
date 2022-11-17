@@ -9,6 +9,7 @@
   =consult-buffer=. Registers are often used as quick access keys for files, e.g.,
   =(add-to-list 'register-alist '(?i file . "~/.emacs.d/init.el")))=.
 - Remove obsolete =consult-line-point-placement=
+- =consult-grep/find=: Always show directory in the prompt
 
 * Version 0.20 (2022-10-16)
 
