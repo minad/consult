@@ -930,12 +930,10 @@ Otherwise the `default-directory' is returned."
          ;; Bind default-directory in order to find the project
          (pdir (let ((default-directory edir)) (consult--project-root))))
     (cons
-     (cond
-      ((equal edir pdir)
-       (format "%s (Project %s): " prompt (consult--project-name pdir)))
-      ((equal edir (file-name-as-directory (expand-file-name default-directory)))
-       (concat prompt ": "))
-      (t (format "%s (%s): " prompt (consult--abbreviate-directory dir))))
+     (format "%s (%s): " prompt
+             (if (equal edir pdir)
+                 (concat "Project " (consult--project-name pdir))
+               (consult--abbreviate-directory dir)))
      edir)))
 
 (defun consult--default-project-function (may-prompt)
