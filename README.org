@@ -1025,6 +1025,8 @@ on your preferences and requirements.
 - [[https://github.com/mohkale/consult-eglot][consult-eglot]]: Integration with Eglot (LSP client).
 - [[https://github.com/minad/consult-flycheck][consult-flycheck]]: Additional Flycheck integration.
 - [[https://gitlab.com/OlMon/consult-flyspell][consult-flyspell]]: Additional Flyspell integration.
+- [[https://github.com/ghosty141/consult-git-log-grep][consult-git-log-grep]]: Consult interface to git log.
+- [[https://github.com/Nyoho/consult-hatena-bookmark][consult-hatena-bookmark]]: Access Hatena bookmarks.
 - [[https://github.com/rcj/consult-ls-git][consult-ls-git]]: List files from git via Consult.
 - [[https://github.com/gagbo/consult-lsp][consult-lsp]]: Integration with Lsp-mode (LSP client).
 - [[https://codeberg.org/jao/consult-notmuch][consult-notmuch]]: Access the [[https://notmuchmail.org/][Notmuch]] email system using Consult.
@@ -1192,6 +1194,8 @@ Authors of supplementary =consult-*= packages:
 - [[https://github.com/rcj][Robin Joy]] ([[https://github.com/rcj/consult-ls-git][consult-ls-git]])
 - [[https://codeberg.org/ravi][Ravi R Kiran]] [[https://codeberg.org/ravi/consult-dash][(consult-dash]])
 - [[https://github.com/mclearc][Colin McLear]] ([[https://github.com/mclear-tools/consult-notes][consult-notes]])
+- [[https://github.com/Nyoho][Yukinori Kitadai]] ([[https://github.com/Nyoho/consult-hatena-bookmark][consult-hatena-bookmark]])
+- [[https://github.com/ghosty141][ghosty141]] ([[https://github.com/ghosty141/consult-git-log-grep][consult-git-log-grep]])
 
 #+html: <!--
 
