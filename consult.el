@@ -67,8 +67,11 @@
 
 ;;;; Customization
 
-(defcustom consult-yank-rotate (bound-and-true-p yank-from-kill-ring-rotate)
-  "Rotate the kill ring."
+(defcustom consult-yank-rotate
+  (if (boundp 'yank-from-kill-ring-rotate)
+      yank-from-kill-ring-rotate
+    t)
+  "Rotate the `kill-ring' in the `consult-yank' commands."
   :type 'boolean)
 
 (defcustom consult-narrow-key nil

@@ -10,6 +10,7 @@
   =(add-to-list 'register-alist '(?i file . "~/.emacs.d/init.el")))=.
 - Remove obsolete =consult-line-point-placement=
 - =consult-grep/find=: Always show directory in the prompt
+- Add variable =consult-yank-rotate=, =consult-yank-from-kill-ring= rotates kill ring
 
 * Version 0.20 (2022-10-16)
 

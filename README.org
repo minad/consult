@@ -924,6 +924,7 @@ an overview of all Consult variables and functions with their descriptions.
 | consult-ripgrep-args             | Command line arguments for ripgrep                    |
 | consult-themes                   | List of themes to be presented for selection          |
 | consult-widen-key                | Widening key during completion                        |
+| consult-yank-rotate              | Rotate kill ring                                      |
 
 ** Fine-tuning of individual commands
 :properties:
