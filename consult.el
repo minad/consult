@@ -3530,6 +3530,13 @@ If no MODES are specified, use currently active major and minor modes."
 
 ;;;;; Command: consult-yank
 
+(defcustom consult-yank-from-kill-ring-rotate
+  (if (symbolp yank-from-kill-ring-rotate) yank-from-kill-ring-rotate t)
+  "Wrapper around `yank-from-kill-ring-rotate'.
+See `yank-from-kill-ring-rotate' for more informations"
+  :type 'boolean
+  :group 'killing)
+
 (defun consult--read-from-kill-ring ()
   "Open kill ring menu and return selected string."
   ;; `current-kill' updates `kill-ring' with a possible interprogram-paste (#443)
@@ -3572,7 +3579,7 @@ version supports preview of the selected string."
     (push-mark)
     (insert-for-yank string)
     (setq this-command 'yank)
-    (when yank-from-kill-ring-rotate
+    (when consult-yank-from-kill-ring-rotate
       (let ((pos (seq-position kill-ring string)))
         (if pos
             (setq kill-ring-yank-pointer (nthcdr pos kill-ring))
