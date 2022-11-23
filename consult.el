@@ -67,6 +67,10 @@
 
 ;;;; Customization
 
+(defcustom consult-yank-rotate (bound-and-true-p yank-from-kill-ring-rotate)
+  "Rotate the kill ring."
+  :type 'boolean)
+
 (defcustom consult-narrow-key nil
   "Prefix key for narrowing during completion.
 
@@ -3541,7 +3545,11 @@ If no MODES are specified, use currently active major and minor modes."
   (consult--lookup-member
    (consult--read
     (consult--remove-dups
-     (or kill-ring (user-error "Kill ring is empty")))
+     (or (if consult-yank-rotate
+             (append kill-ring-yank-pointer
+                     (butlast kill-ring (length kill-ring-yank-pointer)))
+           kill-ring)
+         (user-error "Kill ring is empty")))
     :prompt "Yank from kill-ring: "
     :history t ;; disable history
     :sort nil
@@ -3569,6 +3577,10 @@ version supports preview of the selected string."
     (push-mark)
     (insert-for-yank string)
     (setq this-command 'yank)
+    (when consult-yank-rotate
+      (if-let (pos (seq-position kill-ring string))
+          (setq kill-ring-yank-pointer (nthcdr pos kill-ring))
+        (kill-new string)))
     (when (consp arg)
       ;; Swap point and mark like in `yank'.
       (goto-char (prog1 (mark t)
