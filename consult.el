@@ -67,13 +67,6 @@
 
 ;;;; Customization
 
-(defcustom consult-yank-rotate
-  (if (boundp 'yank-from-kill-ring-rotate)
-      yank-from-kill-ring-rotate
-    t)
-  "Rotate the `kill-ring' in the `consult-yank' commands."
-  :type 'boolean)
-
 (defcustom consult-narrow-key nil
   "Prefix key for narrowing during completion.
 
@@ -356,6 +349,13 @@ Can be either a string, or a list of strings or expressions."
 
 Each element of the list must have the form \\='(char name handler)."
   :type '(repeat (list character string function)))
+
+(defcustom consult-yank-rotate
+  (if (boundp 'yank-from-kill-ring-rotate)
+      yank-from-kill-ring-rotate
+    t)
+  "Rotate the `kill-ring' in the `consult-yank' commands."
+  :type 'boolean)
 
 ;;;; Faces
 
