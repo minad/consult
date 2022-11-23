@@ -67,6 +67,10 @@
 
 ;;;; Customization
 
+(defcustom consult-yank-rotate (bound-and-true-p yank-from-kill-ring-rotate)
+  "Rotate the kill ring."
+  :type 'boolean)
+
 (defcustom consult-narrow-key nil
   "Prefix key for narrowing during completion.
 
@@ -3530,13 +3534,6 @@ If no MODES are specified, use currently active major and minor modes."
 
 ;;;;; Command: consult-yank
 
-(defcustom consult-yank-from-kill-ring-rotate
-  (if (symbolp yank-from-kill-ring-rotate) yank-from-kill-ring-rotate t)
-  "Wrapper around `yank-from-kill-ring-rotate'.
-See `yank-from-kill-ring-rotate' for more informations"
-  :type 'boolean
-  :group 'killing)
-
 (defun consult--read-from-kill-ring ()
   "Open kill ring menu and return selected string."
   ;; `current-kill' updates `kill-ring' with a possible interprogram-paste (#443)
@@ -3548,10 +3545,9 @@ See `yank-from-kill-ring-rotate' for more informations"
   (consult--lookup-member
    (consult--read
     (consult--remove-dups
-     (or (if consult-yank-from-kill-ring-rotate
-             (append
-              kill-ring-yank-pointer
-              (butlast kill-ring (length kill-ring-yank-pointer)))
+     (or (if consult-yank-rotate
+             (append kill-ring-yank-pointer
+                     (butlast kill-ring (length kill-ring-yank-pointer)))
            kill-ring)
          (user-error "Kill ring is empty")))
     :prompt "Yank from kill-ring: "
@@ -3581,11 +3577,10 @@ version supports preview of the selected string."
     (push-mark)
     (insert-for-yank string)
     (setq this-command 'yank)
-    (when consult-yank-from-kill-ring-rotate
-      (let ((pos (seq-position kill-ring string)))
-        (if pos
-            (setq kill-ring-yank-pointer (nthcdr pos kill-ring))
-          (kill-new string))))
+    (when consult-yank-rotate
+      (if-let (pos (seq-position kill-ring string))
+          (setq kill-ring-yank-pointer (nthcdr pos kill-ring))
+        (kill-new string)))
     (when (consp arg)
       ;; Swap point and mark like in `yank'.
       (goto-char (prog1 (mark t)
