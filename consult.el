@@ -3548,9 +3548,11 @@ See `yank-from-kill-ring-rotate' for more informations"
   (consult--lookup-member
    (consult--read
     (consult--remove-dups
-     (or (append
-          kill-ring-yank-pointer
-          (butlast kill-ring (length kill-ring-yank-pointer)))
+     (or (if consult-yank-from-kill-ring-rotate
+             (append
+              kill-ring-yank-pointer
+              (butlast kill-ring (length kill-ring-yank-pointer)))
+           kill-ring)
          (user-error "Kill ring is empty")))
     :prompt "Yank from kill-ring: "
     :history t ;; disable history
