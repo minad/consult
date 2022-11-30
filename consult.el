@@ -1363,32 +1363,38 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
         (when (invisible-p (overlay-get ov 'invisible))
           (funcall fun ov))))))
 
-(defun consult--invisible-open-temporarily ()
-  "Temporarily open overlays which hide the current line.
+(defun consult--invisible-opener ()
+  "Create function to temporarily open overlays which hide the current line.
 See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
   (if (and (derived-mode-p #'org-mode) (fboundp 'org-fold-show-set-visibility))
       ;; New Org 9.6 fold-core API
       (let ((regions (delq nil (org-fold-core-get-regions
-                                :with-markers t :from (point-min) :to (point-max)))))
-        (org-fold-show-set-visibility 'local)
-        (list (lambda ()
-                (pcase-dolist (`(,beg ,end ,spec) regions)
-                  (org-fold-core-region beg end t spec)
-                  (when (markerp beg) (set-marker beg nil))
-                  (when (markerp end) (set-marker end nil))))))
+                                :with-markers t :from (point-min) :to (point-max))))
+            restore)
+        (lambda (open)
+          (when restore
+            (pcase-dolist (`(,beg ,end ,spec) regions)
+              (org-fold-core-region beg end t spec))
+            (setq restore nil))
+          (when open
+            (org-fold-show-set-visibility 'local)
+            (setq restore t))))
     (let (restore)
-      (dolist (ov (let ((inhibit-field-text-motion t))
-                    (overlays-in (line-beginning-position) (line-end-position))))
-        (let ((inv (overlay-get ov 'invisible)))
-          (when (and (invisible-p inv) (overlay-get ov 'isearch-open-invisible))
-            (push (if-let (fun (overlay-get ov 'isearch-open-invisible-temporary))
-                      (progn
-                        (funcall fun ov nil)
-                        (lambda () (funcall fun ov t)))
-                    (overlay-put ov 'invisible nil)
-                    (lambda () (overlay-put ov 'invisible inv)))
-                  restore))))
-      restore)))
+      (lambda (open)
+        (mapc #'funcall restore)
+        (setq restore nil)
+        (when open
+          (dolist (ov (let ((inhibit-field-text-motion t))
+                        (overlays-in (line-beginning-position) (line-end-position))))
+            (let ((inv (overlay-get ov 'invisible)))
+              (when (and (invisible-p inv) (overlay-get ov 'isearch-open-invisible))
+                (push (if-let (fun (overlay-get ov 'isearch-open-invisible-temporary))
+                          (progn
+                            (funcall fun ov nil)
+                            (lambda () (funcall fun ov t)))
+                        (overlay-put ov 'invisible nil)
+                        (lambda () (overlay-put ov 'invisible inv)))
+                      restore)))))))))
 
 (defun consult--jump-1 (pos)
   "Go to POS and recenter."
@@ -1429,13 +1435,14 @@ The function can be used as the `:state' argument of `consult--read'."
   (let ((saved-min (point-min-marker))
         (saved-max (point-max-marker))
         (saved-pos (point-marker))
-        overlays invisible)
+        (open-invisible (consult--invisible-opener))
+        overlays)
     (set-marker-insertion-type saved-max t) ;; Grow when text is inserted
     (lambda (action cand)
       (when (eq action 'preview)
-        (mapc #'funcall invisible)
+        (funcall open-invisible nil)
         (mapc #'delete-overlay overlays)
-        (setq invisible nil overlays nil)
+        (setq overlays nil)
         (if (not cand)
             ;; If position cannot be previewed, return to saved position
             (let ((saved-buffer (marker-buffer saved-pos)))
@@ -1446,8 +1453,8 @@ The function can be used as the `:state' argument of `consult--read'."
                 (goto-char saved-pos)))
           ;; Handle positions with overlay information
           (consult--jump-1 (or (car-safe cand) cand))
-          (setq invisible (consult--invisible-open-temporarily)
-                overlays
+          (funcall open-invisible 'open)
+          (setq overlays
                 (list (save-excursion
                         (let ((vbeg (progn (beginning-of-visual-line) (point)))
                               (vend (progn (end-of-visual-line) (point)))
