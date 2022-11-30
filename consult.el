@@ -1383,18 +1383,18 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
       (lambda (open)
         (mapc #'funcall restore)
         (setq restore nil)
-        (when open
-          (dolist (ov (let ((inhibit-field-text-motion t))
-                        (overlays-in (line-beginning-position) (line-end-position))))
-            (let ((inv (overlay-get ov 'invisible)))
-              (when (and (invisible-p inv) (overlay-get ov 'isearch-open-invisible))
-                (push (if-let (fun (overlay-get ov 'isearch-open-invisible-temporary))
-                          (progn
-                            (funcall fun ov nil)
-                            (lambda () (funcall fun ov t)))
-                        (overlay-put ov 'invisible nil)
-                        (lambda () (overlay-put ov 'invisible inv)))
-                      restore)))))))))
+        (dolist (ov (let ((inhibit-field-text-motion t))
+                      (and open
+                           (overlays-in (line-beginning-position) (line-end-position)))))
+          (let ((inv (overlay-get ov 'invisible)))
+            (when (and (invisible-p inv) (overlay-get ov 'isearch-open-invisible))
+              (push (if-let (fun (overlay-get ov 'isearch-open-invisible-temporary))
+                        (progn
+                          (funcall fun ov nil)
+                          (lambda () (funcall fun ov t)))
+                      (overlay-put ov 'invisible nil)
+                      (lambda () (overlay-put ov 'invisible inv)))
+                    restore))))))))
 
 (defun consult--jump-1 (pos)
   "Go to POS and recenter."
