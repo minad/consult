@@ -13,6 +13,7 @@
 - Add variable =consult-yank-rotate=, =consult-yank-from-kill-ring= rotates kill ring
 - Emacs 29: =consult-register= supports =buffer= register type
 - Emacs 29: Support =outline-search-function=
+- Org 9.6: Support new =org-fold-core= API (both overlays and text-properties)
 
 * Version 0.20 (2022-10-16)
 

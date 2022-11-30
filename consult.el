@@ -1348,31 +1348,47 @@ ORIG is the original function, HOOKS the arguments."
           (kill-buffer buf))
         (setq temporary-buffers nil)))))
 
+(declare-function org-fold-core-region "org-fold-core")
+(declare-function org-fold-core-get-regions "org-fold-core")
+
 (defun consult--invisible-open-permanently ()
   "Open overlays which hide the current line.
 See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
-  (dolist (ov (let ((inhibit-field-text-motion t))
-                (overlays-in (line-beginning-position) (line-end-position))))
-    (when-let (fun (overlay-get ov 'isearch-open-invisible))
-      (when (invisible-p (overlay-get ov 'invisible))
-        (funcall fun ov)))))
+  (if (and (derived-mode-p #'org-mode) (fboundp 'org-fold-show-set-visibility))
+      ;; New Org 9.6 fold-core API
+      (org-fold-show-set-visibility 'local)
+    (dolist (ov (let ((inhibit-field-text-motion t))
+                  (overlays-in (line-beginning-position) (line-end-position))))
+      (when-let (fun (overlay-get ov 'isearch-open-invisible))
+        (when (invisible-p (overlay-get ov 'invisible))
+          (funcall fun ov))))))
 
 (defun consult--invisible-open-temporarily ()
   "Temporarily open overlays which hide the current line.
 See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
-  (let (restore)
-    (dolist (ov (let ((inhibit-field-text-motion t))
-                  (overlays-in (line-beginning-position) (line-end-position))))
-      (let ((inv (overlay-get ov 'invisible)))
-        (when (and (invisible-p inv) (overlay-get ov 'isearch-open-invisible))
-          (push (if-let (fun (overlay-get ov 'isearch-open-invisible-temporary))
-                    (progn
-                      (funcall fun ov nil)
-                      (lambda () (funcall fun ov t)))
-                  (overlay-put ov 'invisible nil)
-                  (lambda () (overlay-put ov 'invisible inv)))
-                restore))))
-    restore))
+  (if (and (derived-mode-p #'org-mode) (fboundp 'org-fold-show-set-visibility))
+      ;; New Org 9.6 fold-core API
+      (let ((regions (delq nil (org-fold-core-get-regions
+                                :with-markers t :from (point-min) :to (point-max)))))
+        (org-fold-show-set-visibility 'local)
+        (list (lambda ()
+                (pcase-dolist (`(,beg ,end ,spec) regions)
+                  (org-fold-core-region beg end t spec)
+                  (when (markerp beg) (set-marker beg nil))
+                  (when (markerp end) (set-marker end nil))))))
+    (let (restore)
+      (dolist (ov (let ((inhibit-field-text-motion t))
+                    (overlays-in (line-beginning-position) (line-end-position))))
+        (let ((inv (overlay-get ov 'invisible)))
+          (when (and (invisible-p inv) (overlay-get ov 'isearch-open-invisible))
+            (push (if-let (fun (overlay-get ov 'isearch-open-invisible-temporary))
+                      (progn
+                        (funcall fun ov nil)
+                        (lambda () (funcall fun ov t)))
+                    (overlay-put ov 'invisible nil)
+                    (lambda () (overlay-put ov 'invisible inv)))
+                  restore))))
+      restore)))
 
 (defun consult--jump-1 (pos)
   "Go to POS and recenter."
