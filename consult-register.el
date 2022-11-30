@@ -38,6 +38,7 @@
     (?t . "Frameset")
     (?k . "Kmacro")
     (?f . "File")
+    (?b . "Buffer")
     (?w . "Window"))
   "Register type names.
 Each element of the list must have the form \\='(char . name).")
@@ -83,6 +84,11 @@ Each element of the list must have the form \\='(char . name).")
   "Describe file register VAL."
   (list (propertize (abbreviate-file-name (cdr val)) 'face 'consult-file)
         'consult--type ?f 'multi-category `(file . ,(cdr val))))
+
+(cl-defmethod consult-register--describe ((val (head buffer)))
+  "Describe buffer register VAL."
+  (list (propertize (cdr val) 'face 'consult-buffer)
+        'consult--type ?f 'multi-category `(buffer . ,(cdr val))))
 
 (cl-defmethod consult-register--describe ((val (head file-query)))
   "Describe file-query register VAL."
