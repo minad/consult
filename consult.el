@@ -2833,10 +2833,13 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                               (- (match-end 0) (match-beginning 0))))))
          (inhibit-field-text-motion t)
          (buffer (current-buffer))
-         (candidates))
+         candidates)
     (save-excursion
       (goto-char (point-min))
-      (while (save-excursion (re-search-forward heading-regexp nil t))
+      (while (save-excursion
+               (if-let (fun (bound-and-true-p outline-search-function))
+                   (funcall fun)
+                 (re-search-forward heading-regexp nil t)))
         (setq line (+ line (consult--count-lines (match-beginning 0))))
         (push (consult--location-candidate
                (consult--buffer-substring (line-beginning-position)

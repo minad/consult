@@ -11,7 +11,8 @@
 - Remove obsolete =consult-line-point-placement=
 - =consult-grep/find=: Always show directory in the prompt
 - Add variable =consult-yank-rotate=, =consult-yank-from-kill-ring= rotates kill ring
-- =consult-register=: Support Emacs 29 =buffer= register type
+- Emacs 29: =consult-register= supports =buffer= register type
+- Emacs 29: Support =outline-search-function=
 
 * Version 0.20 (2022-10-16)
 
