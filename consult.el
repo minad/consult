@@ -3427,9 +3427,11 @@ narrowing and the settings `consult-goto-line-numbers' and
   (interactive)
   (find-file
    (consult--read
-    (or (mapcar #'abbreviate-file-name recentf-list)
-        (user-error "No recent files, `recentf-mode' is %s"
-                    (if recentf-mode "on" "off")))
+    (or
+     (let (file-name-handler-alist) ;; No Tramp slowdown please
+       (mapcar #'abbreviate-file-name recentf-list))
+     (user-error "No recent files, `recentf-mode' is %s"
+                 (if recentf-mode "on" "off")))
     :prompt "Find recent file: "
     :sort nil
     :require-match t
@@ -4240,17 +4242,20 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
     ,(lambda ()
       (when-let (root (consult--project-root))
         (let ((len (length root))
-              (ht (consult--buffer-file-hash)))
-          (mapcar (lambda (file)
-                    (let ((part (substring file len)))
-                      (when (equal part "") (setq part "./"))
-                      (put-text-property 0 (length part)
-                                         'multi-category `(file . ,file) part)
-                      part))
-                  (seq-filter (lambda (x)
-                                (and (not (gethash x ht))
-                                     (string-prefix-p root x)))
-                              recentf-list))))))
+              (ht (consult--buffer-file-hash))
+              file-name-handler-alist ;; No Tramp slowdown please.
+              items)
+          (dolist (file recentf-list (nreverse items))
+            ;; Emacs 29 abbreviates file paths by default, see
+            ;; `recentf-filename-handlers'.
+            (unless (eq (aref file 0) ?/)
+              (setq file (expand-file-name file)))
+            (when (and (not (gethash file ht)) (string-prefix-p root file))
+              (let ((part (substring file len)))
+                (when (equal part "") (setq part "./"))
+                (put-text-property 0 (length part)
+                                   'multi-category `(file . ,file) part)
+                (push part items))))))))
   "Project file candidate source for `consult-buffer'.")
 
 (defvar consult--source-hidden-buffer
@@ -4322,9 +4327,16 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
     :enabled  ,(lambda () recentf-mode)
     :items
     ,(lambda ()
-       (let ((ht (consult--buffer-file-hash)))
-         (mapcar #'abbreviate-file-name
-                 (seq-remove (lambda (x) (gethash x ht)) recentf-list)))))
+       (let ((ht (consult--buffer-file-hash))
+             file-name-handler-alist ;; No Tramp slowdown please.
+             items)
+         (dolist (file recentf-list (nreverse items))
+           ;; Emacs 29 abbreviates file paths by default, see
+           ;; `recentf-filename-handlers'.
+           (unless (eq (aref file 0) ?/)
+             (setq file (expand-file-name file)))
+           (unless (gethash file ht)
+             (push (abbreviate-file-name file) items))))))
   "Recent file candidate source for `consult-buffer'.")
 
 ;;;###autoload
