@@ -341,16 +341,12 @@ their descriptions.
 :description: Various other useful commands
 :end:
 
-#+findex: consult-apropos
 #+findex: consult-file-externally
 #+findex: consult-completion-in-region
 #+findex: consult-theme
 #+findex: consult-man
 #+findex: consult-preview-at-point
 #+findex: consult-preview-at-point-mode
-- =consult-apropos=: Replacement for =apropos= with completion. As a better
-  alternative, you can run =embark-export= from commands like =M-x= or
-  =describe-symbol=.
 - =consult-man=: Find Unix man page, via Unix =apropos= or =man -k=. =consult-man= opens
   the selected man page using the Emacs =man= command.
 - =consult-file-externally=: Select a file and open it externally, e.g. using
@@ -774,7 +770,6 @@ configuration examples.
            ("C-M-#" . consult-register)
            ;; Other custom bindings
            ("M-y" . consult-yank-pop)                ;; orig. yank-pop
-           ("<help> a" . consult-apropos)            ;; orig. apropos-command
            ;; M-g bindings (goto-map)
            ("M-g e" . consult-compile-error)
            ("M-g f" . consult-flymake)               ;; Alternative: consult-flycheck

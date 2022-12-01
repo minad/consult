@@ -456,7 +456,6 @@ Used by `consult-completion-in-region', `consult-yank' and `consult-history'.")
 (defvar consult--find-history nil)
 (defvar consult--man-history nil)
 (defvar consult--line-history nil)
-(defvar consult--apropos-history nil)
 (defvar consult--theme-history nil)
 (defvar consult--minor-mode-menu-history nil)
 (defvar consult--kmacro-history nil)
@@ -3739,14 +3738,20 @@ alternative, you can run `embark-export' from commands like `M-x' and
   (let ((pattern
          (consult--read
           obarray
-          :prompt "Apropos: "
+          :prompt "consult-apropos (obsolete): "
           :predicate (lambda (x) (or (fboundp x) (boundp x) (facep x) (symbol-plist x)))
-          :history 'consult--apropos-history
           :category 'symbol
           :default (thing-at-point 'symbol))))
     (when (string= pattern "")
       (user-error "No pattern given"))
     (apropos pattern)))
+
+(make-obsolete
+ #'consult-apropos
+ "consult-apropos has been deprecated in favor of Embark actions:
+M-x describe-symbol <regexp> M-x embark-export
+M-x describe-symbol <regexp> M-x embark-act a"
+               "0.20")
 
 ;;;;; Command: consult-complex-command
 
