@@ -25,7 +25,7 @@
 
 (require 'consult)
 
-(defcustom consult-register-prefix #("@" 0 1 (face consult-key))
+(defcustom consult-register-prefix #("#" 0 1 (face consult-key))
   "Prepend prefix in front of register keys during completion."
   :type '(choice (const nil) string)
   :group 'consult)
