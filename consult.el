@@ -3747,7 +3747,7 @@ alternative, you can run `embark-export' from commands like `M-x' and
     (apropos pattern)))
 
 (make-obsolete
- #'consult-apropos
+ 'consult-apropos
  "consult-apropos has been deprecated in favor of Embark actions:
 M-x describe-symbol <regexp> M-x embark-export
 M-x describe-symbol <regexp> M-x embark-act a"
