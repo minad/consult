@@ -157,7 +157,17 @@ TYPES is the mode-specific types configuration."
 
 (defun consult-imenu--multi-items (buffers)
   "Return all imenu items from BUFFERS."
-  (apply #'append (consult--buffer-map buffers #'consult-imenu--items-safe)))
+  (consult--with-increased-gc
+   (let ((reporter (make-progress-reporter "Collecting" 0 (length buffers))))
+     (prog1
+         (apply #'append
+                (seq-map-indexed (lambda (buf idx)
+                                   (with-current-buffer buf
+                                     (prog1 (consult-imenu--items-safe)
+                                       (progress-reporter-update
+                                        reporter (1+ idx) (buffer-name)))))
+                                 buffers))
+       (progress-reporter-done reporter)))))
 
 (defun consult-imenu--jump (item)
   "Jump to imenu ITEM via `consult--jump'.

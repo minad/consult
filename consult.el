@@ -3048,29 +3048,6 @@ INPUT is the input string entered by the user."
           (cons dest (cdr matches)))
       pos)))
 
-(cl-defun consult--line (candidates &key curr-line prompt initial group)
-  "Select from from line CANDIDATES and jump to the match.
-CURR-LINE is the current line. See `consult--read' for the arguments PROMPT,
-INITIAL and GROUP."
-  (consult--read
-   candidates
-   :prompt prompt
-   :annotate (consult--line-prefix curr-line)
-   :group group
-   :category 'consult-location
-   :sort nil
-   :require-match t
-   ;; Always add last isearch string to future history
-   :add-history (list (thing-at-point 'symbol) isearch-string)
-   :history '(:input consult--line-history)
-   :lookup #'consult--line-match
-   :default (car candidates)
-   ;; Add isearch-string as initial input if starting from isearch
-   :initial (or initial
-                (and isearch-mode
-                     (prog1 isearch-string (isearch-done))))
-   :state (consult--location-state candidates)))
-
 ;;;###autoload
 (defun consult-line (&optional initial start)
   "Search for a matching line.
@@ -3082,15 +3059,28 @@ narrowing. Optional INITIAL input can be provided. The search starting point is
 changed if the START prefix argument is set. The symbol at point and the last
 `isearch-string' is added to the future history."
   (interactive (list nil (not (not current-prefix-arg))))
-  (let ((curr-line (line-number-at-pos (point) consult-line-numbers-widen))
-        (top (not (eq start consult-line-start-from-top))))
-    (consult--line
-     (or (consult--with-increased-gc
-          (consult--line-candidates top curr-line))
-         (user-error "No lines"))
-     :curr-line (and (not top) curr-line)
+  (let* ((curr-line (line-number-at-pos (point) consult-line-numbers-widen))
+         (top (not (eq start consult-line-start-from-top)))
+         (candidates (or (consult--with-increased-gc
+                          (consult--line-candidates top curr-line))
+                         (user-error "No lines"))))
+    (consult--read
+     candidates
      :prompt (if top "Go to line from top: " "Go to line: ")
-     :initial initial)))
+     :annotate (consult--line-prefix curr-line)
+     :category 'consult-location
+     :sort nil
+     :require-match t
+     ;; Always add last isearch string to future history
+     :add-history (list (thing-at-point 'symbol) isearch-string)
+     :history '(:input consult--line-history)
+     :lookup #'consult--line-match
+     :default (car candidates)
+     ;; Add isearch-string as initial input if starting from isearch
+     :initial (or initial
+                  (and isearch-mode
+                       (prog1 isearch-string (isearch-done))))
+     :state (consult--location-state candidates))))
 
 ;;;;; Command: consult-line-multi
 
@@ -4155,21 +4145,6 @@ AS is a conversion function."
            (or (not predicate) (funcall predicate it))
            (if as (funcall as it) it)))))
     buffers))
-
-(defun consult--buffer-map (buffer &rest app)
-  "Run function application APP for each BUFFER.
-Report progress and return a list of the results"
-  (consult--with-increased-gc
-   (let* ((count (length buffer))
-          (reporter (make-progress-reporter "Collecting" 0 count)))
-     (prog1
-         (seq-map-indexed (lambda (buf idx)
-                            (with-current-buffer buf
-                              (prog1 (apply app)
-                                (progress-reporter-update
-                                 reporter (1+ idx) (buffer-name)))))
-                          buffer)
-       (progress-reporter-done reporter)))))
 
 (defun consult--buffer-file-hash ()
   "Return hash table of all buffer file names."
