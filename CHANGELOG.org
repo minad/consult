@@ -5,9 +5,9 @@
 * Development
 
 - Bugfixes
-- =consult-line-multi= has been rewritten completely. Buffers are searched
-  dynamically instead, similar to =consult-grep= in order to reduce the startup
-  speed.
+- =consult-line-multi= has been rewritten completely. The candidates are computed
+  on demand based on the input. This reduces startup speed greatly. The command
+  behaves like =consult-grep=, but operates on buffers instead of files.
 - Add =consult--source-file-register=, and make the registers available in
   =consult-buffer=. Registers are often used as quick access keys for files, e.g.,
   =(add-to-list 'register-alist '(?i file . "~/.emacs.d/init.el")))=.

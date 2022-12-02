@@ -209,9 +209,10 @@ their descriptions.
   recent Isearch string are added to the "future history" and can be accessed
   by pressing =M-n=. When =consult-line= is bound to the =isearch-mode-map= and
   is invoked during a running Isearch, it will use the current Isearch string.
-- =consult-line-multi=: Search across multiple buffers. By default search across
-  project buffers. If invoked with a prefix argument search across all buffers.
-  Behaves like =consult-line=.
+- =consult-line-multi=: Search dynamically across multiple buffers. By default
+  search across project buffers. If invoked with a prefix argument search across
+  all buffers. The candidates are computed on demand based on the input. The
+  command behaves like =consult-grep=, but operates on buffers instead of files.
 - =consult-multi-occur=: Replacement for =multi-occur= which uses
   =completing-read-multiple=.
 - =consult-keep-lines=: Replacement for =keep/flush-lines= which uses the current
