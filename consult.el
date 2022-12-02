@@ -2853,6 +2853,8 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                 (occur-read-primary-args)))
   (occur-1 regexp nlines bufs))
 
+(make-obsolete 'consult-multi-occur 'consult-line-multi "0.20")
+
 ;;;;; Command: consult-outline
 
 (defun consult--outline-candidates ()
