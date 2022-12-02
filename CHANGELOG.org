@@ -19,7 +19,6 @@
 - Org 9.6: Support new =org-fold-core= API (both overlays and text-properties)
 - Support abbreviated file names in =recentf-list=, see =recentf-filename-handler=.
 - Deprecate =consult-apropos=
-- Deprecate =consult-multi-occur=
 
 * Version 0.20 (2022-10-16)
 
