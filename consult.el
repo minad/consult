@@ -1106,7 +1106,7 @@ Return the location marker."
     (while (< (point) pos)
       (forward-line)
       (when (<= (point) pos)
-        (setq line (1+ line))))
+        (cl-incf line)))
     (goto-char pos)
     line))
 
@@ -1998,7 +1998,7 @@ PROPS are optional properties passed to `make-process'."
                      (funcall async 'flush))
                    (overlay-put indicator 'display (consult--process-indicator event))
                    (when (and (string-prefix-p "finished" event) (not (string= rest "")))
-                     (setq count (+ count 1))
+                     (cl-incf count)
                      (funcall async (list rest)))
                    (consult--async-log
                     "consult--async-process sentinel: event=%s lines=%d\n"
@@ -2245,7 +2245,7 @@ PREVIEW-KEY are the preview keys."
   (let* ((max (length str))
          (end max))
     (while (and (> end 0) (consult--tofu-p (aref str (1- end))))
-      (setq end (1- end)))
+      (cl-decf end))
     (when (< end max)
       (setq str (copy-sequence str))
       (put-text-property end max 'invisible t str))
@@ -2257,7 +2257,7 @@ PREVIEW-KEY are the preview keys."
          (max (point-max))
          (pos max))
     (while (and (> pos min) (consult--tofu-p (char-before pos)))
-      (setq pos (1- pos)))
+      (cl-decf pos))
     (when (< pos max)
       (add-text-properties pos max '(invisible t rear-nonsticky t cursor-intangible t)))))
 
@@ -2509,7 +2509,7 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
                                    `(multi-category (,cat . ,item) ,@face) cand))
             (when (> width max-width) (setq max-width width))
             (push cand candidates))))
-      (setq idx (1+ idx)))
+      (cl-incf idx))
     (list def (+ 3 max-width) (nreverse candidates))))
 
 (defun consult--multi-enabled-sources (sources)
@@ -3014,7 +3014,7 @@ CURR-LINE is the current line number."
           (push (consult--location-candidate str (cons buffer (point)) line) candidates)
           (when (and (not default-cand) (>= line curr-line))
             (setq default-cand candidates)))
-        (setq line (1+ line))))
+        (cl-incf line)))
     (when candidates
       (nreverse
        (if (or top (not default-cand))
