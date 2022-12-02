@@ -3041,22 +3041,15 @@ CURR-LINE is the current line number."
            (setcdr default-cand nil)
            (nconc before candidates)))))))
 
-(defun consult--line-match (selected candidates input &rest _)
-  "Lookup position of match.
-
+(defun consult--line-point-placement (selected candidates highlighted &rest ignored-faces)
+  "Find point position on matching line.
 SELECTED is the currently selected candidate.
 CANDIDATES is the list of candidates.
-INPUT is the input string entered by the user."
+HIGHLIGHTED is the highlighted string to determine the match position.
+IGNORED-FACES are ignored when determining the match position."
   (when-let (pos (consult--lookup-location selected candidates))
-    (if-let* (((not (string-blank-p input)))
-              (highlighted (consult--completion-filter
-                            input
-                            (list (substring-no-properties selected))
-                            'consult-location 'highlight)))
-        ;; Ignore `completions-first-difference' when matching, since
-        ;; this face doesn't yield a meaningful jump position.
-        (let* ((matches (consult--point-placement (car highlighted) 0
-                                                  'completions-first-difference))
+    (if highlighted
+        (let* ((matches (apply #'consult--point-placement highlighted 0 ignored-faces))
                (dest (+ pos (car matches))))
           ;; Only create a new marker when jumping across buffers (for example
           ;; `consult-line-multi'). Avoid creating unnecessary markers, when
@@ -3065,6 +3058,19 @@ INPUT is the input string entered by the user."
             (setq dest (move-marker (make-marker) dest (marker-buffer pos))))
           (cons dest (cdr matches)))
       pos)))
+
+(defun consult--line-match (selected candidates input &rest _)
+  "Lookup position of match.
+SELECTED is the currently selected candidate.
+CANDIDATES is the list of candidates.
+INPUT is the input string entered by the user."
+  (consult--line-point-placement selected candidates
+                                 (and (not (string-blank-p input))
+                                      (car (consult--completion-filter
+                                            input
+                                            (list (substring-no-properties selected))
+                                            'consult-location 'highlight)))
+                                 'completions-first-difference))
 
 ;;;###autoload
 (defun consult-line (&optional initial start)
@@ -3102,6 +3108,13 @@ changed if the START prefix argument is set. The symbol at point and the last
 
 ;;;;; Command: consult-line-multi
 
+(defun consult--line-multi-match (selected candidates &rest _)
+  "Lookup position of match.
+SELECTED is the currently selected candidate.
+CANDIDATES is the list of candidates."
+  (consult--line-point-placement selected candidates
+                                 (car (member selected candidates))))
+
 (defun consult--line-multi-group (cand transform)
   "Group function used by `consult-line-multi'.
 If TRANSFORM non-nil, return transformed CAND, otherwise return title."
@@ -3134,9 +3147,10 @@ BUFFERS is the list of buffers."
                (cl-incf line (consult--count-lines (match-beginning 0)))
                (let ((beg (line-beginning-position))
                      (end (line-end-position)))
-                 (when (seq-every-p (lambda (x) (save-excursion (re-search-forward x end t)))
-                                    (cdr regexps))
-                   (let ((cand (consult--buffer-substring beg end)))
+                 (when (seq-every-p
+                        (lambda (x) (save-excursion (re-search-forward x end t)))
+                        (cdr regexps))
+                   (let ((cand (buffer-substring-no-properties beg end)))
                      (funcall hl cand)
                      (push (consult--location-candidate cand (cons buf beg) line)
                            candidates))))
@@ -3171,7 +3185,7 @@ to `consult--buffer-query'."
                           (delq nil (list (thing-at-point 'symbol)
                                           isearch-string)))
      :history '(:input consult--line-multi-history)
-     :lookup #'consult--lookup-location
+     :lookup #'consult--line-multi-match
      ;; Add isearch-string as initial input if starting from isearch
      :initial (consult--async-split-initial
                (or initial
