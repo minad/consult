@@ -1343,9 +1343,9 @@ ORIG is the original function, HOOKS the arguments."
 (defun consult--invisible-open-permanently ()
   "Open overlays which hide the current line.
 See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
-  (if (and (derived-mode-p #'org-mode) (fboundp 'org-fold-show-set-visibility))
+  (if (and (derived-mode-p #'org-mode) (fboundp 'org-fold-show-context))
       ;; New Org 9.6 fold-core API
-      (org-fold-show-set-visibility 'local)
+      (org-fold-show-context 'org-goto)
     (dolist (ov (let ((inhibit-field-text-motion t))
                   (overlays-in (line-beginning-position) (line-end-position))))
       (when-let (fun (overlay-get ov 'isearch-open-invisible))
