@@ -2,7 +2,7 @@
 #+author: Daniel Mendler
 #+language: en
 
-* Development
+* Version 0.29 (2022-12-03)
 
 - Bugfixes
 - =consult-line-multi= has been rewritten completely. The candidates are computed
