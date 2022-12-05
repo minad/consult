@@ -3292,20 +3292,22 @@ INITIAL is the initial input."
            (consult--completion-filter-dispatch
             pattern cands 'consult-location 'highlight))))
   (consult--forbid-minibuffer)
-  (cl-letf ((ro buffer-read-only)
-            ((buffer-local-value 'buffer-read-only (current-buffer)) nil))
-    (consult--minibuffer-with-setup-hook
-        (lambda ()
-          (when ro
-            (minibuffer-message
-             (substitute-command-keys
-              " [Unlocked read-only buffer. \\[minibuffer-keyboard-quit] to quit.]"))))
-      (consult--with-increased-gc
-       (consult--prompt
-        :prompt "Keep lines: "
-        :initial initial
-        :history 'consult--keep-lines-history
-        :state (consult--keep-lines-state filter))))))
+  (let ((ro buffer-read-only))
+    (unwind-protect
+        (consult--minibuffer-with-setup-hook
+            (lambda ()
+              (when ro
+                (minibuffer-message
+                 (substitute-command-keys
+                  " [Unlocked read-only buffer. \\[minibuffer-keyboard-quit] to quit.]"))))
+          (setq buffer-read-only nil)
+          (consult--with-increased-gc
+           (consult--prompt
+            :prompt "Keep lines: "
+            :initial initial
+            :history 'consult--keep-lines-history
+            :state (consult--keep-lines-state filter))))
+      (setq buffer-read-only ro))))
 
 ;;;;; Command: consult-focus-lines
 
