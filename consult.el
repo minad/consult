@@ -4983,9 +4983,10 @@ automatically previewed."
 ;;;; Integration with other completion systems
 
 (with-eval-after-load 'icomplete (require 'consult-icomplete))
-(with-eval-after-load 'selectrum (require 'consult-selectrum))
 (with-eval-after-load 'vertico (require 'consult-vertico))
 (with-eval-after-load 'mct (add-hook 'consult--completion-refresh-hook
                                      'mct--live-completions-refresh))
+(with-eval-after-load 'selectrum
+  (warn (propertize "Consult: Selectrum has been deprecated in favor of Vertico" 'face 'warning)))
 
 ;;; consult.el ends here
