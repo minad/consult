@@ -1345,7 +1345,7 @@ ORIG is the original function, HOOKS the arguments."
 See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
   (if (and (derived-mode-p #'org-mode) (fboundp 'org-fold-show-set-visibility))
       ;; New Org 9.6 fold-core API
-      (org-fold-show-set-visibility 'local)
+      (org-fold-show-set-visibility 'lineage)
     (dolist (ov (let ((inhibit-field-text-motion t))
                   (overlays-in (line-beginning-position) (line-end-position))))
       (when-let (fun (overlay-get ov 'isearch-open-invisible))
@@ -1363,7 +1363,7 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
       ;; modifications such that we can restore the ones which got modified.
       (let ((regions (delq nil (org-fold-core-get-regions
                                 :with-markers t :from (point-min) :to (point-max)))))
-        (org-fold-show-set-visibility 'local)
+        (org-fold-show-set-visibility 'lineage)
         (list (lambda ()
                 (pcase-dolist (`(,beg ,end ,spec) regions)
                   (org-fold-core-region beg end t spec)
