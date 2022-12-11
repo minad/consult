@@ -655,16 +655,18 @@ If no capturing groups are used highlight the whole match. Case is ignored
 if IGNORE-CASE is non-nil."
   (let ((case-fold-search ignore-case))
     (dolist (re regexps)
-      (when (string-match re str)
-        ;; Unfortunately there is no way to avoid the allocation of the match
-        ;; data, since the number of capturing groups is unknown.
-        (let ((m (match-data)))
-          (setq m (or (cddr m) m))
-          (while m
-            (when (car m)
-              (add-face-text-property (car m) (cadr m)
-                                      'consult-highlight-match nil str))
-            (setq m (cddr m))))))))
+      (let ((i 0))
+        (while (string-match re str i)
+          ;; Unfortunately there is no way to avoid the allocation of the match
+          ;; data, since the number of capturing groups is unknown.
+          (let ((m (match-data)))
+            (setq i (cadr m))
+            (setq m (or (cddr m) m))
+            (while m
+              (when (car m)
+                (add-face-text-property (car m) (cadr m)
+                                        'consult-highlight-match nil str))
+              (setq m (cddr m)))))))))
 
 (defconst consult--convert-regexp-table
   (append
