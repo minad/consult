@@ -3219,7 +3219,7 @@ to `consult--buffer-query'."
             (setq content-orig (buffer-string)
                   replace (lambda (content &optional pos)
                             (delete-region rbeg rend)
-                            (insert content)
+                            (insert-before-markers content)
                             (goto-char (or pos rbeg))
                             (setq rend (+ rbeg (length content)))
                             (add-face-text-property rbeg rend 'region t)))))
