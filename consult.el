@@ -4881,11 +4881,13 @@ details regarding the asynchronous search."
 
 (defun consult--man-builder (input)
   "Build command line given CONFIG and INPUT."
-  (pcase-let ((`(,arg . ,opts) (consult--command-split input)))
-    (unless (string-blank-p arg)
+  (pcase-let* ((`(,arg . ,opts) (consult--command-split input))
+               (`(,re . ,hl) (funcall consult--regexp-compiler arg 'basic t)))
+    (when re
       (list :command (append (consult--build-args consult-man-args)
-                             (list arg) opts)
-            :highlight (cdr (consult--default-regexp-compiler input 'basic t))))))
+                             (list (consult--join-regexps re 'basic))
+                             opts)
+            :highlight hl))))
 
 (defun consult--man-format (lines)
   "Format man candidates from LINES."
