@@ -201,7 +201,6 @@ their descriptions.
 
 #+findex: consult-line
 #+findex: consult-line-multi
-#+findex: consult-multi-occur
 #+findex: consult-keep-lines
 #+findex: consult-focus-lines
 - =consult-line=: Enter search string and select from matching lines.
@@ -213,8 +212,6 @@ their descriptions.
   search across project buffers. If invoked with a prefix argument search across
   all buffers. The candidates are computed on demand based on the input. The
   command behaves like =consult-grep=, but operates on buffers instead of files.
-- =consult-multi-occur=: Replacement for =multi-occur= which uses
-  =completing-read-multiple=.
 - =consult-keep-lines=: Replacement for =keep/flush-lines= which uses the current
   completion style for filtering the buffer. The function updates the buffer
   while typing. In particular =consult-keep-lines= can narrow down an exported
@@ -786,7 +783,6 @@ configuration examples.
            ("M-s r" . consult-ripgrep)
            ("M-s l" . consult-line)
            ("M-s L" . consult-line-multi)
-           ("M-s m" . consult-multi-occur)
            ("M-s k" . consult-keep-lines)
            ("M-s u" . consult-focus-lines)
            ;; Isearch integration
