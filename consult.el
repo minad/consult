@@ -3531,6 +3531,11 @@ narrowing and the settings `consult-goto-line-numbers' and
                   nil 0 nil
                   (expand-file-name file))))
 
+(make-obsolete
+ 'consult-file-externally
+ 'embark-open-externally
+ "0.29")
+
 ;;;;; Command: consult-mode-command
 
 (defun consult--mode-name (mode)

@@ -6,6 +6,7 @@
 
 - Bugfixes
 - Drop Selectrum support
+- Deprecate =consult-file-externally=
 
 * Version 0.29 (2022-12-03)
 

@@ -342,7 +342,6 @@ their descriptions.
 :description: Various other useful commands
 :end:
 
-#+findex: consult-file-externally
 #+findex: consult-completion-in-region
 #+findex: consult-theme
 #+findex: consult-man
@@ -350,8 +349,6 @@ their descriptions.
 #+findex: consult-preview-at-point-mode
 - =consult-man=: Find Unix man page, via Unix =apropos= or =man -k=. =consult-man= opens
   the selected man page using the Emacs =man= command.
-- =consult-file-externally=: Select a file and open it externally, e.g. using
-  =xdg-open= on Linux.
 - =consult-theme=: Select a theme and disable all currently enabled themes.
   Supports live preview of the theme while scrolling through the candidates.
 - =consult-preview-at-point= and =consult-preview-at-point-mode=: Command and minor
