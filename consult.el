@@ -2854,6 +2854,8 @@ See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
                 (occur-read-primary-args)))
   (occur-1 regexp nlines bufs))
 
+(make-obsolete 'consult-multi-occur 'consult-line-multi "0.29")
+
 ;;;;; Command: consult-outline
 
 (defun consult--outline-candidates ()
@@ -3531,10 +3533,7 @@ narrowing and the settings `consult-goto-line-numbers' and
                   nil 0 nil
                   (expand-file-name file))))
 
-(make-obsolete
- 'consult-file-externally
- 'embark-open-externally
- "0.29")
+(make-obsolete 'consult-file-externally 'embark-open-externally "0.29")
 
 ;;;;; Command: consult-mode-command
 

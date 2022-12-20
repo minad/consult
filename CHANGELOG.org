@@ -6,7 +6,10 @@
 
 - Bugfixes
 - Drop Selectrum support
-- Deprecate =consult-file-externally=
+- Deprecate =consult-file-externally= in favor of =embark-open-externally=
+- Deprecate =consult-multi-occur=. The =multi-occur= command should be improved
+  upstream to take advantage of =completing-read-multiple=. Consult provides the
+  command =consult-line-multi= as an alternative.
 
 * Version 0.29 (2022-12-03)
 
