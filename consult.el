@@ -4667,7 +4667,7 @@ INITIAL is inital input."
     (eq 0 (apply #'call-process-region (point-min) (point-max)
                  (car cmd) nil nil nil `(,@(cdr cmd) "^(?=.*b)(?=.*a)")))))
 
-(defun consult--grep-builder ()
+(defun consult--grep-make-builder ()
   "Create grep command line builder."
   (let* ((cmd (consult--build-args consult-grep-args))
          (type (if (consult--grep-lookahead-p (car cmd) "-P") 'pcre 'extended)))
@@ -4727,7 +4727,7 @@ the directory to search in. By default the project directory is used
 if `consult-project-function' is defined and returns non-nil.
 Otherwise the `default-directory' is searched."
   (interactive "P")
-  (consult--grep "Grep" (consult--grep-builder) dir initial))
+  (consult--grep "Grep" (consult--grep-make-builder) dir initial))
 
 ;;;;; Command: consult-git-grep
 
@@ -4757,7 +4757,7 @@ for more details."
 
 ;;;;; Command: consult-ripgrep
 
-(defun consult--ripgrep-builder ()
+(defun consult--ripgrep-make-builder ()
   "Create ripgrep command line builder."
   (let* ((cmd (consult--build-args consult-ripgrep-args))
          (type (if (consult--grep-lookahead-p (car cmd) "-P") 'pcre 'extended)))
@@ -4787,7 +4787,7 @@ for more details."
 The initial input is given by the INITIAL argument. See `consult-grep'
 for more details."
   (interactive "P")
-  (consult--grep "Ripgrep" (consult--ripgrep-builder) dir initial))
+  (consult--grep "Ripgrep" (consult--ripgrep-make-builder) dir initial))
 
 ;;;;; Command: consult-find
 
@@ -4813,7 +4813,7 @@ INITIAL is inital input."
    :category 'file
    :history '(:input consult--find-history)))
 
-(defun consult--find-builder ()
+(defun consult--find-make-builder ()
   "Create find command line builder."
   (let* ((cmd (consult--build-args consult-find-args))
          (type (if (eq 0 (call-process-shell-command
@@ -4847,7 +4847,7 @@ See `consult-grep' for more details regarding the asynchronous search."
   (interactive "P")
   (let* ((prompt-dir (consult--directory-prompt "Find" dir))
          (default-directory (cdr prompt-dir)))
-    (find-file (consult--find (car prompt-dir) (consult--find-builder) initial))))
+    (find-file (consult--find (car prompt-dir) (consult--find-make-builder) initial))))
 
 ;;;;; Command: consult-locate
 
