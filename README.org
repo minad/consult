@@ -1004,12 +1004,26 @@ you.
 - [[https://git.sr.ht/~protesilaos/mct][mct by Protesilaos Stavrou]]: Minibuffer and Completions in Tandem, which builds
   on the default completion UI (development currently [[https://protesilaos.com/codelog/2022-04-14-emacs-discontinue-mct/][discontinued]]).
 
+Note that all packages are independent and can be exchanged with alternative
+components, since there exist no hard dependencies. Furthermore it is possible
+to get started with only default completion and Consult and add more components
+later to the mix. For example you can omit Marginalia if you don't need
+annotations. I highly recommend the Embark package, but in order to familiarize
+yourself with the other components, you can first start without it - or you could
+use with Embark right away and add the other components later on.
+
+* Auxiliary packages
+:properties:
+:description: Integrations with the wider ecosystem
+:end:
+
 You can integrate Consult with special programs or with other packages in the
 wider Emacs ecosystem. You may want to install some of theses packages depending
 on your preferences and requirements.
 
 - [[https://github.com/yadex205/consult-ag][consult-ag]]: Support for the [[https://github.com/ggreer/the_silver_searcher][Silver Searcher]] in the style of =consult-grep=.
 - [[https://github.com/mohkale/consult-company][consult-company]]: Completion at point using the [[https://github.com/company-mode/company-mode][Company]] backends.
+- [[https://github.com/youngker/consult-codesearch.el][consult-codesearch]]: Integration with [[https://github.com/google/codesearch][Code Search]].
 - [[https://github.com/karthink/consult-dir][consult-dir]]: Directory jumper using Consult multi sources.
 - [[https://codeberg.org/ravi/consult-dash][consult-dash]]: Consult interface to [[https://github.com/dash-docs-el/dash-docs][Dash documentation]]
 - [[https://github.com/mohkale/consult-eglot][consult-eglot]]: Integration with Eglot (LSP client).
@@ -1041,14 +1055,6 @@ offer functionality based on ~completing-read~.
 - [[https://github.com/d12frosted/flyspell-correct][flyspell-correct]]: Apply spelling corrections by selecting via =completing-read=.
 - [[https://github.com/mhayashi1120/Emacs-wgrep][wgrep]]: Editing of grep buffers, use together with =consult-grep= via =embark-export=.
 - [[https://github.com/iyefrat/all-the-icons-completion][all-the-icons-completion]]: Icons for the completion UI.
-
-Note that all packages are independent and can be exchanged with alternative
-components, since there exist no hard dependencies. Furthermore it is possible
-to get started with only default completion and Consult and add more components
-later to the mix. For example you can omit Marginalia if you don't need
-annotations. I highly recommend the Embark package, but in order to familiarize
-yourself with the other components, you can first start without it - or you could
-use with Embark right away and add the other components later on.
 
 * Bug reports
 :properties:
@@ -1186,6 +1192,7 @@ Authors of supplementary =consult-*= packages:
 - [[https://github.com/mclearc][Colin McLear]] ([[https://github.com/mclear-tools/consult-notes][consult-notes]])
 - [[https://github.com/Nyoho][Yukinori Kitadai]] ([[https://github.com/Nyoho/consult-hatena-bookmark][consult-hatena-bookmark]])
 - [[https://github.com/ghosty141][ghosty141]] ([[https://github.com/ghosty141/consult-git-log-grep][consult-git-log-grep]])
+- [[https://github.com/youngker][YoungJoo Lee]] ([[https://github.com/youngker/consult-codesearch.el][consult-codesearch]])
 
 #+html: <!--
 
