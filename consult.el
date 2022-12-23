@@ -2680,9 +2680,9 @@ KEYMAP is a command-specific keymap."
                 :preview-key consult-preview-key
                 :transform #'identity))))
 
-;;;; Functions
+;;;; Commands
 
-;;;;; Function: consult-completion-in-region
+;;;;; Command: consult-completion-in-region
 
 (defun consult--insertion-preview (start end)
   "State function for previewing a candidate in a specific region.
@@ -2837,24 +2837,6 @@ These configuration options are supported:
               t)
           (message "No completion")
           nil)))))
-
-;;;; Commands
-
-;;;;; Command: consult-multi-occur
-
-;;;###autoload
-(defun consult-multi-occur (bufs regexp &optional nlines)
-  "Improved version of `multi-occur' based on `completing-read-multiple'.
-
-See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
-  (interactive (cons
-                (mapcar #'get-buffer
-                        (completing-read-multiple "Buffer: "
-                                                  #'internal-complete-buffer))
-                (occur-read-primary-args)))
-  (occur-1 regexp nlines bufs))
-
-(make-obsolete 'consult-multi-occur 'consult-line-multi "0.29")
 
 ;;;;; Command: consult-outline
 
@@ -3517,24 +3499,6 @@ narrowing and the settings `consult-goto-line-numbers' and
     :state (consult--file-preview)
     :history 'file-name-history)))
 
-;;;;; Command: consult-file-externally
-
-;;;###autoload
-(defun consult-file-externally (file)
-  "Open FILE externally using the default application of the system."
-  (interactive "fOpen externally: ")
-  (if (and (eq system-type 'windows-nt)
-           (fboundp 'w32-shell-execute))
-      (w32-shell-execute "open" file)
-    (call-process (pcase system-type
-                    ('darwin "open")
-                    ('cygwin "cygstart")
-                    (_ "xdg-open"))
-                  nil 0 nil
-                  (expand-file-name file))))
-
-(make-obsolete 'consult-file-externally 'embark-open-externally "0.29")
-
 ;;;;; Command: consult-mode-command
 
 (defun consult--mode-name (mode)
@@ -3805,34 +3769,6 @@ variable `consult-bookmark-narrow' for the narrowing configuration."
   (if (assoc name bookmark-alist)
       (bookmark-jump name)
     (bookmark-set name)))
-
-;;;;; Command: consult-apropos
-
-;;;###autoload
-(defun consult-apropos ()
-  "Select pattern and call `apropos'.
-
-The default value of the completion is the symbol at point. As a better
-alternative, you can run `embark-export' from commands like `M-x' and
-`describe-symbol'."
-  (interactive)
-  (let ((pattern
-         (consult--read
-          obarray
-          :prompt "consult-apropos (obsolete): "
-          :predicate (lambda (x) (or (fboundp x) (boundp x) (facep x) (symbol-plist x)))
-          :category 'symbol
-          :default (thing-at-point 'symbol))))
-    (when (string= pattern "")
-      (user-error "No pattern given"))
-    (apropos pattern)))
-
-(make-obsolete
- 'consult-apropos
- "consult-apropos has been deprecated in favor of Embark actions:
-M-x describe-symbol <regexp> M-x embark-export
-M-x describe-symbol <regexp> M-x embark-act a"
-               "0.20")
 
 ;;;;; Command: consult-complex-command
 
@@ -4919,6 +4855,64 @@ the asynchronous search."
         :initial (consult--async-split-initial initial)
         :add-history (consult--async-split-thingatpt 'symbol)
         :history '(:input consult--man-history))))
+
+;;;; Obsolete commands
+
+;;;###autoload
+(defun consult-apropos ()
+  "Select pattern and call `apropos'.
+
+The default value of the completion is the symbol at point. As a better
+alternative, you can run `embark-export' from commands like `M-x' and
+`describe-symbol'."
+  (interactive)
+  (let ((pattern
+         (consult--read
+          obarray
+          :prompt "consult-apropos (obsolete): "
+          :predicate (lambda (x) (or (fboundp x) (boundp x) (facep x) (symbol-plist x)))
+          :category 'symbol
+          :default (thing-at-point 'symbol))))
+    (when (string= pattern "")
+      (user-error "No pattern given"))
+    (apropos pattern)))
+
+(make-obsolete
+ 'consult-apropos
+ "consult-apropos has been deprecated in favor of Embark actions:
+M-x describe-symbol <regexp> M-x embark-export
+M-x describe-symbol <regexp> M-x embark-act a"
+               "0.20")
+
+;;;###autoload
+(defun consult-file-externally (file)
+  "Open FILE externally using the default application of the system."
+  (interactive "fOpen externally: ")
+  (if (and (eq system-type 'windows-nt)
+           (fboundp 'w32-shell-execute))
+      (w32-shell-execute "open" file)
+    (call-process (pcase system-type
+                    ('darwin "open")
+                    ('cygwin "cygstart")
+                    (_ "xdg-open"))
+                  nil 0 nil
+                  (expand-file-name file))))
+
+(make-obsolete 'consult-file-externally 'embark-open-externally "0.29")
+
+;;;###autoload
+(defun consult-multi-occur (bufs regexp &optional nlines)
+  "Improved version of `multi-occur' based on `completing-read-multiple'.
+
+See `multi-occur' for the meaning of the arguments BUFS, REGEXP and NLINES."
+  (interactive (cons
+                (mapcar #'get-buffer
+                        (completing-read-multiple "Buffer: "
+                                                  #'internal-complete-buffer))
+                (occur-read-primary-args)))
+  (occur-1 regexp nlines bufs))
+
+(make-obsolete 'consult-multi-occur 'consult-line-multi "0.29")
 
 ;;;; Preview at point in completions buffers
 
