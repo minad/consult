@@ -4433,18 +4433,13 @@ outside a project. See `consult-buffer' for more details."
   "Return alist of kmacros and indices."
   (thread-last
     ;; List of macros
-    (append
-     (when last-kbd-macro
-       (list (list last-kbd-macro kmacro-counter kmacro-counter-format)))
-     ;; Emacs 29 uses OClosures. I like OClosures but it would have been better
-     ;; if public APIs wouldn't change like that.
-     (if (> emacs-major-version 28)
-         (mapcar (lambda (x)
-                   (list (kmacro--keys x)
-                         (kmacro--counter x)
-                         (kmacro--format x)))
-                 kmacro-ring)
-       kmacro-ring))
+    (append (when last-kbd-macro (list (kmacro-ring-head))) kmacro-ring)
+    ;; Emacs 29 uses OClosures. I like OClosures but it would have been better
+    ;; if public APIs wouldn't change like that.
+    (mapcar (lambda (x)
+              (if (> emacs-major-version 28)
+                  (list (kmacro--keys x) (kmacro--counter x) (kmacro--format x))
+                x)))
     ;; Add indices
     (seq-map-indexed #'cons)
     ;; Filter mouse clicks
@@ -4491,19 +4486,15 @@ Macros containing mouse clicks are omitted."
         (kmacro-call-macro (or arg 1) t nil)
       ;; Otherwise, run a kmacro from the ring.
       (let* ((selected (1- selected))
-             (kmacro (nth selected kmacro-ring))
+             (km (nth selected kmacro-ring))
              ;; Temporarily change the variables to retrieve the correct
              ;; settings.  Mainly, we want the macro counter to persist, which
              ;; automatically happens when cycling the ring.
-             (last-kbd-macro (car kmacro))
-             (kmacro-counter (cadr kmacro))
-             (kmacro-counter-format (caddr kmacro)))
+             last-kbd-macro kmacro-counter kmacro-counter-format)
+        (kmacro-split-ring-element km)
         (kmacro-call-macro (or arg 1) t)
         ;; Once done, put updated variables back into the ring.
-        (setf (nth selected kmacro-ring)
-              (list last-kbd-macro
-                    kmacro-counter
-                    kmacro-counter-format))))))
+        (setf (nth selected kmacro-ring) (kmacro-ring-head))))))
 
 ;;;;; Command: consult-grep
 
