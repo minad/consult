@@ -4425,13 +4425,26 @@ outside a project. See `consult-buffer' for more details."
 
 ;;;;; Command: consult-kmacro
 
+(declare-function kmacro--keys "kmacro")
+(declare-function kmacro--counter "kmacro")
+(declare-function kmacro--format "kmacro")
+
 (defun consult--kmacro-candidates ()
   "Return alist of kmacros and indices."
   (thread-last
     ;; List of macros
-    (append (when last-kbd-macro
-              `((,last-kbd-macro ,kmacro-counter ,kmacro-counter-format)))
-            kmacro-ring)
+    (append
+     (when last-kbd-macro
+       (list (list last-kbd-macro kmacro-counter kmacro-counter-format)))
+     ;; Emacs 29 uses OClosures. I like OClosures but it would have been better
+     ;; if public APIs wouldn't change like that.
+     (if (> emacs-major-version 28)
+         (mapcar (lambda (x)
+                   (list (kmacro--keys x)
+                         (kmacro--counter x)
+                         (kmacro--format x)))
+                 kmacro-ring)
+       kmacro-ring))
     ;; Add indices
     (seq-map-indexed #'cons)
     ;; Filter mouse clicks
