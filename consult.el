@@ -4433,22 +4433,20 @@ outside a project. See `consult-buffer' for more details."
   "Return alist of kmacros and indices."
   (thread-last
     ;; List of macros
-    (append (when last-kbd-macro (list (kmacro-ring-head))) kmacro-ring)
+    (append (and last-kbd-macro (list (kmacro-ring-head))) kmacro-ring)
     ;; Emacs 29 uses OClosures. I like OClosures but it would have been better
     ;; if public APIs wouldn't change like that.
     (mapcar (lambda (x)
               (if (> emacs-major-version 28)
-                  (list (kmacro--keys x) (kmacro--counter x) (kmacro--format x))
-                x)))
-    ;; Add indices
-    (seq-map-indexed #'cons)
+                  (list (kmacro--keys x) (kmacro--counter x) (kmacro--format x) x)
+                `(,@x ,x))))
     ;; Filter mouse clicks
-    (seq-remove (lambda (x) (seq-some #'mouse-event-p (caar x))))
+    (seq-remove (lambda (x) (seq-some #'mouse-event-p (car x))))
     ;; Format macros
-    (mapcar (pcase-lambda (`((,keys ,counter ,format) . ,index))
+    (mapcar (pcase-lambda (`(,keys ,counter ,format ,km))
               (propertize
                (format-kbd-macro keys 1)
-               'consult--candidate index
+               'consult--candidate km
                'consult--kmacro-annotation
                ;; If the counter is 0 and the counter format is its default,
                ;; then there is a good chance that the counter isn't actually
@@ -4469,32 +4467,23 @@ outside a project. See `consult-buffer' for more details."
 With prefix ARG, run the macro that many times.
 Macros containing mouse clicks are omitted."
   (interactive "p")
-  (let ((selected (consult--read
-                   (or (consult--kmacro-candidates)
-                       (user-error "No keyboard macros defined"))
-                   :prompt "Keyboard macro: "
-                   :category 'consult-kmacro
-                   :require-match t
-                   :sort nil
-                   :history 'consult--kmacro-history
-                   :annotate
-                   (lambda (cand)
-                     (get-text-property 0 'consult--kmacro-annotation cand))
-                   :lookup #'consult--lookup-candidate)))
-    (if (= 0 selected)
-        ;; If the first element has been selected, just run the last macro.
-        (kmacro-call-macro (or arg 1) t nil)
-      ;; Otherwise, run a kmacro from the ring.
-      (let* ((selected (1- selected))
-             (km (nth selected kmacro-ring))
-             ;; Temporarily change the variables to retrieve the correct
-             ;; settings.  Mainly, we want the macro counter to persist, which
-             ;; automatically happens when cycling the ring.
-             last-kbd-macro kmacro-counter kmacro-counter-format)
-        (kmacro-split-ring-element km)
-        (kmacro-call-macro (or arg 1) t)
-        ;; Once done, put updated variables back into the ring.
-        (setf (nth selected kmacro-ring) (kmacro-ring-head))))))
+  (let ((km (consult--read
+             (or (consult--kmacro-candidates)
+                 (user-error "No keyboard macros defined"))
+             :prompt "Keyboard macro: "
+             :category 'consult-kmacro
+             :require-match t
+             :sort nil
+             :history 'consult--kmacro-history
+             :annotate
+             (lambda (cand)
+               (get-text-property 0 'consult--kmacro-annotation cand))
+             :lookup #'consult--lookup-candidate)))
+    (unless km (user-error "No kmacro selected"))
+    (funcall
+     ;; Kmacros are lambdas (oclosures) on Emacs 29
+     (if (fboundp 'kmacro-lambda-form) (kmacro-lambda-form km) km)
+     arg)))
 
 ;;;;; Command: consult-grep
 
