@@ -10,6 +10,7 @@
 - Deprecate =consult-multi-occur=. The =multi-occur= command should be improved
   upstream to take advantage of =completing-read-multiple=. Consult provides the
   command =consult-line-multi= as an alternative.
+- =consult-history=: Use input as initial completion input
 
 * Version 0.29 (2022-12-03)
 

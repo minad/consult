@@ -139,18 +139,19 @@ This applies to asynchronous commands, e.g., `consult-grep'."
   :type '(alist :key-type symbol :value-type plist))
 
 (defcustom consult-mode-histories
-  '((eshell-mode eshell-history-ring eshell-history-index)
-    (comint-mode comint-input-ring   comint-input-ring-index)
-    (term-mode   term-input-ring     term-input-ring-index))
-  "Alist of mode histories as (mode . history) or (mode history index).
-The histories can be rings or lists. INDEX, if provided, is a
+  '((eshell-mode eshell-history-ring eshell-history-index    eshell-bol)
+    (comint-mode comint-input-ring   comint-input-ring-index comint-bol)
+    (term-mode   term-input-ring     term-input-ring-index   term-bol))
+  "Alist of mode histories (mode history index bol).
+The histories can be rings or lists. Index, if provided, is a
 variable to set to the index of the selection within the ring or
-list."
+list. Bol, if provided is a function which jumps to the beginning
+of the line after the prompt."
   :type '(alist :key-type symbol
-                :value-type (choice (symbol :tag "List or Ring Name")
-                                    (group :tag "Include Index"
-                                           (symbol :tag "List/Ring")
-                                           (symbol :tag "Index Variable")))))
+                :value-type (group :tag "Include Index"
+                                   (symbol :tag "List/Ring")
+                                   (symbol :tag "Index Variable")
+                                   (symbol :tag "Bol Function"))))
 
 (defcustom consult-themes nil
   "List of themes (symbols or regexps) to be presented for selection.
@@ -3804,18 +3805,20 @@ otherwise the history corresponding to the mode. There is a
 special case for `repeat-complex-command', for which the command
 history is used."
   (cond
-   ;; If pressing "C-x M-:", i.e., `repeat-complex-command',
-   ;; we are instead querying the `command-history' and get a full s-expression.
-   ;; Alternatively you might want to use `consult-complex-command',
-   ;; which can also be bound to "C-x M-:"!
-   ((eq last-command 'repeat-complex-command)
-    (list (mapcar #'prin1-to-string command-history)))
    ;; In the minibuffer we use the current minibuffer history,
    ;; which can be configured by setting `minibuffer-history-variable'.
    ((minibufferp)
     (when (eq minibuffer-history-variable t)
       (user-error "Minibuffer history is disabled for `%s'" this-command))
-    (list (mapcar #'consult--tofu-hide (symbol-value minibuffer-history-variable))))
+    (list (mapcar #'consult--tofu-hide
+                  (if (eq minibuffer-history-variable 'command-history)
+                      ;; If pressing "C-x M-:", i.e., `repeat-complex-command',
+                      ;; we are instead querying the `command-history' and get a
+                      ;; full s-expression. Alternatively you might want to use
+                      ;; `consult-complex-command', which can also be bound to
+                      ;; "C-x M-:"!
+                      (mapcar #'prin1-to-string command-history)
+                    (symbol-value minibuffer-history-variable)))))
    ;; Otherwise we use a mode-specific history, see `consult-mode-histories'.
    (t (let ((found (seq-find (lambda (h)
                                (and (derived-mode-p (car h))
@@ -3824,39 +3827,52 @@ history is used."
         (unless found
           (user-error "No history configured for `%s', see `consult-mode-histories'"
                       major-mode))
-        (if (consp (cdr found))
-            (cons (symbol-value (cadr found)) (caddr found))
-          (list (symbol-value (cdr found))))))))
+        (unless (consp (cdr found))
+          (user-error "Obsolete mode history entry: %S" found))
+        (cons (symbol-value (cadr found)) (cddr found))))))
 
 ;;;###autoload
-(defun consult-history (&optional history index)
+(defun consult-history (&optional history index bol)
   "Insert string from HISTORY of current buffer.
-In order to select from a specific HISTORY, pass the history variable
-as argument. INDEX is the name of the index variable to update, if any.
-See also `cape-history' from the Cape package."
+In order to select from a specific HISTORY, pass the history
+variable as argument. INDEX is the name of the index variable to
+update, if any. BOL is the function which jumps to the beginning
+of the prompt. See also `cape-history' from the Cape package."
   (interactive)
-  (let* ((pair (if history (cons history index) (consult--current-history)))
-         (history (if (ring-p (car pair)) (ring-elements (car pair)) (car pair)))
-         (index (cdr pair))
-         (str (consult--local-let ((enable-recursive-minibuffers t))
-                (consult--read
-                 (or (consult--remove-dups history)
-                     (user-error "History is empty"))
-                 :prompt "History: "
-                 :history t ;; disable history
-                 :category ;; Report category depending on history variable
-                 (and (minibufferp)
-                      (pcase minibuffer-history-variable
-                        ('extended-command-history 'command)
-                        ('buffer-name-history 'buffer)
-                        ('face-name-history 'face)
-                        ('read-envvar-name-history 'environment-variable)
-                        ('bookmark-history 'bookmark)
-                        ('file-name-history 'file)))
-                 :sort nil
-                 :state (consult--insertion-preview (point) (point))))))
-    (when (minibufferp)
-      (delete-minibuffer-contents))
+  (pcase-let* ((`(,history ,index ,bol) (if history
+                                            (list history index bol)
+                                          (consult--current-history)))
+               (history (if (ring-p history) (ring-elements history) history))
+               (`(,beg . ,end)
+                (if (minibufferp)
+                    (cons (minibuffer-prompt-end) (point-max))
+                  (if bol
+                      (save-excursion
+                        (funcall bol)
+                        (cons
+                         (point)
+                         (let ((inhibit-field-text-motion t))
+                           (line-end-position))))
+                    (cons (point) (point)))))
+               (str (consult--local-let ((enable-recursive-minibuffers t))
+                      (consult--read
+                       (or (consult--remove-dups history)
+                           (user-error "History is empty"))
+                       :prompt "History: "
+                       :history t ;; disable history
+                       :category ;; Report category depending on history variable
+                       (and (minibufferp)
+                            (pcase minibuffer-history-variable
+                              ('extended-command-history 'command)
+                              ('buffer-name-history 'buffer)
+                              ('face-name-history 'face)
+                              ('read-envvar-name-history 'environment-variable)
+                              ('bookmark-history 'bookmark)
+                              ('file-name-history 'file)))
+                       :sort nil
+                       :initial (buffer-substring-no-properties beg end)
+                       :state (consult--insertion-preview beg end)))))
+    (delete-region beg end)
     (when index
       (set index (seq-position history str)))
     (insert (substring-no-properties str))))
