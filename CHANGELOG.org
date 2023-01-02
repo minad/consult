@@ -2,7 +2,7 @@
 #+author: Daniel Mendler
 #+language: en
 
-* Development
+* Version 0.30 (2023-01-02)
 
 - Bugfixes
 - Drop Selectrum support
