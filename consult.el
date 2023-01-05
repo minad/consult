@@ -6,7 +6,7 @@
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2020
 ;; Version: 0.30
-;; Package-Requires: ((emacs "27.1") (compat "28.1"))
+;; Package-Requires: ((emacs "27.1") (compat "29.1"))
 ;; Homepage: https://github.com/minad/consult
 
 ;; This file is part of GNU Emacs.
@@ -57,7 +57,6 @@
 (require 'recentf)
 (require 'seq)
 (require 'compat)
-(require 'compat-28)
 
 (defgroup consult nil
   "Consulting `completing-read'."
@@ -875,7 +874,7 @@ The line beginning/ending BEG/END is bound in BODY."
           (while (< pos nextd)
             (let ((nexti (next-single-property-change pos 'invisible string nextd)))
               (unless (get-text-property pos 'invisible string)
-                (setq width (+ width (compat-string-width string pos nexti))))
+                (setq width (+ width (compat-call string-width string pos nexti))))
               (setq pos nexti))))))
     width))
 
