@@ -2184,24 +2184,20 @@ argument list :command and a highlighting function :highlight."
 
 ;;;; Special keymaps
 
-(defvar consult-async-map
-  (let ((map (make-sparse-keymap)))
-    ;; Async keys overwriting some unusable defaults for the default completion
-    (define-key map [remap minibuffer-complete-word] #'self-insert-command)
-    ;; Remap Emacs 29 history and default completion for now.
-    ;; See https://github.com/minad/consult/issues/613
-    (define-key map [remap minibuffer-complete-defaults] #'ignore)
-    (define-key map [remap minibuffer-complete-history] #'consult-history)
-    map)
-  "Keymap added for commands with asynchronous candidates.")
+(defvar-keymap consult-async-map
+  :doc "Keymap added for commands with asynchronous candidates."
+  ;; Async keys overwriting some unusable defaults for the default completion
+  "<remap> <minibuffer-complete-word>" #'self-insert-command
+  ;; Remap Emacs 29 history and default completion for now.
+  ;; See https://github.com/minad/consult/issues/613
+  "<remap> <minibuffer-complete-defaults>" #'ignore
+  "<remap> <minibuffer-complete-history>" #'consult-history)
 
-(defvar consult-narrow-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map " " consult--narrow-space)
-    (define-key map "\d" consult--narrow-delete)
-    map)
-  "Narrowing keymap which is added to the local minibuffer map.
-Note that `consult-narrow-key' and `consult-widen-key' are bound dynamically.")
+(defvar-keymap consult-narrow-map
+  :doc "Narrowing keymap which is added to the local minibuffer map.
+Note that `consult-narrow-key' and `consult-widen-key' are bound dynamically."
+  "SPC" consult--narrow-space
+  "DEL" consult--narrow-delete)
 
 ;;;; Internal API: consult--read
 
@@ -3894,12 +3890,10 @@ of the prompt. See also `cape-history' from the Cape package."
 (put #'consult-isearch-backward 'completion-predicate #'ignore)
 (put #'consult-isearch-forward 'completion-predicate #'ignore)
 
-(defvar consult-isearch-history-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map [remap isearch-forward] #'consult-isearch-forward)
-    (define-key map [remap isearch-backward] #'consult-isearch-backward)
-    map)
-  "Additional keymap used by `consult-isearch-history'.")
+(defvar-keymap consult-isearch-history-map
+  :doc "Additional keymap used by `consult-isearch-history'."
+  "<remap> <isearch-forward>" #'consult-isearch-forward
+  "<remap> <isearch-backward>" #'consult-isearch-backward)
 
 (defun consult--isearch-history-candidates ()
   "Return isearch history candidates."
