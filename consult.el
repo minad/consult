@@ -6,7 +6,7 @@
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2020
 ;; Version: 0.31
-;; Package-Requires: ((emacs "27.1") (compat "29.1.0.1"))
+;; Package-Requires: ((emacs "27.1") (compat "29.1.1.0"))
 ;; Homepage: https://github.com/minad/consult
 
 ;; This file is part of GNU Emacs.
