@@ -857,8 +857,7 @@ The line beginning/ending BEG/END is bound in BODY."
        (let ((,beg (point-min)) (,max (point-max)) end)
          (while (< ,beg ,max)
            (goto-char ,beg)
-           (let ((inhibit-field-text-motion t))
-             (setq ,end (line-end-position)))
+           (setq ,end (pos-eol))
            ,@body
            (setq ,beg (1+ ,end)))))))
 
@@ -1186,8 +1185,7 @@ MARKER is the cursor position."
 
 (defun consult--line-with-cursor (marker)
   "Return current line where the cursor MARKER is highlighted."
-  (let ((inhibit-field-text-motion t))
-    (consult--region-with-cursor (line-beginning-position) (line-end-position) marker)))
+  (consult--region-with-cursor (pos-bol) (pos-eol) marker))
 
 ;;;; Preview support
 
@@ -1347,8 +1345,7 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
   (if (and (derived-mode-p #'org-mode) (fboundp 'org-fold-show-set-visibility))
       ;; New Org 9.6 fold-core API
       (org-fold-show-set-visibility 'canonical)
-    (dolist (ov (let ((inhibit-field-text-motion t))
-                  (overlays-in (line-beginning-position) (line-end-position))))
+    (dolist (ov (overlays-in (pos-bol) (pos-eol)))
       (when-let (fun (overlay-get ov 'isearch-open-invisible))
         (when (invisible-p (overlay-get ov 'invisible))
           (funcall fun ov))))))
@@ -1371,8 +1368,7 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
                   (when (markerp beg) (set-marker beg nil))
                   (when (markerp end) (set-marker end nil))))))
     (let (restore)
-      (dolist (ov (let ((inhibit-field-text-motion t))
-                    (overlays-in (line-beginning-position) (line-end-position))))
+      (dolist (ov (overlays-in (pos-bol) (pos-eol)))
         (let ((inv (overlay-get ov 'invisible)))
           (when (and (invisible-p inv) (overlay-get ov 'isearch-open-invisible))
             (push (if-let (fun (overlay-get ov 'isearch-open-invisible-temporary))
@@ -1445,7 +1441,7 @@ The function can be used as the `:state' argument of `consult--read'."
                 (list (save-excursion
                         (let ((vbeg (progn (beginning-of-visual-line) (point)))
                               (vend (progn (end-of-visual-line) (point)))
-                              (end (line-end-position)))
+                              (end (pos-eol)))
                           (consult--overlay vbeg (if (= vend end) (1+ end) vend)
                                             'face 'consult-preview-line
                                             'window (selected-window)
@@ -2849,7 +2845,6 @@ These configuration options are supported:
                         (lambda () ;; as in the default from outline.el
                           (or (cdr (assoc (match-string 0) heading-alist))
                               (- (match-end 0) (match-beginning 0))))))
-         (inhibit-field-text-motion t)
          (buffer (current-buffer))
          candidates)
     (save-excursion
@@ -2860,9 +2855,7 @@ These configuration options are supported:
                  (re-search-forward heading-regexp nil t)))
         (cl-incf line (consult--count-lines (match-beginning 0)))
         (push (consult--location-candidate
-               (consult--buffer-substring (line-beginning-position)
-                                          (line-end-position)
-                                          'fontify)
+               (consult--buffer-substring (pos-bol) (pos-eol) 'fontify)
                (cons buffer (point)) line
                'consult--outline-level (funcall level-fun))
               candidates)
@@ -3115,8 +3108,7 @@ BUFFERS is the list of buffers."
   (pcase-let ((`(,regexps . ,hl)
                (funcall consult--regexp-compiler
                         input 'emacs completion-ignore-case))
-              (candidates nil)
-              (inhibit-field-text-motion t))
+              (candidates nil))
     (setq regexps (mapcar (lambda (x) (format "^.*?\\(?:%s\\)" x)) regexps))
     (dolist (buf buffers (nreverse candidates))
      (with-current-buffer buf
@@ -3126,8 +3118,7 @@ BUFFERS is the list of buffers."
              (goto-char (point-min))
              (while (save-excursion (re-search-forward (car regexps) nil t))
                (cl-incf line (consult--count-lines (match-beginning 0)))
-               (let ((beg (line-beginning-position))
-                     (end (line-end-position)))
+               (let ((beg (pos-bol)) (end (pos-eol)))
                  (when (seq-every-p
                         (lambda (x) (save-excursion (re-search-forward x end t)))
                         (cdr regexps))
@@ -3844,10 +3835,7 @@ of the prompt. See also `cape-history' from the Cape package."
                   (if bol
                       (save-excursion
                         (funcall bol)
-                        (cons
-                         (point)
-                         (let ((inhibit-field-text-motion t))
-                           (line-end-position))))
+                        (cons (point) (pos-eol)))
                     (cons (point) (point)))))
                (str (consult--local-let ((enable-recursive-minibuffers t))
                       (consult--read

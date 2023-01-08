@@ -55,7 +55,7 @@
           (when-let (msg (get-text-property pos 'compilation-message))
             (goto-char pos)
             (push (propertize
-                   (consult-compile--font-lock (consult--buffer-substring pos (line-end-position)))
+                   (consult-compile--font-lock (consult--buffer-substring pos (pos-eol)))
                    'consult--type (pcase (compilation--message->type msg)
                                     (0 ?i)
                                     (1 ?w)
