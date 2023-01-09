@@ -4,6 +4,7 @@
 
 * Development
 
+- =consult-buffer=: Always select the first candidate when narrowing (#714).
 - Drop obsolete =consult-apropos=. Alternative: =describe-symbol= in combination
   with =embark-export=.
 - Drop obsolete =consult-multi-occur=. Alternative: Built-in =multi-occur=,
