@@ -2484,31 +2484,37 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
 
 (defun consult--multi-lookup (sources selected candidates _input narrow &rest _)
   "Lookup SELECTED in CANDIDATES given SOURCES, with potential NARROW."
-  (unless (string-blank-p selected)
-    (if-let (found (member selected candidates))
-        (cons (cdr (get-text-property 0 'multi-category (car found)))
-              (consult--multi-source sources selected))
-      (let* ((tofu (consult--tofu-p (aref selected (1- (length selected)))))
-             (src (cond
-                   (tofu (consult--multi-source sources selected))
+  (if (or (string-blank-p selected)
+          (not (consult--tofu-p (aref selected (1- (length selected))))))
+      ;; Non-existing candidate without Tofu or default submitted (empty string)
+      (let* ((src (cond
                    (narrow (seq-find (lambda (src)
                                        (let ((n (plist-get src :narrow)))
                                          (eq (or (car-safe n) n -1) narrow)))
                                      sources))
                    ((seq-find (lambda (src) (plist-get src :default)) sources))
-                   ((aref sources 0)))))
-        `(,(if tofu (substring selected 0 -1) selected) :match nil ,@src)))))
+                   ((aref sources 0))))
+             (idx (seq-position sources src))
+             (def (and (string-blank-p selected) ;; default candidate
+                       (seq-find (lambda (cand) (eq idx (consult--tofu-get cand))) candidates))))
+        (if def
+            (cons (cdr (get-text-property 0 'multi-category def)) src)
+          `(,selected :match nil ,@src)))
+    (if-let (found (member selected candidates))
+        ;; Existing candidate submitted
+        (cons (cdr (get-text-property 0 'multi-category (car found)))
+              (consult--multi-source sources selected))
+      ;; Non-existing Tofu'ed candidate submitted, e.g., via Embark
+      `(,(substring selected 0 -1) :match nil ,@(consult--multi-source sources selected)))))
 
 (defun consult--multi-candidates (sources)
   "Return `consult--multi' candidates from SOURCES."
-  (let ((def) (idx 0) (max-width 0) (candidates))
+  (let ((idx 0) (max-width 0) (candidates))
     (seq-doseq (src sources)
       (let* ((face (and (plist-member src :face) `(face ,(plist-get src :face))))
              (cat (plist-get src :category))
              (items (plist-get src :items))
              (items (if (functionp items) (funcall items) items)))
-        (when (and (not def) (plist-get src :default) items)
-          (setq def (consult--tofu-append (car items) idx)))
         (dolist (item items)
           (let ((cand (consult--tofu-append item idx))
                 (width (consult--display-width item)))
@@ -2521,7 +2527,7 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
             (when (> width max-width) (setq max-width width))
             (push cand candidates))))
       (cl-incf idx))
-    (list def (+ 3 max-width) (nreverse candidates))))
+    (cons (+ 3 max-width) (nreverse candidates))))
 
 (defun consult--multi-enabled-sources (sources)
   "Return vector of enabled SOURCES."
@@ -2606,13 +2612,12 @@ Optional source fields:
                       (consult--multi-candidates sources)))
          (align (propertize
                  " " 'display
-                 `(space :align-to (+ left ,(cadr candidates)))))
+                 `(space :align-to (+ left ,(car candidates)))))
          (selected (apply #'consult--read
-                          (caddr candidates)
+                          (cdr candidates)
                           (append
                            options
                            (list
-                            :default     (car candidates)
                             :category    'multi-category
                             :predicate   (apply-partially #'consult--multi-predicate sources)
                             :annotate    (apply-partially #'consult--multi-annotate sources align)
