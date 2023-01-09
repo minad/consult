@@ -1697,13 +1697,13 @@ to make it available for commands with narrowing."
   (consult--require-minibuffer)
   (let ((minibuffer-message-timeout 1000000))
     (minibuffer-message
-     (mapconcat
-      (lambda (x) (concat
-                   (propertize (char-to-string (car x)) 'face 'consult-key) " "
+     (mapconcat (lambda (x)
+                  (concat
+                   (propertize (key-description (list (car x))) 'face 'consult-key)
+                   " "
                    (propertize (cdr x) 'face 'consult-help)))
-      (seq-filter (lambda (x) (/= (car x) 32))
-                  consult--narrow-keys)
-      " "))))
+                consult--narrow-keys
+                " "))))
 
 (defun consult--narrow-setup (settings map)
   "Setup narrowing with SETTINGS and keymap MAP."
