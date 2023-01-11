@@ -1065,7 +1065,7 @@ offer functionality based on ~completing-read~.
 If you find a bug or suspect that there is a problem with Consult, please carry
 out the following steps:
 
-1. Search through the issue tracker if your issue has been reported before (and
+1. *Search through the issue tracker* if your issue has been reported before (and
    has been resolved eventually) in the meantime.
 2. *Update all the relevant packages to the newest version*. This includes
    Consult, Compat, Vertico or other completion UIs, Marginalia, Embark and
