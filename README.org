@@ -1065,15 +1065,17 @@ offer functionality based on ~completing-read~.
 If you find a bug or suspect that there is a problem with Consult, please carry
 out the following steps:
 
-1. *Update all the relevant packages to the newest version*. This includes
+1. Search through the issue tracker if your issue has been reported before (and
+   has been resolved eventually) in the meantime.
+2. *Update all the relevant packages to the newest version*. This includes
    Consult, Compat, Vertico or other completion UIs, Marginalia, Embark and
    Orderless.
-2. Either use the default completion UI or ensure that exactly one of
+3. Either use the default completion UI or ensure that exactly one of
    =vertico-mode=, =mct-mode=, or =icomplete-mode= is enabled. The unsupported modes
    =ivy-mode=, =helm-mode= and =ido-ubiquitous-mode= must be disabled.
-3. Ensure that the =completion-styles= variable is properly configured. Try to set
+4. Ensure that the =completion-styles= variable is properly configured. Try to set
    =completion-styles= to a list including =substring= or =orderless=.
-4. Try to reproduce the issue by starting a bare bone Emacs instance with =emacs -Q=
+5. Try to reproduce the issue by starting a bare bone Emacs instance with =emacs -Q=
    on the command line. Execute the following minimal code snippets in the
    scratch buffer. This way we can exclude side effects due to configuration
    settings. If other packages are relevant to reproduce the issue, include them
