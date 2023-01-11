@@ -1065,9 +1065,9 @@ offer functionality based on ~completing-read~.
 If you find a bug or suspect that there is a problem with Consult, please carry
 out the following steps:
 
-1. *Update all the relevant packages to the newest version*.
-   This includes Consult, Vertico or other completion UIs, Marginalia, Embark
-   and Orderless.
+1. *Update all the relevant packages to the newest version*. This includes
+   Consult, Compat, Vertico or other completion UIs, Marginalia, Embark and
+   Orderless.
 2. Either use the default completion UI or ensure that exactly one of
    =vertico-mode=, =mct-mode=, or =icomplete-mode= is enabled. The unsupported modes
    =ivy-mode=, =helm-mode= and =ido-ubiquitous-mode= must be disabled.
