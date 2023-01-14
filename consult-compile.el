@@ -19,8 +19,8 @@
 
 ;;; Commentary:
 
-;; Provides the command `consult-compile-error'. This is an extra
-;; package, to allow lazy loading of compile.el. The
+;; Provides the command `consult-compile-error'.  This is an extra
+;; package, to allow lazy loading of compile.el.  The
 ;; `consult-compile-error' command is autoloaded.
 
 ;;; Code:

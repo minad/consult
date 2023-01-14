@@ -186,11 +186,11 @@ Raise an error if the list is empty and NOERROR is nil."
 (defun consult-register (&optional arg)
   "Load register and either jump to location or insert the stored text.
 
-This command is useful to search the register contents. For quick access
+This command is useful to search the register contents.  For quick access
 to registers it is still recommended to use the register functions
 `consult-register-load' and `consult-register-store' or the built-in
-built-in register access functions. The command supports narrowing, see
-`consult-register--narrow'. Marker positions are previewed. See
+built-in register access functions.  The command supports narrowing, see
+`consult-register--narrow'.  Marker positions are previewed.  See
 `jump-to-register' and `insert-register' for the meaning of prefix ARG."
   (interactive "P")
   (consult-register-load
@@ -217,8 +217,8 @@ built-in register access functions. The command supports narrowing, see
 (defun consult-register-load (reg &optional arg)
   "Do what I mean with a REG.
 
-For a window configuration, restore it. For a number or text, insert it.
-For a location, jump to it. See `jump-to-register' and `insert-register'
+For a window configuration, restore it.  For a number or text, insert it.
+For a location, jump to it.  See `jump-to-register' and `insert-register'
 for the meaning of prefix ARG."
   (interactive
    (list
@@ -296,8 +296,8 @@ This function is derived from `register-read-with-preview'."
   "Store register dependent on current context, showing an action menu.
 
 With an active region, store/append/prepend the contents, optionally
-deleting the region when a prefix ARG is given. With a numeric prefix
-ARG, store or add the number. Otherwise store point, frameset, window or
+deleting the region when a prefix ARG is given.  With a numeric prefix
+ARG, store or add the number.  Otherwise store point, frameset, window or
 kmacro."
   (interactive "P")
   (consult-register--action

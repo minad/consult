@@ -19,7 +19,7 @@
 
 ;;; Commentary:
 
-;; Integration code for the Vertico completion system. This package
+;; Integration code for the Vertico completion system.  This package
 ;; is automatically loaded by Consult.
 
 ;;; Code:
@@ -53,7 +53,7 @@ See `consult--completion-filter' for arguments PATTERN, CANDS, CATEGORY
 and HIGHLIGHT."
   (if (and (bound-and-true-p vertico-mode) (not highlight))
       ;; Optimize `consult--completion-filter' using the deferred highlighting
-      ;; from Vertico. The advice is not necessary - it is a pure optimization.
+      ;; from Vertico.  The advice is not necessary - it is a pure optimization.
       (nconc (car (vertico--all-completions pattern cands nil (length pattern)
                                             `(metadata (category . ,category))))
              nil)

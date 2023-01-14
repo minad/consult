@@ -19,8 +19,8 @@
 
 ;;; Commentary:
 
-;; Provides Xref integration for Consult. This is an extra package, to
-;; allow lazy loading of xref.el. The `consult-xref' function is
+;; Provides Xref integration for Consult.  This is an extra package, to
+;; allow lazy loading of xref.el.  The `consult-xref' function is
 ;; autoloaded.
 
 ;;; Code:

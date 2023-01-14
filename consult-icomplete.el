@@ -19,7 +19,7 @@
 
 ;;; Commentary:
 
-;; Integration code for the Icomplete completion system. This package
+;; Integration code for the Icomplete completion system.  This package
 ;; is automatically loaded by Consult.
 
 ;;; Code:

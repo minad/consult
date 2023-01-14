@@ -35,10 +35,11 @@
                              (?v "Variables" font-lock-variable-name-face))))
   "Imenu configuration, faces and narrowing keys used by `consult-imenu'.
 
-For each type a narrowing key and a name must be specified. The face is
-optional. The imenu representation provided by the backend usually puts
-functions directly at the toplevel. `consult-imenu' moves them instead under the
-type specified by :toplevel."
+For each type a narrowing key and a name must be specified.  The
+face is optional.  The imenu representation provided by the
+backend usually puts functions directly at the toplevel.
+`consult-imenu' moves them instead under the type specified by
+:toplevel."
   :type '(repeat (cons symbol plist))
   :group 'consult)
 
@@ -231,7 +232,7 @@ this function can jump across buffers."
 (defun consult-imenu ()
   "Select item from flattened `imenu' using `completing-read' with preview.
 
-The command supports preview and narrowing. See the variable
+The command supports preview and narrowing.  See the variable
 `consult-imenu-config', which configures the narrowing.
 The symbol at point is added to the future history.
 
@@ -244,9 +245,9 @@ See also `consult-imenu-multi'."
   "Select item from the imenus of all buffers from the same project.
 
 In order to determine the buffers belonging to the same project, the
-`consult-project-function' is used. Only the buffers with the
-same major mode as the current buffer are used. See also
-`consult-imenu' for more details. In order to search a subset of buffers,
+`consult-project-function' is used.  Only the buffers with the
+same major mode as the current buffer are used.  See also
+`consult-imenu' for more details.  In order to search a subset of buffers,
 QUERY can be set to a plist according to `consult--buffer-query'."
   (interactive "P")
   (unless (keywordp (car-safe query))

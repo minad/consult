@@ -115,7 +115,7 @@ buffer are offered."
 (defun consult-org-agenda (&optional match)
   "Jump to an Org agenda heading.
 
-By default, all agenda entries are offered. MATCH is as in
+By default, all agenda entries are offered.  MATCH is as in
 `org-map-entries' and can used to refine this."
   (interactive)
   (unless org-agenda-files
