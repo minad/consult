@@ -1204,11 +1204,11 @@ ORIG is the original function, HOOKS the arguments."
 
 (defun consult--find-file-temporarily-1 (name)
   "Open file NAME, helper function for `consult--find-file-temporarily'."
-  (when-let* (((not (seq-find (lambda (x) (string-match-p x name))
-                              consult-preview-excluded-files)))
-              ;; file-attributes may throw permission denied error
-              (attrs (ignore-errors (file-attributes name)))
-              (size (file-attribute-size attrs)))
+  (when-let (((not (seq-find (lambda (x) (string-match-p x name))
+                             consult-preview-excluded-files)))
+             ;; file-attributes may throw permission denied error
+             (attrs (ignore-errors (file-attributes name)))
+             (size (file-attribute-size attrs)))
     (if (> size consult-preview-max-size)
         (format "File `%s' (%s) is too large for preview"
                 name (file-size-human-readable size))
@@ -1553,8 +1553,8 @@ PREVIEW-KEY, STATE, TRANSFORM and CANDIDATE."
                           (let ((input (minibuffer-contents-no-properties))
                                 (new-preview (cons input cand)))
                             (with-selected-window (or (minibuffer-selected-window) (next-window))
-                              (when-let* ((transformed (funcall transform narrow input cand))
-                                          (debounce (consult--preview-key-debounce preview-key transformed)))
+                              (when-let ((transformed (funcall transform narrow input cand))
+                                         (debounce (consult--preview-key-debounce preview-key transformed)))
                                 (when timer
                                   (cancel-timer timer)
                                   (setq timer nil))
@@ -3709,13 +3709,13 @@ There exists no equivalent of this command in Emacs 28."
       (funcall
        preview action
        ;; Only preview bookmarks with the default handler.
-       (when-let* ((bm (and cand (eq action 'preview) (assoc cand bookmark-alist)))
-                   (handler (bookmark-get-handler bm))
-                   (file (and (or (not handler)
-                                  (eq handler #'bookmark-default-handler))
-                              (bookmark-get-filename bm)))
-                   (pos (bookmark-get-position bm))
-                   (buf (funcall open file)))
+       (when-let ((bm (and cand (eq action 'preview) (assoc cand bookmark-alist)))
+                  (handler (bookmark-get-handler bm))
+                  (file (and (or (not handler)
+                                 (eq handler #'bookmark-default-handler))
+                             (bookmark-get-filename bm)))
+                  (pos (bookmark-get-position bm))
+                  (buf (funcall open file)))
          (set-marker (make-marker) pos buf))))))
 
 (defun consult--bookmark-action (bm)
@@ -4867,9 +4867,9 @@ automatically previewed."
 (defun consult-preview-at-point ()
   "Preview candidate at point in *Completions* buffer."
   (interactive)
-  (when-let* ((win (active-minibuffer-window))
-              (buf (window-buffer win))
-              (fun (buffer-local-value 'consult--preview-function buf)))
+  (when-let ((win (active-minibuffer-window))
+             (buf (window-buffer win))
+             (fun (buffer-local-value 'consult--preview-function buf)))
     (funcall fun)))
 
 ;;;; Integration with the default completion system
