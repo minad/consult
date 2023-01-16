@@ -1363,9 +1363,22 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
       ;; restore them.  A better show API would return all the applied
       ;; modifications such that we can restore the ones which got modified.
       (progn
-        (with-memoization consult--org-fold-regions
-          (delq nil (org-fold-core-get-regions
-                     :with-markers t :from (point-min) :to (point-max))))
+        (unless consult--org-fold-regions
+          (setq consult--org-fold-regions
+                (delq nil (org-fold-core-get-regions
+                           :with-markers t :from (point-min) :to (point-max))))
+          (when consult--org-fold-regions
+            (let ((hook (make-symbol "consult--invisible-open-temporarily-cleanup"))
+                  (buffer (current-buffer)))
+              (fset hook (lambda ()
+                           (remove-hook 'minibuffer-exit-hook hook)
+                           (when (buffer-live-p buffer)
+                             (with-current-buffer buffer
+                               (pcase-dolist (`(,beg ,end ,_) consult--org-fold-regions)
+                                 (when (markerp beg) (set-marker beg nil))
+                                 (when (markerp end) (set-marker end nil)))
+                               (kill-local-variable 'consult--org-fold-regions)))))
+              (add-hook 'minibuffer-exit-hook hook))))
         (org-fold-show-set-visibility 'canonical)
         (list (lambda ()
                 (pcase-dolist (`(,beg ,end ,spec) consult--org-fold-regions)
@@ -1425,11 +1438,6 @@ The function can be used as the `:state' argument of `consult--read'."
         overlays invisible)
     (set-marker-insertion-type saved-max t) ;; Grow when text is inserted
     (lambda (action cand)
-      (when (eq action 'return)
-        (pcase-dolist (`(,beg ,end ,_) consult--org-fold-regions)
-          (when (markerp beg) (set-marker beg nil))
-          (when (markerp end) (set-marker end nil)))
-        (kill-local-variable 'consult--org-fold-regions))
       (when (eq action 'preview)
         (mapc #'funcall invisible)
         (mapc #'delete-overlay overlays)
