@@ -6,7 +6,7 @@
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2020
 ;; Version: 0.31
-;; Package-Requires: ((emacs "27.1") (compat "29.1.1.0"))
+;; Package-Requires: ((emacs "27.1") (compat "29.1.1.1"))
 ;; Homepage: https://github.com/minad/consult
 
 ;; This file is part of GNU Emacs.
@@ -533,6 +533,9 @@ We use invalid characters outside the Unicode range.")
 
 (defvar-local consult--focus-lines-overlays nil
   "Overlays used by `consult-focus-lines'.")
+
+(defvar-local consult--org-fold-regions nil
+  "Stored regions for the org-fold API.")
 
 ;;;; Customization helper
 
@@ -1359,14 +1362,14 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
       ;; efficiently.  We obtain all regions in the whole buffer in order to
       ;; restore them.  A better show API would return all the applied
       ;; modifications such that we can restore the ones which got modified.
-      (let ((regions (delq nil (org-fold-core-get-regions
-                                :with-markers t :from (point-min) :to (point-max)))))
+      (progn
+        (with-memoization consult--org-fold-regions
+          (delq nil (org-fold-core-get-regions
+                     :with-markers t :from (point-min) :to (point-max))))
         (org-fold-show-set-visibility 'canonical)
         (list (lambda ()
-                (pcase-dolist (`(,beg ,end ,spec) regions)
-                  (org-fold-core-region beg end t spec)
-                  (when (markerp beg) (set-marker beg nil))
-                  (when (markerp end) (set-marker end nil))))))
+                (pcase-dolist (`(,beg ,end ,spec) consult--org-fold-regions)
+                  (org-fold-core-region beg end t spec)))))
     (let (restore)
       (dolist (ov (overlays-in (pos-bol) (pos-eol)))
         (let ((inv (overlay-get ov 'invisible)))
@@ -1422,6 +1425,11 @@ The function can be used as the `:state' argument of `consult--read'."
         overlays invisible)
     (set-marker-insertion-type saved-max t) ;; Grow when text is inserted
     (lambda (action cand)
+      (when (eq action 'return)
+        (pcase-dolist (`(,beg ,end ,_) consult--org-fold-regions)
+          (when (markerp beg) (set-marker beg nil))
+          (when (markerp end) (set-marker end nil)))
+        (kill-local-variable 'consult--org-fold-regions))
       (when (eq action 'preview)
         (mapc #'funcall invisible)
         (mapc #'delete-overlay overlays)
