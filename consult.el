@@ -1368,17 +1368,19 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
                 (delq nil (org-fold-core-get-regions
                            :with-markers t :from (point-min) :to (point-max))))
           (when consult--org-fold-regions
-            (let ((hook (make-symbol "consult--invisible-open-temporarily-cleanup"))
-                  (buffer (current-buffer)))
-              (fset hook (lambda ()
-                           (remove-hook 'minibuffer-exit-hook hook)
-                           (when (buffer-live-p buffer)
-                             (with-current-buffer buffer
-                               (pcase-dolist (`(,beg ,end ,_) consult--org-fold-regions)
-                                 (when (markerp beg) (set-marker beg nil))
-                                 (when (markerp end) (set-marker end nil)))
-                               (kill-local-variable 'consult--org-fold-regions)))))
-              (add-hook 'minibuffer-exit-hook hook))))
+            (let ((hook (make-symbol "consult--invisible-open-temporarily-cleanup")))
+              (fset hook (apply-partially #'run-at-time 0 nil
+                                          (lambda (buffer)
+                                            (when (buffer-live-p buffer)
+                                              (with-current-buffer buffer
+                                                (pcase-dolist (`(,beg ,end ,_) consult--org-fold-regions)
+                                                  (when (markerp beg) (set-marker beg nil))
+                                                  (when (markerp end) (set-marker end nil)))
+                                                (kill-local-variable 'consult--org-fold-regions))))
+                                          (current-buffer)))
+              (when-let (win (active-minibuffer-window))
+                (with-current-buffer (window-buffer win)
+                  (add-hook 'minibuffer-exit-hook hook nil 'local))))))
         (org-fold-show-set-visibility 'canonical)
         (list (lambda ()
                 (pcase-dolist (`(,beg ,end ,spec) consult--org-fold-regions)
