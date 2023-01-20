@@ -4459,7 +4459,7 @@ outside a project.  See `consult-buffer' for more details."
     ;; Emacs 29 uses OClosures.  I like OClosures but it would have been better
     ;; if public APIs wouldn't change like that.
     (mapcar (lambda (x)
-              (if (> emacs-major-version 28)
+              (if (eval-when-compile (> emacs-major-version 28))
                   (list (kmacro--keys x) (kmacro--counter x) (kmacro--format x) x)
                 `(,@x ,x))))
     ;; Filter mouse clicks
