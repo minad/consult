@@ -60,6 +60,8 @@
 
 (defgroup consult nil
   "Consulting `completing-read'."
+  :link '(url-link "https://github.com/minad/consult")
+  :link '(info-link "(consult)")
   :group 'convenience
   :group 'minibuffer
   :prefix "consult-")
