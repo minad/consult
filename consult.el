@@ -60,9 +60,11 @@
 
 (defgroup consult nil
   "Consulting `completing-read'."
-  :link '(url-link "https://github.com/minad/consult")
-  :link '(info-link "(consult)")
-  :group 'convenience
+  :link '(info-link :tag "Info Manual" "(consult)")
+  :link '(url-link :tag "Homepage" "https://github.com/minad/consult")
+  :link '(emacs-library-link :tag "Library Source" "consult.el")
+  :group 'files
+  :group 'outlines
   :group 'minibuffer
   :prefix "consult-")
 
