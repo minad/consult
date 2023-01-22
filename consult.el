@@ -284,7 +284,7 @@ Can be either a string, or a list of strings or expressions."
   :type '(choice string (repeat (choice string expression))))
 
 (defcustom consult-locate-args
-  "locate --ignore-case --existing"
+  "locate --ignore-case" ;; --existing not supported by Debian plocate
   "Command line arguments for locate, see `consult-locate'.
 The dynamically computed arguments are appended.
 Can be either a string, or a list of strings or expressions."
