@@ -82,7 +82,7 @@
                   (add-text-properties 0 (length node)
                                        (list 'consult--info-position (cons buffer bol)
                                              'face 'consult-file
-                                             'consult--file-group node)
+                                             'consult--prefix-group node)
                                        cand)
                   (push cand candidates))))))))
     (nreverse candidates)))
@@ -91,7 +91,7 @@
   "Lookup info position marker given SELECTED candidate from CANDIDATES list."
   (when-let ((cand (car (member selected candidates)))
              (pos (get-text-property 0 'consult--info-position cand))
-             (node (get-text-property 0 'consult--file-group cand))
+             (node (get-text-property 0 'consult--prefix-group cand))
              (matches (consult--point-placement cand (1+ (length node)))))
     (save-restriction
       (widen)
@@ -107,7 +107,7 @@
       (if (not cand)
           (funcall preview action nil)
         (let* ((pos (get-text-property 0 'consult--info-position cand))
-               (node (get-text-property 0 'consult--file-group cand))
+               (node (get-text-property 0 'consult--prefix-group cand))
                (matches (consult--point-placement cand (1+ (length node))))
                (dest (+ (cdr pos) (car matches))))
         (funcall preview action
@@ -152,7 +152,7 @@
            :require-match t
            :sort nil
            :history '(:input consult-info--history)
-           :group #'consult--file-group
+           :group #'consult--prefix-group
            ;; TODO fix consult-man and consult-info embark integration
            ;; We have to set (alist-get '(general . consult-man) embark-default-action-overrides)
            ;; and (alist-get '(general . consult-info) embark-default-action-overrides)

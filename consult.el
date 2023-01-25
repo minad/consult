@@ -1003,6 +1003,13 @@ When no project is found and MAY-PROMPT is non-nil ask the user."
   "Return t if position POS lies in range `point-min' to `point-max'."
   (<= (point-min) pos (point-max)))
 
+(defun consult--prefix-group (cand transform)
+  "Return title for CAND or TRANSFORM the candidate.
+The candidate must have a `consult--prefix-group' property."
+  (if transform
+      (substring cand (1+ (length (get-text-property 0 'consult--prefix-group cand))))
+    (get-text-property 0 'consult--prefix-group cand)))
+
 (defun consult--type-group (types)
   "Return group function for TYPES."
   (lambda (cand transform)
@@ -4555,8 +4562,8 @@ BUILDER is the command argument builder."
                   (when highlight
                     (funcall highlight content))
                   (setq str (concat file sep line sep content))
-                  ;; Store file name in order to avoid allocations in `consult--file-group'
-                  (add-text-properties 0 file-len `(face consult-file consult--file-group ,file) str)
+                  ;; Store file name in order to avoid allocations in `consult--prefix-group'
+                  (add-text-properties 0 file-len `(face consult-file consult--prefix-group ,file) str)
                   (put-text-property (1+ file-len) (+ 1 file-len line-len) 'face 'consult-line-number str)
                   (when ctx
                     (add-face-text-property (+ 2 file-len line-len) (length str) 'consult-grep-context 'append str))
@@ -4589,13 +4596,6 @@ FIND-FILE is the file open function, defaulting to `find-file'."
                             cand
                             (and (not (eq action 'return)) open))))))
 
-;; TODO rename also in affe
-(defun consult--file-group (cand transform)
-  "Return title for CAND or TRANSFORM the candidate."
-  (if transform
-      (substring cand (1+ (length (get-text-property 0 'consult--file-group cand))))
-    (get-text-property 0 'consult--file-group cand)))
-
 (defun consult--grep-exclude-args ()
   "Produce grep exclude arguments.
 Take the variables `grep-find-ignored-directories' and
@@ -4625,7 +4625,7 @@ INITIAL is inital input."
      :add-history (consult--async-split-thingatpt 'symbol)
      :require-match t
      :category 'consult-grep
-     :group #'consult--file-group
+     :group #'consult--prefix-group
      :history '(:input consult--grep-history)
      :sort nil)))
 
