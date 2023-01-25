@@ -4466,10 +4466,6 @@ outside a project.  See `consult-buffer' for more details."
 
 ;;;;; Command: consult-kmacro
 
-(declare-function kmacro--keys "kmacro")
-(declare-function kmacro--counter "kmacro")
-(declare-function kmacro--format "kmacro")
-
 (defun consult--kmacro-candidates ()
   "Return alist of kmacros and indices."
   (thread-last
