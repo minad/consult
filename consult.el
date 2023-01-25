@@ -4850,15 +4850,16 @@ details regarding the asynchronous search."
     (save-match-data
       (dolist (str lines)
         (when (string-match "\\`\\(.*?\\([^ ]+\\) *(\\([^,)]+\\)[^)]*).*?\\) +- +\\(.*\\)\\'" str)
-          (let ((names (match-string 1 str))
-                (name (match-string 2 str))
-                (section (match-string 3 str))
-                (desc (match-string 4 str)))
-            (add-face-text-property 0 (length names) 'consult-file nil names)
-            (push (cons
-                   (format "%s - %s" names desc)
-                   (concat section " " name))
-                  candidates)))))
+          (let* ((names (match-string 1 str))
+                 (name (match-string 2 str))
+                 (section (match-string 3 str))
+                 (desc (match-string 4 str))
+                 (cand (format "%s - %s" names desc)))
+            (add-text-properties 0 (length names)
+                                 (list 'face 'consult-file
+                                       'consult-man (concat section " " name))
+                                 cand)
+            (push cand candidates)))))
     (nreverse candidates)))
 
 ;;;###autoload
@@ -4876,7 +4877,8 @@ the asynchronous search."
           (consult--async-highlight #'consult--man-builder))
         :prompt "Manual entry: "
         :require-match t
-        :lookup #'consult--lookup-cdr
+        :category 'consult-man
+        :lookup (apply-partially #'consult--lookup-prop 'consult-man)
         :initial (consult--async-split-initial initial)
         :add-history (consult--async-split-thingatpt 'symbol)
         :history '(:input consult--man-history))))

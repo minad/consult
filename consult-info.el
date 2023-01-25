@@ -153,9 +153,6 @@
            :sort nil
            :history '(:input consult-info--history)
            :group #'consult--prefix-group
-           ;; TODO fix consult-man and consult-info embark integration
-           ;; We have to set (alist-get '(general . consult-man) embark-default-action-overrides)
-           ;; and (alist-get '(general . consult-info) embark-default-action-overrides)
            :initial (consult--async-split-initial "")
            :lookup #'consult--lookup-member))
       (dolist (buf buffers)
