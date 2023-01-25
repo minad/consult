@@ -334,6 +334,16 @@ their descriptions.
 - =consult-org-agenda=: Jump to an agenda heading. Supports
   narrowing by heading level, priority and TODO state, as well as
   live preview and recursive editing.
+** Help
+:properties:
+:description: Searching through help
+:end:
+
+#+findex: consult-info
+#+findex: consult-man
+- =consult-man=: Find Unix man page, via Unix =apropos= or =man -k=. =consult-man= opens
+  the selected man page using the Emacs =man= command.
+- =consult-info=: Full text search through info pages.
 
 ** Miscellaneous
 :properties:
@@ -342,11 +352,8 @@ their descriptions.
 
 #+findex: consult-completion-in-region
 #+findex: consult-theme
-#+findex: consult-man
 #+findex: consult-preview-at-point
 #+findex: consult-preview-at-point-mode
-- =consult-man=: Find Unix man page, via Unix =apropos= or =man -k=. =consult-man= opens
-  the selected man page using the Emacs =man= command.
 - =consult-theme=: Select a theme and disable all currently enabled themes.
   Supports live preview of the theme while scrolling through the candidates.
 - =consult-preview-at-point= and =consult-preview-at-point-mode=: Command and minor
@@ -750,9 +757,11 @@ configuration examples.
   (use-package consult
     ;; Replace bindings. Lazily loaded due by `use-package'.
     :bind (;; C-c bindings (mode-specific-map)
+           ("C-c M-x" . consult-mode-command)
            ("C-c h" . consult-history)
-           ("C-c m" . consult-mode-command)
            ("C-c k" . consult-kmacro)
+           ("C-c m" . consult-man)
+           ("C-c i" . consult-info)
            ;; C-x bindings (ctl-x-map)
            ("C-x M-:" . consult-complex-command)     ;; orig. repeat-complex-command
            ("C-x b" . consult-buffer)                ;; orig. switch-to-buffer

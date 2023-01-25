@@ -4555,8 +4555,8 @@ BUILDER is the command argument builder."
                   (when highlight
                     (funcall highlight content))
                   (setq str (concat file sep line sep content))
-                  ;; Store file name in order to avoid allocations in `consult--grep-group'
-                  (add-text-properties 0 file-len `(face consult-file consult--grep-file ,file) str)
+                  ;; Store file name in order to avoid allocations in `consult--file-group'
+                  (add-text-properties 0 file-len `(face consult-file consult--file-group ,file) str)
                   (put-text-property (1+ file-len) (+ 1 file-len line-len) 'face 'consult-line-number str)
                   (when ctx
                     (add-face-text-property (+ 2 file-len line-len) (length str) 'consult-grep-context 'append str))
@@ -4589,11 +4589,12 @@ FIND-FILE is the file open function, defaulting to `find-file'."
                             cand
                             (and (not (eq action 'return)) open))))))
 
-(defun consult--grep-group (cand transform)
+;; TODO rename also in affe
+(defun consult--file-group (cand transform)
   "Return title for CAND or TRANSFORM the candidate."
   (if transform
-      (substring cand (1+ (length (get-text-property 0 'consult--grep-file cand))))
-    (get-text-property 0 'consult--grep-file cand)))
+      (substring cand (1+ (length (get-text-property 0 'consult--file-group cand))))
+    (get-text-property 0 'consult--file-group cand)))
 
 (defun consult--grep-exclude-args ()
   "Produce grep exclude arguments.
@@ -4624,7 +4625,7 @@ INITIAL is inital input."
      :add-history (consult--async-split-thingatpt 'symbol)
      :require-match t
      :category 'consult-grep
-     :group #'consult--grep-group
+     :group #'consult--file-group
      :history '(:input consult--grep-history)
      :sort nil)))
 
