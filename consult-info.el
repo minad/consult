@@ -87,43 +87,37 @@
                   (push cand candidates))))))))
     (nreverse candidates)))
 
-(defun consult-info--lookup (selected candidates &rest _)
-  "Lookup info position marker given SELECTED candidate from CANDIDATES list."
-  (when-let ((cand (car (member selected candidates)))
-             (pos (get-text-property 0 'consult--info-position cand))
+(defun consult-info--position (cand)
+  "Return position information for CAND."
+  (when-let ((pos (get-text-property 0 'consult--info-position cand))
              (node (get-text-property 0 'consult--prefix-group cand))
-             (matches (consult--point-placement cand (1+ (length node)))))
-    (save-restriction
-      (widen)
-      (cons node
-            (cons
-             (set-marker (make-marker) (+ (cdr pos) (car matches)) (car pos))
-             (cdr matches))))))
+             (matches (consult--point-placement cand (1+ (length node))))
+             (dest (+ (cdr pos) (car matches))))
+    (list node dest (cons
+                     (set-marker (make-marker) dest (car pos))
+                     (cdr matches)))))
+
+(defun consult-info--jump (cand)
+  "Jump to info CAND."
+  (when-let ((pos (consult-info--position cand)))
+    (info (car pos))
+    (widen)
+    (goto-char (cadr pos))
+    (Info-select-node)
+    (run-hooks 'consult-after-jump-hook)))
 
 (defun consult-info--state ()
   "Info manual preview state."
   (let ((preview (consult--jump-preview)))
     (lambda (action cand)
-      (if (not cand)
-          (funcall preview action nil)
-        (let* ((pos (get-text-property 0 'consult--info-position cand))
-               (node (get-text-property 0 'consult--prefix-group cand))
-               (matches (consult--point-placement cand (1+ (length node))))
-               (dest (+ (cdr pos) (car matches))))
-        (funcall preview action
-                 (cons
-                  (set-marker (make-marker) dest (car pos))
-                  (cdr matches)))
-        (pcase action
-          ('preview
-           (let (Info-history Info-history-list Info-history-forward)
-             (ignore-errors (Info-select-node))))
-          ('return
-           (info node)
-           (widen)
-           (goto-char dest)
-           (Info-select-node)
-           (run-hooks 'consult-after-jump-hook))))))))
+      (cond
+       ((not cand) (funcall preview action nil))
+       ((eq action 'preview)
+        (funcall preview 'preview (caddr (consult-info--position cand)))
+        (let (Info-history Info-history-list Info-history-forward)
+          (ignore-errors (Info-select-node))))
+       ((eq action 'return)
+        (consult-info--jump cand))))))
 
 ;;;###autoload
 (defun consult-info (&rest manuals)
@@ -151,6 +145,7 @@
            :prompt (format "Info (%s): " (string-join manuals ", "))
            :require-match t
            :sort nil
+           :category 'consult-info
            :history '(:input consult-info--history)
            :group #'consult--prefix-group
            :initial (consult--async-split-initial "")
