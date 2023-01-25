@@ -142,11 +142,11 @@
             (with-current-buffer (generate-new-buffer (format "*info-preview: %s*" manual))
               (let (Info-history Info-history-list Info-history-forward)
                 (Info-mode)
-                (Info-find-node manual "Top")) ;; TODO noerror?
+                (Info-find-node manual "Top"))
               (push (cons manual (current-buffer)) buffers)))
           (consult--read
            (consult--dynamic-collection
-            (apply-partially #'consult-info--candidates buffers))
+            (apply-partially #'consult-info--candidates (reverse buffers)))
            :state (consult-info--state)
            :prompt (format "Info (%s): " (string-join manuals ", "))
            :require-match t
