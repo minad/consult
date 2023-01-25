@@ -32,20 +32,19 @@
 
 (defun consult-info--candidates (manuals input)
   "Dynamically find lines in MANUALS matching INPUT."
-  (let (candidates)
+  (pcase-let ((`(,regexps . ,hl)
+               (funcall consult--regexp-compiler input 'emacs t))
+              (candidates nil))
     (pcase-dolist (`(,manual . ,buffer) manuals)
       (with-current-buffer buffer
         (widen)
         (goto-char (point-min))
-        (pcase-let ((`(,regexps . ,hl)
-                     (funcall consult--regexp-compiler input 'emacs t)))
-          ;; TODO subfile support?!
-          (while (ignore-errors (re-search-forward (car regexps) nil t))
-            (let ((bol (pos-bol))
-                  (eol (pos-eol))
-                  (current-node nil))
-              (when
-                  (save-excursion
+        ;; TODO subfile support?!
+        (while (ignore-errors (re-search-forward (car regexps) nil t))
+          (let ((bol (pos-bol))
+                (eol (pos-eol))
+                node cand)
+            (when (save-excursion
                     (goto-char bol)
                     (and
                      (>= (- (point) 2) (point-min))
@@ -69,22 +68,21 @@
                            (forward-line 1))))
                      ;; Node name
                      (re-search-forward "Node:[ \t]*" nil t)
-                     (setq current-node
-                           (buffer-substring-no-properties
-                            (point)
-                            (progn
-                              (skip-chars-forward "^,\t\n")
-                              (point))))))
-                (let* ((node (format "(%s)%s" manual current-node))
-                       (cand (concat
-                              node ":"
-                              (funcall hl (buffer-substring-no-properties bol eol)))))
-                  (add-text-properties 0 (length node)
-                                       (list 'consult--info-position (cons buffer bol)
-                                             'face 'consult-file
-                                             'consult--prefix-group node)
-                                       cand)
-                  (push cand candidates))))))))
+                     (setq node
+                           (format "(%s)%s" manual
+                                   (buffer-substring-no-properties
+                                    (point)
+                                    (progn
+                                      (skip-chars-forward "^,\t\n")
+                                      (point)))))))
+              (setq cand (concat node ":"
+                                 (funcall hl (buffer-substring-no-properties bol eol))))
+              (add-text-properties 0 (length node)
+                                   (list 'consult--info-position (cons buffer bol)
+                                         'face 'consult-file
+                                         'consult--prefix-group node)
+                                   cand)
+              (push cand candidates))))))
     (nreverse candidates)))
 
 (defun consult-info--position (cand)
