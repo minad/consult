@@ -89,7 +89,7 @@
 
 (defun consult-info--position (cand)
   "Return position information for CAND."
-  (when-let ((pos (get-text-property 0 'consult--info-position cand))
+  (when-let ((pos (and cand (get-text-property 0 'consult--info-position cand)))
              (node (get-text-property 0 'consult--prefix-group cand))
              (matches (consult--point-placement cand (1+ (length node))))
              (dest (+ (cdr pos) (car matches))))
@@ -97,7 +97,7 @@
                      (set-marker (make-marker) dest (car pos))
                      (cdr matches)))))
 
-(defun consult-info--jump (cand)
+(defun consult-info--action (cand)
   "Jump to info CAND."
   (when-let ((pos (consult-info--position cand)))
     (info (car pos))
@@ -110,14 +110,14 @@
   "Info manual preview state."
   (let ((preview (consult--jump-preview)))
     (lambda (action cand)
-      (cond
-       ((not cand) (funcall preview action nil))
-       ((eq action 'preview)
-        (funcall preview 'preview (caddr (consult-info--position cand)))
-        (let (Info-history Info-history-list Info-history-forward)
-          (ignore-errors (Info-select-node))))
-       ((eq action 'return)
-        (consult-info--jump cand))))))
+      (pcase action
+        ('preview
+         (setq cand (caddr (consult-info--position cand)))
+         (funcall preview 'preview cand)
+         (let (Info-history Info-history-list Info-history-forward)
+           (when cand (ignore-errors (Info-select-node)))))
+        ('return
+         (consult-info--action cand))))))
 
 ;;;###autoload
 (defun consult-info (&rest manuals)
