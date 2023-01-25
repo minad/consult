@@ -976,7 +976,7 @@ When no project is found and MAY-PROMPT is non-nil ask the user."
     dir))
 
 (defun consult--format-location (file line &optional str)
-  "Format location string 'FILE:LINE:STR'."
+  "Format location string FILE:LINE:STR."
   (setq line (number-to-string line)
         str (concat file ":" line (and str ":") str)
         file (length file))
