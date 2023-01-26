@@ -40,8 +40,7 @@
         (widen)
         (goto-char (point-min))
         ;; TODO subfile support?!
-        (while (and (not (eobp))
-                    (ignore-errors (re-search-forward (car regexps) nil t)))
+        (while (and (not (eobp)) (re-search-forward (car regexps) nil t))
           (let ((bol (pos-bol))
                 (eol (pos-eol))
                 node cand)
@@ -55,11 +54,10 @@
                      ;; not work?!
                      (not (re-search-forward "[^[:print:]]" eol t))
                      ;; Matches all regexps
-                     (seq-every-p
-                      (lambda (r)
-                        (goto-char bol)
-                        (ignore-errors (re-search-forward r eol t)))
-                      (cdr regexps))
+                     (seq-every-p (lambda (r)
+                                    (goto-char bol)
+                                    (re-search-forward r eol t))
+                                  (cdr regexps))
                      ;; Find node beginning
                      (progn
                        (goto-char bol)
