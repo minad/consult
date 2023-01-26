@@ -46,7 +46,7 @@
                             (or (xref-location-line loc) 0)
                             (xref-item-summary xref))))
                 (add-text-properties
-                 0 1 `(consult-xref ,xref consult-xref--group ,group) cand)
+                 0 1 `(consult-xref ,xref consult--prefix-group ,group) cand)
                 cand))
             (funcall consult-xref--fetcher))))
 
@@ -77,12 +77,6 @@
                              (xref-file-location-column loc)
                            0)))))))))))
 
-(defun consult-xref--group (cand transform)
-  "Return title for CAND or TRANSFORM the candidate."
-  (if transform
-      (substring cand (1+ (length (get-text-property 0 'consult-xref--group cand))))
-    (get-text-property 0 'consult-xref--group cand)))
-
 ;;;###autoload
 (defun consult-xref (fetcher &optional alist)
   "Show xrefs with preview in the minibuffer.
@@ -106,7 +100,7 @@ FETCHER and ALIST arguments."
             :require-match t
             :sort nil
             :category 'consult-xref
-            :group #'consult-xref--group
+            :group #'consult--prefix-group
             :state
             ;; do not preview other frame
             (when-let (fun (pcase-exhaustive display
