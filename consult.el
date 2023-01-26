@@ -548,12 +548,10 @@ We use invalid characters outside the Unicode range.")
   (dolist (cmd cmds)
     (cond
      ((and (boundp cmd) (consp (symbol-value cmd)))
-      (set cmd (plist-put (symbol-value cmd) prop (eval form 'lexical))))
+      (setf (plist-get (symbol-value cmd) prop) (eval form 'lexical)))
      ((functionp cmd)
-      (setf (alist-get cmd consult--customize-alist)
-            (plist-put (alist-get cmd consult--customize-alist) prop form)))
-     (t (user-error "%s is neither a Consult command nor a Consult source"
-                    cmd))))
+      (setf (plist-get (alist-get cmd consult--customize-alist) prop) form))
+     (t (user-error "%s is neither a Command command nor a source" cmd))))
   nil)
 
 (defmacro consult-customize (&rest args)
