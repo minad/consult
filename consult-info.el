@@ -45,11 +45,11 @@
                 (eol (pos-eol))
                 node cand)
             (when (save-excursion
+                    (goto-char bol)
                     (and
-                     (> eol bol)
-                     (goto-char bol)
-                     (>= (- (point) 2) (point-min))
+                     (not (looking-at "^\\s-*$"))
                      ;; Information separator character
+                     (>= (- (point) 2) (point-min))
                      (not (eq (char-after (- (point) 2)) ?\^_))
                      ;; Only printable characters on the line, [:cntrl:] does
                      ;; not work?!

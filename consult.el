@@ -3042,16 +3042,17 @@ Start from top if TOP non-nil.
 CURR-LINE is the current line number."
   (consult--forbid-minibuffer)
   (consult--fontify-all)
-  (let* (default-cand candidates
-         (buffer (current-buffer))
-         (line (line-number-at-pos (point-min) consult-line-numbers-widen)))
+  (let* ((buffer (current-buffer))
+         (line (line-number-at-pos (point-min) consult-line-numbers-widen))
+         default-cand candidates)
     (consult--each-line beg end
-      (let ((str (consult--buffer-substring beg end)))
-        (unless (string-blank-p str)
-          (push (consult--location-candidate str (cons buffer (point)) line) candidates)
-          (when (and (not default-cand) (>= line curr-line))
-            (setq default-cand candidates)))
-        (cl-incf line)))
+      (unless (looking-at "^\\s-*$")
+        (push (consult--location-candidate (consult--buffer-substring beg end)
+                                           (cons buffer beg) line)
+              candidates)
+        (when (and (not default-cand) (>= line curr-line))
+          (setq default-cand candidates)))
+      (cl-incf line))
     (when candidates
       (nreverse
        (if (or top (not default-cand))
@@ -3165,7 +3166,8 @@ BUFFERS is the list of buffers."
                (cl-incf line (consult--count-lines (match-beginning 0)))
                (let ((bol (pos-bol))
                      (eol (pos-eol)))
-                 (when (and (> eol bol)
+                 (goto-char bol)
+                 (when (and (not (looking-at "^\\s-*$"))
                             (seq-every-p (lambda (r)
                                            (goto-char bol)
                                            (re-search-forward r eol t))
