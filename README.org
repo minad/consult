@@ -349,13 +349,13 @@ their descriptions.
   (defun consult-info-emacs ()
     "Search through Emacs info pages."
     (interactive)
-    (consult-info "emacs" "elisp" "cl" "compat"))
+    (consult-info "emacs" "efaq" "elisp" "cl" "compat"))
+
   (defun consult-info-completion ()
     "Search through completion info pages."
     (interactive)
     (consult-info "vertico" "consult" "marginalia" "orderless" "embark"
                   "corfu" "cape" "tempel"))
-
 #+end_src
 
 ** Miscellaneous
