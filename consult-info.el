@@ -35,7 +35,7 @@
   (pcase-let ((`(,regexps . ,hl)
                (funcall consult--regexp-compiler input 'emacs t))
               (candidates nil)
-              (buf-idx 0))
+              (cand-idx 0))
     (pcase-dolist (`(,manual . ,buf) manuals)
       (with-current-buffer buf
         (widen)
@@ -72,13 +72,12 @@
                              (point))))
                     (cand (concat
                            (funcall hl (buffer-substring-no-properties bol eol))
-                           ;; Buffer index and bol for disambiguation
-                           (consult--tofu-encode (logior (ash bol 8) buf-idx)))))
+                           (consult--tofu-encode cand-idx))))
                 (put-text-property 0 1 'consult--info
                                    (list (format "(%s)%s" manual node) bol buf) cand)
+                (cl-incf cand-idx)
                 (push cand candidates)))
-            (goto-char (1+ eol)))))
-      (cl-incf buf-idx))
+            (goto-char (1+ eol))))))
     (nreverse candidates)))
 
 (defun consult-info--position (cand)

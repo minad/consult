@@ -2902,7 +2902,7 @@ These configuration options are supported:
         (cl-incf line (consult--count-lines (match-beginning 0)))
         (push (consult--location-candidate
                (consult--buffer-substring (pos-bol) (pos-eol) 'fontify)
-               (cons buffer (point)) (1- line) (point)
+               (cons buffer (point)) (1- line) (1- line)
                'consult--outline-level (funcall level-fun))
               candidates)
         (goto-char (1+ (pos-eol)))))
@@ -3052,7 +3052,7 @@ CURR-LINE is the current line number."
       (unless (looking-at-p "^\\s-*$")
         (push (consult--location-candidate
                (consult--buffer-substring beg end)
-               (cons buffer beg) line beg)
+               (cons buffer beg) line line)
               candidates)
         (when (and (not default-cand) (>= line curr-line))
           (setq default-cand candidates)))
@@ -3159,7 +3159,7 @@ BUFFERS is the list of buffers."
                (funcall consult--regexp-compiler
                         input 'emacs completion-ignore-case))
               (candidates nil)
-              (buf-idx 0))
+              (cand-idx 0))
     (save-match-data
       (dolist (buf buffers (nreverse candidates))
         (with-current-buffer buf
@@ -3179,12 +3179,10 @@ BUFFERS is the list of buffers."
                                           (cdr regexps)))
                     (push (consult--location-candidate
                            (funcall hl (buffer-substring-no-properties bol eol))
-                           (cons buf bol) (1- line)
-                           ;; Buffer index and bol for disambiguation
-                           (logior (ash bol 8) buf-idx))
-                          candidates))
-                  (goto-char (1+ eol))))
-              (cl-incf buf-idx))))))))
+                           (cons buf bol) (1- line) cand-idx)
+                          candidates)
+                    (cl-incf cand-idx))
+                  (goto-char (1+ eol)))))))))))
 
 ;;;###autoload
 (defun consult-line-multi (query &optional initial)
