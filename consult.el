@@ -2312,7 +2312,7 @@ PREVIEW-KEY are the preview keys."
 
 (defsubst consult--tofu-append (cand id)
   "Append tofu-encoded ID to CAND.
-The ID must fit within a single character. It must be smaller
+The ID must fit within a single character.  It must be smaller
 than `consult--tofu-range'."
   (setq id (char-to-string (+ consult--tofu-char id)))
   (add-text-properties 0 1 '(invisible t consult-strip t) id)
