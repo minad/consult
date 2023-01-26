@@ -46,13 +46,12 @@
                 (eol (pos-eol)))
             (goto-char bol)
             (when (and
-                   (not (looking-at "^\\s-*$"))
                    ;; Information separator character
                    (>= (- (point) 2) (point-min))
                    (not (eq (char-after (- (point) 2)) ?\^_))
-                   ;; Only printable characters on the line, [:cntrl:] does
-                   ;; not work?!
-                   (not (re-search-forward "[^[:print:]]" eol t))
+                   ;; Non-blank line, only printable characters on the line.
+                   (not (looking-at-p "^\\s-*$"))
+                   (looking-at-p "^[[:print:]]*$")
                    ;; Matches all regexps
                    (seq-every-p (lambda (r)
                                   (goto-char bol)
@@ -62,7 +61,7 @@
                    (goto-char bol)
                    (if (search-backward "\n\^_" nil 'move)
                        (forward-line 2)
-                     (when (looking-at "\^_")
+                     (when (looking-at-p "\^_")
                        (forward-line 1)))
                    ;; Node name
                    (re-search-forward "Node:[ \t]*" nil t))

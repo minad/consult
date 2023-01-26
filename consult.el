@@ -3045,7 +3045,7 @@ CURR-LINE is the current line number."
          (line (line-number-at-pos (point-min) consult-line-numbers-widen))
          default-cand candidates)
     (consult--each-line beg end
-      (unless (looking-at "^\\s-*$")
+      (unless (looking-at-p "^\\s-*$")
         (push (consult--location-candidate
                (consult--buffer-substring beg end)
                (cons buffer beg) line beg)
@@ -3168,7 +3168,7 @@ BUFFERS is the list of buffers."
                 (let ((bol (pos-bol))
                       (eol (pos-eol)))
                   (goto-char bol)
-                  (when (and (not (looking-at "^\\s-*$"))
+                  (when (and (not (looking-at-p "^\\s-*$"))
                              (seq-every-p (lambda (r)
                                             (goto-char bol)
                                             (re-search-forward r eol t))
