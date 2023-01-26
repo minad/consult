@@ -347,8 +347,15 @@ their descriptions.
   own commands which search through a predefined set of info pages, for example:
 #+begin_src emacs-lisp
   (defun consult-info-emacs ()
+    "Search through Emacs info pages."
     (interactive)
     (consult-info "emacs" "elisp" "cl" "compat"))
+  (defun consult-info-completion ()
+    "Search through completion info pages."
+    (interactive)
+    (consult-info "vertico" "consult" "marginalia" "orderless" "embark"
+                  "corfu" "cape" "tempel"))
+
 #+end_src
 
 ** Miscellaneous

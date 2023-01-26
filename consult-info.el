@@ -141,7 +141,12 @@
            (consult--dynamic-collection
             (apply-partially #'consult-info--candidates (reverse buffers)))
            :state (consult-info--state)
-           :prompt (format "Info (%s): " (string-join manuals ", "))
+           :prompt
+           (format "Info (%s): "
+                   (string-join (if (length> manuals 3)
+                                    `(,@(seq-take manuals 3) ,"…")
+                                  manuals)
+                                ", "))
            :require-match t
            :sort nil
            :category 'consult-info
