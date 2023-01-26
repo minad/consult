@@ -1120,7 +1120,7 @@ Return the location marker."
 
 (defun consult--count-lines (pos)
   "Move to position POS and return number of lines."
-  (let ((line 0))
+  (let ((line 1))
     (while (< (point) pos)
       (forward-line)
       (when (<= (point) pos)
@@ -2901,10 +2901,10 @@ These configuration options are supported:
         (cl-incf line (consult--count-lines (match-beginning 0)))
         (push (consult--location-candidate
                (consult--buffer-substring (pos-bol) (pos-eol) 'fontify)
-               (cons buffer (point)) line
+               (cons buffer (point)) (1- line)
                'consult--outline-level (funcall level-fun))
               candidates)
-        (unless (eobp) (forward-char 1))))
+        (goto-char (1+ (pos-eol)))))
     (unless candidates
       (user-error "No headings"))
     (nreverse candidates)))
@@ -3154,24 +3154,26 @@ BUFFERS is the list of buffers."
                (funcall consult--regexp-compiler
                         input 'emacs completion-ignore-case))
               (candidates nil))
-    (setq regexps (mapcar (lambda (x) (format "^.*?\\(?:%s\\)" x)) regexps))
     (dolist (buf buffers (nreverse candidates))
      (with-current-buffer buf
        (save-excursion
          (save-match-data
            (let ((line (line-number-at-pos (point-min) consult-line-numbers-widen)))
              (goto-char (point-min))
-             (while (save-excursion (re-search-forward (car regexps) nil t))
+             (while (and (not (eobp))
+                         (save-excursion (re-search-forward (car regexps) nil t)))
                (cl-incf line (consult--count-lines (match-beginning 0)))
-               (let ((beg (pos-bol)) (end (pos-eol)))
-                 (when (seq-every-p
-                        (lambda (x) (save-excursion (re-search-forward x end t)))
-                        (cdr regexps))
+               (let ((bol (pos-bol))
+                     (eol (pos-eol)))
+                 (when (seq-every-p (lambda (r)
+                                      (goto-char bol)
+                                      (re-search-forward r eol t))
+                                    (cdr regexps))
                    (push (consult--location-candidate
-                          (funcall hl (buffer-substring-no-properties beg end))
-                          (cons buf beg) line)
-                         candidates)))
-               (unless (eobp) (forward-char 1))))))))))
+                          (funcall hl (buffer-substring-no-properties bol eol))
+                          (cons buf bol) (1- line))
+                         candidates))
+                 (goto-char (1+ eol)))))))))))
 
 ;;;###autoload
 (defun consult-line-multi (query &optional initial)

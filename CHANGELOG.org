@@ -4,6 +4,7 @@
 
 * Development
 
+- Bugfixes
 - Add =consult-info= command (#634, #727).
 - =consult-buffer=: Always select the first candidate when narrowing (#714).
 - Drop obsolete =consult-apropos=. Alternative: =describe-symbol= in combination
