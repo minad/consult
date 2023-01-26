@@ -44,6 +44,7 @@
           (let ((bol (pos-bol))
                 (eol (pos-eol))
                 node cand)
+            (goto-char eol)
             (when (save-excursion
                     (goto-char bol)
                     (and
