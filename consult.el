@@ -2311,13 +2311,16 @@ PREVIEW-KEY are the preview keys."
       (add-text-properties pos max '(invisible t rear-nonsticky t cursor-intangible t)))))
 
 (defsubst consult--tofu-append (cand id)
-  "Append tofu-encoded ID to CAND."
+  "Append tofu-encoded ID to CAND.
+The ID must fit within a single character. It must be smaller
+than `consult--tofu-range'."
   (setq id (char-to-string (+ consult--tofu-char id)))
   (add-text-properties 0 1 '(invisible t consult-strip t) id)
   (concat cand id))
 
 (defsubst consult--tofu-get (cand)
-  "Extract tofu-encoded ID from CAND."
+  "Extract tofu-encoded ID from CAND.
+See `consult--tofu-append'."
   (- (aref cand (1- (length cand))) consult--tofu-char))
 
 ;; We must disambiguate the lines by adding a prefix such that two lines with
@@ -2326,7 +2329,8 @@ PREVIEW-KEY are the preview keys."
 ;; encode the line number as characters outside the unicode range.
 ;; By doing that, no accidential matching can occur.
 (defun consult--tofu-encode (n)
-  "Return tofu-encoded number N."
+  "Return tofu-encoded number N as a string.
+Large numbers are encoded as multiple tofu characters."
   (let (str tofu)
     (while (progn
              (setq tofu (char-to-string
