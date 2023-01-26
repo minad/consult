@@ -132,7 +132,7 @@
     (unwind-protect
         (progn
           (dolist (manual manuals)
-            (with-current-buffer (generate-new-buffer (format "*info-preview: %s*" manual))
+            (with-current-buffer (generate-new-buffer (format "*info-preview-%s*" manual))
               (let (Info-history Info-history-list Info-history-forward)
                 (Info-mode)
                 (Info-find-node manual "Top"))
