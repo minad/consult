@@ -1157,7 +1157,8 @@ CURR-LINE is the current line number."
   "Add MARKER and LINE as `consult-location' text property to CAND.
 Furthermore add the additional text properties PROPS, and append
 TOFU suffix for disambiguation."
-  (setq cand (concat cand (consult--tofu-encode tofu)))
+  ;;(setq cand (concat cand (consult--tofu-encode tofu)))
+  (setq cand (consult--tofu-disambiguate cand tofu))
   (add-text-properties 0 1 `(consult-location (,marker . ,line) ,@props) cand)
   cand)
 
@@ -2341,6 +2342,17 @@ Large numbers are encoded as multiple tofu characters."
     (add-text-properties 0 (length str) '(invisible t consult-strip t) str)
     str))
 
+(defun consult--tofu-disambiguate (cand n)
+  (let* ((end (1- (length cand)))
+         (last (aref cand end)))
+    (if (or (eq last ?\n) (eq last ?\r))
+        (if (>= n consult--tofu-range)
+            (concat (substring cand 0 -1) (consult--tofu-encode n))
+          (aset cand end (+ consult--tofu-char n))
+          (add-text-properties end (1+ end) '(invisible t consult-strip t) cand)
+          cand)
+      (concat cand (consult--tofu-encode n)))))
+
 (defun consult--read-annotate (fun cand)
   "Annotate CAND with annotation function FUN."
   (pcase (funcall fun cand)
@@ -3051,7 +3063,8 @@ CURR-LINE is the current line number."
     (consult--each-line beg end
       (unless (looking-at-p "^\\s-*$")
         (push (consult--location-candidate
-               (consult--buffer-substring beg end)
+               (consult--buffer-substring beg (min (point-max) (1+ end)))
+               ;;(consult--buffer-substring beg end)
                (cons buffer beg) line line)
               candidates)
         (when (and (not default-cand) (>= line curr-line))
