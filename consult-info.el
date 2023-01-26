@@ -35,9 +35,12 @@
   (pcase-let ((`(,regexps . ,hl)
                (funcall consult--regexp-compiler input 'emacs t))
               (candidates nil)
-              (cand-idx 0))
+              (cand-idx 0)
+              (last-node nil)
+              (full-node nil))
     (pcase-dolist (`(,manual . ,buf) manuals)
       (with-current-buffer buf
+        (setq last-node nil full-node nil)
         (widen)
         (goto-char (point-min))
         ;; TODO subfile support?!
@@ -73,8 +76,10 @@
                     (cand (concat
                            (funcall hl (buffer-substring-no-properties bol eol))
                            (consult--tofu-encode cand-idx))))
-                (put-text-property 0 1 'consult--info
-                                   (list (format "(%s)%s" manual node) bol buf) cand)
+                (unless (equal node last-node)
+                  (setq full-node (concat "(" manual ")" node)
+                        last-node node))
+                (put-text-property 0 1 'consult--info (list full-node bol buf) cand)
                 (cl-incf cand-idx)
                 (push cand candidates)))
             (goto-char (1+ eol))))))
