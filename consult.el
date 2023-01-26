@@ -662,8 +662,10 @@ If no capturing groups are used highlight the whole match.  Case is ignored
 if IGNORE-CASE is non-nil."
   (dolist (re regexps)
     (let ((i 0))
-      (while (let ((case-fold-search ignore-case))
-               (string-match re str i))
+      (while (and (let ((case-fold-search ignore-case))
+                    (string-match re str i))
+                  ;; Ensure that regexp search made progress (edge case for .*)
+                  (> (match-end 0) i))
         ;; Unfortunately there is no way to avoid the allocation of the match
         ;; data, since the number of capturing groups is unknown.
         (let ((m (match-data)))

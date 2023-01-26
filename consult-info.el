@@ -40,11 +40,11 @@
         (widen)
         (goto-char (point-min))
         ;; TODO subfile support?!
-        (while (ignore-errors (re-search-forward (car regexps) nil t))
+        (while (and (not (eobp))
+                    (ignore-errors (re-search-forward (car regexps) nil t)))
           (let ((bol (pos-bol))
                 (eol (pos-eol))
                 node cand)
-            (goto-char eol)
             (when (save-excursion
                     (goto-char bol)
                     (and
@@ -78,7 +78,8 @@
               (setq cand (funcall hl (buffer-substring-no-properties bol eol)))
               (put-text-property 0 (length cand) 'consult--info
                                  (list (format "(%s)%s" manual node) bol buffer) cand)
-              (push cand candidates))))))
+              (push cand candidates))
+            (goto-char (1+ eol))))))
     (nreverse candidates)))
 
 (defun consult-info--position (cand)
