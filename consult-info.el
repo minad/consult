@@ -45,8 +45,9 @@
                 (eol (pos-eol))
                 node cand)
             (when (save-excursion
-                    (goto-char bol)
                     (and
+                     (> eol bol)
+                     (goto-char bol)
                      (>= (- (point) 2) (point-min))
                      ;; Information separator character
                      (not (eq (char-after (- (point) 2)) ?\^_))
@@ -59,12 +60,11 @@
                                     (re-search-forward r eol t))
                                   (cdr regexps))
                      ;; Find node beginning
-                     (progn
-                       (goto-char bol)
-                       (if (search-backward "\n\^_" nil 'move)
-                           (forward-line 2)
-                         (when (looking-at "\^_")
-                           (forward-line 1))))
+                     (goto-char bol)
+                     (if (search-backward "\n\^_" nil 'move)
+                         (forward-line 2)
+                       (when (looking-at "\^_")
+                         (forward-line 1)))
                      ;; Node name
                      (re-search-forward "Node:[ \t]*" nil t)
                      (setq node
@@ -74,7 +74,7 @@
                               (skip-chars-forward "^,\t\n")
                               (point))))))
               (setq cand (funcall hl (buffer-substring-no-properties bol eol)))
-              (put-text-property 0 (length cand) 'consult--info
+              (put-text-property 0 1 'consult--info
                                  (list (format "(%s)%s" manual node) bol buffer) cand)
               (push cand candidates))
             (goto-char (1+ eol))))))
