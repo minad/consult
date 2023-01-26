@@ -34,50 +34,52 @@
   "Dynamically find lines in MANUALS matching INPUT."
   (pcase-let ((`(,regexps . ,hl)
                (funcall consult--regexp-compiler input 'emacs t))
-              (candidates nil))
-    (pcase-dolist (`(,manual . ,buffer) manuals)
-      (with-current-buffer buffer
+              (candidates nil)
+              (buf-idx 0))
+    (pcase-dolist (`(,manual . ,buf) manuals)
+      (with-current-buffer buf
         (widen)
         (goto-char (point-min))
         ;; TODO subfile support?!
         (while (and (not (eobp)) (re-search-forward (car regexps) nil t))
           (let ((bol (pos-bol))
-                (eol (pos-eol))
-                node cand)
-            (when (save-excursion
-                    (goto-char bol)
-                    (and
-                     (not (looking-at "^\\s-*$"))
-                     ;; Information separator character
-                     (>= (- (point) 2) (point-min))
-                     (not (eq (char-after (- (point) 2)) ?\^_))
-                     ;; Only printable characters on the line, [:cntrl:] does
-                     ;; not work?!
-                     (not (re-search-forward "[^[:print:]]" eol t))
-                     ;; Matches all regexps
-                     (seq-every-p (lambda (r)
-                                    (goto-char bol)
-                                    (re-search-forward r eol t))
-                                  (cdr regexps))
-                     ;; Find node beginning
-                     (goto-char bol)
-                     (if (search-backward "\n\^_" nil 'move)
-                         (forward-line 2)
-                       (when (looking-at "\^_")
-                         (forward-line 1)))
-                     ;; Node name
-                     (re-search-forward "Node:[ \t]*" nil t)
-                     (setq node
-                           (buffer-substring-no-properties
-                            (point)
-                            (progn
-                              (skip-chars-forward "^,\t\n")
-                              (point))))))
-              (setq cand (funcall hl (buffer-substring-no-properties bol eol)))
-              (put-text-property 0 1 'consult--info
-                                 (list (format "(%s)%s" manual node) bol buffer) cand)
-              (push cand candidates))
-            (goto-char (1+ eol))))))
+                (eol (pos-eol)))
+            (goto-char bol)
+            (when (and
+                   (not (looking-at "^\\s-*$"))
+                   ;; Information separator character
+                   (>= (- (point) 2) (point-min))
+                   (not (eq (char-after (- (point) 2)) ?\^_))
+                   ;; Only printable characters on the line, [:cntrl:] does
+                   ;; not work?!
+                   (not (re-search-forward "[^[:print:]]" eol t))
+                   ;; Matches all regexps
+                   (seq-every-p (lambda (r)
+                                  (goto-char bol)
+                                  (re-search-forward r eol t))
+                                (cdr regexps))
+                   ;; Find node beginning
+                   (goto-char bol)
+                   (if (search-backward "\n\^_" nil 'move)
+                       (forward-line 2)
+                     (when (looking-at "\^_")
+                       (forward-line 1)))
+                   ;; Node name
+                   (re-search-forward "Node:[ \t]*" nil t))
+              (let ((node (buffer-substring-no-properties
+                           (point)
+                           (progn
+                             (skip-chars-forward "^,\t\n")
+                             (point))))
+                    (cand (concat
+                           (funcall hl (buffer-substring-no-properties bol eol))
+                           ;; Buffer index and bol for disambiguation
+                           (consult--tofu-encode (logior (ash bol 8) buf-idx)))))
+                (put-text-property 0 1 'consult--info
+                                   (list (format "(%s)%s" manual node) bol buf) cand)
+                (push cand candidates)))
+            (goto-char (1+ eol)))))
+      (cl-incf buf-idx))
     (nreverse candidates)))
 
 (defun consult-info--position (cand)
@@ -90,7 +92,7 @@
 (defun consult-info--action (cand)
   "Jump to info CAND."
   (pcase (consult-info--position cand)
-    (`( ,_matches ,pos ,node ,_bol ,_buffer)
+    (`( ,_matches ,pos ,node ,_bol ,_buf)
      (info node)
      (widen)
      (goto-char pos)
@@ -106,8 +108,8 @@
          (setq cand (consult-info--position cand))
          (funcall preview 'preview
                   (pcase cand
-                    (`(,matches ,pos ,_node ,_bol ,buffer)
-                     (cons (set-marker (make-marker) pos buffer) matches))))
+                    (`(,matches ,pos ,_node ,_bol ,buf)
+                     (cons (set-marker (make-marker) pos buf) matches))))
          (let (Info-history Info-history-list Info-history-forward)
            (when cand (ignore-errors (Info-select-node)))))
         ('return

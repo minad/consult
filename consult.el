@@ -1155,12 +1155,11 @@ CURR-LINE is the current line number."
       (let ((line (cdr (get-text-property 0 'consult-location cand))))
         (list cand (format (if (< line curr-line) before after) line) "")))))
 
-(defun consult--location-candidate (cand marker line &rest props)
-  "Add MARKER and LINE as \\='consult-location text property to CAND.
+(defsubst consult--location-candidate (cand marker line tofu &rest props)
+  "Add MARKER and LINE as `consult-location' text property to CAND.
 Furthermore add the additional text properties PROPS, and append
-tofu-encoded MARKER suffix for disambiguation."
-  ;; Handle cheap marker
-  (setq cand (concat cand (consult--tofu-encode (if (consp marker) (cdr marker) marker))))
+TOFU suffix for disambiguation."
+  (setq cand (concat cand (consult--tofu-encode tofu)))
   (add-text-properties 0 1 `(consult-location (,marker . ,line) ,@props) cand)
   cand)
 
@@ -2901,7 +2900,7 @@ These configuration options are supported:
         (cl-incf line (consult--count-lines (match-beginning 0)))
         (push (consult--location-candidate
                (consult--buffer-substring (pos-bol) (pos-eol) 'fontify)
-               (cons buffer (point)) (1- line)
+               (cons buffer (point)) (1- line) (point)
                'consult--outline-level (funcall level-fun))
               candidates)
         (goto-char (1+ (pos-eol)))))
@@ -2954,12 +2953,14 @@ The symbol at point is added to the future history."
           (when (and (eq buf current-buf)
                      (consult--in-range-p pos))
             (goto-char pos)
-            ;; `line-number-at-pos' is a very slow function, which should be replaced everywhere.
-            ;; However in this case the slow line-number-at-pos does not hurt much, since
-            ;; the mark ring is usually small since it is limited by `mark-ring-max'.
+            ;; `line-number-at-pos' is a very slow function, which should be
+            ;; replaced everywhere.  However in this case the slow
+            ;; line-number-at-pos does not hurt much, since the mark ring is
+            ;; usually small since it is limited by `mark-ring-max'.
             (push (consult--location-candidate
                    (consult--line-with-cursor marker) marker
-                   (line-number-at-pos pos consult-line-numbers-widen))
+                   (line-number-at-pos pos consult-line-numbers-widen)
+                   marker)
                   candidates)))))
     (unless candidates
       (user-error "No marks"))
@@ -3047,8 +3048,9 @@ CURR-LINE is the current line number."
          default-cand candidates)
     (consult--each-line beg end
       (unless (looking-at "^\\s-*$")
-        (push (consult--location-candidate (consult--buffer-substring beg end)
-                                           (cons buffer beg) line)
+        (push (consult--location-candidate
+               (consult--buffer-substring beg end)
+               (cons buffer beg) line beg)
               candidates)
         (when (and (not default-cand) (>= line curr-line))
           (setq default-cand candidates)))
@@ -3154,29 +3156,33 @@ BUFFERS is the list of buffers."
   (pcase-let ((`(,regexps . ,hl)
                (funcall consult--regexp-compiler
                         input 'emacs completion-ignore-case))
-              (candidates nil))
-    (dolist (buf buffers (nreverse candidates))
-     (with-current-buffer buf
-       (save-excursion
-         (save-match-data
-           (let ((line (line-number-at-pos (point-min) consult-line-numbers-widen)))
-             (goto-char (point-min))
-             (while (and (not (eobp))
-                         (save-excursion (re-search-forward (car regexps) nil t)))
-               (cl-incf line (consult--count-lines (match-beginning 0)))
-               (let ((bol (pos-bol))
-                     (eol (pos-eol)))
-                 (goto-char bol)
-                 (when (and (not (looking-at "^\\s-*$"))
-                            (seq-every-p (lambda (r)
-                                           (goto-char bol)
-                                           (re-search-forward r eol t))
-                                         (cdr regexps)))
-                   (push (consult--location-candidate
-                          (funcall hl (buffer-substring-no-properties bol eol))
-                          (cons buf bol) (1- line))
-                         candidates))
-                 (goto-char (1+ eol)))))))))))
+              (candidates nil)
+              (buf-idx 0))
+    (save-match-data
+      (dolist (buf buffers (nreverse candidates))
+        (with-current-buffer buf
+          (save-excursion
+            (let ((line (line-number-at-pos (point-min) consult-line-numbers-widen)))
+              (goto-char (point-min))
+              (while (and (not (eobp))
+                          (save-excursion (re-search-forward (car regexps) nil t)))
+                (cl-incf line (consult--count-lines (match-beginning 0)))
+                (let ((bol (pos-bol))
+                      (eol (pos-eol)))
+                  (goto-char bol)
+                  (when (and (not (looking-at "^\\s-*$"))
+                             (seq-every-p (lambda (r)
+                                            (goto-char bol)
+                                            (re-search-forward r eol t))
+                                          (cdr regexps)))
+                    (push (consult--location-candidate
+                           (funcall hl (buffer-substring-no-properties bol eol))
+                           (cons buf bol) (1- line)
+                           ;; Buffer index and bol for disambiguation
+                           (logior (ash bol 8) buf-idx))
+                          candidates))
+                  (goto-char (1+ eol))))
+              (cl-incf buf-idx))))))))
 
 ;;;###autoload
 (defun consult-line-multi (query &optional initial)
