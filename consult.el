@@ -4555,6 +4555,8 @@ BUILDER is the command argument builder."
                          ;; Filter out empty context lines
                          (or (/= (aref str (match-beginning 3)) ?-)
                              (/= (match-end 0) (length str))))
+                ;; We share the file name across candidates to reduce
+                ;; the amount of allocated memory.
                 (unless (and (= file-len (- (match-end 1) (match-beginning 1)))
                              (eq t (compare-strings
                                     file 0 file-len
