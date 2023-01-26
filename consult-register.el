@@ -41,7 +41,7 @@
     (?b . "Buffer")
     (?w . "Window"))
   "Register type names.
-Each element of the list must have the form \\='(char . name).")
+Each element of the list must have the form (char . name).")
 
 (cl-defun consult-register--format-value (val)
   "Format generic register VAL as string."

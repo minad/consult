@@ -298,7 +298,7 @@ Can be either a string, or a list of strings or expressions."
   :type '(choice string (repeat (choice string expression))))
 
 (defcustom consult-preview-key 'any
-  "Preview trigger keys, can be nil, \\='any, a single key or a list of keys."
+  "Preview trigger keys, can be nil, `any', a single key or a list of keys."
   :type '(choice (const :tag "Any key" any)
                  (list :tag "Debounced" (const :debounce) (float :tag "Seconds" 0.1) (const any))
                  (const :tag "No preview" nil)
@@ -351,7 +351,7 @@ Can be either a string, or a list of strings or expressions."
     (?v "VC Directory" vc-dir-bookmark-jump))
   "Bookmark narrowing configuration.
 
-Each element of the list must have the form \\='(char name handler)."
+Each element of the list must have the form (char name handler)."
   :type '(repeat (list character string function)))
 
 (defcustom consult-yank-rotate
@@ -2442,7 +2442,7 @@ INITIAL is the initial input string.
 STATE is the state function, see `consult--with-preview'.
 GROUP is a completion metadata `group-function' as documented in
 the Elisp manual.
-PREVIEW-KEY are the preview keys.  Can be nil, \\='any, a single
+PREVIEW-KEY are the preview keys.  Can be nil, `any', a single
 key or a list of keys.
 NARROW is an alist of narrowing prefix strings and description.
 KEYMAP is a command-specific keymap.
@@ -2706,7 +2706,7 @@ INITIAL is initial input.
 DEFAULT is the default selected value.
 ADD-HISTORY is a list of items to add to the history.
 STATE is the state function, see `consult--with-preview'.
-PREVIEW-KEY are the preview keys (nil, \\='any, a single key or a list of keys).
+PREVIEW-KEY are the preview keys (nil, `any', a single key or a list of keys).
 KEYMAP is a command-specific keymap."
   (ignore prompt history add-history initial default
           keymap state preview-key transform inherit-input-method)
