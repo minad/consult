@@ -1013,8 +1013,7 @@ The candidate must have a `consult--prefix-group' property."
 (defun consult--type-group (types)
   "Return group function for TYPES."
   (lambda (cand transform)
-    (if transform
-        cand
+    (if transform cand
       (alist-get (get-text-property 0 'consult--type cand) types))))
 
 (defun consult--type-narrow (types)
@@ -2502,8 +2501,7 @@ INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
 
 (defun consult--multi-group (sources cand transform)
   "Return title of candidate CAND or TRANSFORM the candidate given SOURCES."
-  (if transform
-      cand
+  (if transform cand
     (plist-get (consult--multi-source sources cand) :name)))
 
 (defun consult--multi-preview-key (sources)
@@ -3138,8 +3136,7 @@ CANDIDATES is the list of candidates."
 (defun consult--line-multi-group (cand transform)
   "Group function used by `consult-line-multi'.
 If TRANSFORM non-nil, return transformed CAND, otherwise return title."
-  (if transform
-      cand
+  (if transform cand
     (let ((marker (car (get-text-property 0 'consult-location cand))))
       (buffer-name
        ;; Handle cheap marker

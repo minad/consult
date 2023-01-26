@@ -69,40 +69,33 @@
                      ;; Node name
                      (re-search-forward "Node:[ \t]*" nil t)
                      (setq node
-                           (format "(%s)%s" manual
-                                   (buffer-substring-no-properties
-                                    (point)
-                                    (progn
-                                      (skip-chars-forward "^,\t\n")
-                                      (point)))))))
-              (setq cand (concat node ":"
-                                 (funcall hl (buffer-substring-no-properties bol eol))))
-              (add-text-properties 0 (length node)
-                                   (list 'consult--info-position (cons buffer bol)
-                                         'face 'consult-file
-                                         'consult--prefix-group node)
-                                   cand)
+                           (buffer-substring-no-properties
+                            (point)
+                            (progn
+                              (skip-chars-forward "^,\t\n")
+                              (point))))))
+              (setq cand (funcall hl (buffer-substring-no-properties bol eol)))
+              (put-text-property 0 (length cand) 'consult--info
+                                 (list (format "(%s)%s" manual node) bol buffer) cand)
               (push cand candidates))))))
     (nreverse candidates)))
 
 (defun consult-info--position (cand)
   "Return position information for CAND."
-  (when-let ((pos (and cand (get-text-property 0 'consult--info-position cand)))
-             (node (get-text-property 0 'consult--prefix-group cand))
-             (matches (consult--point-placement cand (1+ (length node))))
-             (dest (+ (cdr pos) (car matches))))
-    (list node dest (cons
-                     (set-marker (make-marker) dest (car pos))
-                     (cdr matches)))))
+  (when-let ((pos (and cand (get-text-property 0 'consult--info cand)))
+             (matches (consult--point-placement cand 0))
+             (dest (+ (cadr pos) (car matches))))
+    `( ,(cdr matches) ,dest . ,pos)))
 
 (defun consult-info--action (cand)
   "Jump to info CAND."
-  (when-let ((pos (consult-info--position cand)))
-    (info (car pos))
-    (widen)
-    (goto-char (cadr pos))
-    (Info-select-node)
-    (run-hooks 'consult-after-jump-hook)))
+  (pcase (consult-info--position cand)
+    (`( ,_matches ,pos ,node ,_bol ,_buffer)
+     (info node)
+     (widen)
+     (goto-char pos)
+     (Info-select-node)
+     (run-hooks 'consult-after-jump-hook))))
 
 (defun consult-info--state ()
   "Info manual preview state."
@@ -110,12 +103,20 @@
     (lambda (action cand)
       (pcase action
         ('preview
-         (setq cand (caddr (consult-info--position cand)))
-         (funcall preview 'preview cand)
+         (setq cand (consult-info--position cand))
+         (funcall preview 'preview
+                  (pcase cand
+                    (`(,matches ,pos ,_node ,_bol ,buffer)
+                     (cons (set-marker (make-marker) pos buffer) matches))))
          (let (Info-history Info-history-list Info-history-forward)
            (when cand (ignore-errors (Info-select-node)))))
         ('return
          (consult-info--action cand))))))
+
+(defun consult-info--group (cand transform)
+  "Return title for CAND or TRANSFORM the candidate."
+  (if transform cand
+    (car (get-text-property 0 'consult--info cand))))
 
 ;;;###autoload
 (defun consult-info (&rest manuals)
@@ -145,7 +146,7 @@
            :sort nil
            :category 'consult-info
            :history '(:input consult-info--history)
-           :group #'consult--prefix-group
+           :group #'consult-info--group
            :initial (consult--async-split-initial "")
            :lookup #'consult--lookup-member))
       (dolist (buf buffers)
