@@ -343,7 +343,13 @@ their descriptions.
 #+findex: consult-man
 - =consult-man=: Find Unix man page, via Unix =apropos= or =man -k=. =consult-man= opens
   the selected man page using the Emacs =man= command.
-- =consult-info=: Full text search through info pages.
+- =consult-info=: Full text search through info pages. You may want to create your
+  own commands which search through a predefined set of info pages, for example:
+#+begin_src emacs-lisp
+  (defun consult-info-emacs ()
+    (interactive)
+    (consult-info "emacs" "elisp" "cl" "compat"))
+#+end_src
 
 ** Miscellaneous
 :properties:
