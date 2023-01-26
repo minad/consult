@@ -72,7 +72,8 @@ MATCH, SCOPE and SKIP are as in `org-map-entries'."
                           (org-get-outline-path 'with-self 'use-cache)
                           most-positive-fixnum)))
          (when tags
-           (setq tags (concat " " (propertize tags 'face 'org-tag))))
+           (setq tags (concat " " tags))
+           (put-text-property 1 (length tags) 'face 'org-tag tags))
          (setq cand (if prefix
                         (concat buffer " " cand tags (consult--tofu-encode (point)))
                       (concat cand tags (consult--tofu-encode (point)))))
