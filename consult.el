@@ -4548,19 +4548,23 @@ BUILDER is the command argument builder."
             (setq highlight (plist-get tmp :highlight))))
         (funcall async action))
        ((consp action)
-        (let (result)
+        (let ((file "") (file-len 0) result)
           (save-match-data
             (dolist (str action)
               (when (and (string-match consult--grep-match-regexp str)
                          ;; Filter out empty context lines
                          (or (/= (aref str (match-beginning 3)) ?-)
                              (/= (match-end 0) (length str))))
-                (let* ((file (match-string 1 str))
-                       (line (match-string 2 str))
+                (unless (and (= file-len (- (match-end 1) (match-beginning 1)))
+                             (eq t (compare-strings
+                                    file 0 file-len
+                                    str (match-beginning 1) (match-end 1) nil)))
+                  (setq file (match-string 1 str)
+                        file-len (length file)))
+                (let* ((line (match-string 2 str))
                        (ctx (= (aref str (match-beginning 3)) ?-))
                        (sep (if ctx "-" ":"))
                        (content (substring str (match-end 0)))
-                       (file-len (length file))
                        (line-len (length line)))
                   (when (length> content consult-grep-max-columns)
                     (setq content (substring content 0 consult-grep-max-columns)))
