@@ -2166,17 +2166,24 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
   "Dynamic collection source.
 ASYNC is the sink.
 FUN computes the candidates given the input."
-  (let ((input "") current)
+  (let ((request "") current)
     (lambda (action)
       (pcase action
         ('nil
-         (if (or (equal input "") (equal input current))
+         (if (or (equal request "") (equal request current))
              (funcall async nil)
-           (funcall async (prog1 (funcall fun input)
-                            (funcall async 'flush)
-                            (setq current input)))))
+           (unwind-protect
+               (let ((response (funcall fun request)))
+                 (funcall async 'flush)
+                 (funcall async response)
+                 (setq current request))
+             ;; Check if computation went through completely or if it was
+             ;; interrupted.  If an interrupt occurred, set request to the empty
+             ;; string, which signals a cancelled request.
+             (unless (equal current request)
+               (setq request "")))))
         ((pred stringp)
-         (setq input action)
+         (setq request action)
          (funcall async 'refresh))
         (_ (funcall async action))))))
 
