@@ -353,7 +353,7 @@ their descriptions.
     (interactive)
     (consult-info "emacs" "efaq" "elisp" "cl" "compat"))
 
-  (defun consult-info-emacs ()
+  (defun consult-info-org ()
     "Search through the Org info page."
     (interactive)
     (consult-info "org"))
