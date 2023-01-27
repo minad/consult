@@ -3529,7 +3529,7 @@ narrowing and the settings `consult-goto-line-numbers' and
      (let (file-name-handler-alist) ;; No Tramp slowdown please
        (mapcar #'abbreviate-file-name (bound-and-true-p recentf-list)))
      (user-error "No recent files, `recentf-mode' is %s"
-                 (if recentf-mode "on" "off")))
+                 (if recentf-mode "enabled" "disabled")))
     :prompt "Find recent file: "
     :sort nil
     :require-match t
