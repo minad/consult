@@ -1697,7 +1697,7 @@ This command is used internally by the narrowing system of `consult--read'."
   `(menu-item
     "" nil :filter
     ,(lambda (&optional _)
-       (when (string= (minibuffer-contents-no-properties) "")
+       (when (equal (minibuffer-contents-no-properties) "")
          (lambda ()
            (interactive)
            (consult-narrow nil))))))
@@ -1709,7 +1709,7 @@ This command is used internally by the narrowing system of `consult--read'."
        (let ((str (minibuffer-contents-no-properties)))
          (when-let (pair (or (and (length= str 1)
                                   (assoc (aref str 0) consult--narrow-keys))
-                             (and (string= str "")
+                             (and (equal str "")
                                   (assoc 32 consult--narrow-keys))))
            (lambda ()
              (interactive)
@@ -2013,7 +2013,7 @@ PROPS are optional properties passed to `make-process'."
                      (setq flush nil)
                      (funcall async 'flush))
                    (overlay-put indicator 'display (consult--process-indicator event))
-                   (when (and (string-prefix-p "finished" event) (not (string= rest "")))
+                   (when (and (string-prefix-p "finished" event) (not (equal rest "")))
                      (cl-incf count)
                      (funcall async (list rest)))
                    (consult--async-log
@@ -2090,13 +2090,13 @@ The DEBOUNCE delay defaults to `consult-async-input-debounce'."
     (lambda (action)
       (pcase action
         ((pred stringp)
-         (unless (string= action input)
+         (unless (equal action input)
            (when timer
              (cancel-timer timer)
              (setq timer nil))
            (funcall async "") ;; cancel running process
            (setq input action)
-           (unless (string= action "")
+           (unless (equal action "")
              (setq timer
                    (run-at-time
                     (+ debounce
@@ -3472,7 +3472,7 @@ Print an error message with MSG function."
             pos
           (funcall msg "Line number out of range.")
           nil))
-    (when (and str (not (string= str "")))
+    (when (and str (not (equal str "")))
       (funcall msg "Please enter a number."))
     nil))
 
@@ -4500,7 +4500,7 @@ outside a project.  See `consult-buffer' for more details."
                ;; intentionally starts the counter with a negative value and
                ;; then increments it to 0.
                (cond
-                ((not (string= format "%d")) ;; show counter for non-default format
+                ((not (equal format "%d")) ;; show counter for non-default format
                  (format " (counter=%d, format=%s) " counter format))
                 ((/= counter 0) ;; show counter if non-zero
                  (format " (counter=%d)" counter))))))
