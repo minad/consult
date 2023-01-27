@@ -24,6 +24,7 @@
 ;;; Code:
 
 (require 'consult)
+(require 'kmacro)
 
 (defcustom consult-register-prefix #("#" 0 1 (face consult-key))
   "Prepend prefix in front of register keys during completion."
