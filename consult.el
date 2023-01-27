@@ -1969,11 +1969,11 @@ SPLIT is the splitting function."
    (t
     #("!" 0 1 (face consult-async-failed)))))
 
-(defun consult--async-process (async cmd &rest props)
+(defun consult--async-process (async builder &rest props)
   "Create process source async function.
 
 ASYNC is the async function which receives the candidates.
-CMD is the command line builder function.
+BUILDER is the command line builder function.
 PROPS are optional properties passed to `make-process'."
   (let (proc proc-buf last-args indicator count)
     (lambda (action)
@@ -1986,8 +1986,7 @@ PROPS are optional properties passed to `make-process'."
          (setq last-args nil))
         ((pred stringp)
          (funcall async action)
-         (let* ((args (funcall cmd action))
-                (flush t)
+         (let* ((flush t)
                 (rest "")
                 (proc-filter
                  (lambda (_ out)
@@ -2020,7 +2019,14 @@ PROPS are optional properties passed to `make-process'."
                      (goto-char (point-max))
                      (insert ">>>>> stderr >>>>>\n")
                      (insert-buffer-substring proc-buf)
-                     (insert "<<<<< stderr <<<<<\n")))))
+                     (insert "<<<<< stderr <<<<<\n"))))
+                (args (funcall builder action)))
+           (unless (stringp (car args))
+             (if (not (keywordp (car args)))
+                 (setq args (car args))
+               ;; TODO remove backward compatibility code
+               (message "Consult: The command builder return value changed, it should be a pair instead of a plist")
+               (plist-get args :command)))
            (unless (equal args last-args)
              (setq last-args args)
              (when proc
@@ -2058,7 +2064,7 @@ PROPS are optional properties passed to `make-process'."
 
 (defun consult--async-highlight (async builder)
   "Return ASYNC function which highlightes the candidates.
-BUILDER is the command line builder."
+BUILDER is the command line builder function."
   (let (highlight)
     (lambda (action)
       (cond
@@ -2183,32 +2189,20 @@ FUN computes the candidates given the input."
     (consult--async-throttle)
     (consult--async-split)))
 
-(defun consult--command-builder (builder)
-  "Return command line builder given CMD.
-BUILDER is the command line builder function."
-  (lambda (input)
-    (setq input (funcall builder input))
-    (if (stringp (car input))
-        input
-      (if (not (keywordp (car input)))
-          (car input)
-        ;; TODO remove backward compatibility code
-        (message "Consult: The command builder return value changed, it should be a pair instead of a plist")
-        (plist-get input :command)))))
-
 (defmacro consult--async-command (builder &rest args)
   "Asynchronous command pipeline.
-ARGS is a list of `make-process' properties and transforms.  BUILDER is the
-command line builder function, which takes the input string and must either
-return a list of command line arguments or a pair of the command line
-argument list and a highlighting function."
+ARGS is a list of `make-process' properties and transforms.
+BUILDER is the command line builder function, which takes the
+input string and must either return a list of command line
+arguments or a pair of the command line argument list and a
+highlighting function."
   (declare (indent 1))
   `(thread-first
      (consult--async-sink)
      (consult--async-refresh-timer)
      ,@(seq-take-while (lambda (x) (not (keywordp x))) args)
      (consult--async-process
-      (consult--command-builder ,builder)
+      ,builder
       ,@(seq-drop-while (lambda (x) (not (keywordp x))) args))
      (consult--async-throttle)
      (consult--async-split)))
@@ -4474,7 +4468,7 @@ outside a project.  See `consult-buffer' for more details."
 
 (defun consult--grep-format (async builder)
   "Return ASYNC function highlighting grep match results.
-BUILDER is the command argument builder."
+BUILDER is the command line builder function."
   (let (highlight)
     (lambda (action)
       (cond
@@ -4559,7 +4553,7 @@ Take the variables `grep-find-ignored-directories' and
 (defun consult--grep (prompt builder dir initial)
   "Run grep in DIR.
 
-BUILDER is the command builder.
+BUILDER is the command line builder function.
 PROMPT is the prompt string.
 INITIAL is inital input."
   (let* ((prompt-dir (consult--directory-prompt prompt dir))
@@ -4713,7 +4707,7 @@ for more details."
 The function returns the selected file.
 The filename at point is added to the future history.
 
-BUILDER is the command builder.
+BUILDER is the command line builder function.
 PROMPT is the prompt.
 INITIAL is inital input."
   (consult--read
