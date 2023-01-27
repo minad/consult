@@ -123,17 +123,9 @@
   (if transform cand
     (car (get-text-property 0 'consult--info cand))))
 
-;;;###autoload
-(defun consult-info (&rest manuals)
-  "Full text search through info MANUALS."
-  (interactive
-   (if Info-current-file
-       (list (file-name-base Info-current-file))
-     (info-initialize)
-     (completing-read-multiple
-      "Info Manuals: "
-      (info--manual-names current-prefix-arg)
-      nil t)))
+(defun consult-info--prepare-buffers (manuals fun)
+  "Prepare buffers for MANUALS and call FUN with buffers."
+  (declare (indent 1))
   (let (buffers)
     (unwind-protect
         (progn
@@ -148,26 +140,41 @@
                               (progress-reporter-update reporter (1+ idx) manual))
                             manuals)
             (progress-reporter-done reporter))
-          (consult--read
-           (consult--dynamic-collection
-            (apply-partially #'consult-info--candidates (reverse buffers)))
-           :state (consult-info--state)
-           :prompt
-           (format "Info (%s): "
-                   (string-join (if (length> manuals 3)
-                                    `(,@(seq-take manuals 3) ,"…")
-                                  manuals)
-                                ", "))
-           :require-match t
-           :sort nil
-           :category 'consult-info
-           :history '(:input consult-info--history)
-           :group #'consult-info--group
-           :initial (consult--async-split-initial "")
-           :add-history (consult--async-split-thingatpt 'symbol)
-           :lookup #'consult--lookup-member))
+          (funcall fun (reverse buffers)))
       (dolist (buf buffers)
         (kill-buffer (cdr buf))))))
+
+;;;###autoload
+(defun consult-info (&rest manuals)
+  "Full text search through info MANUALS."
+  (interactive
+   (if Info-current-file
+       (list (file-name-base Info-current-file))
+     (info-initialize)
+     (completing-read-multiple
+      "Info Manuals: "
+      (info--manual-names current-prefix-arg)
+      nil t)))
+  (consult-info--prepare-buffers manuals
+    (lambda (buffers)
+      (consult--read
+       (consult--dynamic-collection
+        (apply-partially #'consult-info--candidates (reverse buffers)))
+       :state (consult-info--state)
+       :prompt
+       (format "Info (%s): "
+               (string-join (if (length> manuals 3)
+                                `(,@(seq-take manuals 3) ,"…")
+                              manuals)
+                            ", "))
+       :require-match t
+       :sort nil
+       :category 'consult-info
+       :history '(:input consult-info--history)
+       :group #'consult-info--group
+       :initial (consult--async-split-initial "")
+       :add-history (consult--async-split-thingatpt 'symbol)
+       :lookup #'consult--lookup-member))))
 
 (provide 'consult-info)
 ;;; consult-info.el ends here
