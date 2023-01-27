@@ -28,8 +28,6 @@
 
 ;; NOTE: It is not guaranteed that Vertico is available during compilation!
 (defvar vertico--input)
-(defvar vertico--history-hash)
-(defvar vertico--lock-candidate)
 (declare-function vertico--exhibit "ext:vertico")
 (declare-function vertico--candidate "ext:vertico")
 (declare-function vertico--all-completions "ext:vertico")
@@ -38,13 +36,10 @@
   "Return current candidate for Consult preview."
   (and vertico--input (vertico--candidate 'highlight)))
 
-(defun consult-vertico--refresh (&optional reset)
-  "Refresh completion UI, keep current candidate unless RESET is non-nil."
+(defun consult-vertico--refresh ()
+  "Refresh completion UI."
   (when vertico--input
     (setq vertico--input t)
-    (when reset
-      (setq vertico--history-hash nil
-            vertico--lock-candidate nil))
     (vertico--exhibit)))
 
 (defun consult-vertico--filter-adv (orig pattern cands category highlight)
