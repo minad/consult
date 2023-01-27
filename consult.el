@@ -102,19 +102,22 @@ seconds.  This applies to asynchronous commands like for example
 `consult-grep'."
   :type 'float)
 
-(defcustom consult-async-input-throttle 0.4
+(define-obsolete-variable-alias 'consult-async-input-debounce 'consult-async-debounce "0.31")
+(define-obsolete-variable-alias 'consult-async-input-throttle 'consult-async-throttle "0.31")
+
+(defcustom consult-async-throttle 0.4
   "Input throttle for asynchronous commands.
 
 The asynchronous process is started only every
-`consult-async-input-throttle' seconds.  This applies to asynchronous
+`consult-async-throttle' seconds.  This applies to asynchronous
 commands, e.g., `consult-grep'."
   :type 'float)
 
-(defcustom consult-async-input-debounce 0.2
+(defcustom consult-async-debounce 0.2
   "Input debounce for asynchronous commands.
 
 The asynchronous process is started only when there has not been new
-input for `consult-async-input-debounce' seconds.  This applies to
+input for `consult-async-debounce' seconds.  This applies to
 asynchronous commands, e.g., `consult-grep'."
   :type 'float)
 
@@ -2097,10 +2100,10 @@ BUILDER is the command line builder function."
 (defun consult--async-throttle (async &optional throttle debounce)
   "Create async function from ASYNC which throttles input.
 
-The THROTTLE delay defaults to `consult-async-input-throttle'.
-The DEBOUNCE delay defaults to `consult-async-input-debounce'."
-  (setq throttle (or throttle consult-async-input-throttle)
-        debounce (or debounce consult-async-input-debounce))
+The THROTTLE delay defaults to `consult-async-throttle'.
+The DEBOUNCE delay defaults to `consult-async-debounce'."
+  (setq throttle (or throttle consult-async-throttle)
+        debounce (or debounce consult-async-debounce))
   (let ((input "") last timer)
     (lambda (action)
       (pcase action
@@ -2180,7 +2183,7 @@ ASYNC is the sink.
 FUN computes the candidates given the input.
 DEBOUNCE is the time after which an interrupted computation
 should be restarted."
-  (setq debounce (or debounce consult-async-input-debounce))
+  (setq debounce (or debounce consult-async-debounce))
   (setq async (consult--async-indicator async))
   (let* ((request) (current) (timer)
          (cancel (lambda () (when timer (cancel-timer timer) (setq timer nil))))
