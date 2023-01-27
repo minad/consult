@@ -127,7 +127,8 @@
 (defun consult-info (&rest manuals)
   "Full text search through info MANUALS."
   (interactive
-   (progn
+   (if Info-current-file
+       (list (file-name-base Info-current-file))
      (info-initialize)
      (completing-read-multiple
       "Info Manuals: "
@@ -158,6 +159,7 @@
            :history '(:input consult-info--history)
            :group #'consult-info--group
            :initial (consult--async-split-initial "")
+           :add-history (consult--async-split-thingatpt 'symbol)
            :lookup #'consult--lookup-member))
       (dolist (buf buffers)
         (kill-buffer (cdr buf))))))

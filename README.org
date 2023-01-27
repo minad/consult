@@ -343,8 +343,10 @@ their descriptions.
 #+findex: consult-man
 - =consult-man=: Find Unix man page, via Unix =apropos= or =man -k=. =consult-man= opens
   the selected man page using the Emacs =man= command.
-- =consult-info=: Full text search through info pages. You may want to create your
-  own commands which search through a predefined set of info pages, for example:
+- =consult-info=: Full text search through info pages. If the command is invoked
+  from within an ~*info*~ buffer, it will search through the current manual. You
+  may want to create your own commands which search through a predefined set of
+  info pages, for example:
 #+begin_src emacs-lisp
   (defun consult-info-emacs ()
     "Search through Emacs info pages."
@@ -775,6 +777,7 @@ configuration examples.
            ("C-c k" . consult-kmacro)
            ("C-c m" . consult-man)
            ("C-c i" . consult-info)
+           ([remap Info-search] . consult-info)
            ;; C-x bindings (ctl-x-map)
            ("C-x M-:" . consult-complex-command)     ;; orig. repeat-complex-command
            ("C-x b" . consult-buffer)                ;; orig. switch-to-buffer
