@@ -159,7 +159,7 @@
     (lambda (buffers)
       (consult--read
        (consult--dynamic-collection
-        (apply-partially #'consult-info--candidates (reverse buffers)))
+        (apply-partially #'consult-info--candidates buffers))
        :state (consult-info--state)
        :prompt
        (format "Info (%s): "
