@@ -52,11 +52,9 @@
 (eval-when-compile
   (require 'cl-lib)
   (require 'subr-x))
-(require 'bookmark)
-(require 'kmacro)
-(require 'recentf)
 (require 'seq)
 (require 'compat)
+(require 'bookmark)
 
 (defgroup consult nil
   "Consulting `completing-read'."
@@ -463,7 +461,6 @@ Used by `consult-completion-in-region', `consult-yank' and `consult-history'.")
 (defvar consult--line-multi-history nil)
 (defvar consult--theme-history nil)
 (defvar consult--minor-mode-menu-history nil)
-(defvar consult--kmacro-history nil)
 (defvar consult--buffer-history nil)
 
 ;;;; Internal variables
@@ -3530,7 +3527,7 @@ narrowing and the settings `consult-goto-line-numbers' and
    (consult--read
     (or
      (let (file-name-handler-alist) ;; No Tramp slowdown please
-       (mapcar #'abbreviate-file-name recentf-list))
+       (mapcar #'abbreviate-file-name (bound-and-true-p recentf-list)))
      (user-error "No recent files, `recentf-mode' is %s"
                  (if recentf-mode "on" "off")))
     :prompt "Find recent file: "
@@ -4311,7 +4308,7 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
               (ht (consult--buffer-file-hash))
               file-name-handler-alist ;; No Tramp slowdown please.
               items)
-          (dolist (file recentf-list (nreverse items))
+          (dolist (file (bound-and-true-p recentf-list) (nreverse items))
             ;; Emacs 29 abbreviates file paths by default, see
             ;; `recentf-filename-handlers'.
             (unless (eq (aref file 0) ?/)
@@ -4395,7 +4392,7 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
        (let ((ht (consult--buffer-file-hash))
              file-name-handler-alist ;; No Tramp slowdown please.
              items)
-         (dolist (file recentf-list (nreverse items))
+         (dolist (file (bound-and-true-p recentf-list) (nreverse items))
            ;; Emacs 29 abbreviates file paths by default, see
            ;; `recentf-filename-handlers'.
            (unless (eq (aref file 0) ?/)
@@ -4472,64 +4469,6 @@ outside a project.  See `consult-buffer' for more details."
   (interactive)
   (let ((consult--buffer-display #'switch-to-buffer-other-frame))
     (consult-buffer)))
-
-;;;;; Command: consult-kmacro
-
-(defun consult--kmacro-candidates ()
-  "Return alist of kmacros and indices."
-  (thread-last
-    ;; List of macros
-    (append (and last-kbd-macro (list (kmacro-ring-head))) kmacro-ring)
-    ;; Emacs 29 uses OClosures.  I like OClosures but it would have been better
-    ;; if public APIs wouldn't change like that.
-    (mapcar (lambda (x)
-              (if (eval-when-compile (> emacs-major-version 28))
-                  (list (kmacro--keys x) (kmacro--counter x) (kmacro--format x) x)
-                `(,@x ,x))))
-    ;; Filter mouse clicks
-    (seq-remove (lambda (x) (seq-some #'mouse-event-p (car x))))
-    ;; Format macros
-    (mapcar (pcase-lambda (`(,keys ,counter ,format ,km))
-              (propertize
-               (format-kbd-macro keys 1)
-               'consult--candidate km
-               'consult--kmacro-annotation
-               ;; If the counter is 0 and the counter format is its default,
-               ;; then there is a good chance that the counter isn't actually
-               ;; being used.  This can only be wrong when a user
-               ;; intentionally starts the counter with a negative value and
-               ;; then increments it to 0.
-               (cond
-                ((not (equal format "%d")) ;; show counter for non-default format
-                 (format " (counter=%d, format=%s) " counter format))
-                ((/= counter 0) ;; show counter if non-zero
-                 (format " (counter=%d)" counter))))))
-    (delete-dups)))
-
-;;;###autoload
-(defun consult-kmacro (arg)
-  "Run a chosen keyboard macro.
-
-With prefix ARG, run the macro that many times.
-Macros containing mouse clicks are omitted."
-  (interactive "p")
-  (let ((km (consult--read
-             (or (consult--kmacro-candidates)
-                 (user-error "No keyboard macros defined"))
-             :prompt "Keyboard macro: "
-             :category 'consult-kmacro
-             :require-match t
-             :sort nil
-             :history 'consult--kmacro-history
-             :annotate
-             (lambda (cand)
-               (get-text-property 0 'consult--kmacro-annotation cand))
-             :lookup #'consult--lookup-candidate)))
-    (unless km (user-error "No kmacro selected"))
-    (funcall
-     ;; Kmacros are lambdas (oclosures) on Emacs 29
-     (if (fboundp 'kmacro-lambda-form) (kmacro-lambda-form km) km)
-     arg)))
 
 ;;;;; Command: consult-grep
 
