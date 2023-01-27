@@ -2174,33 +2174,47 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
   "Filter candidates of ASYNC by FUN."
   (consult--async-transform async seq-filter fun))
 
-(defun consult--dynamic-compute (async fun)
+(defun consult--dynamic-compute (async fun &optional debounce)
   "Dynamic computation of candidates.
 ASYNC is the sink.
-FUN computes the candidates given the input."
+FUN computes the candidates given the input.
+DEBOUNCE is the time after which an interrupted computation
+should be restarted."
+  (setq debounce (or debounce consult-async-input-debounce))
   (setq async (consult--async-indicator async))
-  (let (request current)
+  (let* ((request) (current) (timer)
+         (cancel (lambda () (when timer (cancel-timer timer) (setq timer nil))))
+         (start (lambda (req) (setq request req) (funcall async 'refresh))))
     (lambda (action)
       (pcase action
         ((and 'nil (guard (not request)))
          (funcall async nil))
         ('nil
+         (funcall cancel)
          (let ((state 'killed))
            (unwind-protect
                (progn
                  (funcall async 'indicator 'running)
                  (redisplay)
+                 ;; Run computation
                  (let ((response (funcall fun request)))
+                   ;; Flush and update candidate list
                    (funcall async 'flush)
                    (setq state 'finished current request)
                    (funcall async response)))
              (funcall async 'indicator state)
+             ;; If the computation was killed, restart it after some time.
+             (when (eq state 'killed)
+               (setq timer (run-at-time debounce nil start request)))
              (setq request nil))))
         ((pred stringp)
+         (funcall cancel)
          (if (or (equal action "") (equal action current))
              (funcall async 'indicator 'finished)
-           (setq request action)
-           (funcall async 'refresh)))
+           (funcall start action)))
+        ('destroy
+         (funcall cancel)
+         (funcall async 'destroy))
         (_ (funcall async action))))))
 
 (defun consult--dynamic-collection (fun)
