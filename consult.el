@@ -2174,8 +2174,8 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
   "Filter candidates of ASYNC by FUN."
   (consult--async-transform async seq-filter fun))
 
-(defun consult--dynamic-collection-source (async fun)
-  "Dynamic collection source.
+(defun consult--dynamic-compute (async fun)
+  "Dynamic computation of candidates.
 ASYNC is the sink.
 FUN computes the candidates given the input."
   (setq async (consult--async-indicator async))
@@ -2208,7 +2208,7 @@ FUN computes the candidates given the input."
 FUN computes the candidates given the input."
   (thread-first
     (consult--async-sink)
-    (consult--dynamic-collection-source fun)
+    (consult--dynamic-compute fun)
     (consult--async-throttle)
     (consult--async-split)))
 
