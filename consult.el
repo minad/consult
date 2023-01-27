@@ -1953,21 +1953,33 @@ SPLIT is the splitting function."
                     ""))))
       (_ (funcall async action)))))
 
+(defun consult--async-indicator (async)
+  "Create async function with a state indicator overlay.
+ASYNC is the async sink."
+  (let (ov)
+    (lambda (action &optional state)
+      (pcase action
+        ('indicator
+         (overlay-put ov 'display
+                      (pcase-exhaustive state
+                        ('running  #("*" 0 1 (face consult-async-running)))
+                        ('finished #(":" 0 1 (face consult-async-finished)))
+                        ('killed   #(";" 0 1 (face consult-async-failed)))
+                        ('failed   #("!" 0 1 (face consult-async-failed))))))
+        ('setup
+         (setq ov (make-overlay (- (minibuffer-prompt-end) 2)
+                                (- (minibuffer-prompt-end) 1)))
+         (funcall async 'setup))
+        ('destroy
+         (delete-overlay ov)
+         (funcall async 'destroy))
+        (_ (funcall async action))))))
+
 (defun consult--async-log (formatted &rest args)
   "Log FORMATTED ARGS to variable `consult--async-log'."
   (with-current-buffer (get-buffer-create consult--async-log)
     (goto-char (point-max))
     (insert (apply #'format formatted args))))
-
-(defun consult--process-indicator (event)
-  "Return the process indicator character for EVENT."
-  (cond
-   ((string-prefix-p "killed" event)
-    #(";" 0 1 (face consult-async-failed)))
-   ((string-prefix-p "finished" event)
-    #(":" 0 1 (face consult-async-finished)))
-   (t
-    #("!" 0 1 (face consult-async-failed)))))
 
 (defun consult--async-process (async builder &rest props)
   "Create process source async function.
@@ -1975,7 +1987,8 @@ SPLIT is the splitting function."
 ASYNC is the async function which receives the candidates.
 BUILDER is the command line builder function.
 PROPS are optional properties passed to `make-process'."
-  (let (proc proc-buf last-args indicator count)
+  (setq async (consult--async-indicator async))
+  (let (proc proc-buf last-args count)
     (lambda (action)
       (pcase action
         ("" ;; If no input is provided kill current process
@@ -2008,7 +2021,11 @@ PROPS are optional properties passed to `make-process'."
                    (when flush
                      (setq flush nil)
                      (funcall async 'flush))
-                   (overlay-put indicator 'display (consult--process-indicator event))
+                   (funcall async 'indicator
+                            (cond
+                             ((string-prefix-p "killed" event)   'killed)
+                             ((string-prefix-p "finished" event) 'finished)
+                             (t 'failed)))
                    (when (and (string-prefix-p "finished" event) (not (equal rest "")))
                      (cl-incf count)
                      (funcall async (list rest)))
@@ -2034,7 +2051,7 @@ PROPS are optional properties passed to `make-process'."
                (kill-buffer proc-buf)
                (setq proc nil proc-buf nil))
              (when args
-               (overlay-put indicator 'display #("*" 0 1 (face consult-async-running)))
+               (funcall async 'indicator 'running)
                (consult--async-log "consult--async-process started %S\n" args)
                (setq count 0
                      proc-buf (generate-new-buffer " *consult-async-stderr*")
@@ -2054,12 +2071,7 @@ PROPS are optional properties passed to `make-process'."
            (delete-process proc)
            (kill-buffer proc-buf)
            (setq proc nil proc-buf nil))
-         (delete-overlay indicator)
          (funcall async 'destroy))
-        ('setup
-         (setq indicator (make-overlay (- (minibuffer-prompt-end) 2)
-                                       (- (minibuffer-prompt-end) 1)))
-         (funcall async 'setup))
         (_ (funcall async action))))))
 
 (defun consult--async-highlight (async builder)
@@ -2166,21 +2178,23 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
   "Dynamic collection source.
 ASYNC is the sink.
 FUN computes the candidates given the input."
-  (let ((request "") current)
+  (setq async (consult--async-indicator async))
+  (let ((request ""))
     (lambda (action)
       (pcase action
         ('nil
-         (if (or (equal request "") (equal request current))
+         (if (equal request "")
              (funcall async nil)
-           (unwind-protect
-               (let ((response (funcall fun request)))
-                 (funcall async 'flush)
-                 (funcall async response)
-                 (setq current request))
-             ;; Check if computation went through completely or if it was
-             ;; interrupted.  If an interrupt occurred, set request to the empty
-             ;; string, which signals a cancelled request.
-             (unless (equal current request)
+           (let ((state 'killed))
+             (unwind-protect
+                 (progn
+                   (funcall async 'indicator 'running)
+                   (redisplay)
+                   (let ((response (funcall fun request)))
+                     (funcall async 'flush)
+                     (setq state 'finished)
+                     (funcall async response)))
+               (funcall async 'indicator state)
                (setq request "")))))
         ((pred stringp)
          (setq request action)
