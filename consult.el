@@ -2101,7 +2101,7 @@ The THROTTLE delay defaults to `consult-async-input-throttle'.
 The DEBOUNCE delay defaults to `consult-async-input-debounce'."
   (setq throttle (or throttle consult-async-input-throttle)
         debounce (or debounce consult-async-input-debounce))
-  (let ((input "") (last) (timer))
+  (let ((input "") last timer)
     (lambda (action)
       (pcase action
         ((pred stringp)
@@ -2179,26 +2179,28 @@ The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
 ASYNC is the sink.
 FUN computes the candidates given the input."
   (setq async (consult--async-indicator async))
-  (let ((request ""))
+  (let (request current)
     (lambda (action)
       (pcase action
+        ((and 'nil (guard (not request)))
+         (funcall async nil))
         ('nil
-         (if (equal request "")
-             (funcall async nil)
-           (let ((state 'killed))
-             (unwind-protect
-                 (progn
-                   (funcall async 'indicator 'running)
-                   (redisplay)
-                   (let ((response (funcall fun request)))
-                     (funcall async 'flush)
-                     (setq state 'finished)
-                     (funcall async response)))
-               (funcall async 'indicator state)
-               (setq request "")))))
+         (let ((state 'killed))
+           (unwind-protect
+               (progn
+                 (funcall async 'indicator 'running)
+                 (redisplay)
+                 (let ((response (funcall fun request)))
+                   (funcall async 'flush)
+                   (setq state 'finished current request)
+                   (funcall async response)))
+             (funcall async 'indicator state)
+             (setq request nil))))
         ((pred stringp)
-         (setq request action)
-         (funcall async 'refresh))
+         (if (or (equal action "") (equal action current))
+             (funcall async 'indicator 'finished)
+           (setq request action)
+           (funcall async 'refresh)))
         (_ (funcall async action))))))
 
 (defun consult--dynamic-collection (fun)
