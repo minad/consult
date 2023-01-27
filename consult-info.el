@@ -137,12 +137,17 @@
   (let (buffers)
     (unwind-protect
         (progn
-          (dolist (manual manuals)
-            (with-current-buffer (generate-new-buffer (format "*info-preview-%s*" manual))
-              (let (Info-history Info-history-list Info-history-forward)
-                (Info-mode)
-                (Info-find-node manual "Top"))
-              (push (cons manual (current-buffer)) buffers)))
+          (let ((reporter (make-progress-reporter "Preparing" 0 (length manuals))))
+            (seq-do-indexed (lambda (manual idx)
+                              (push (cons manual (generate-new-buffer (format "*info-preview-%s*" manual)))
+                                    buffers)
+                              (with-current-buffer (cdar buffers)
+                                (let (Info-history Info-history-list Info-history-forward)
+                                  (Info-mode)
+                                  (Info-find-node manual "Top")))
+                              (progress-reporter-update reporter (1+ idx) manual))
+                            manuals)
+            (progress-reporter-done reporter))
           (consult--read
            (consult--dynamic-collection
             (apply-partially #'consult-info--candidates (reverse buffers)))
