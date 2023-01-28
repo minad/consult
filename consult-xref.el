@@ -29,7 +29,11 @@
 (require 'xref)
 
 (defvar consult-xref--history nil)
-(defvar consult-xref--fetcher nil)
+
+(defvar consult-xref--fetcher nil
+  "The current xref fetcher.
+The fetch is stored globally such that it can be accessed by
+ Embark for `embark-export'.")
 
 (defun consult-xref--candidates ()
   "Return xref candidate list."
