@@ -906,8 +906,8 @@ an overview of all Consult variables and functions with their descriptions.
 | Variable                         | Description                                           |
 |----------------------------------+-------------------------------------------------------|
 | consult-after-jump-hook          | Functions to call after jumping to a location         |
-| consult-async-debounce           | Input debounce for asynchronous commands              |
-| consult-async-throttle           | Input throttle for asynchronous commands              |
+| consult-async-input-debounce     | Input debounce for asynchronous commands              |
+| consult-async-input-throttle     | Input throttle for asynchronous commands              |
 | consult-async-min-input          | Minimum numbers of letters needed for async process   |
 | consult-async-refresh-delay      | Refresh delay for asynchronous commands               |
 | consult-async-split-style        | Splitting style used for async commands               |
