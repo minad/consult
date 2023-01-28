@@ -1548,7 +1548,7 @@ The result can be passed as :state argument to `consult--read'." type)
   "Add preview support for FUN.
 See `consult--with-preview' for the arguments
 PREVIEW-KEY, STATE, TRANSFORM and CANDIDATE."
-  (let ((input "") narrow selected timer last-preview)
+  (let ((mb-input "") mb-narrow selected timer last-preview)
     (consult--minibuffer-with-setup-hook
         (if (and state preview-key)
             (lambda ()
@@ -1575,8 +1575,9 @@ PREVIEW-KEY, STATE, TRANSFORM and CANDIDATE."
                     (lambda ()
                       (when-let ((cand (funcall candidate)))
                         (with-selected-window (active-minibuffer-window)
-                          (let ((input (minibuffer-contents-no-properties))
-                                (new-preview (cons input cand)))
+                          (let* ((input (minibuffer-contents-no-properties))
+                                 (narrow consult--narrow)
+                                 (new-preview (list input narrow cand)))
                             (with-selected-window (or (minibuffer-selected-window) (next-window))
                               (when-let ((transformed (funcall transform narrow input cand))
                                          (debounce (consult--preview-key-debounce preview-key transformed)))
@@ -1600,17 +1601,18 @@ PREVIEW-KEY, STATE, TRANSFORM and CANDIDATE."
                                     (setq last-preview new-preview))))))))))
               (consult--append-local-post-command-hook
                (lambda ()
-                 (setq input (minibuffer-contents-no-properties)
-                       narrow consult--narrow)
+                 (setq mb-input (minibuffer-contents-no-properties)
+                       mb-narrow consult--narrow)
                  (funcall consult--preview-function))))
           (lambda ()
             (consult--append-local-post-command-hook
-             (lambda () (setq input (minibuffer-contents-no-properties)
-                              narrow consult--narrow)))))
+             (lambda ()
+               (setq mb-input (minibuffer-contents-no-properties)
+                     mb-narrow consult--narrow)))))
       (unwind-protect
           (cons (setq selected (when-let (result (funcall fun))
-                                 (funcall transform narrow input result)))
-                input)
+                                 (funcall transform mb-narrow mb-input result)))
+                mb-input)
         (when state
           ;; STEP 5: The preview function should perform its final action
           (funcall state 'return selected))))))
