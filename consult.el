@@ -298,7 +298,10 @@ Can be either a string, or a list of strings or expressions."
 (defcustom consult-preview-key 'any
   "Preview trigger keys, can be nil, `any', a single key or a list of keys."
   :type '(choice (const :tag "Any key" any)
-                 (list :tag "Debounced" (const :debounce) (float :tag "Seconds" 0.1) (const any))
+                 (list :tag "Debounced"
+                       (const :debounce)
+                       (float :tag "Seconds" 0.1)
+                       (const any))
                  (const :tag "No preview" nil)
                  (key-sequence :tag "Key")
                  (repeat :tag "List of keys" key-sequence)))
@@ -442,7 +445,7 @@ Used by `consult-completion-in-region', `consult-yank' and `consult-history'.")
 
 (defface consult-line-number-wrapped
   '((t :inherit consult-line-number-prefix :inherit font-lock-warning-face))
-  "Face used to highlight line number prefixes, if the line number wrapped around.")
+  "Face used to highlight line number prefixes after wrap around.")
 
 (defface consult-separator
   '((((class color) (min-colors 88) (background light))
@@ -1163,8 +1166,9 @@ TOFU suffix for disambiguation."
 ;; and at the same time not enough (e.g., cursor-sensor-functions).
 (defconst consult--remove-text-properties
   '(category cursor cursor-intangible cursor-sensor-functions field follow-link
-    fontified front-sticky help-echo insert-behind-hooks insert-in-front-hooks intangible keymap
-    local-map modification-hooks mouse-face pointer read-only rear-nonsticky yank-handler)
+    fontified front-sticky help-echo insert-behind-hooks insert-in-front-hooks
+    intangible keymap local-map modification-hooks mouse-face pointer read-only
+    rear-nonsticky yank-handler)
   "List of text properties to remove from buffer strings.")
 
 (defsubst consult--buffer-substring (beg end &optional fontify)
@@ -1175,8 +1179,11 @@ region has been fontified."
       (let (str)
         (when fontify (consult--fontify-region beg end))
         (setq str (buffer-substring beg end))
-        ;; TODO Propose the addition of a function `preserve-list-of-text-properties'
-        (remove-list-of-text-properties 0 (- end beg) consult--remove-text-properties str)
+        ;; TODO Propose the upstream addition of a function
+        ;; `preserve-list-of-text-properties', which should be as efficient as
+        ;; `remove-list-of-text-properties'.
+        (remove-list-of-text-properties
+         0 (- end beg) consult--remove-text-properties str)
         str)
     (buffer-substring-no-properties beg end)))
 
@@ -1376,15 +1383,16 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
                            :with-markers t :from (point-min) :to (point-max))))
           (when consult--org-fold-regions
             (let ((hook (make-symbol "consult--invisible-open-temporarily-cleanup")))
-              (fset hook (apply-partially #'run-at-time 0 nil
-                                          (lambda (buffer)
-                                            (when (buffer-live-p buffer)
-                                              (with-current-buffer buffer
-                                                (pcase-dolist (`(,beg ,end ,_) consult--org-fold-regions)
-                                                  (when (markerp beg) (set-marker beg nil))
-                                                  (when (markerp end) (set-marker end nil)))
-                                                (kill-local-variable 'consult--org-fold-regions))))
-                                          (current-buffer)))
+              (fset hook (apply-partially
+                          #'run-at-time 0 nil
+                          (lambda (buffer)
+                            (when (buffer-live-p buffer)
+                              (with-current-buffer buffer
+                                (pcase-dolist (`(,beg ,end ,_) consult--org-fold-regions)
+                                  (when (markerp beg) (set-marker beg nil))
+                                  (when (markerp end) (set-marker end nil)))
+                                (kill-local-variable 'consult--org-fold-regions))))
+                          (current-buffer)))
               (when-let (win (active-minibuffer-window))
                 (with-current-buffer (window-buffer win)
                   (add-hook 'minibuffer-exit-hook hook nil 'local))))))
@@ -2294,10 +2302,11 @@ ASYNC must be non-nil for async completion functions."
     (ensure-list minibuffer-default)
     ;; then our custom items
     (remove "" (remq nil (ensure-list items)))
-    ;; Add all the completions for non-async commands.  For async commands this feature
-    ;; is not useful, since if one selects a completion candidate, the async search is
-    ;; restarted using that candidate string.  This usually does not yield a desired
-    ;; result since the async input uses a special format, e.g., `#grep#filter'.
+    ;; Add all the completions for non-async commands.  For async commands this
+    ;; feature is not useful, since if one selects a completion candidate, the
+    ;; async search is restarted using that candidate string.  This usually does
+    ;; not yield a desired result since the async input uses a special format,
+    ;; e.g., `#grep#filter'.
     (unless async
       (all-completions ""
                        minibuffer-completion-table
@@ -2376,8 +2385,8 @@ See `consult--tofu-append'."
 ;; We must disambiguate the lines by adding a prefix such that two lines with
 ;; the same text can be distinguished.  In order to avoid matching the line
 ;; number, such that the user can search for numbers with `consult-line', we
-;; encode the line number as characters outside the unicode range.
-;; By doing that, no accidential matching can occur.
+;; encode the line number as characters outside the unicode range.  By doing
+;; that, no accidential matching can occur.
 (defun consult--tofu-encode (n)
   "Return tofu-encoded number N as a string.
 Large numbers are encoded as multiple tofu characters."
@@ -2405,8 +2414,9 @@ Large numbers are encoded as multiple tofu characters."
                   ann
                 (setq ann (or ann ""))
                 (list cand ""
-                      ;; The default completion UI adds the `completions-annotations' face
-                      ;; if no other faces are present.
+                      ;; The default completion UI adds the
+                      ;; `completions-annotations' face if no other faces are
+                      ;; present.
                       (if (text-property-not-all 0 (length ann) 'face nil ann)
                           ann
                         (propertize ann 'face 'completions-annotations))))))
@@ -2424,11 +2434,11 @@ Large numbers are encoded as multiple tofu characters."
                  (setq-local minibuffer-default-add-function
                              (apply-partially #'consult--add-history (functionp candidates) add-history))))
     (consult--with-async (async candidates)
-      ;; NOTE: Do not unnecessarily let-bind the lambdas to avoid
-      ;; overcapturing in the interpreter.  This will make closures and the
-      ;; lambda string representation larger, which makes debugging much worse.
-      ;; Fortunately the overcapturing problem does not affect the bytecode
-      ;; interpreter which does a proper scope analyis.
+      ;; NOTE: Do not unnecessarily let-bind the lambdas to avoid overcapturing
+      ;; in the interpreter.  This will make closures and the lambda string
+      ;; representation larger, which makes debugging much worse.  Fortunately
+      ;; the overcapturing problem does not affect the bytecode interpreter
+      ;; which does a proper scope analyis.
       (let* ((metadata `(metadata
                          ,@(when category `((category . ,category)))
                          ,@(when group `((group-function . ,group)))
@@ -2704,19 +2714,20 @@ Optional source fields:
          (align (propertize
                  " " 'display
                  `(space :align-to (+ left ,(car candidates)))))
-         (selected (apply #'consult--read
-                          (cdr candidates)
-                          (append
-                           options
-                           (list
-                            :category    'multi-category
-                            :predicate   (apply-partially #'consult--multi-predicate sources)
-                            :annotate    (apply-partially #'consult--multi-annotate sources align)
-                            :group       (apply-partially #'consult--multi-group sources)
-                            :lookup      (apply-partially #'consult--multi-lookup sources)
-                            :preview-key (consult--multi-preview-key sources)
-                            :narrow      (consult--multi-narrow sources)
-                            :state       (consult--multi-state sources))))))
+         (selected
+          (apply #'consult--read
+                 (cdr candidates)
+                 (append
+                  options
+                  (list
+                   :category    'multi-category
+                   :predicate   (apply-partially #'consult--multi-predicate sources)
+                   :annotate    (apply-partially #'consult--multi-annotate sources align)
+                   :group       (apply-partially #'consult--multi-group sources)
+                   :lookup      (apply-partially #'consult--multi-lookup sources)
+                   :preview-key (consult--multi-preview-key sources)
+                   :narrow      (consult--multi-narrow sources)
+                   :state       (consult--multi-state sources))))))
     (when-let (history (plist-get (cdr selected) :history))
       (add-to-history history (car selected)))
     (if (plist-member (cdr selected) :match)
@@ -3702,9 +3713,9 @@ If no MODES are specified, use currently active major and minor modes."
   ;; `current-kill' updates `kill-ring' with a possible interprogram-paste (#443)
   (current-kill 0)
   ;; Do not specify a :lookup function in order to preserve completion-styles
-  ;; highlighting of the current candidate. We have to perform a final lookup
-  ;; to obtain the original candidate which may be propertized with
-  ;; yank-specific properties, like 'yank-handler.
+  ;; highlighting of the current candidate. We have to perform a final lookup to
+  ;; obtain the original candidate which may be propertized with yank-specific
+  ;; properties, like 'yank-handler.
   (consult--lookup-member
    (consult--read
     (consult--remove-dups
