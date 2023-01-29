@@ -2682,21 +2682,25 @@ OPTIONS is the plist of options passed to `consult--read'.  The following
 options are supported: :require-match, :history, :keymap, :initial,
 :add-history, :sort and :inherit-input-method.  The other options of
 `consult--read' are used by the implementation of `consult--multi' and
-should be overwritten only in special scenarios.
+should not be overwritten, except in in special scenarios.
 
 The function returns the selected candidate in the form (cons candidate
 source-plist).  The plist has the key :match with a value nil if the
 candidate does not exist, t if the candidate exists and `new' if the
 candidate has been created.  The sources of the source list can either be
 symbols of source variables or source values.  Source values must be
-plists with the following fields:
+plists with fields from the following list.
 
 Required source fields:
-* :category - Completion category.
-* :items - List of strings to select from or function returning list of strings.
+* :category - Completion category symbol.
+* :items - List of strings to select from or function returning
+  list of strings.  Note that the strings can use text properties
+  to carry mtadata, which is then available to the :annotate,
+  :action and :state functions.
 
 Optional source fields:
-* :name - Name of the source, used for narrowing, group titles and annotations.
+* :name - Name of the source as a string, used for narrowing,
+  group titles and annotations.
 * :narrow - Narrowing character or (character . string) pair.
 * :enabled - Function which must return t if the source is enabled.
 * :hidden - When t candidates of this source are hidden by default.
@@ -2706,8 +2710,12 @@ Optional source fields:
 * :default - Must be t if the first item of the source is the default value.
 * :action - Function called with the selected candidate.
 * :new - Function called with new candidate name, only if :require-match is nil.
-* :state - State constructor for the source, must return the state function.
-* Other source fields can be added specifically to the use case."
+* :state - State constructor for the source, must return the
+  state function.  The state function is informed about state
+  changes of the UI and can be used to implement preview.
+* Other custom source fields can be added depending on the use
+  case.  Note that the source is returned by `consult--multi'
+  together with the selected candidate."
   (let* ((sources (consult--multi-enabled-sources sources))
          (candidates (consult--with-increased-gc
                       (consult--multi-candidates sources)))
