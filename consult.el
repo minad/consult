@@ -2073,7 +2073,7 @@ PROPS are optional properties passed to `make-process'."
                  (setq args (car args))
                ;; TODO remove backward compatibility code
                (message "Consult: The command builder return value changed, it should be a pair instead of a plist")
-               (plist-get args :command)))
+               (setq args (plist-get args :command))))
            (unless (equal args last-args)
              (setq last-args args)
              (when proc
