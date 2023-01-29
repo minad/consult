@@ -803,7 +803,7 @@ ESC is the escaping string for choice and groups."
        (setq ,list (cdr ,head))
        nil)))
 
-;; Upstream bug#46326, Consult issue https://github.com/minad/consult/issues/193
+;; Upstream bug#46326, Consult issue gh:minad/consult#193.
 (defmacro consult--minibuffer-with-setup-hook (fun &rest body)
   "Variant of `minibuffer-with-setup-hook' using a symbol and `fset'.
 
@@ -1927,7 +1927,7 @@ string   Update with the current user input string.  Return nil."
                (run-hooks 'consult--completion-refresh-hook)
                ;; Interaction between asynchronous completion tables and
                ;; preview: We have to trigger preview immediately when
-               ;; candidates arrive (Issue #436).
+               ;; candidates arrive (gh:minad/consult#436).
                (when (and consult--preview-function candidates)
                  (funcall consult--preview-function)))))
          nil)
@@ -2278,10 +2278,10 @@ highlighting function."
 
 (defvar-keymap consult-async-map
   :doc "Keymap added for commands with asynchronous candidates."
-  ;; Async keys overwriting some unusable defaults for the default completion
+  ;; Overwriting some unusable defaults of default minibuffer completion.
   "<remap> <minibuffer-complete-word>" #'self-insert-command
-  ;; Remap Emacs 29 history and default completion for now.
-  ;; See https://github.com/minad/consult/issues/613
+  ;; Remap Emacs 29 history and default completion for now
+  ;; (gh:minad/consult#613).
   "<remap> <minibuffer-complete-defaults>" #'ignore
   "<remap> <minibuffer-complete-history>" #'consult-history)
 
@@ -2789,11 +2789,12 @@ The candidates are previewed in the region from START to END.  This function is
 used as the `:state' argument for `consult--read' in the `consult-yank' family
 of functions and in `consult-completion-in-region'."
   (unless (or (minibufferp)
-              ;; XXX Disable preview if anything odd is going on with the markers. Otherwise we get
-              ;; "Marker points into wrong buffer errors".  See
-              ;; https://github.com/minad/consult/issues/375, where Org mode source blocks are
-              ;; completed in a different buffer than the original buffer.  This completion is
-              ;; probably also problematic in my Corfu completion package.
+              ;; XXX Disable preview if anything odd is going on with the
+              ;; markers. Otherwise we get "Marker points into wrong buffer
+              ;; errors".  See gh:minad/consult#375, where Org mode source
+              ;; blocks are completed in a different buffer than the original
+              ;; buffer.  This completion is probably also problematic in my
+              ;; Corfu completion package.
               (not (eq (window-buffer) (current-buffer)))
               (and (markerp start) (not (eq (marker-buffer start) (current-buffer))))
               (and (markerp end) (not (eq (marker-buffer end) (current-buffer)))))
@@ -2892,7 +2893,8 @@ These configuration options are supported:
                             ((file-name-absolute-p initial)
                              (lambda (_narrow _inp cand)
                                (substitute-in-file-name cand)))
-                            ;; Ensure that ./ prefix is kept for the shell (#356)
+                            ;; Ensure that ./ prefix is kept for the shell
+                            ;; (gh:minad/consult#356).
                             ((string-match-p "\\`\\.\\.?/" initial)
                              (lambda (_narrow _inp cand)
                                (setq cand (file-relative-name (substitute-in-file-name cand)))
@@ -2919,7 +2921,7 @@ These configuration options are supported:
                          ;; Evaluate completion table in the original buffer.
                          ;; This is a reasonable thing to do and required by
                          ;; some completion tables in particular by lsp-mode.
-                         ;; See https://github.com/minad/vertico/issues/61.
+                         ;; See gh:minad/vertico#61.
                          (completing-read prompt
                                           (consult--completion-table-in-buffer collection)
                                           predicate require-match initial)))))))))
@@ -3710,7 +3712,8 @@ If no MODES are specified, use currently active major and minor modes."
 
 (defun consult--read-from-kill-ring ()
   "Open kill ring menu and return selected string."
-  ;; `current-kill' updates `kill-ring' with a possible interprogram-paste (#443)
+  ;; `current-kill' updates `kill-ring' with interprogram paste, see
+  ;; gh:minad/consult#443.
   (current-kill 0)
   ;; Do not specify a :lookup function in order to preserve completion-styles
   ;; highlighting of the current candidate. We have to perform a final lookup to
