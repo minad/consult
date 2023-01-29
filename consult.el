@@ -268,7 +268,7 @@ Can be either a string, or a list of strings or expressions."
 
 (defcustom consult-ripgrep-args
   "rg --null --line-buffered --color=never --max-columns=1000 --path-separator /\
-   --smart-case --no-heading --line-number ."
+   --smart-case --no-heading --line-number --search-zip ."
   "Command line arguments for ripgrep, see `consult-ripgrep'.
 The dynamically computed arguments are appended.
 Can be either a string, or a list of strings or expressions."

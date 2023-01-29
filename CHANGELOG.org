@@ -9,11 +9,17 @@
 - =consult-buffer=: Always select the first candidate when narrowing (#714).
 - =consult-locate-args=: Remove =--existing=, which is not supported by =plocate= on
   Debian stable.
-- Drop obsolete =consult-apropos=. Alternative: =describe-symbol= in combination
-  with =embark-export=.
+- =consult-ripgrep-args=: Add =--search-zip= option to automatically search through
+  compressed files. This will allow you to search Elisp files bundled with your
+  Emacs installation. Move to an Elisp library via =find-library=, then invoke
+  =consult-ripgrep=.
+- Drop obsolete =consult-apropos=. Alternatives: =describe-symbol= in combination
+  with =embark-export=. See also =consult-info= and =consult-ripgrep= to search
+  through info manuals and Elisp source code.
 - Drop obsolete =consult-multi-occur=. Alternative: Built-in =multi-occur=,
   =multi-occur-in-matching-buffers= or =consult-line-multi=.
-- Drop obsolete =consult-file-externally=. Alternative: =embark-open-externally=.
+- Drop obsolete =consult-file-externally=. The command has been moved to Embark
+  under the name =embark-open-externally=.
 
 * Version 0.31 (2023-01-06)
 
