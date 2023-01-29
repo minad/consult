@@ -7,13 +7,13 @@
 - Bugfixes
 - Add =consult-info= command (#634, #727).
 - =consult-buffer=: Always select the first candidate when narrowing (#714).
+- =consult-locate-args=: Remove =--existing=, which is not supported by =plocate= on
+  Debian stable.
 - Drop obsolete =consult-apropos=. Alternative: =describe-symbol= in combination
   with =embark-export=.
 - Drop obsolete =consult-multi-occur=. Alternative: Built-in =multi-occur=,
   =multi-occur-in-matching-buffers= or =consult-line-multi=.
 - Drop obsolete =consult-file-externally=. Alternative: =embark-open-externally=.
-- =consult-locate-args=: Remove =--existing=, which is not supported by =plocate= on
-  Debian stable.
 
 * Version 0.31 (2023-01-06)
 
