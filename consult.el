@@ -2476,22 +2476,26 @@ Large numbers are encoded as multiple tofu characters."
                                     prompt predicate require-match history default
                                     keymap category initial narrow add-history annotate
                                     state preview-key sort lookup group inherit-input-method)
-  "Enhanced completing read function selecting from CANDIDATES.
+  "Enhanced completing read function to select from CANDIDATES.
 
-The function is a thin wrapper around `completing-read'.  On top
-of `completing-read' it additionally supports asynchronous
-completion list computations, candidate preview and narrowing.
+The function is a thin wrapper around `completing-read'.  Keyword
+arguments are used instead of positional arguments for code
+clarity.  On top of `completing-read' it additionally supports
+computing the candidate list asynchronously, candidate preview
+and narrowing.
 
 Keyword OPTIONS:
 
-PROMPT is the string which is shown as prompt message in the minibuffer.
-PREDICATE is a filter function called for each candidate, returns nil or t.
+PROMPT is the string which is shown as prompt in the minibuffer.
+PREDICATE is a filter function called for each candidate, returns
+nil or t.
 REQUIRE-MATCH equals t means that an exact match is required.
 HISTORY is the symbol of the history variable.
 DEFAULT is the default selected value.
 ADD-HISTORY is a list of items to add to the history.
-CATEGORY is the completion category.
+CATEGORY is the completion category symbol.
 SORT should be set to nil if the candidates are already sorted.
+This will disable sorting in the completion UI.
 LOOKUP is a lookup function passed the selected candidate string,
 the list of candidates, the current input string and the current
 narrowing value.
@@ -2506,7 +2510,8 @@ PREVIEW-KEY are the preview keys.  Can be nil, `any', a single
 key or a list of keys.
 NARROW is an alist of narrowing prefix strings and description.
 KEYMAP is a command-specific keymap.
-INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the input method."
+INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the
+input method."
   ;; supported types
   (cl-assert (or (functionp candidates)     ;; async table
                  (obarrayp candidates)      ;; obarray
