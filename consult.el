@@ -71,20 +71,17 @@
 (defcustom consult-narrow-key nil
   "Prefix key for narrowing during completion.
 
-Good choices for this key are (kbd \"<\") or (kbd \"C-+\") for example.
+Good choices for this key are \"<\" and \"C-+\" for example.
 
-The key must be either a string or a vector.
-This is the key representation accepted by `define-key'."
-  :type '(choice key-sequence (const nil)))
+The key must be a string accepted by `key-valid-p'."
+  :type '(choice string (const nil)))
 
 (defcustom consult-widen-key nil
   "Key used for widening during completion.
 
 If this key is unset, defaults to twice the `consult-narrow-key'.
-
-The key must be either a string or a vector.
-This is the key representation accepted by `define-key'."
-  :type '(choice key-sequence (const nil)))
+The key must be a string accepted by `key-valid-p'."
+  :type '(choice string (const nil)))
 
 (defcustom consult-project-function
   #'consult--default-project-function
@@ -1695,7 +1692,10 @@ invoked, the state function will also be called with `exit' and
 (defun consult--widen-key ()
   "Return widening key, if `consult-widen-key' is not set.
 The default is twice the `consult-narrow-key'."
-  (or consult-widen-key (and consult-narrow-key (vconcat consult-narrow-key consult-narrow-key))))
+  (or consult-widen-key
+      (when-let ((key (and consult-narrow-key
+                           (key-parse consult-narrow-key))))
+           (vconcat key key))))
 
 (defun consult-narrow (key)
   "Narrow current completion with KEY.
@@ -1767,11 +1767,13 @@ to make it available for commands with narrowing."
             consult--narrow-keys (plist-get settings :keys))
     (setq consult--narrow-predicate nil
           consult--narrow-keys settings))
-  (when consult-narrow-key
+  (when-let ((key consult-narrow-key))
+    (unless (key-valid-p key)
+      (error "Invalid `consult-narrow-key': %S" key))
+    (setq key (key-parse key))
     (dolist (pair consult--narrow-keys)
-      (define-key map
-        (vconcat consult-narrow-key (vector (car pair)))
-        (cons (cdr pair) #'consult-narrow))))
+      (define-key map (vconcat key  (vector (car pair)))
+                  (cons (cdr pair) #'consult-narrow))))
   (when-let (widen (consult--widen-key))
     (define-key map widen (cons "All" #'consult-narrow))))
 
