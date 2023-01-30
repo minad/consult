@@ -5,6 +5,10 @@
 * Development
 
 - Bugfixes
+- Update the key convention. Keys must now be strings valid according to
+  =key-valid-p=. This changes affects the keys =consult-narrow-key=,
+  =consult-widen-key=, =consult-preview-key= and the =:preview-key= of sources and
+  passed as keyword argument to =consult--read=.
 - Add =consult-info= command (#634, #727).
 - =consult-buffer=: Always select the first candidate when narrowing (#714).
 - =consult-locate-args=: Remove =--existing=, which is not supported by =plocate= on

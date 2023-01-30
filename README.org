@@ -439,8 +439,8 @@ following settings are possible:
 
 - Automatic and immediate ='any=
 - Automatic and delayed =(list :debounce 0.5 'any)=
-- Manual and immediate =(kbd "M-.")=
-- Manual and delayed =(list :debounce 0.5 (kbd "M-."))=
+- Manual and immediate ="M-."=
+- Manual and delayed =(list :debounce 0.5 "M-.")=
 - Disabled =nil=
 
 A safe recommendation is to leave automatic immediate previews enabled in
@@ -460,7 +460,7 @@ to be considered.
    consult--source-recent-file consult--source-project-recent-file
    ;; my/command-wrapping-consult    ;; disable auto previews inside my command
    :preview-key '(:debounce 0.4 any) ;; Option 1: Delay preview
-   ;; :preview-key (kbd "M-."))      ;; Option 2: Manual preview
+   ;; :preview-key "M-.")            ;; Option 2: Manual preview
 #+end_src
 
 In this case one may wonder what the difference is between using an Embark
@@ -480,9 +480,9 @@ UI experience.
   ;; Preview immediately on M-., on up/down after 0.5s, on any other key after 1s
   (consult-customize consult-theme
                      :preview-key
-                     (list (kbd "M-.")
-                           :debounce 0.5 (kbd "<up>") (kbd "<down>")
-                           :debounce 1 'any))
+                     '("M-."
+                       :debounce 0.5 "<up>" "<down>"
+                       :debounce 1 any))
 #+end_src
 
 ** Narrowing and grouping
@@ -636,7 +636,7 @@ configure a manual preview as follows.
   (consult-customize
    consult--source-bookmark consult--source-file-register
    consult--source-recent-file consult--source-project-recent-file
-   :preview-key (kbd "M-."))
+   :preview-key "M-.")
 #+end_src
 
 Sources can be added directly to the =consult-buffer-source= list for convenience.
@@ -856,8 +856,8 @@ configuration examples.
     ;; Optionally configure preview. The default value
     ;; is 'any, such that any key triggers the preview.
     ;; (setq consult-preview-key 'any)
-    ;; (setq consult-preview-key (kbd "M-."))
-    ;; (setq consult-preview-key (list (kbd "<S-down>") (kbd "<S-up>")))
+    ;; (setq consult-preview-key "M-.")
+    ;; (setq consult-preview-key '("S-<down>" "S-<up>"))
     ;; For some commands and buffer sources it is useful to configure the
     ;; :preview-key on a per-command basis using the `consult-customize' macro.
     (consult-customize
@@ -866,12 +866,12 @@ configuration examples.
      consult-bookmark consult-recent-file consult-xref
      consult--source-bookmark consult--source-file-register
      consult--source-recent-file consult--source-project-recent-file
-     ;; :preview-key (kbd "M-.")
+     ;; :preview-key "M-."
      :preview-key '(:debounce 0.4 any))
 
     ;; Optionally configure the narrowing key.
     ;; Both < and C-+ work reasonably well.
-    (setq consult-narrow-key "<") ;; (kbd "C-+")
+    (setq consult-narrow-key "<") ;; "C-+"
 
     ;; Optionally make narrowing help available in the minibuffer.
     ;; You may want to use `embark-prefix-help-command' or which-key instead.
@@ -979,13 +979,13 @@ Useful options are:
    ;; Disable preview for `consult-theme' completely.
    consult-theme :preview-key nil
    ;; Set preview for `consult-buffer' to key `M-.'
-   consult-buffer :preview-key (kbd "M-.")
+   consult-buffer :preview-key "M-."
    ;; For `consult-line' change the prompt and specify multiple preview
    ;; keybindings. Note that you should bind <S-up> and <S-down> in the
    ;; `minibuffer-local-completion-map' or `vertico-map' to the commands which
    ;; select the previous or next candidate.
    consult-line :prompt "Search: "
-   :preview-key (list (kbd "<S-down>") (kbd "<S-up>")))
+   :preview-key '("S-<down>" "S-<up>"))
 #+end_src
 
 The configuration values are evaluated at runtime, just before the completion

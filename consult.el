@@ -71,20 +71,16 @@
 (defcustom consult-narrow-key nil
   "Prefix key for narrowing during completion.
 
-Good choices for this key are (kbd \"<\") or (kbd \"C-+\") for example.
-
-The key must be either a string or a vector.
-This is the key representation accepted by `define-key'."
-  :type '(choice key-sequence (const nil)))
+Good choices for this key are \"<\" and \"C-+\" for example. The
+key must be a string accepted by `key-valid-p'."
+  :type '(choice string (const nil)))
 
 (defcustom consult-widen-key nil
   "Key used for widening during completion.
 
 If this key is unset, defaults to twice the `consult-narrow-key'.
-
-The key must be either a string or a vector.
-This is the key representation accepted by `define-key'."
-  :type '(choice key-sequence (const nil)))
+The key must be a string accepted by `key-valid-p'."
+  :type '(choice string (const nil)))
 
 (defcustom consult-project-function
   #'consult--default-project-function
@@ -296,15 +292,17 @@ Can be either a string, or a list of strings or expressions."
   :type '(choice string (repeat (choice string expression))))
 
 (defcustom consult-preview-key 'any
-  "Preview trigger keys, can be nil, `any', a single key or a list of keys."
+  "Preview trigger keys, can be nil, `any', a single key or a list of keys.
+Debouncing can be specified via the `:debounce' attribute.  The
+individual keys must be strings accepted by `key-valid-p'."
   :type '(choice (const :tag "Any key" any)
                  (list :tag "Debounced"
                        (const :debounce)
                        (float :tag "Seconds" 0.1)
                        (const any))
                  (const :tag "No preview" nil)
-                 (key-sequence :tag "Key")
-                 (repeat :tag "List of keys" key-sequence)))
+                 (string :tag "Key")
+                 (repeat :tag "List of keys" string)))
 
 (defcustom consult-preview-max-size 10485760
   "Files larger than this byte limit are not previewed."
@@ -1520,7 +1518,13 @@ The result can be passed as :state argument to `consult--read'." type)
       (if (eq (car preview-key) :debounce)
           (setq debounce (cadr preview-key)
                 preview-key (cddr preview-key))
-        (push (cons (car preview-key) debounce) keys)
+        (let ((key (car preview-key)))
+          (unless (eq key 'any)
+            (if (key-valid-p key)
+                (setq key (key-parse key))
+              ;; TODO: Remove compatibility code, throw error.
+              (message "Invalid preview key: %S" key)))
+          (push (cons key debounce) keys))
         (pop preview-key)))
     keys))
 
@@ -1531,10 +1535,10 @@ The result can be passed as :state argument to `consult--read'." type)
   (let ((map (make-sparse-keymap))
         (keys (this-single-command-keys))
         any)
-    (dolist (x (consult--preview-key-normalize preview-key))
-      (if (eq (car x) 'any)
-          (setq any (cdr x))
-        (define-key map (car x) `(lambda () ,(cdr x)))))
+    (pcase-dolist (`(,k . ,d) (consult--preview-key-normalize preview-key))
+      (if (eq k 'any)
+          (setq any d)
+        (define-key map k `(lambda () ,d))))
     (setq keys (lookup-key map keys))
     (if (functionp keys) (funcall keys) any)))
 
@@ -1695,7 +1699,20 @@ invoked, the state function will also be called with `exit' and
 (defun consult--widen-key ()
   "Return widening key, if `consult-widen-key' is not set.
 The default is twice the `consult-narrow-key'."
-  (or consult-widen-key (and consult-narrow-key (vconcat consult-narrow-key consult-narrow-key))))
+  (cond
+   (consult-widen-key
+    (if (key-valid-p consult-widen-key)
+        (key-parse consult-widen-key)
+      ;; TODO: Remove compatibility code, throw error.
+      (message "Invalid `consult-widen-key': %S" consult-widen-key)
+      consult-widen-key))
+   (consult-narrow-key
+    (let ((key consult-narrow-key))
+      (if (key-valid-p key)
+          (setq key (key-parse key))
+        ;; TODO: Remove compatibility code, throw error.
+        (message "Invalid `consult-narrow-key': %S" key))
+      (vconcat key key)))))
 
 (defun consult-narrow (key)
   "Narrow current completion with KEY.
@@ -1767,12 +1784,15 @@ to make it available for commands with narrowing."
             consult--narrow-keys (plist-get settings :keys))
     (setq consult--narrow-predicate nil
           consult--narrow-keys settings))
-  (when consult-narrow-key
+  (when-let ((key consult-narrow-key))
+    (if (key-valid-p key)
+        (setq key (key-parse key))
+      ;; TODO: Remove compatibility code, throw error.
+      (message "Invalid `consult-narrow-key': %S" key))
     (dolist (pair consult--narrow-keys)
-      (define-key map
-        (vconcat consult-narrow-key (vector (car pair)))
-        (cons (cdr pair) #'consult-narrow))))
-  (when-let (widen (consult--widen-key))
+      (define-key map (vconcat key (vector (car pair)))
+                  (cons (cdr pair) #'consult-narrow))))
+  (when-let ((widen (consult--widen-key)))
     (define-key map widen (cons "All" #'consult-narrow))))
 
 ;; Emacs 28: hide in M-X
