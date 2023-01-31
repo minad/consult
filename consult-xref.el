@@ -45,7 +45,7 @@ The fetch is stored globally such that it can be accessed by
                                 (xref--group-name-for-display
                                  (xref-location-group loc) root)
                               (xref-location-group loc)))
-                     (cand (consult--format-location
+                     (cand (consult--format-file-line-match
                             group
                             (or (xref-location-line loc) 0)
                             (xref-item-summary xref))))
@@ -71,7 +71,7 @@ The fetch is stored globally such that it can be accessed by
                        ('xref-buffer-location
                         (xref-location-marker loc))
                        ((or 'xref-file-location 'xref-etags-location)
-                        (consult--position-marker
+                        (consult--marker-from-line-column
                          (funcall open
                                   ;; xref-location-group returns the file name
                                   (let ((xref-file-name-display 'abs))

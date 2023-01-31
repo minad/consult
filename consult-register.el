@@ -73,7 +73,7 @@ Each element of the list must have the form (char . name).")
         (let* ((line (line-number-at-pos))
                (str (propertize (consult--line-with-cursor val)
                                 'consult-location (cons val line))))
-          (list (consult--format-location (buffer-name) line str)
+          (list (consult--format-file-line-match (buffer-name) line str)
                 'multi-category `(consult-location . ,str)
                 'consult--type ?p))))))
 
