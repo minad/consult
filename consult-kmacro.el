@@ -83,7 +83,9 @@ Macros containing mouse clicks are omitted."
     (unless km (user-error "No kmacro selected"))
     (funcall
      ;; Kmacros are lambdas (oclosures) on Emacs 29
-     (if (fboundp 'kmacro-lambda-form) (kmacro-lambda-form km) km)
+     (if (eval-when-compile (> emacs-major-version 28))
+         km
+       (kmacro-lambda-form km))
      arg)))
 
 (provide 'consult-kmacro)
