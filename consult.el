@@ -6,7 +6,7 @@
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2020
 ;; Version: 0.31
-;; Package-Requires: ((emacs "27.1") (compat "29.1.3.0"))
+;; Package-Requires: ((emacs "27.1") (compat "29.1.3.2"))
 ;; Homepage: https://github.com/minad/consult
 
 ;; This file is part of GNU Emacs.
@@ -843,6 +843,14 @@ When no project is found and MAY-PROMPT is non-nil ask the user."
             (gc-cons-threshold (if ,overwrite consult--gc-threshold gc-cons-threshold))
             (gc-cons-percentage (if ,overwrite consult--gc-percentage gc-cons-percentage)))
        ,@body)))
+
+(defmacro consult--slow-operation (message &rest body)
+  "Show delayed MESSAGE if BODY takes too long.
+Also temporarily increase the gc limit via `consult--with-increased-gc'."
+  (declare (indent 1))
+  `(with-delayed-message (1 ,message)
+     (consult--with-increased-gc
+      ,@body)))
 
 (defun consult--count-lines (pos)
   "Move to position POS and return number of lines."
@@ -3023,7 +3031,9 @@ These configuration options are supported:
 This command supports narrowing to a heading level and candidate preview.
 The symbol at point is added to the future history."
   (interactive)
-  (let* ((candidates (consult--outline-candidates))
+  (let* ((candidates (consult--slow-operation
+                         "Collecting headings..."
+                       (consult--outline-candidates)))
          (min-level (- (apply #'min (mapcar
                                      (lambda (cand)
                                        (get-text-property 0 'consult--outline-level cand))
@@ -3218,8 +3228,8 @@ and the last `isearch-string' is added to the future history."
   (interactive (list nil (not (not current-prefix-arg))))
   (let* ((curr-line (line-number-at-pos (point) consult-line-numbers-widen))
          (top (not (eq start consult-line-start-from-top)))
-         (candidates (consult--with-increased-gc
-                      (consult--line-candidates top curr-line))))
+         (candidates (consult--slow-operation "Collecting lines..."
+                       (consult--line-candidates top curr-line))))
     (consult--read
      candidates
      :prompt (if top "Go to line from top: " "Go to line: ")

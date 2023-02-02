@@ -238,7 +238,10 @@ The symbol at point is added to the future history.
 
 See also `consult-imenu-multi'."
   (interactive)
-  (consult-imenu--select "Go to item: " (consult-imenu--items)))
+  (consult-imenu--select
+   "Go to item: "
+   (consult--slow-operation "Building Imenu..."
+     (consult-imenu--items))))
 
 ;;;###autoload
 (defun consult-imenu-multi (&optional query)
