@@ -3164,13 +3164,14 @@ CURR-LINE is the current line number."
         (when (and (not default-cand) (>= line curr-line))
           (setq default-cand candidates)))
       (cl-incf line))
-    (when candidates
-      (nreverse
-       (if (or top (not default-cand))
-           candidates
-         (let ((before (cdr default-cand)))
-           (setcdr default-cand nil)
-           (nconc before candidates)))))))
+    (unless candidates
+      (user-error "No lines"))
+    (nreverse
+     (if (or top (not default-cand))
+         candidates
+       (let ((before (cdr default-cand)))
+         (setcdr default-cand nil)
+         (nconc before candidates))))))
 
 (defun consult--line-point-placement (selected candidates highlighted &rest ignored-faces)
   "Find point position on matching line.
@@ -3217,9 +3218,8 @@ and the last `isearch-string' is added to the future history."
   (interactive (list nil (not (not current-prefix-arg))))
   (let* ((curr-line (line-number-at-pos (point) consult-line-numbers-widen))
          (top (not (eq start consult-line-start-from-top)))
-         (candidates (or (consult--with-increased-gc
-                          (consult--line-candidates top curr-line))
-                         (user-error "No lines"))))
+         (candidates (consult--with-increased-gc
+                      (consult--line-candidates top curr-line))))
     (consult--read
      candidates
      :prompt (if top "Go to line from top: " "Go to line: ")
