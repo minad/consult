@@ -1485,7 +1485,7 @@ The result can be passed as :state argument to `consult--read'." type)
             (if (key-valid-p key)
                 (setq key (key-parse key))
               ;; TODO: Remove compatibility code, throw error.
-              (message "Invalid preview key: %S" key)))
+              (message "Invalid preview key according to `key-valid-p': %S" key)))
           (push (cons key debounce) keys))
         (pop preview-key)))
     keys))
@@ -1685,14 +1685,14 @@ The default is twice the `consult-narrow-key'."
     (if (key-valid-p consult-widen-key)
         (key-parse consult-widen-key)
       ;; TODO: Remove compatibility code, throw error.
-      (message "Invalid `consult-widen-key': %S" consult-widen-key)
+      (message "Invalid `consult-widen-key' according to `key-valid-p': %S" consult-widen-key)
       consult-widen-key))
    (consult-narrow-key
     (let ((key consult-narrow-key))
       (if (key-valid-p key)
           (setq key (key-parse key))
         ;; TODO: Remove compatibility code, throw error.
-        (message "Invalid `consult-narrow-key': %S" key))
+        (message "Invalid `consult-narrow-key' according to `key-valid-p': %S" key))
       (vconcat key key)))))
 
 (defun consult-narrow (key)
@@ -1769,7 +1769,7 @@ to make it available for commands with narrowing."
     (if (key-valid-p key)
         (setq key (key-parse key))
       ;; TODO: Remove compatibility code, throw error.
-      (message "Invalid `consult-narrow-key': %S" key))
+      (message "Invalid `consult-narrow-key' according to `key-valid-p': %S" key))
     (dolist (pair consult--narrow-keys)
       (define-key map (vconcat key (vector (car pair)))
                   (cons (cdr pair) #'consult-narrow))))
