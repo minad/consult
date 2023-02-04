@@ -44,7 +44,13 @@
         (setq last-node nil full-node nil)
         (widen)
         (goto-char (point-min))
-        ;; TODO Info seems to support subfiles?! Maybe not needed?
+        ;; TODO Info has support for subfiles, which is currently not supported
+        ;; by the `consult-info' search routine.  Fortunately most (or all?)
+        ;; Emacs info files are generated with the --no-split option.  See the
+        ;; comment in doc/emacs/Makefile.in.  Given the computing powers these
+        ;; days split info files are probably also not necessary anymore.
+        ;; However it could happen that info files installed as part of the
+        ;; Linux distribution are split.
         (while (and (not (eobp)) (re-search-forward re nil t))
           (if (match-end 1)
               (progn
