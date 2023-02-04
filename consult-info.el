@@ -45,12 +45,6 @@
         (widen)
         (goto-char (point-min))
         ;; TODO Info seems to support subfiles?! Maybe not needed?
-        ;; TODO It would be nice to make section/subsection/subsubsection titles
-        ;; part of the candidate group titles. However the titles must also be
-        ;; searchable, so we cannot simply search for all titles and walk over
-        ;; them. But if we add sections to the group titles, the grouping may
-        ;; also get too fine grained for completion, such that this won't be
-        ;; convenient.
         (while (and (not (eobp)) (re-search-forward re nil t))
           (if (match-end 1)
               (progn
