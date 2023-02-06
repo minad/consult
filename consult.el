@@ -3988,8 +3988,6 @@ history is used."
         (unless found
           (user-error "No history configured for `%s', see `consult-mode-histories'"
                       major-mode))
-        (unless (consp (cdr found))
-          (user-error "Obsolete mode history entry: %S" found))
         (cons (symbol-value (cadr found)) (cddr found))))))
 
 ;;;###autoload
@@ -5024,7 +5022,5 @@ automatically previewed."
 (with-eval-after-load 'vertico (require 'consult-vertico))
 (with-eval-after-load 'mct (add-hook 'consult--completion-refresh-hook
                                      'mct--live-completions-refresh))
-(with-eval-after-load 'selectrum
-  (warn (propertize "Consult: Selectrum has been deprecated in favor of Vertico" 'face 'warning)))
 
 ;;; consult.el ends here
