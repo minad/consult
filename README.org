@@ -1103,7 +1103,8 @@ out the following steps:
    Orderless.
 3. Either use the default completion UI or ensure that exactly one of
    =vertico-mode=, =mct-mode=, or =icomplete-mode= is enabled. The unsupported modes
-   =selectrum-mode=, =ivy-mode=, =helm-mode= and =ido-ubiquitous-mode= must be disabled.
+   =selectrum-mode=, =ivy-mode=, =helm-mode=, =ido-mode= and =ido-ubiquitous-mode= must be
+   disabled.
 4. Ensure that the =completion-styles= variable is properly configured. Try to set
    =completion-styles= to a list including =substring= or =orderless=.
 5. Try to reproduce the issue by starting a bare bone Emacs instance with =emacs -Q=
