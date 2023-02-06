@@ -2,7 +2,7 @@
 #+author: Daniel Mendler
 #+language: en
 
-* Development
+* Version 0.32 (2023-02-06)
 
 - Bugfixes
 - Update the key convention. Keys must now be strings valid according to
