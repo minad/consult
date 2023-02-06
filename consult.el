@@ -786,13 +786,16 @@ When no project is found and MAY-PROMPT is non-nil ask the user."
 (define-obsolete-function-alias
   'consult--format-location 'consult--format-file-line-match "0.31")
 
-(defun consult--make-overlay (beg end &rest props)
+(defmacro consult--overlay (beg end &rest props)
   "Make consult overlay between BEG and END with PROPS."
-  (let ((ov (make-overlay beg end)))
+  (let ((ov (make-symbol "ov"))
+        (puts))
     (while props
-      (overlay-put ov (car props) (cadr props))
+      (push `(overlay-put ,ov ,(car props) ,(cadr props)) puts)
       (setq props (cddr props)))
-    ov))
+    `(let ((,ov (make-overlay ,beg ,end)))
+       ,@puts
+       ,ov)))
 
 (defun consult--remove-dups (list)
   "Remove duplicate strings from LIST."
@@ -1406,20 +1409,20 @@ The function can be used as the `:state' argument of `consult--read'."
                         (let ((vbeg (progn (beginning-of-visual-line) (point)))
                               (vend (progn (end-of-visual-line) (point)))
                               (end (pos-eol)))
-                          (consult--make-overlay vbeg (if (= vend end) (1+ end) vend)
-                                                 'face 'consult-preview-line
-                                                 'window (selected-window)
-                                                 'priority 1)))
-                      (consult--make-overlay (point) (1+ (point))
-                                             'face 'consult-preview-cursor
-                                             'window (selected-window)
-                                             'priority 3)))
+                          (consult--overlay vbeg (if (= vend end) (1+ end) vend)
+                                            'face 'consult-preview-line
+                                            'window (selected-window)
+                                            'priority 1)))
+                      (consult--overlay (point) (1+ (point))
+                                        'face 'consult-preview-cursor
+                                        'window (selected-window)
+                                        'priority 3)))
           (dolist (match (cdr-safe cand))
-            (push (consult--make-overlay (+ (point) (car match))
-                                         (+ (point) (cdr match))
-                                         'face 'consult-preview-match
-                                         'window (selected-window)
-                                         'priority 2)
+            (push (consult--overlay (+ (point) (car match))
+                                    (+ (point) (cdr match))
+                                    'face 'consult-preview-match
+                                    'window (selected-window)
+                                    'priority 2)
                   overlays))
           (run-hooks 'consult-after-jump-hook))))))
 
@@ -1707,7 +1710,7 @@ This command is used internally by the narrowing system of `consult--read'."
     (delete-overlay consult--narrow-overlay))
   (when consult--narrow
     (setq consult--narrow-overlay
-          (consult--make-overlay
+          (consult--overlay
            (1- (minibuffer-prompt-end)) (minibuffer-prompt-end)
            'before-string
            (propertize (format " [%s]" (alist-get consult--narrow
@@ -2860,9 +2863,9 @@ of functions and in `consult-completion-in-region'."
           (setq ov nil))
          ((and (eq action 'preview) cand)
           (unless ov
-            (setq ov (consult--make-overlay start end
-                                            'invisible t
-                                            'window (selected-window))))
+            (setq ov (consult--overlay start end
+                                       'invisible t
+                                       'window (selected-window))))
           ;; Use `add-face-text-property' on a copy of "cand in order to merge face properties
           (setq cand (copy-sequence cand))
           (add-face-text-property 0 (length cand) 'consult-preview-insertion t cand)
@@ -3511,7 +3514,7 @@ INITIAL is the initial input."
                              (let ((a (if not block-beg block-end))
                                    (b (if not block-end beg)))
                                (when (/= a b)
-                                 (push (consult--make-overlay a b 'invisible t) new-overlays)))
+                                 (push (consult--overlay a b 'invisible t) new-overlays)))
                              (setq block-beg beg))
                            (setq block-end end old-ind ind)))))
                    'commit)
