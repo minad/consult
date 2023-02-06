@@ -501,8 +501,12 @@ as the public API.")
 This function can be called by custom completion systems from
 outside the minibuffer.")
 
-(defvar-local consult--multi-cand-width-max 0
-  "Maximum candidate width used for annotation alignment.")
+(defconst consult--tofu-char #x200000
+  "Special character used to encode line prefixes for disambiguation.
+We use invalid characters outside the Unicode range.")
+
+(defconst consult--tofu-range #x100000
+  "Special character range.")
 
 (defvar-local consult--narrow nil
   "Current narrowing key.")
@@ -525,22 +529,15 @@ outside the minibuffer.")
 (defvar consult--process-chunk (* 1024 1024)
   "Increase process output chunk size.")
 
+(defvar consult--async-log
+  " *consult-async*"
+  "Buffer for async logging output used by `consult--async-process'.")
+
 (defvar-local consult--focus-lines-overlays nil
   "Overlays used by `consult-focus-lines'.")
 
 (defvar-local consult--org-fold-regions nil
   "Stored regions for the org-fold API.")
-
-(defconst consult--tofu-char #x200000
-  "Special character used to encode line prefixes for disambiguation.
-We use invalid characters outside the Unicode range.")
-
-(defconst consult--tofu-range #x100000
-  "Special character range.")
-
-(defconst consult--async-log
-  " *consult-async*"
-  "Buffer for async logging output used by `consult--async-process'.")
 
 ;;;; Miscellaneous helper functions
 
@@ -2567,18 +2564,14 @@ input method."
     (delq nil)
     (delete-dups)))
 
-(defun consult--multi-annotate (sources cand)
-  "Annotate candidate CAND from multi SOURCES."
-  (setq consult--multi-cand-width-max (max consult--multi-cand-width-max (consult--display-width cand)))
+(defun consult--multi-annotate (sources align cand)
+  "Annotate candidate CAND with `consult--multi' type, given SOURCES and ALIGN."
   (let* ((src (consult--multi-source sources cand))
-         (fun (plist-get src :annotate))
-         (ann (if fun
-                  (funcall fun (cdr (get-text-property 0 'multi-category cand)))
+         (annotate (plist-get src :annotate))
+         (ann (if annotate
+                  (funcall annotate (cdr (get-text-property 0 'multi-category cand)))
                 (plist-get src :name))))
-    (when ann
-      (concat
-       #("   " 0 1 (display (space :align-to (+ left consult--multi-cand-width-max))))
-       ann))))
+    (and ann (concat align ann))))
 
 (defun consult--multi-group (sources cand transform)
   "Return title of candidate CAND or TRANSFORM the candidate given SOURCES."
@@ -2628,23 +2621,25 @@ input method."
 
 (defun consult--multi-candidates (sources)
   "Return `consult--multi' candidates from SOURCES."
-  (let ((idx 0) candidates)
+  (let ((idx 0) (max-width 0) (candidates))
     (seq-doseq (src sources)
       (let* ((face (and (plist-member src :face) `(face ,(plist-get src :face))))
              (cat (plist-get src :category))
              (items (plist-get src :items))
              (items (if (functionp items) (funcall items) items)))
         (dolist (item items)
-          (let ((cand (consult--tofu-append item idx)))
+          (let ((cand (consult--tofu-append item idx))
+                (width (consult--display-width item)))
             ;; Preserve existing `multi-category' datum of the candidate.
             (if (get-text-property 0 'multi-category cand)
                 (when face (add-text-properties 0 (length item) face cand))
               ;; Attach `multi-category' datum and face.
               (add-text-properties 0 (length item)
                                    `(multi-category (,cat . ,item) ,@face) cand))
+            (when (> width max-width) (setq max-width width))
             (push cand candidates))))
       (cl-incf idx))
-    (nreverse candidates)))
+    (cons (+ 3 max-width) (nreverse candidates))))
 
 (defun consult--multi-enabled-sources (sources)
   "Return vector of enabled SOURCES."
@@ -2735,15 +2730,18 @@ Optional source fields:
   (let* ((sources (consult--multi-enabled-sources sources))
          (candidates (consult--with-increased-gc
                       (consult--multi-candidates sources)))
+         (align (propertize
+                 " " 'display
+                 `(space :align-to (+ left ,(car candidates)))))
          (selected
           (apply #'consult--read
-                 candidates
+                 (cdr candidates)
                  (append
                   options
                   (list
                    :category    'multi-category
                    :predicate   (apply-partially #'consult--multi-predicate sources)
-                   :annotate    (apply-partially #'consult--multi-annotate sources)
+                   :annotate    (apply-partially #'consult--multi-annotate sources align)
                    :group       (apply-partially #'consult--multi-group sources)
                    :lookup      (apply-partially #'consult--multi-lookup sources)
                    :preview-key (consult--multi-preview-key sources)
