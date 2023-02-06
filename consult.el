@@ -937,6 +937,54 @@ MARKER is the cursor position."
   "Return current line where the cursor MARKER is highlighted."
   (consult--region-with-cursor (pos-bol) (pos-eol) marker))
 
+;;;; Tofu cooks
+
+(defsubst consult--tofu-p (char)
+  "Return non-nil if CHAR is a tofu."
+  (<= consult--tofu-char char (+ consult--tofu-char consult--tofu-range -1)))
+
+(defun consult--tofu-hide (str)
+  "Hide the tofus in STR."
+  (let* ((max (length str))
+         (end max))
+    (while (and (> end 0) (consult--tofu-p (aref str (1- end))))
+      (cl-decf end))
+    (when (< end max)
+      (setq str (copy-sequence str))
+      (put-text-property end max 'invisible t str))
+    str))
+
+(defsubst consult--tofu-append (cand id)
+  "Append tofu-encoded ID to CAND.
+The ID must fit within a single character.  It must be smaller
+than `consult--tofu-range'."
+  (setq id (char-to-string (+ consult--tofu-char id)))
+  (add-text-properties 0 1 '(invisible t consult-strip t) id)
+  (concat cand id))
+
+(defsubst consult--tofu-get (cand)
+  "Extract tofu-encoded ID from CAND.
+See `consult--tofu-append'."
+  (- (aref cand (1- (length cand))) consult--tofu-char))
+
+;; We must disambiguate the lines by adding a prefix such that two lines with
+;; the same text can be distinguished.  In order to avoid matching the line
+;; number, such that the user can search for numbers with `consult-line', we
+;; encode the line number as characters outside the unicode range.  By doing
+;; that, no accidential matching can occur.
+(defun consult--tofu-encode (n)
+  "Return tofu-encoded number N as a string.
+Large numbers are encoded as multiple tofu characters."
+  (let (str tofu)
+    (while (progn
+             (setq tofu (char-to-string
+                         (+ consult--tofu-char (% n consult--tofu-range)))
+                   str (if str (concat tofu str) tofu))
+             (and (>= n consult--tofu-range)
+                  (setq n (/ n consult--tofu-range)))))
+    (add-text-properties 0 (length str) '(invisible t consult-strip t) str)
+    str))
+
 ;;;; Regexp utilities
 
 (defun consult--find-highlights (str start &rest ignored-faces)
@@ -2350,21 +2398,6 @@ PREVIEW-KEY are the preview keys."
                       map))
       old-map))))
 
-(defsubst consult--tofu-p (char)
-  "Return non-nil if CHAR is a tofu."
-  (<= consult--tofu-char char (+ consult--tofu-char consult--tofu-range -1)))
-
-(defun consult--tofu-hide (str)
-  "Hide the tofus in STR."
-  (let* ((max (length str))
-         (end max))
-    (while (and (> end 0) (consult--tofu-p (aref str (1- end))))
-      (cl-decf end))
-    (when (< end max)
-      (setq str (copy-sequence str))
-      (put-text-property end max 'invisible t str))
-    str))
-
 (defun consult--tofu-hide-in-minibuffer (&rest _)
   "Hide the tofus in the minibuffer."
   (let* ((min (minibuffer-prompt-end))
@@ -2374,37 +2407,6 @@ PREVIEW-KEY are the preview keys."
       (cl-decf pos))
     (when (< pos max)
       (add-text-properties pos max '(invisible t rear-nonsticky t cursor-intangible t)))))
-
-(defsubst consult--tofu-append (cand id)
-  "Append tofu-encoded ID to CAND.
-The ID must fit within a single character.  It must be smaller
-than `consult--tofu-range'."
-  (setq id (char-to-string (+ consult--tofu-char id)))
-  (add-text-properties 0 1 '(invisible t consult-strip t) id)
-  (concat cand id))
-
-(defsubst consult--tofu-get (cand)
-  "Extract tofu-encoded ID from CAND.
-See `consult--tofu-append'."
-  (- (aref cand (1- (length cand))) consult--tofu-char))
-
-;; We must disambiguate the lines by adding a prefix such that two lines with
-;; the same text can be distinguished.  In order to avoid matching the line
-;; number, such that the user can search for numbers with `consult-line', we
-;; encode the line number as characters outside the unicode range.  By doing
-;; that, no accidential matching can occur.
-(defun consult--tofu-encode (n)
-  "Return tofu-encoded number N as a string.
-Large numbers are encoded as multiple tofu characters."
-  (let (str tofu)
-    (while (progn
-             (setq tofu (char-to-string
-                         (+ consult--tofu-char (% n consult--tofu-range)))
-                   str (if str (concat tofu str) tofu))
-             (and (>= n consult--tofu-range)
-                  (setq n (/ n consult--tofu-range)))))
-    (add-text-properties 0 (length str) '(invisible t consult-strip t) str)
-    str))
 
 (defun consult--read-annotate (fun cand)
   "Annotate CAND with annotation function FUN."
@@ -2537,6 +2539,47 @@ input method."
                 :preview-key consult-preview-key
                 :sort t
                 :lookup (lambda (selected &rest _) selected)))))
+
+;;;; Internal API: consult--prompt
+
+(cl-defun consult--prompt-1 (&key prompt history add-history initial default
+                                  keymap state preview-key transform inherit-input-method)
+  "See `consult--prompt' for documentation."
+  (consult--minibuffer-with-setup-hook
+      (:append (lambda ()
+                 (consult--setup-keymap keymap nil nil preview-key)
+                 (setq-local minibuffer-default-add-function
+                             (apply-partially #'consult--add-history nil add-history))))
+    (car (consult--with-preview
+             preview-key state
+             (lambda (_narrow inp _cand) (funcall transform inp))
+             (lambda () "")
+           (read-from-minibuffer prompt initial nil nil history default inherit-input-method)))))
+
+(cl-defun consult--prompt (&rest options &key prompt history add-history initial default
+                                 keymap state preview-key transform inherit-input-method)
+  "Read from minibuffer.
+
+Keyword OPTIONS:
+
+PROMPT is the string to prompt with.
+TRANSFORM is a function which is applied to the current input string.
+HISTORY is the symbol of the history variable.
+INITIAL is initial input.
+DEFAULT is the default selected value.
+ADD-HISTORY is a list of items to add to the history.
+STATE is the state function, see `consult--with-preview'.
+PREVIEW-KEY are the preview keys (nil, `any', a single key or a list of keys).
+KEYMAP is a command-specific keymap."
+  (ignore prompt history add-history initial default
+          keymap state preview-key transform inherit-input-method)
+  (apply #'consult--prompt-1
+         (append
+          (consult--customize-get)
+          options
+          (list :prompt "Input: "
+                :preview-key consult-preview-key
+                :transform #'identity))))
 
 ;;;; Internal API: consult--multi
 
@@ -2757,47 +2800,6 @@ Optional source fields:
         (funcall fun (car selected)))
       (setq selected `(,(car selected) :match t ,@(cdr selected))))
     selected))
-
-;;;; Internal API: consult--prompt
-
-(cl-defun consult--prompt-1 (&key prompt history add-history initial default
-                                  keymap state preview-key transform inherit-input-method)
-  "See `consult--prompt' for documentation."
-  (consult--minibuffer-with-setup-hook
-      (:append (lambda ()
-                 (consult--setup-keymap keymap nil nil preview-key)
-                 (setq-local minibuffer-default-add-function
-                             (apply-partially #'consult--add-history nil add-history))))
-    (car (consult--with-preview
-             preview-key state
-             (lambda (_narrow inp _cand) (funcall transform inp))
-             (lambda () "")
-           (read-from-minibuffer prompt initial nil nil history default inherit-input-method)))))
-
-(cl-defun consult--prompt (&rest options &key prompt history add-history initial default
-                                 keymap state preview-key transform inherit-input-method)
-  "Read from minibuffer.
-
-Keyword OPTIONS:
-
-PROMPT is the string to prompt with.
-TRANSFORM is a function which is applied to the current input string.
-HISTORY is the symbol of the history variable.
-INITIAL is initial input.
-DEFAULT is the default selected value.
-ADD-HISTORY is a list of items to add to the history.
-STATE is the state function, see `consult--with-preview'.
-PREVIEW-KEY are the preview keys (nil, `any', a single key or a list of keys).
-KEYMAP is a command-specific keymap."
-  (ignore prompt history add-history initial default
-          keymap state preview-key transform inherit-input-method)
-  (apply #'consult--prompt-1
-         (append
-          (consult--customize-get)
-          options
-          (list :prompt "Input: "
-                :preview-key consult-preview-key
-                :transform #'identity))))
 
 ;;;; Customization macro
 
