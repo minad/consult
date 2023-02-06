@@ -501,6 +501,12 @@ as the public API.")
 This function can be called by custom completion systems from
 outside the minibuffer.")
 
+(defvar consult--annotate-align-step 10
+  "Round candidate width.")
+
+(defvar consult--annotate-align-width 0
+  "Maximum candidate width used for annotation alignment.")
+
 (defconst consult--tofu-char #x200000
   "Special character used to encode line prefixes for disambiguation.
 We use invalid characters outside the Unicode range.")
@@ -2347,6 +2353,18 @@ Note that `consult-narrow-key' and `consult-widen-key' are bound dynamically."
 
 ;;;; Internal API: consult--read
 
+(defun consult--annotate-align (cand ann)
+  "Align annotation ANN by computing the maximum CAND width."
+  (setq consult--annotate-align-width
+        (max consult--annotate-align-width
+             (* (ceiling (consult--display-width cand)
+                         consult--annotate-align-step)
+                consult--annotate-align-step)))
+  (when ann
+    (concat
+     #("   " 0 1 (display (space :align-to (+ left consult--annotate-align-width))))
+     ann)))
+
 (defun consult--add-history (async items)
   "Add ITEMS to the minibuffer future history.
 ASYNC must be non-nil for async completion functions."
@@ -2457,6 +2475,7 @@ PREVIEW-KEY are the preview keys."
                                 . ,(apply-partially #'consult--read-annotate annotate))))
                          ,@(unless sort '((cycle-sort-function . identity)
                                           (display-sort-function . identity)))))
+             (consult--annotate-align-width 0)
              (result
               (consult--with-preview
                   preview-key state
@@ -2607,14 +2626,14 @@ KEYMAP is a command-specific keymap."
     (delq nil)
     (delete-dups)))
 
-(defun consult--multi-annotate (sources align cand)
-  "Annotate candidate CAND with `consult--multi' type, given SOURCES and ALIGN."
-  (let* ((src (consult--multi-source sources cand))
-         (annotate (plist-get src :annotate))
-         (ann (if annotate
-                  (funcall annotate (cdr (get-text-property 0 'multi-category cand)))
-                (plist-get src :name))))
-    (and ann (concat align ann))))
+(defun consult--multi-annotate (sources cand)
+  "Annotate candidate CAND from multi SOURCES."
+  (consult--annotate-align
+   cand
+   (let ((src (consult--multi-source sources cand)))
+     (if-let ((fun (plist-get src :annotate)))
+         (funcall fun (cdr (get-text-property 0 'multi-category cand)))
+       (plist-get src :name)))))
 
 (defun consult--multi-group (sources cand transform)
   "Return title of candidate CAND or TRANSFORM the candidate given SOURCES."
@@ -2664,25 +2683,23 @@ KEYMAP is a command-specific keymap."
 
 (defun consult--multi-candidates (sources)
   "Return `consult--multi' candidates from SOURCES."
-  (let ((idx 0) (max-width 0) (candidates))
+  (let ((idx 0) candidates)
     (seq-doseq (src sources)
       (let* ((face (and (plist-member src :face) `(face ,(plist-get src :face))))
              (cat (plist-get src :category))
              (items (plist-get src :items))
              (items (if (functionp items) (funcall items) items)))
         (dolist (item items)
-          (let ((cand (consult--tofu-append item idx))
-                (width (consult--display-width item)))
+          (let ((cand (consult--tofu-append item idx)))
             ;; Preserve existing `multi-category' datum of the candidate.
             (if (get-text-property 0 'multi-category cand)
                 (when face (add-text-properties 0 (length item) face cand))
               ;; Attach `multi-category' datum and face.
               (add-text-properties 0 (length item)
                                    `(multi-category (,cat . ,item) ,@face) cand))
-            (when (> width max-width) (setq max-width width))
             (push cand candidates))))
       (cl-incf idx))
-    (cons (+ 3 max-width) (nreverse candidates))))
+    (nreverse candidates)))
 
 (defun consult--multi-enabled-sources (sources)
   "Return vector of enabled SOURCES."
@@ -2773,18 +2790,15 @@ Optional source fields:
   (let* ((sources (consult--multi-enabled-sources sources))
          (candidates (consult--with-increased-gc
                       (consult--multi-candidates sources)))
-         (align (propertize
-                 " " 'display
-                 `(space :align-to (+ left ,(car candidates)))))
          (selected
           (apply #'consult--read
-                 (cdr candidates)
+                 candidates
                  (append
                   options
                   (list
                    :category    'multi-category
                    :predicate   (apply-partially #'consult--multi-predicate sources)
-                   :annotate    (apply-partially #'consult--multi-annotate sources align)
+                   :annotate    (apply-partially #'consult--multi-annotate sources)
                    :group       (apply-partially #'consult--multi-group sources)
                    :lookup      (apply-partially #'consult--multi-lookup sources)
                    :preview-key (consult--multi-preview-key sources)
@@ -4066,27 +4080,23 @@ of the prompt.  See also `cape-history' from the Cape package."
   (let ((history (if (eq t search-default-mode)
                      (append regexp-search-ring search-ring)
                    (append search-ring regexp-search-ring))))
-    (cons
-     (delete-dups
-      (mapcar
-       (lambda (cand)
-         ;; The search type can be distinguished via text properties.
-         (let* ((props (plist-member (text-properties-at 0 cand)
-                                     'isearch-regexp-function))
-                (type (pcase (cadr props)
-                        ((and 'nil (guard (not props))) ?r)
-                        ('nil                           ?l)
-                        ('word-search-regexp            ?w)
-                        ('isearch-symbol-regexp         ?s)
-                        ('char-fold-to-regexp           ?c)
-                        (_                              ?u))))
-           ;; Disambiguate history items.  The same string could
-           ;; occur with different search types.
-           (consult--tofu-append cand type)))
-       history))
-     (if history
-         (+ 4 (apply #'max (mapcar #'length history)))
-       0))))
+    (delete-dups
+     (mapcar
+      (lambda (cand)
+        ;; The search type can be distinguished via text properties.
+        (let* ((props (plist-member (text-properties-at 0 cand)
+                                    'isearch-regexp-function))
+               (type (pcase (cadr props)
+                       ((and 'nil (guard (not props))) ?r)
+                       ('nil                           ?l)
+                       ('word-search-regexp            ?w)
+                       ('isearch-symbol-regexp         ?s)
+                       ('char-fold-to-regexp           ?c)
+                       (_                              ?u))))
+          ;; Disambiguate history items.  The same string could
+          ;; occur with different search types.
+          (consult--tofu-append cand type)))
+      history))))
 
 (defconst consult--isearch-history-narrow
   '((?c . "Char")
@@ -4106,13 +4116,12 @@ starts a new Isearch session otherwise."
   (consult--forbid-minibuffer)
   (let* ((isearch-message-function 'ignore) ;; Avoid flicker in echo area
          (inhibit-redisplay t)              ;; Avoid flicker in mode line
-         (candidates (consult--isearch-history-candidates))
-         (align (propertize " " 'display `(space :align-to (+ left ,(cdr candidates))))))
+         (candidates (consult--isearch-history-candidates)))
     (unless isearch-mode (isearch-mode t))
     (with-isearch-suspended
      (setq isearch-new-string
            (consult--read
-            (car candidates)
+            candidates
             :prompt "I-search: "
             :category 'consult-isearch
             :history t ;; disable history
@@ -4121,7 +4130,9 @@ starts a new Isearch session otherwise."
             :keymap consult-isearch-history-map
             :annotate
             (lambda (cand)
-              (concat align (alist-get (consult--tofu-get cand) consult--isearch-history-narrow)))
+              (consult--annotate-align
+               cand
+               (alist-get (consult--tofu-get cand) consult--isearch-history-narrow)))
             :group
             (lambda (cand transform)
               (if transform
