@@ -6,7 +6,7 @@
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2020
 ;; Version: 0.32
-;; Package-Requires: ((emacs "27.1") (compat "29.1.3.2"))
+;; Package-Requires: ((emacs "27.1") (compat "29.1.3.3"))
 ;; Homepage: https://github.com/minad/consult
 
 ;; This file is part of GNU Emacs.
@@ -52,7 +52,6 @@
 (eval-when-compile
   (require 'cl-lib)
   (require 'subr-x))
-(require 'seq)
 (require 'compat)
 (require 'bookmark)
 
@@ -594,9 +593,7 @@ Turn ARG into a list, and for each element either:
 (defmacro consult--keep! (list form)
   "Evaluate FORM for every element of LIST and keep the non-nil results."
   (declare (indent 1))
-  (let ((head (make-symbol "head"))
-        (prev (make-symbol "prev"))
-        (result (make-symbol "result")))
+  (cl-with-gensyms (head prev result)
     `(let* ((,head (cons nil ,list))
             (,prev ,head))
        (while (cdr ,prev)
@@ -665,7 +662,7 @@ HIGHLIGHT."
 
 The line beginning/ending BEG/END is bound in BODY."
   (declare (indent 2))
-  (let ((max (make-symbol "max")))
+  (cl-with-gensyms (max)
     `(save-excursion
        (let ((,beg (point-min)) (,max (point-max)) end)
          (while (< ,beg ,max)
@@ -841,7 +838,7 @@ When no project is found and MAY-PROMPT is non-nil ask the user."
 
 (defmacro consult--with-increased-gc (&rest body)
   "Temporarily increase the gc limit in BODY to optimize for throughput."
-  (let ((overwrite (make-symbol "overwrite")))
+  (cl-with-gensyms (overwrite)
     `(let* ((,overwrite (> consult--gc-threshold gc-cons-threshold))
             (gc-cons-threshold (if ,overwrite consult--gc-threshold gc-cons-threshold))
             (gc-cons-percentage (if ,overwrite consult--gc-percentage gc-cons-percentage)))
@@ -2266,8 +2263,7 @@ highlighting function."
 
 (defmacro consult--async-transform (async &rest transform)
   "Use FUN to TRANSFORM candidates of ASYNC."
-  (let ((async-var (make-symbol "async"))
-        (action-var (make-symbol "action")))
+  (cl-with-gensyms (async-var action-var)
     `(let ((,async-var ,async))
        (lambda (,action-var)
          (funcall ,async-var (if (consp ,action-var) (,@transform ,action-var) ,action-var))))))
