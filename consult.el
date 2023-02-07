@@ -2766,7 +2766,7 @@ Required source fields:
 * :category - Completion category symbol.
 * :items - List of strings to select from or function returning
   list of strings.  Note that the strings can use text properties
-  to carry mtadata, which is then available to the :annotate,
+  to carry metadata, which is then available to the :annotate,
   :action and :state functions.
 
 Optional source fields:
