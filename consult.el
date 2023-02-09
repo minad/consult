@@ -775,7 +775,7 @@ When no project is found and MAY-PROMPT is non-nil ask the user."
 (defun consult--project-name (dir)
   "Return the project name for DIR."
   (if (string-match "/\\([^/]+\\)/\\'" dir)
-      (propertize (match-string 1 dir) 'help-echo dir)
+      (propertize (match-string 1 dir) 'help-echo (abbreviate-file-name dir))
     dir))
 
 (defun consult--format-file-line-match (file line &optional match)
