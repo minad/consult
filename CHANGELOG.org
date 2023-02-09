@@ -6,6 +6,8 @@
 
 - =consult-buffer= and =consult-isearch-history=: Align annotations dynamically
   depending on candidate width, instead of computing the alignment beforehand.
+- Abbreviated directories and project names are propertized with the full path
+  as =help-echo=. Enable =tooltip-mode= and move the mouse over the prompt to see.
 
 * Version 0.32 (2023-02-06)
 
