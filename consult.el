@@ -718,7 +718,8 @@ The line beginning/ending BEG/END is bound in BODY."
   (save-match-data
     (let ((adir (abbreviate-file-name dir)))
       (if (string-match "/\\([^/]+\\)/\\([^/]+\\)/\\'" adir)
-          (format "…/%s/%s/" (match-string 1 adir) (match-string 2 adir))
+          (propertize (format "…/%s/%s/" (match-string 1 adir) (match-string 2 adir))
+                      'help-echo adir)
         adir))))
 
 (defun consult--directory-prompt (prompt dir)
@@ -774,7 +775,7 @@ When no project is found and MAY-PROMPT is non-nil ask the user."
 (defun consult--project-name (dir)
   "Return the project name for DIR."
   (if (string-match "/\\([^/]+\\)/\\'" dir)
-      (match-string 1 dir)
+      (propertize (match-string 1 dir) 'help-echo dir)
     dir))
 
 (defun consult--format-file-line-match (file line &optional match)
