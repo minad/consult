@@ -778,17 +778,14 @@ When no project is found and MAY-PROMPT is non-nil ask the user."
       (propertize (match-string 1 dir) 'help-echo (abbreviate-file-name dir))
     dir))
 
-(defun consult--format-file-line-match (file line &optional match)
+(defun consult--format-file-line-match (file line match)
   "Format string FILE:LINE:MATCH with faces."
   (setq line (number-to-string line)
-        match (concat file ":" line (and match ":") match)
+        match (concat file ":" line ":" match)
         file (length file))
   (put-text-property 0 file 'face 'consult-file match)
   (put-text-property (1+ file) (+ 1 file (length line)) 'face 'consult-line-number match)
   match)
-
-(define-obsolete-function-alias
-  'consult--format-location 'consult--format-file-line-match "0.31")
 
 (defun consult--make-overlay (beg end &rest props)
   "Make consult overlay between BEG and END with PROPS."
