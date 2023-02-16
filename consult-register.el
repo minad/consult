@@ -66,8 +66,8 @@ Each element of the list must have the form (char . name).")
 (cl-defmethod consult-register--describe ((val marker))
   "Describe marker register VAL."
   (with-current-buffer (marker-buffer val)
-    (save-restriction
-      (save-excursion
+    (save-excursion
+      (save-restriction
         (widen)
         (goto-char val)
         (let* ((line (line-number-at-pos))

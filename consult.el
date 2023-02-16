@@ -864,8 +864,8 @@ Also temporarily increase the gc limit via `consult--with-increased-gc'."
   "Get marker in BUFFER from LINE and COLUMN."
   (when (buffer-live-p buffer)
     (with-current-buffer buffer
-      (save-restriction
-        (save-excursion
+      (save-excursion
+        (save-restriction
           (widen)
           (goto-char (point-min))
           ;; Location data might be invalid by now!
