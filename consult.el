@@ -4111,8 +4111,8 @@ This replaces the current search string if Isearch is active, and
 starts a new Isearch session otherwise."
   (interactive)
   (consult--forbid-minibuffer)
-  (let* ((isearch-message-function 'ignore) ;; Avoid flicker in echo area
-         (inhibit-redisplay t)              ;; Avoid flicker in mode line
+  (let* ((isearch-message-function #'ignore)
+         (cursor-in-echo-area t) ;; Avoid cursor flickering
          (candidates (consult--isearch-history-candidates)))
     (unless isearch-mode (isearch-mode t))
     (with-isearch-suspended
