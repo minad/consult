@@ -1098,17 +1098,18 @@ out the following steps:
 
 1. *Search through the issue tracker* if your issue has been reported before (and
    has been resolved eventually) in the meantime.
-2. *Remove and reinstall the newest version of all relevant packages*. Updating
-   alone is not sufficient, since package.el is known to cause miscompilation.
-   The list of packages includes Consult, Compat, Vertico or other completion
-   UIs, Marginalia, Embark and Orderless.
-3. Either use the default completion UI or ensure that exactly one of
+2. *Remove all packages involved in the suspected bug from your installation.*
+3. *Reinstall the newest version of all relevant packages*. Updating alone is not
+   sufficient, since package.el is known to cause miscompilation. The list of
+   packages includes Consult, Compat, Vertico or other completion UIs,
+   Marginalia, Embark and Orderless.
+4. Either use the default completion UI or ensure that exactly one of
    =vertico-mode=, =mct-mode=, or =icomplete-mode= is enabled. The unsupported modes
    =selectrum-mode=, =ivy-mode=, =helm-mode=, =ido-mode= and =ido-ubiquitous-mode= must be
    disabled.
-4. Ensure that the =completion-styles= variable is properly configured. Try to set
+5. Ensure that the =completion-styles= variable is properly configured. Try to set
    =completion-styles= to a list including =substring= or =orderless=.
-5. Try to reproduce the issue by starting a bare bone Emacs instance with =emacs -Q=
+6. Try to reproduce the issue by starting a bare bone Emacs instance with =emacs -Q=
    on the command line. Execute the following minimal code snippets in the
    scratch buffer. This way we can exclude side effects due to configuration
    settings. If other packages are relevant to reproduce the issue, include them
