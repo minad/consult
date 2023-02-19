@@ -2125,11 +2125,7 @@ PROPS are optional properties passed to `make-process'."
                      (insert "<<<<< stderr <<<<<\n"))))
                 (args (funcall builder action)))
            (unless (stringp (car args))
-             (if (not (keywordp (car args)))
-                 (setq args (car args))
-               ;; TODO remove backward compatibility code
-               (message "Consult: The command builder return value changed, it should be a pair instead of a plist")
-               (setq args (plist-get args :command))))
+             (setq args (car args)))
            (unless (equal args last-args)
              (setq last-args args)
              (when proc
@@ -2167,12 +2163,7 @@ BUILDER is the command line builder function."
     (lambda (action)
       (cond
        ((stringp action)
-        (let ((tmp (funcall builder action)))
-          (if (not (keywordp (car tmp)))
-              (setq highlight (cdr tmp))
-            ;; TODO remove backward compatibility code
-            (message "Consult: The command builder return value changed, it should be a pair instead of a plist")
-            (setq highlight (plist-get tmp :highlight))))
+        (setq highlight (cdr (funcall builder action)))
         (funcall async action))
        ((and (consp action) highlight)
         (dolist (str action)
@@ -4611,12 +4602,7 @@ BUILDER is the command line builder function."
     (lambda (action)
       (cond
        ((stringp action)
-        (let ((tmp (funcall builder action)))
-          (if (not (keywordp (car tmp)))
-              (setq highlight (cdr tmp))
-            ;; TODO remove backward compatibility code
-            (message "Consult: The command builder return value changed, it should be a pair instead of a plist")
-            (setq highlight (plist-get tmp :highlight))))
+        (setq highlight (cdr (funcall builder action)))
         (funcall async action))
        ((consp action)
         (let ((file "") (file-len 0) result)
