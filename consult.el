@@ -451,7 +451,17 @@ Used by `consult-completion-in-region', `consult-yank' and `consult-history'.")
      :foreground "#333"))
   "Face used for thin line separators in `consult-register-window'.")
 
-;;;; History variables
+;;;; Command argument variables (public)
+
+(defvar consult-last-command-args nil
+  "List of args used in prior consult command.
+Automatically set in `consult--async-process'.")
+
+(defvar consult-this-command-args nil
+  "List of args used in current consult command.
+Automatically set in `consult--async-process'.")
+
+;;;; Input history variables
 
 (defvar consult--keep-lines-history nil)
 (defvar consult--grep-history nil)
@@ -464,6 +474,11 @@ Used by `consult-completion-in-region', `consult-yank' and `consult-history'.")
 (defvar consult--buffer-history nil)
 
 ;;;; Internal variables
+
+(defvar consult--search-path-list nil
+  "List of paths passed to consult search commands.
+If any directories are included in the list, the first element
+must be a directory.")
 
 (defvar consult--regexp-compiler
   #'consult--default-regexp-compiler
@@ -546,6 +561,11 @@ We use invalid characters outside the Unicode range.")
 
 ;;;; Miscellaneous helper functions
 
+(defun consult--replace-in-list (from to list)
+  "Replace occurrences of FROM with TO in LIST."
+  (mapcar (lambda (elt) (if (equal elt from) to elt))
+	  list))
+
 (defun consult--in-buffer (fun &optional buffer)
   "Ensure that FUN is executed inside BUFFER."
   (unless buffer (setq buffer (current-buffer)))
@@ -574,12 +594,24 @@ We use invalid characters outside the Unicode range.")
 
 Turn ARG into a list, and for each element either:
 - split it if it a string.
-- eval it if it is an expression."
-  (mapcan (lambda (x)
-            (if (stringp x)
-                (split-string-and-unquote x)
-              (ensure-list (eval x 'lexical))))
-          (ensure-list arg)))
+- eval it if it is an expression.
+
+If `consult--search-path-list' is set and not equal to '(\".\"),
+splice its paths in at the end of the arg list."
+  (let ((args (copy-sequence (mapcan (lambda (x)
+				       (if (stringp x)
+					   (split-string-and-unquote x)
+					 (ensure-list (eval x 'lexical))))
+				     (ensure-list arg)))))
+    (if (and consult--search-path-list
+	     (not (equal consult--search-path-list '("."))))
+	(if (member "." args)
+	    (progn (unless (and consult--search-path-list
+				(file-directory-p (car consult--search-path-list)))
+		     (setq args (delete "-r" args)))
+		   (flatten-list (consult--replace-in-list "." consult--search-path-list args)))
+	  (nconc args consult--search-path-list))
+      args)))
 
 (defun consult--command-split (str)
   "Return command argument and options list given input STR."
@@ -723,7 +755,7 @@ The line beginning/ending BEG/END is bound in BODY."
         adir))))
 
 (defun consult--directory-prompt (prompt dir)
-  "Return prompt and directory.
+  "Return a cons of possibly modified PROMPT and expanded DIR.
 
 PROMPT is the prompt prefix.  The directory
 is appended to the prompt prefix.  For projects
@@ -731,27 +763,47 @@ only the project name is shown.  The `default-directory'
 is not shown.  Other directories are abbreviated and
 only the last two path components are shown.
 
-If DIR is a string, it is returned.
-If DIR is a true value, the user is asked.
-Then the `consult-project-function' is tried.
-Otherwise the `default-directory' is returned."
-  (let* ((dir
+If DIR is null or equal to `default-directory',
+`consult--search-path-list' is set to nil.  Otherwise,
+when DIR is a string, it is split into space-separated
+path patterns, pathname wildcard expansion is performed
+on each element and a flattened list of the results is
+saved in `consult--search-path-list'.
+
+The cdr of the return value is either the expanded value
+of DIR if it is a single directory, the current project root
+directory if any from a call to `consult-project-function'
+or else `default-directory'."
+  (let* ((abbrev-dir ".")
+	 (dir
           (cond
            ((stringp dir) dir)
            (dir
             ;; Preserve this-command across `read-directory-name' call,
             ;; such that `consult-customize' continues to work.
             (let ((this-command this-command))
-              (read-directory-name "Directory: " nil nil t)))
+              ;; (read-directory-name "Directory: " nil nil t)
+	      (read-string "Search Locations (default = .): "
+			   nil nil abbrev-dir)))
            (t (or (consult--project-root) default-directory))))
-         (edir (file-name-as-directory (expand-file-name dir)))
+         (edir (file-name-as-directory
+		(expand-file-name (if (file-directory-p dir) dir abbrev-dir))))
          ;; Bind default-directory in order to find the project
          (pdir (let ((default-directory edir)) (consult--project-root))))
+    (setq consult--search-path-list
+	  (if (equal dir default-directory)
+	      (list abbrev-dir)
+            (when (stringp dir)
+	      ;; Expand any space separated list of wildcard path patterns
+	      (flatten-list
+	       (mapcar (lambda (pat) (or (file-expand-wildcards pat) pat))
+		       (split-string dir))))))
     (cons
      (format "%s (%s): " prompt
              (if (equal edir pdir)
                  (concat "Project " (consult--project-name pdir))
-               (consult--abbreviate-directory dir)))
+               (consult--abbreviate-directory
+		(if (file-directory-p dir) dir abbrev-dir))))
      edir)))
 
 (defun consult--default-project-function (may-prompt)
@@ -2139,7 +2191,12 @@ PROPS are optional properties passed to `make-process'."
              (when args
                (funcall async 'indicator 'running)
                (consult--async-log "consult--async-process started %S\n" args)
-               (setq count 0
+	       ;; `args' is a list of the command-line args run by consult for this
+	       ;; command; capture it and the previous set of args here for debugging
+	       ;; and ease of use.
+               (setq consult-last-command-args consult-this-command-args
+		     consult-this-command-args args
+		     count 0
                      proc-buf (generate-new-buffer " *consult-async-stderr*")
                      proc (apply #'make-process
                                  `(,@props
@@ -4694,13 +4751,12 @@ Take the variables `grep-find-ignored-directories' and
 BUILDER is the command line builder function.
 PROMPT is the prompt string.
 INITIAL is inital input."
-  (let* ((prompt-dir (consult--directory-prompt prompt dir))
-         (default-directory (cdr prompt-dir)))
+  (let* ((default-directory dir))
     (consult--read
      (consult--async-command builder
        (consult--grep-format builder)
        :file-handler t) ;; allow tramp
-     :prompt (car prompt-dir)
+     :prompt prompt
      :lookup #'consult--lookup-member
      :state (consult--grep-state)
      :initial (consult--async-split-initial initial)
@@ -4777,7 +4833,12 @@ the directory to search in.  By default the project directory is used
 if `consult-project-function' is defined and returns non-nil.
 Otherwise the `default-directory' is searched."
   (interactive "P")
-  (consult--grep "Grep" (consult--grep-make-builder) dir initial))
+  ;; Must call `consult--directory-prompt' to set `consult--search-path-list'
+  ;; prior to calling `consult--grep-make-builder' where the path list is used.
+  (let* ((prompt-dir (consult--directory-prompt "Grep" dir))
+	 (prompt (car prompt-dir)))
+    (setq dir (cdr prompt-dir))
+    (consult--grep prompt (consult--grep-make-builder) dir initial)))
 
 ;;;;; Command: consult-git-grep
 
@@ -4802,7 +4863,12 @@ Otherwise the `default-directory' is searched."
 The initial input is given by the INITIAL argument.  See `consult-grep'
 for more details."
   (interactive "P")
-  (consult--grep "Git-grep" #'consult--git-grep-builder dir initial))
+  ;; Must call `consult--directory-prompt' to set `consult--search-path-list'
+  ;; prior to calling `consult--grep-make-builder' where the path list is used.
+  (let* ((prompt-dir (consult--directory-prompt "Git-grep" dir))
+	 (prompt (car prompt-dir)))
+    (setq dir (cdr prompt-dir))
+    (consult--grep prompt #'consult--git-grep-builder dir initial)))
 
 ;;;;; Command: consult-ripgrep
 
@@ -4835,7 +4901,12 @@ for more details."
 The initial input is given by the INITIAL argument.  See `consult-grep'
 for more details."
   (interactive "P")
-  (consult--grep "Ripgrep" (consult--ripgrep-make-builder) dir initial))
+  ;; Must call `consult--directory-prompt' to set `consult--search-path-list'
+  ;; prior to calling `consult--grep-make-builder' where the path list is used.
+  (let* ((prompt-dir (consult--directory-prompt "Ripgrep" dir))
+	 (prompt (car prompt-dir)))
+    (setq dir (cdr prompt-dir))
+    (consult--grep prompt (consult--ripgrep-make-builder) dir initial)))
 
 ;;;;; Command: consult-find
 
