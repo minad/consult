@@ -773,7 +773,8 @@ current project root directory if any from a call to
 	 (possible-prefix-arg dir)
 	 (dir
           (cond
-           ((stringp dir) dir)
+           ((or (stringp dir) (and (listp dir) (stringp (car dir))))
+	    dir)
            (dir
             ;; Preserve this-command across `read-directory-name' call,
             ;; such that `consult-customize' continues to work.
@@ -788,7 +789,10 @@ current project root directory if any from a call to
 				   nil nil abbrev-dir)))))
            (t (or (consult--project-root) default-directory))))
          (edir (file-name-as-directory
-		(expand-file-name (if (file-directory-p dir) dir abbrev-dir))))
+		(expand-file-name (if (and (stringp dir)
+					   (file-directory-p dir))
+				      dir
+				    abbrev-dir))))
          ;; Bind default-directory in order to find the project
          (pdir (let ((default-directory edir)) (consult--project-root)))
 	 (search-path-list
@@ -800,14 +804,19 @@ current project root directory if any from a call to
 	       (mapcar (lambda (pat) (or (file-expand-wildcards pat) pat))
 		       (split-string dir)))))))
     (list
-     (format "%s (%s): " prompt
+     (format "%s %s: " prompt
 	     (cond ((and possible-prefix-arg (not (stringp possible-prefix-arg))
 			 (not (eq possible-prefix-arg '(4))))
-		    dir)
+		    (if (listp dir)
+			dir
+		      (format "(%s)" dir)))
 		   ((equal edir pdir)
-                    (concat "Project " (consult--project-name pdir)))
-		   (t (consult--abbreviate-directory
-		       (if (file-directory-p dir) dir abbrev-dir)))))
+                    (format "(Project %s)" (consult--project-name pdir)))
+		   (t (format "(%s)"
+			      (consult--abbreviate-directory
+			       (if (and (stringp dir) (file-directory-p dir))
+				   dir
+				 abbrev-dir))))))
      search-path-list
      edir)))
 
