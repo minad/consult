@@ -5,17 +5,14 @@
 * Development
 
 Multi-path and wildcard handling contributed by Robert Weiner (@rswgnu):
-- Add =consult--search-path-list= to store multiple paths per search.  This can
-  be any number of directories followed by any number of file paths.
-- Add =consult--set-dir-and-paths= to support grep over multiple directories
-  and wildcarded paths.
-- Change =consult--directory-prompt= with prefix arg to prompt for a string
-  that can contain multiple wildcard/glob expressions and/or directories to
-  recursively search.  Also, save dir value as a list into
-  =consult--search-path-list=.
-- Add public =consult-last-command-args= and =consult-this-command-args= variables
-  that store prior and current list of shell command args run by consult.  Useful
-  for rerunning commands or branching based on prior command args.
+- Add support for grep and find over multiple directories and wildcarded paths.
+- Change =consult--directory-prompt=.  With a prefix arg sent as =dir= to one
+  of the consult search commands:
+    if it is a single C-u, prompt for a single directory to recursively search;
+    with any other prefix arg, prompt for a space-separated string of any
+    number of directories followed by file paths optionally with wildcards.
+- Rename =consult--git-grep-builder= to =consult--git-grep-make-builder=
+  and return lambda so can pass in =search-path-list=.
 
 - =consult-buffer= and =consult-isearch-history=: Align annotations dynamically
   depending on candidate width, instead of computing the alignment beforehand.
