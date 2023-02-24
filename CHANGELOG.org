@@ -9,8 +9,8 @@ Multi-path and wildcard handling contributed by Robert Weiner (@rswgnu):
 - Change =consult--directory-prompt=.  With a prefix arg sent as =dir= to one
   of the consult search commands:
     if it is a single C-u, prompt for a single directory to recursively search;
-    with any other prefix arg, prompt for a space-separated string of any
-    number of directories followed by file paths optionally with wildcards.
+    with any other prefix arg, prompt for a space-separated string of positive
+    number of directories or file paths with possible wildcards.
 - Rename =consult--git-grep-builder= to =consult--git-grep-make-builder=
   and return lambda so can pass in =search-path-list=.
 

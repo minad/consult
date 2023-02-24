@@ -258,8 +258,8 @@ their descriptions.
   current project directory. Otherwise the =default-directory= is searched. If
   =consult-grep= is invoked with prefix argument =C-u M-s g=, you can specify the
   directory manually.  With any other prefix argument, =C-u C-u M-s g=, you can
-  enter any number (including 0) space-separated directories followed by any number
-  of wildcarded paths, like "~/src/*.c" to search over.
+  enter any positive number of space-separated directories or wildcarded paths
+  like "~/src/*.c", to search over.
 - =consult-find=, =consult-locate=: Find file by matching the path against a regexp.
   Like for =consult-grep=, either the project root or the current directory is the
   root directory for the search. The input string is treated similarly to
