@@ -2126,7 +2126,8 @@ PROPS are optional properties passed to `make-process'."
                          (insert-buffer-substring proc-buf)
                          (save-excursion
                            (goto-char beg)
-                           (message "%s" (buffer-substring (pos-bol) (pos-eol)))))
+                           (message #("%s" 0 2 (face error))
+                                    (buffer-substring-no-properties (pos-bol) (pos-eol)))))
                        (insert "<<<<< stderr <<<<<\n")))))
                 (args (funcall builder action)))
            (unless (stringp (car args))
