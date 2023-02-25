@@ -4,16 +4,13 @@
 
 * Development
 
-Multi-path handling contributed by Robert Weiner (@rswgnu):
-- Add support for grep and find over multiple directories and files.
-- Change =consult--directory-prompt=.  With a prefix arg sent as =dir= to one
-  of the consult search commands:
-    if it is a single C-u, prompt for a single directory to recursively search;
-    with any other prefix arg, prompt for a space-separated string of positive
-    number of directories or files.
-- Rename =consult--git-grep-builder= to =consult--git-grep-make-builder=
-  and return lambda so can pass in =search-path-list=.
-
+- BREAKING: Remove the "." argument from  =consult-grep-args= and
+  =consult-ripgrep-args=, since directories or files to search are appended by the
+  command line builder. Take this change into account, when you use a customized
+  version of those variables.
+- =consult-grep=: Add support for grep and find over multiple files or directory.
+  If the prefix argument DIR is a single C-u, prompt for a directories or files
+  to search recursively via =completing-read-multiple=.
 - =consult-buffer= and =consult-isearch-history=: Align annotations dynamically
   depending on candidate width, instead of computing the alignment beforehand.
 - Add the full path as =help-echo= property to abbreviated directory paths and

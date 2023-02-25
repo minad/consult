@@ -256,9 +256,8 @@ their descriptions.
   completion style like orderless. =consult-grep= supports preview. If the
   =consult-project-function= returns non-nil, =consult-grep= searches the
   current project directory. Otherwise the =default-directory= is searched. If
-  =consult-grep= is invoked with prefix argument =C-u M-s g=, you can specify the
-  directory manually.  With any other prefix argument, =C-u C-u M-s g=, you can
-  enter any positive number of space-separated directories or files to search over.
+  =consult-grep= is invoked with prefix argument =C-u M-s g=, you can specify one or
+  multiple files or directories manually.
 - =consult-find=, =consult-locate=: Find file by matching the path against a regexp.
   Like for =consult-grep=, either the project root or the current directory is the
   root directory for the search. The input string is treated similarly to
@@ -1198,6 +1197,7 @@ Code contributions:
 - [[https://github.com/aagon][Aymeric Agon-Rambosson]]
 - [[https://github.com/geolessel][Geoffrey Lessel]]
 - [[https://github.com/piotrkwiecinski][Piotr Kwiecinski]]
+- [[https://github.com/rswgnu][Robert Weiner]]
 
 Advice and useful discussions:
 - [[https://github.com/clemera/][Clemens Radermacher]]
