@@ -588,7 +588,7 @@ Turn ARG into a list, and for each element either:
 - split it if it a string.
 - eval it if it is an expression.
 
-If SEARCH-PATH-LIST is non-nil and not equal to '(\".\"),
+If SEARCH-PATH-LIST is non-nil and not equal to (\".\"),
 splice its paths in at the end of the arg list."
   (let ((args (consult--build-args arg)))
     (if (and search-path-list
@@ -743,7 +743,7 @@ The line beginning/ending BEG/END is bound in BODY."
         adir))))
 
 (defun consult--directory-prompt (prompt dir)
-  "Return a list of possibly modified PROMPT, expanded DIR and a list of paths to search.
+  "Return a list of latest PROMPT, expanded DIR and a list of paths to search.
 
 PROMPT is the prompt prefix.  The directory
 is appended to the prompt prefix.  For projects
@@ -754,9 +754,8 @@ only the last two path components are shown.
 If DIR is null or equal to `default-directory', local
 `search-path-list' is set to nil.  Otherwise, when DIR
 is a string, it is split into space-separated path
-patterns, pathname wildcard expansion is performed on
-each element and a flattened list of the results is
-saved in `search-path-list'.
+patterns and a flattened list of the results is saved
+in `search-path-list'.
 
 The last element of the return value is either the
 expanded value of DIR if it is a single directory, the
@@ -775,11 +774,11 @@ current project root directory if any from a call to
               (pcase dir
                 ;; Single C-u prefix arg, prompt for a single directory
                 ('(4) (read-directory-name "Directory: " nil nil t))
-                ;; Any other prefix arg, prompt for any number of directories
-                ;; (can be zero) followed by any number of path patterns with
-                ;; wildcards
-                (_    (read-string "Search Locations (default = .): "
-                                   nil nil abbrev-dir)))))
+                ;; Any other prefix arg, prompt for any number of existing
+                ;; directories or files
+                (_    (let ((crm-separator " "))
+			(completing-read-multiple "Search Locations (default = .): "
+						  #'completion-file-name-table nil t nil nil abbrev-dir))))))
            (t (or (consult--project-root) default-directory))))
          (edir (file-name-as-directory
                 (expand-file-name (if (and (stringp dir)
@@ -792,14 +791,12 @@ current project root directory if any from a call to
           (if (equal dir default-directory)
               (list abbrev-dir)
             (when (stringp dir)
-              ;; Expand any space separated list of wildcard path patterns
-              (flatten-list
-               (mapcar (lambda (pat) (or (file-expand-wildcards pat) pat))
-                       (split-string dir)))))))
+              ;; Convert space-separated paths to a list
+              (split-string dir)))))
     (list
      (format "%s %s: " prompt
              (if (and possible-prefix-arg (not (stringp possible-prefix-arg))
-                      (not (eq possible-prefix-arg '(4))))
+                      (not (equal possible-prefix-arg '(4))))
                  (if (listp dir)
                      (mapcar #'consult--abbreviate-directory dir)
                    (format "(%s)" (consult--abbreviate-directory dir)))
@@ -4841,7 +4838,7 @@ Otherwise the `default-directory' is searched."
 ;;;;; Command: consult-git-grep
 
 (defun consult--git-grep-make-builder (search-path-list)
-  "Build command line given CONFIG and INPUT."
+  "Create grep command line builder given SEARCH-PATH-LIST."
   (let ((cmd (consult--build-args-with-paths consult-git-grep-args search-path-list)))
     (lambda (input)
       (pcase-let* ((`(,arg . ,opts) (consult--command-split input))
@@ -4867,7 +4864,7 @@ for more details."
 ;;;;; Command: consult-ripgrep
 
 (defun consult--ripgrep-make-builder (search-path-list)
-  "Create ripgrep command line builder."
+  "Create ripgrep command line builder given SEARCH-PATH-LIST."
   (let* ((cmd (consult--build-args-with-paths consult-ripgrep-args search-path-list))
          (type (if (consult--grep-lookahead-p (car cmd) "-P") 'pcre 'extended)))
     (lambda (input)
@@ -4965,7 +4962,7 @@ See `consult-grep' for more details regarding the asynchronous search."
 ;;;;; Command: consult-locate
 
 (defun consult--locate-builder (input)
-  "Build command line given CONFIG and INPUT."
+  "Build command line given config and INPUT."
   (pcase-let ((`(,arg . ,opts) (consult--command-split input)))
     (unless (string-blank-p arg)
       (cons (append (consult--build-args consult-locate-args)
@@ -4987,7 +4984,7 @@ details regarding the asynchronous search."
 ;;;;; Command: consult-man
 
 (defun consult--man-builder (input)
-  "Build command line given CONFIG and INPUT."
+  "Build command line given config and INPUT."
   (pcase-let* ((`(,arg . ,opts) (consult--command-split input))
                (`(,re . ,hl) (funcall consult--regexp-compiler arg 'basic t)))
     (when re
