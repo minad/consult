@@ -19,6 +19,7 @@ Multi-path and wildcard handling contributed by Robert Weiner (@rswgnu):
 - Add the full path as =help-echo= property to abbreviated directory paths and
   project names. Enable =tooltip-mode= and hover with the mouse over the
   abbreviated directory path to see the full path.
+- =consult-grep/find/etc=: Print first line of stderr output if command failed.
 
 * Version 0.32 (2023-02-06)
 

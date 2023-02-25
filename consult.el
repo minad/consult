@@ -2177,11 +2177,16 @@ PROPS are optional properties passed to `make-process'."
                    (consult--async-log
                     "consult--async-process sentinel: event=%s lines=%d\n"
                     (string-trim event) count)
-                   (with-current-buffer (get-buffer-create consult--async-log)
-                     (goto-char (point-max))
-                     (insert ">>>>> stderr >>>>>\n")
-                     (insert-buffer-substring proc-buf)
-                     (insert "<<<<< stderr <<<<<\n"))))
+                   (when (> (buffer-size proc-buf) 0)
+                     (with-current-buffer (get-buffer-create consult--async-log)
+                       (goto-char (point-max))
+                       (insert ">>>>> stderr >>>>>\n")
+                       (let ((beg (point)))
+                         (insert-buffer-substring proc-buf)
+                         (save-excursion
+                           (goto-char beg)
+                           (message "%s" (buffer-substring (pos-bol) (pos-eol)))))
+                       (insert "<<<<< stderr <<<<<\n")))))
                 (args (funcall builder action)))
            (unless (stringp (car args))
              (setq args (car args)))
