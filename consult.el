@@ -4755,10 +4755,10 @@ input."
 The initial input is given by the INITIAL argument.  DIR can be
 nil, a directory string or a list of file/directory paths.  If
 `consult-grep' is called interactively with a prefix argument,
-the user can specify the directory to search in.  By default the
-project directory is used if `consult-project-function' is
-defined and returns non-nil.  Otherwise the `default-directory'
-is searched.
+the user can specify the directories or files to search in.  By
+default the project directory is used if
+`consult-project-function' is defined and returns non-nil.
+Otherwise the `default-directory' is searched.
 
 The input string is split, the first part of the string (grep
 input) is passed to the asynchronous grep process and the second
