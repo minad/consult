@@ -582,26 +582,6 @@ Turn ARG into a list, and for each element either:
               (ensure-list (eval x 'lexical))))
           (ensure-list arg)))
 
-(defun consult--build-args-with-paths (arg search-path-list)
-  "Return ARG and SEARCH-PATH-LIST joined as a flat list of split strings.
-
-Turn ARG into a list, and for each element either:
-- split it if it a string.
-- eval it if it is an expression.
-
-If SEARCH-PATH-LIST is non-nil and not equal to (\".\"),
-splice its paths in at the end of the arg list."
-  (let ((args (consult--build-args arg)))
-    (if (and search-path-list
-             (not (equal search-path-list '("."))))
-        (if (member "." args)
-            ;; Replace occurrences of "." with `search-path-list' in `args'
-            (flatten-list
-             (mapcar (lambda (elt) (if (equal elt ".") search-path-list elt))
-                     args))
-          (nconc args search-path-list))
-      args)))
-
 (defun consult--command-split (str)
   "Return command argument and options list given input STR."
   (save-match-data
@@ -2177,7 +2157,6 @@ PROPS are optional properties passed to `make-process'."
              (when args
                (funcall async 'indicator 'running)
                (consult--async-log "consult--async-process started %S\n" args)
-               ;; `args' is a list of the command-line args run by consult for this command
                (setq count 0
                      proc-buf (generate-new-buffer " *consult-async-stderr*")
                      proc (apply #'make-process
