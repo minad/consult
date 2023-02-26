@@ -9,8 +9,8 @@
   command line builder. Take this change into account, when you use a customized
   version of those variables.
 - =consult-grep=: Add support for grep and find over multiple files or directory.
-  If the prefix argument DIR is a single C-u, prompt for a directories or files
-  to search recursively via =completing-read-multiple=.
+  If the prefix argument DIR is a single C-u, prompt for comma separated
+  directories or files to search recursively via =completing-read-multiple=.
 - =consult-buffer= and =consult-isearch-history=: Align annotations dynamically
   depending on candidate width, instead of computing the alignment beforehand.
 - Add the full path as =help-echo= property to abbreviated directory paths and
