@@ -753,7 +753,9 @@ asked for the directories or files to search via
                                                     #'completion-file-name-table
                                                     nil t nil 'file-name-history)))
                  ((and `(,p) (guard (file-directory-p p))) p)
-                 (ps (setq paths ps)
+                 (ps (setq paths (mapcar (lambda (p)
+                                           (file-relative-name (expand-file-name p)))
+                                         ps))
                      default-directory)))))
          (edir (file-name-as-directory (expand-file-name dir)))
          (pdir (let ((default-directory edir))
