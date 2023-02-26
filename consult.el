@@ -752,12 +752,12 @@ prompt prefix.  For projects only the project name is shown.  The
 abbreviated and only the last two path components are shown.
 
 If DIR is a string, it is returned as default directory.  If DIR
-is a list of strings, the list is returned as search paths.  If
-DIR is the value (4) corresponding to two key prefix argument
-key presses, the user is asked for the directories or files to search.
-Otherwise the `consult-project-function' is tried to retrieve the
-default directory.  If no project is found the
-`default-directory' is returned as is."
+is a list of strings, the list is returned as search paths. If
+DIR is nil the `consult-project-function' is tried to retrieve
+the default directory.  If no project is found the
+`default-directory' is returned as is.  Otherwise the user is
+asked for the directories or files to search via
+`completing-read-multiple'."
   (let* ((paths nil)
          (dir
           (pcase dir
@@ -768,8 +768,7 @@ default directory.  If no project is found the
                           dir
                         ;; Preserve this-command across `completing-read-multiple' call,
                         ;; such that `consult-customize' continues to work.
-                        (let ((this-command this-command)
-			      (crm-separator "[, ]+"))
+                        (let ((this-command this-command))
                           (completing-read-multiple "Directories or files: "
                                                     #'completion-file-name-table
                                                     nil t nil 'file-name-history)))
@@ -4777,10 +4776,12 @@ input."
 The initial input is given by the INITIAL argument.  DIR can be
 nil, a directory string or a list of file/directory paths.  If
 `consult-grep' is called interactively with a prefix argument,
-the user can specify the directory to search in.  By default the
-project directory is used if `consult-project-function' is
-defined and returns non-nil.  Otherwise the `default-directory'
-is searched.
+the user can specify the directories or files to search in.
+Multiple directories must be separated by comma in the
+minibuffer, since they are read via `completing-read-multiple'.
+By default the project directory is used if
+`consult-project-function' is defined and returns non-nil.
+Otherwise the `default-directory' is searched.
 
 The input string is split, the first part of the string (grep
 input) is passed to the asynchronous grep process and the second
