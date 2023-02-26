@@ -749,7 +749,7 @@ asked for the directories or files to search via
                         ;; Preserve this-command across `completing-read-multiple' call,
                         ;; such that `consult-customize' continues to work.
                         (let ((this-command this-command))
-                          (completing-read-multiple "Directories or files: "
+                          (completing-read-multiple "Comma-separated paths: "
                                                     #'completion-file-name-table
                                                     nil t nil 'file-name-history)))
                  ((and `(,p) (guard (file-directory-p p))) p)
