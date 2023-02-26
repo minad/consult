@@ -768,7 +768,8 @@ default directory.  If no project is found the
                           dir
                         ;; Preserve this-command across `completing-read-multiple' call,
                         ;; such that `consult-customize' continues to work.
-                        (let ((this-command this-command))
+                        (let ((this-command this-command)
+			      (crm-separator "[, ]+"))
                           (completing-read-multiple "Directories or files: "
                                                     #'completion-file-name-table
                                                     nil t nil 'file-name-history)))
