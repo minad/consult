@@ -455,6 +455,7 @@ Used by `consult-completion-in-region', `consult-yank' and `consult-history'.")
 ;;;; Input history variables
 
 (defvar consult--keep-lines-history nil)
+(defvar consult--path-history nil)
 (defvar consult--grep-history nil)
 (defvar consult--find-history nil)
 (defvar consult--man-history nil)
@@ -751,7 +752,7 @@ asked for the directories or files to search via
                         (let ((this-command this-command))
                           (completing-read-multiple "Directories or files: "
                                                     #'completion-file-name-table
-                                                    nil t nil 'file-name-history)))
+                                                    nil t nil 'consult--path-history)))
                  ((and `(,p) (guard (file-directory-p p))) p)
                  (ps (setq paths (mapcar (lambda (p)
                                            (file-relative-name (expand-file-name p)))
