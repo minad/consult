@@ -749,10 +749,11 @@ asked for the directories or files to search via
                           dir
                         ;; Preserve this-command across `completing-read-multiple' call,
                         ;; such that `consult-customize' continues to work.
-                        (let ((this-command this-command))
+                        (let ((this-command this-command)
+                              (def (abbreviate-file-name default-directory)))
                           (completing-read-multiple "Directories or files: "
                                                     #'completion-file-name-table
-                                                    nil t nil 'consult--path-history)))
+                                                    nil t def 'consult--path-history def)))
                  ((and `(,p) (guard (file-directory-p p))) p)
                  (ps (setq paths (mapcar (lambda (p)
                                            (file-relative-name (expand-file-name p)))
