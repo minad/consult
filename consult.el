@@ -1799,7 +1799,7 @@ This command is used internally by the narrowing system of `consult--read'."
          (when-let (pair (or (and (length= str 1)
                                   (assoc (aref str 0) consult--narrow-keys))
                              (and (equal str "")
-                                  (assoc 32 consult--narrow-keys))))
+                                  (assoc ?\s consult--narrow-keys))))
            (lambda ()
              (interactive)
              (delete-minibuffer-contents)
@@ -4463,7 +4463,7 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
 
 (defvar consult--source-hidden-buffer
   `(:name     "Hidden Buffer"
-    :narrow   32
+    :narrow   ?\s
     :hidden   t
     :category buffer
     :face     consult-buffer
