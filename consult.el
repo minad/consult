@@ -577,11 +577,11 @@ We use invalid characters outside the Unicode range.")
 Turn ARG into a list, and for each element either:
 - split it if it a string.
 - eval it if it is an expression."
-  (mapcan (lambda (x)
-            (if (stringp x)
-                (split-string-and-unquote x)
-              (ensure-list (eval x 'lexical))))
-          (ensure-list arg)))
+  (seq-mapcat (lambda (x)
+                (if (stringp x)
+                    (split-string-and-unquote x)
+                  (ensure-list (eval x 'lexical))))
+              (ensure-list arg)))
 
 (defun consult--command-split (str)
   "Return command argument and options list given input STR."
@@ -771,7 +771,7 @@ asked for the directories or files to search via
                 (format "%d paths, %s, …" (length paths) (consult--abbreviate-file p)))
                ((guard (equal edir pdir)) (concat "Project " (consult--project-name pdir)))
                (_ (consult--abbreviate-file edir))))
-     (or paths (list "."))
+     (or paths '("."))
      edir)))
 
 (defun consult--default-project-function (may-prompt)
@@ -4884,9 +4884,9 @@ INITIAL is inital input."
 
 (defun consult--find-make-builder (paths)
   "Build find command line, finding across PATHS."
-  (let* ((cmd (mapcan (lambda (x)
-                        (if (equal x ".") paths (list x)))
-                      (consult--build-args consult-find-args)))
+  (let* ((cmd (seq-mapcat (lambda (x)
+                            (if (equal x ".") paths (list x)))
+                          (consult--build-args consult-find-args)))
          (type (if (eq 0 (call-process-shell-command
                           (concat (car cmd) " -regextype emacs -version")))
                    'emacs 'basic)))
