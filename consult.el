@@ -771,7 +771,7 @@ asked for the directories or files to search via
                 (format "%d paths, %s, …" (length paths) (consult--abbreviate-file p)))
                ((guard (equal edir pdir)) (concat "Project " (consult--project-name pdir)))
                (_ (consult--abbreviate-file edir))))
-     (or paths '("."))
+     (or paths (list "."))
      edir)))
 
 (defun consult--default-project-function (may-prompt)
