@@ -548,6 +548,12 @@ We use invalid characters outside the Unicode range.")
 
 ;;;; Miscellaneous helper functions
 
+(defun consult--key-parse (key)
+  "Parse KEY or signal error if invalid."
+  (unless (key-valid-p key)
+    (error "%S is not a valid key definition; see `key-valid-p'" key))
+  (key-parse key))
+
 (defun consult--in-buffer (fun &optional buffer)
   "Ensure that FUN is executed inside BUFFER."
   (unless buffer (setq buffer (current-buffer)))
@@ -733,7 +739,7 @@ prompt prefix.  For projects only the project name is shown.  The
 abbreviated and only the last two path components are shown.
 
 If DIR is a string, it is returned as default directory.  If DIR
-is a list of strings, the list is returned as search paths. If
+is a list of strings, the list is returned as search paths.  If
 DIR is nil the `consult-project-function' is tried to retrieve
 the default directory.  If no project is found the
 `default-directory' is returned as is.  Otherwise the user is
@@ -1551,10 +1557,7 @@ The result can be passed as :state argument to `consult--read'." type)
                 preview-key (cddr preview-key))
         (let ((key (car preview-key)))
           (unless (eq key 'any)
-            (if (key-valid-p key)
-                (setq key (key-parse key))
-              ;; TODO: Remove compatibility code, throw error.
-              (message "Invalid preview key according to `key-valid-p': %S" key)))
+            (setq key (consult--key-parse key)))
           (push (cons key debounce) keys))
         (pop preview-key)))
     keys))
@@ -1751,17 +1754,9 @@ The candidate must have a `consult--prefix-group' property."
 The default is twice the `consult-narrow-key'."
   (cond
    (consult-widen-key
-    (if (key-valid-p consult-widen-key)
-        (key-parse consult-widen-key)
-      ;; TODO: Remove compatibility code, throw error.
-      (message "Invalid `consult-widen-key' according to `key-valid-p': %S" consult-widen-key)
-      consult-widen-key))
+    (consult--key-parse consult-widen-key))
    (consult-narrow-key
-    (let ((key consult-narrow-key))
-      (if (key-valid-p key)
-          (setq key (key-parse key))
-        ;; TODO: Remove compatibility code, throw error.
-        (message "Invalid `consult-narrow-key' according to `key-valid-p': %S" key))
+    (let ((key (consult--key-parse consult-narrow-key)))
       (vconcat key key)))))
 
 (defun consult-narrow (key)
@@ -1835,10 +1830,7 @@ to make it available for commands with narrowing."
     (setq consult--narrow-predicate nil
           consult--narrow-keys settings))
   (when-let ((key consult-narrow-key))
-    (if (key-valid-p key)
-        (setq key (key-parse key))
-      ;; TODO: Remove compatibility code, throw error.
-      (message "Invalid `consult-narrow-key' according to `key-valid-p': %S" key))
+    (setq key (consult--key-parse key))
     (dolist (pair consult--narrow-keys)
       (define-key map (vconcat key (vector (car pair)))
                   (cons (cdr pair) #'consult-narrow))))
