@@ -6,7 +6,7 @@
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2020
 ;; Version: 0.32
-;; Package-Requires: ((emacs "27.1") (compat "29.1.3.4"))
+;; Package-Requires: ((emacs "27.1") (compat "29.1.4.0"))
 ;; Homepage: https://github.com/minad/consult
 
 ;; This file is part of GNU Emacs.
@@ -72,14 +72,14 @@
 
 Good choices for this key are \"<\" and \"C-+\" for example. The
 key must be a string accepted by `key-valid-p'."
-  :type '(choice string (const nil)))
+  :type '(choice key (const nil)))
 
 (defcustom consult-widen-key nil
   "Key used for widening during completion.
 
 If this key is unset, defaults to twice the `consult-narrow-key'.
 The key must be a string accepted by `key-valid-p'."
-  :type '(choice string (const nil)))
+  :type '(choice key (const nil)))
 
 (defcustom consult-project-function
   #'consult--default-project-function
@@ -117,7 +117,7 @@ asynchronous commands, e.g., `consult-grep'."
   "Minimum number of letters needed, before asynchronous process is called.
 
 This applies to asynchronous commands, e.g., `consult-grep'."
-  :type 'integer)
+  :type 'natnum)
 
 (defcustom consult-async-split-style 'perl
   "Async splitting style, see `consult-async-split-styles-alist'."
@@ -239,7 +239,7 @@ See `consult--multi' for a description of the source data structure."
 
 (defcustom consult-grep-max-columns 300
   "Maximal number of columns of grep output."
-  :type 'integer)
+  :type 'natnum)
 
 (defconst consult--grep-match-regexp
   "\\`\\(?:\\./\\)?\\([^\n\0]+\\)\0\\([0-9]+\\)\\([-:\0]\\)"
@@ -301,8 +301,8 @@ individual keys must be strings accepted by `key-valid-p'."
                        (float :tag "Seconds" 0.1)
                        (const any))
                  (const :tag "No preview" nil)
-                 (string :tag "Key")
-                 (repeat :tag "List of keys" string)))
+                 (key :tag "Key")
+                 (repeat :tag "List of keys" key)))
 
 (defcustom consult-preview-max-size 10485760
   "Files larger than this byte limit are not previewed."
@@ -314,7 +314,7 @@ individual keys must be strings accepted by `key-valid-p'."
 
 (defcustom consult-preview-max-count 10
   "Number of files to keep open at once during preview."
-  :type 'integer)
+  :type 'natnum)
 
 (defcustom consult-preview-excluded-files nil
   "List of regexps matched against names of files, which are not previewed."
