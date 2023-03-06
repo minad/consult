@@ -4,6 +4,11 @@
 
 * Development
 
+- BREAKING: The key convention has been updated. The old key convention is not
+  supported anymore. Keys must now be strings valid according to =key-valid-p=.
+  This changes affects the keys =consult-narrow-key=, =consult-widen-key=,
+  =consult-preview-key= and the =:preview-key= of sources and passed as keyword
+  argument to =consult--read=. See the example configurations in the manual.
 - BREAKING: Remove the "." argument from  =consult-grep-args= and
   =consult-ripgrep-args=, since directories or files to search are appended by the
   command line builder. Take this change into account, when you use a customized
@@ -21,10 +26,11 @@
 * Version 0.32 (2023-02-06)
 
 - Bugfixes
-- Update the key convention. Keys must now be strings valid according to
+- Deprecate the old key convention. Keys must now be strings valid according to
   =key-valid-p=. This changes affects the keys =consult-narrow-key=,
   =consult-widen-key=, =consult-preview-key= and the =:preview-key= of sources and
-  passed as keyword argument to =consult--read=.
+  passed as keyword argument to =consult--read=. See the example configurations in
+  the manual.
 - Add =consult-info= command (#634, #727).
 - =consult-buffer=: Always select the first candidate when narrowing (#714).
 - =consult-locate-args=: Remove =--existing=, which is not supported by =plocate= on
