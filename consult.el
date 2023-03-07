@@ -195,7 +195,7 @@ See also `display-line-numbers-widen'."
 
 This is necessary in order to prevent a large startup time
 for navigation commands like `consult-line'."
-  :type 'integer)
+  :type 'natnum)
 
 (defcustom consult-buffer-filter
   '("\\` "
@@ -306,11 +306,11 @@ individual keys must be strings accepted by `key-valid-p'."
 
 (defcustom consult-preview-max-size 10485760
   "Files larger than this byte limit are not previewed."
-  :type 'integer)
+  :type 'natnum)
 
 (defcustom consult-preview-raw-size 524288
   "Files larger than this byte limit are previewed in raw form."
-  :type 'integer)
+  :type 'natnum)
 
 (defcustom consult-preview-max-count 10
   "Number of files to keep open at once during preview."
@@ -1232,12 +1232,12 @@ ORIG is the original function, HOOKS the arguments."
              ;; file-attributes may throw permission denied error
              (attrs (ignore-errors (file-attributes name)))
              (size (file-attribute-size attrs)))
-    (if (> size consult-preview-max-size)
+    (if (>= size consult-preview-max-size)
         (format "File `%s' (%s) is too large for preview"
                 name (file-size-human-readable size))
-      (let ((buf (find-file-noselect name 'nowarn (> size consult-preview-raw-size))))
+      (let ((buf (find-file-noselect name 'nowarn (>= size consult-preview-raw-size))))
         (cond
-         ((and (> size consult-preview-raw-size)
+         ((and (>= size consult-preview-raw-size)
                (with-current-buffer buf
                  (save-excursion
                    (goto-char (point-min))
