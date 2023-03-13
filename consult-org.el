@@ -67,12 +67,13 @@ MATCH, SCOPE and SKIP are as in `org-map-entries'."
        (unless (eq buffer (buffer-name))
          (setq buffer (buffer-name)
                org-outline-path-cache nil))
-       (pcase-let ((`(_ ,level ,todo ,prio ,_hl ,tags) (org-heading-components))
+       (pcase-let ((`(_ ,level ,todo ,prio ,_hl) (org-heading-components))
+                   (tags (org-get-tags))
                    (cand (org-format-outline-path
                           (org-get-outline-path 'with-self 'use-cache)
                           most-positive-fixnum)))
          (when tags
-           (setq tags (concat " " tags))
+           (setq tags (concat " :" (string-join tags ":") ":"))
            (put-text-property 1 (length tags) 'face 'org-tag tags))
          (setq cand (if prefix
                         (concat buffer " " cand tags (consult--tofu-encode (point)))
