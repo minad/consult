@@ -721,6 +721,22 @@ The line beginning/ending BEG/END is bound in BODY."
                             (kill-local-variable ',(cdr x))))
                        local)))))))
 
+(defun consult--abbreviate-file-name-pure (name)
+  "Return abbreviate file NAME.
+This function is a pure variant of `abbreviate-file-name', which
+does access the file system.  This is important if we rely on the
+operation being fast, even for remote paths or paths on network
+file systems."
+  (save-match-data
+    (let (case-fold-search) ;; Assume that file system is case sensitive.
+      (setq name (directory-abbrev-apply name))
+      (let ((home (with-memoization
+                      (get #'consult--abbreviate-file-name-pure 'home)
+                    (expand-file-name "~"))))
+        (if (string-prefix-p home name)
+            (concat "~" (substring name (length home)))
+          name)))))
+
 (defun consult--left-truncate-file (file)
   "Return abbreviated file name of FILE for use in `completing-read' prompt."
   (save-match-data
