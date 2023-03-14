@@ -721,7 +721,7 @@ The line beginning/ending BEG/END is bound in BODY."
                             (kill-local-variable ',(cdr x))))
                        local)))))))
 
-(defun consult--abbreviate-file (file)
+(defun consult--left-truncate-file (file)
   "Return abbreviated file name of FILE for use in `completing-read' prompt."
   (save-match-data
     (let ((afile (abbreviate-file-name file)))
@@ -772,11 +772,11 @@ asked for the directories or files to search via
     (list
      (format "%s (%s): " prompt
              (pcase paths
-               (`(,p) (consult--abbreviate-file p))
+               (`(,p) (consult--left-truncate-file p))
                (`(,p . ,_)
-                (format "%d paths, %s, …" (length paths) (consult--abbreviate-file p)))
+                (format "%d paths, %s, …" (length paths) (consult--left-truncate-file p)))
                ((guard (equal edir pdir)) (concat "Project " (consult--project-name pdir)))
-               (_ (consult--abbreviate-file edir))))
+               (_ (consult--left-truncate-file edir))))
      (or paths '("."))
      edir)))
 
@@ -4320,7 +4320,7 @@ QUERY is passed to `consult--buffer-query'."
                   (cond
                    ((and ndir (eq dir 'project))
                     (format ", Project %s" (consult--project-name ndir)))
-                   (ndir (concat  ", " (consult--abbreviate-file ndir)))
+                   (ndir (concat  ", " (consult--left-truncate-file ndir)))
                    (t "")))
           buffers)))
 
