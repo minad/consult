@@ -721,6 +721,37 @@ The line beginning/ending BEG/END is bound in BODY."
                             (kill-local-variable ',(cdr x))))
                        local)))))))
 
+;; TODO remove these functions if Compat 29.1.4.1 is released
+(defun consult---directory-abbrev-make-regexp (directory)
+  (let ((regexp (concat "\\`" (regexp-quote directory) "\\(/\\|\\'\\)")))
+    (if (multibyte-string-p regexp)
+        regexp
+      (decode-coding-string regexp
+                            (if (eq system-type 'windows-nt)
+                                'utf-8
+                              locale-coding-system)))))
+(defun consult---directory-abbrev-apply (filename)
+  (dolist (dir-abbrev directory-abbrev-alist filename)
+    (when (string-match (car dir-abbrev) filename)
+         (setq filename (concat (cdr dir-abbrev)
+                                (substring filename (match-end 0)))))))
+
+(defvar consult--fast-abbreviate-file-name nil)
+(defun consult--fast-abbreviate-file-name (name)
+  "Return abbreviate file NAME.
+This function is a pure variant of `abbreviate-file-name', which
+does not access the file system.  This is important if we require
+that the operation is fast, even for remote paths or paths on
+network file systems."
+  (save-match-data
+    (let (case-fold-search) ;; Assume that file system is case sensitive.
+      (setq name (consult---directory-abbrev-apply name))
+      (if (string-match (with-memoization consult--fast-abbreviate-file-name
+                          (consult---directory-abbrev-make-regexp (expand-file-name "~")))
+                        name)
+          (concat "~" (substring name (match-beginning 1)))
+        name))))
+
 (defun consult--left-truncate-file (file)
   "Return abbreviated file name of FILE for use in `completing-read' prompt."
   (save-match-data
@@ -3671,8 +3702,7 @@ narrowing and the settings `consult-goto-line-numbers' and
   (find-file
    (consult--read
     (or
-     (let (file-name-handler-alist) ;; No Tramp slowdown please
-       (mapcar #'abbreviate-file-name (bound-and-true-p recentf-list)))
+     (mapcar #'consult--fast-abbreviate-file-name (bound-and-true-p recentf-list))
      (user-error "No recent files, `recentf-mode' is %s"
                  (if recentf-mode "enabled" "disabled")))
     :prompt "Find recent file: "
@@ -4444,21 +4474,22 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
             recentf-mode))
     :items
     ,(lambda ()
-      (when-let (root (consult--project-root))
-        (let ((len (length root))
-              (ht (consult--buffer-file-hash))
-              file-name-handler-alist ;; No Tramp slowdown please.
-              items)
-          (dolist (file (bound-and-true-p recentf-list) (nreverse items))
-            ;; Emacs 29 abbreviates file paths by default, see
-            ;; `recentf-filename-handlers'.
-            (unless (eq (aref file 0) ?/)
-              (setq file (expand-file-name file)))
-            (when (and (not (gethash file ht)) (string-prefix-p root file))
-              (let ((part (substring file len)))
-                (when (equal part "") (setq part "./"))
-                (put-text-property 0 1 'multi-category `(file . ,file) part)
-                (push part items))))))))
+       (when-let (root (consult--project-root))
+         (let ((len (length root))
+               (ht (consult--buffer-file-hash))
+               items)
+           (dolist (file (bound-and-true-p recentf-list) (nreverse items))
+             ;; Emacs 29 abbreviates file paths by default, see
+             ;; `recentf-filename-handlers'.  I recommend to set
+             ;; recentf-filename-handlers to nil to avoid any slow down.
+             (unless (eq (aref file 0) ?/)
+               (let (file-name-handler-alist) ;; No Tramp slowdown please.
+                 (setq file (expand-file-name file))))
+             (when (and (not (gethash file ht)) (string-prefix-p root file))
+               (let ((part (substring file len)))
+                 (when (equal part "") (setq part "./"))
+                 (put-text-property 0 1 'multi-category `(file . ,file) part)
+                 (push part items))))))))
   "Project file candidate source for `consult-buffer'.")
 
 (defvar consult--source-hidden-buffer
@@ -4531,15 +4562,16 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
     :items
     ,(lambda ()
        (let ((ht (consult--buffer-file-hash))
-             file-name-handler-alist ;; No Tramp slowdown please.
              items)
          (dolist (file (bound-and-true-p recentf-list) (nreverse items))
            ;; Emacs 29 abbreviates file paths by default, see
-           ;; `recentf-filename-handlers'.
+           ;; `recentf-filename-handlers'.  I recommend to set
+           ;; `recentf-filename-handlers' to nil to avoid any slow down.
            (unless (eq (aref file 0) ?/)
-             (setq file (expand-file-name file)))
+             (let (file-name-handler-alist) ;; No Tramp slowdown please.
+               (setq file (expand-file-name file))))
            (unless (gethash file ht)
-             (push (abbreviate-file-name file) items))))))
+             (push (consult--fast-abbreviate-file-name file) items))))))
   "Recent file candidate source for `consult-buffer'.")
 
 ;;;###autoload
