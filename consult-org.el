@@ -59,25 +59,30 @@
 
 If PREFIX is non-nil, prefix the candidates with the buffer name.
 MATCH, SCOPE and SKIP are as in `org-map-entries'."
-  (let (buffer)
+  (let (buffer (idx 0))
     (apply
      #'org-map-entries
      (lambda ()
-        ;; Reset the cache when the buffer changes, since `org-get-outline-path' uses the cache
+       ;; Reset the cache when the buffer changes, since `org-get-outline-path' uses the cache
        (unless (eq buffer (buffer-name))
          (setq buffer (buffer-name)
                org-outline-path-cache nil))
-       (pcase-let ((`(_ ,level ,todo ,prio ,_hl) (org-heading-components))
-                   (tags (org-get-tags))
-                   (cand (org-format-outline-path
-                          (org-get-outline-path 'with-self 'use-cache)
-                          most-positive-fixnum)))
+       (pcase-let* ((`(_ ,level ,todo ,prio ,_hl ,tags) (org-heading-components))
+                    (tags (if org-use-tag-inheritance
+                              (when-let ((tags (org-get-tags)))
+                                (concat ":" (string-join tags ":") ":"))
+                            tags))
+                    (cand (org-format-outline-path
+                           (org-get-outline-path 'with-self 'use-cache)
+                           most-positive-fixnum)))
          (when tags
-           (setq tags (concat " :" (string-join tags ":") ":"))
-           (put-text-property 1 (length tags) 'face 'org-tag tags))
+           (put-text-property 0 (length tags) 'face 'org-tag tags))
          (setq cand (if prefix
-                        (concat buffer " " cand tags (consult--tofu-encode (point)))
-                      (concat cand tags (consult--tofu-encode (point)))))
+                        (concat buffer " " cand (and tags " ")
+                                tags (consult--tofu-encode idx))
+                      (concat cand (and tags " ")
+                              tags (consult--tofu-encode idx))))
+         (cl-incf idx)
          (add-text-properties 0 1
                               `(consult--candidate ,(point-marker)
                                 consult-org--heading (,level ,todo . ,prio))
