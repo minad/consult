@@ -5,6 +5,10 @@
 * Development
 
 - =consult-org-heading=: Support tag inheritance.
+- Use pure =consult--fast-abbreviate-file-name= function to abbreviate file names
+  in =consult-buffer= and =consult-recent-file=. This ensures that abbreviation does
+  not access the file system (or worse remote hosts via Tramp) and is always
+  fast. The downside is that some paths may not get abbreviated.
 
 * Version 0.33 (2023-03-11)
 
