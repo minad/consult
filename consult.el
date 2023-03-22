@@ -1181,19 +1181,18 @@ matches case insensitively."
       (message "Too many regexps, %S ignored. Use post-filtering!"
                (string-join (seq-drop regexps 3) " "))
       (setq regexps (seq-take regexps 3)))
-    (consult--regexp-join-permutations regexps (and (eq type 'emacs) "\\")))))
+    (consult--join-regexps-permutations regexps (and (eq type 'emacs) "\\")))))
 
-(defun consult--regexp-join-permutations (regexps esc)
+(defun consult--join-regexps-permutations (regexps esc)
   "Join all permutations of REGEXPS.
 ESC is the escaping string for choice and groups."
   (pcase regexps
     ('nil "")
     (`(,r) r)
-    (`(,r1 ,r2) (concat r1 ".*" r2 esc "|" r2 ".*" r1))
     (_ (mapconcat
         (lambda (r)
-          (concat r ".*" esc "("
-                  (consult--regexp-join-permutations (remove r regexps) esc)
+          (concat esc "(" r esc ").*" esc "("
+                  (consult--join-regexps-permutations (remove r regexps) esc)
                   esc ")"))
         regexps (concat esc "|")))))
 
