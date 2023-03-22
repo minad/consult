@@ -1181,8 +1181,7 @@ matches case insensitively."
       (message "Too many regexps, %S ignored. Use post-filtering!"
                (string-join (seq-drop regexps 3) " "))
       (setq regexps (seq-take regexps 3)))
-    (consult--regexp-join-permutations regexps
-                                       (and (memq type '(basic emacs)) "\\")))))
+    (consult--regexp-join-permutations regexps (and (eq type 'emacs) "\\")))))
 
 (defun consult--regexp-join-permutations (regexps esc)
   "Join all permutations of REGEXPS.
