@@ -4970,10 +4970,10 @@ details regarding the asynchronous search."
 (defun consult--man-builder (input)
   "Build command line from INPUT."
   (pcase-let* ((`(,arg . ,opts) (consult--command-split input))
-               (`(,re . ,hl) (funcall consult--regexp-compiler arg 'basic t)))
+               (`(,re . ,hl) (funcall consult--regexp-compiler arg 'extended t)))
     (when re
       (cons (append (consult--build-args consult-man-args)
-                    (list (consult--join-regexps re 'basic))
+                    (list (consult--join-regexps re 'extended))
                     opts)
             hl))))
 
