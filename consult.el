@@ -380,6 +380,12 @@ Used for example in `consult-grep'.")
   '((t :inherit isearch))
   "Face used for match previews, e.g., in `consult-line'.")
 
+(defcustom consult-preview-match-faces
+  [consult-preview-match]
+  "Faces used for preview matches.
+This allows compatibility with `orderless-match-faces', if desired."
+  :type '(vector face))
+
 (defface consult-preview-cursor
   '((t :inherit cursor))
   "Face used for cursor previews and marks, e.g., in `consult-mark'.")
@@ -1521,13 +1527,18 @@ The function can be used as the `:state' argument of `consult--read'."
                                              'face 'consult-preview-cursor
                                              'window (selected-window)
                                              'priority 3)))
-          (dolist (match (cdr-safe cand))
-            (push (consult--make-overlay (+ (point) (car match))
-                                         (+ (point) (cdr match))
-                                         'face 'consult-preview-match
-                                         'window (selected-window)
-                                         'priority 2)
-                  overlays))
+
+          (let ((face-idx 0))
+            (dolist (match (cdr-safe cand))
+              (push (consult--overlay (+ (point) (car match))
+                                      (+ (point) (cdr match))
+                                      'face (aref
+                                             consult-preview-match-faces
+                                             (mod face-idx (length consult-preview-match-faces)))
+                                      'window (selected-window)
+                                      'priority 2)
+                    overlays)
+              (cl-incf face-idx)))
           (run-hooks 'consult-after-jump-hook))))))
 
 (defun consult--jump-state ()
