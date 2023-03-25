@@ -276,7 +276,7 @@ their descriptions.
 #+findex: consult-xref
 - =consult-compile-error=: Jump to a compilation error. Supports live preview
   narrowing and recursive editing.
-- =consult-flymake=: Jump to flymake diagnostic. Supports live preview and
+- =consult-flymake=: Jump to Flymake diagnostic. Supports live preview and
   recursive editing. The command supports narrowing. Press =e SPC=, =w SPC=, =n SPC=
   to only show errors, warnings and notes respectively.
 - =consult-xref=: Integration with xref. This function can be set as
