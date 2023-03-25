@@ -182,6 +182,10 @@ This setting affects the command `consult-line' and the `consult-grep' variants.
 See also `display-line-numbers-widen'."
   :type 'boolean)
 
+(defcustom consult-line-preview-all-matches nil
+  "Highlight matches in other lines."
+  :type 'boolean)
+
 (defcustom consult-goto-line-numbers t
   "Show line numbers for `consult-goto-line'."
   :type 'boolean)
@@ -1528,17 +1532,21 @@ The function can be used as the `:state' argument of `consult--read'."
                                              'window (selected-window)
                                              'priority 3)))
 
-          (let ((face-idx 0))
+          (let ((face-idx 0) (offset (point)))
             (dolist (match (cdr-safe cand))
-              (push (consult--overlay (+ (point) (car match))
-                                      (+ (point) (cdr match))
-                                      'face (aref
-                                             consult-preview-match-faces
-                                             (mod face-idx (length consult-preview-match-faces)))
-                                      'window (selected-window)
-                                      'priority 2)
-                    overlays)
-              (cl-incf face-idx)))
+              (if (consp match)
+                  (progn
+                    (push (consult--overlay (+ offset (car match))
+                                            (+ offset (cdr match))
+                                            'face (aref
+                                                   consult-preview-match-faces
+                                                   (mod face-idx (length consult-preview-match-faces)))
+                                            'window (selected-window)
+                                            'priority 2)
+                          overlays)
+                    (cl-incf face-idx))
+                (setq offset match)
+                (setq face-idx 0))))
           (run-hooks 'consult-after-jump-hook))))))
 
 (defun consult--jump-state ()
@@ -3270,14 +3278,41 @@ IGNORED-FACES are ignored when determining the match position."
   "Lookup position of match.
 SELECTED is the currently selected candidate.
 CANDIDATES is the list of candidates.
-INPUT is the input string entered by the user."
-  (consult--line-point-placement selected candidates
-                                 (and (not (string-blank-p input))
-                                      (car (consult--completion-filter
-                                            input
-                                            (list (substring-no-properties selected))
-                                            'consult-location 'highlight)))
-                                 'completions-first-difference))
+INPUT is the input string entered by the user.
+Return value is a list of the form
+(<line pos> (<match start> . <match end>)* <line pos>...)
+where the match offsets are relative to the previous line pos,
+and the selected candidate comes first.
+"
+  (when (not consult-line-preview-all-matches)
+    (setq candidates (list (car (member selected candidates)))))
+
+  (let ((candidates (consult--completion-filter
+                     input
+                     (mapcar (lambda (cand)
+                               (propertize
+                                (substring-no-properties cand)
+                                'consult-location (get-text-property 0 'consult-location cand)))
+                               candidates)
+                     'consult-location 'highlight)))
+    (let (matches)
+      (dolist (cand candidates)
+        (when-let ((match (consult--line-point-placement
+                           cand
+                           ;; Pass only our current candidate to avoid O(N) search.
+                           (list cand)
+                           (and (not (string-blank-p input)) cand)
+                           'completions-first-difference)))
+          ;; Make sure selected candidate goes at head of matches.
+          (if (string= cand selected)
+              (if (consp match)
+                  (setq matches (append match matches))
+                (push match matches))
+            (when (consp match)
+              (setq matches (nconc matches match))))))
+
+      matches)))
+
 
 ;;;###autoload
 (defun consult-line (&optional initial start)
