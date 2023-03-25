@@ -84,17 +84,18 @@ The key must be a string accepted by `key-valid-p'."
 (defcustom consult-project-function
   #'consult--default-project-function
   "Function which returns project root directory.
-The function takes one boolargument MAY-PROMPT.  If MAY-PROMPT is non-nil,
-the function may ask the prompt the user for a project directory.
-The root directory is used by `consult-buffer' and `consult-grep'."
+The function takes one boolean argument MAY-PROMPT.  If
+MAY-PROMPT is non-nil, the function may ask the prompt the user
+for a project directory.  The root directory is used by
+`consult-buffer' and `consult-grep'."
   :type '(choice function (const nil)))
 
 (defcustom consult-async-refresh-delay 0.2
-  "Refreshing delay of the completion ui for asynchronous commands.
+  "Refreshing delay of the completion UI for asynchronous commands.
 
-The completion ui is only updated every `consult-async-refresh-delay'
-seconds.  This applies to asynchronous commands like for example
-`consult-grep'."
+The completion UI is only updated every
+`consult-async-refresh-delay' seconds.  This applies to
+asynchronous commands like for example `consult-grep'."
   :type 'float)
 
 (defcustom consult-async-input-throttle 0.4
