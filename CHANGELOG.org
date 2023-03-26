@@ -10,6 +10,10 @@
   in =consult-buffer= and =consult-recent-file=. This ensures that abbreviation does
   not access the file system (or worse remote hosts via Tramp) and is always
   fast. The downside is that some paths may not get abbreviated.
+- Introduce buffer sources =consult--source-project-buffer-hidden= and
+  =consult--source-project-recent-file-hidden=. Set the buffer sources of
+  =consult-project= to =consult--source-project-buffer= and
+  =consult--source-project-recent-file= to ease customization.
 
 * Version 0.33 (2023-03-11)
 

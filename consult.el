@@ -217,14 +217,16 @@ character, the *Completions* buffer and a few log buffers."
     consult--source-recent-file
     consult--source-file-register
     consult--source-bookmark
-    consult--source-project-buffer
-    consult--source-project-recent-file)
+    consult--source-project-buffer-hidden
+    consult--source-project-recent-file-hidden)
   "Sources used by `consult-buffer'.
 See also `consult-project-buffer-sources'.
 See `consult--multi' for a description of the source data structure."
   :type '(repeat symbol))
 
-(defcustom consult-project-buffer-sources nil
+(defcustom consult-project-buffer-sources
+  '(consult--source-project-buffer
+    consult--source-project-recent-file)
   "Sources used by `consult-project-buffer'.
 See also `consult-buffer-sources'.
 See `consult--multi' for a description of the source data structure."
@@ -4440,8 +4442,7 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
 
 (defvar consult--source-project-buffer
   `(:name     "Project Buffer"
-    :narrow   (?p . "Project")
-    :hidden   t
+    :narrow   ?b
     :category buffer
     :face     consult-buffer
     :history  buffer-name-history
@@ -4457,8 +4458,7 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
 
 (defvar consult--source-project-recent-file
   `(:name     "Project File"
-    :narrow   (?p . "Project")
-    :hidden   t
+    :narrow   ?f
     :category file
     :face     consult-file
     :history  file-name-history
@@ -4490,6 +4490,14 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
                  (put-text-property 0 1 'multi-category `(file . ,file) part)
                  (push part items))))))))
   "Project file candidate source for `consult-buffer'.")
+
+(defvar consult--source-project-buffer-hidden
+  `(:hidden t :narrow (?p . "Project") ,@consult--source-project-buffer)
+  "Like `consult--source-project-buffer' but hidden by default.")
+
+(defvar consult--source-project-recent-file-hidden
+  `(:hidden t :narrow (?p . "Project") ,@consult--source-project-recent-file)
+  "Like `consult--source-project-recent-file' but hidden by default.")
 
 (defvar consult--source-hidden-buffer
   `(:name     "Hidden Buffer"
@@ -4594,12 +4602,6 @@ configuration of the virtual buffer sources."
     ;; For non-matching candidates, fall back to buffer creation.
     (unless (plist-get (cdr selected) :match)
       (consult--buffer-action (car selected)))))
-
-;; Populate `consult-project-buffer-sources'.
-(setq consult-project-buffer-sources
-      (list
-       `(:hidden nil :narrow ?b ,@consult--source-project-buffer)
-       `(:hidden nil :narrow ?f ,@consult--source-project-recent-file)))
 
 (defmacro consult--with-project (&rest body)
   "Ensure that BODY is executed with a project root."
