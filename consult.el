@@ -6,7 +6,7 @@
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2020
 ;; Version: 0.33
-;; Package-Requires: ((emacs "27.1") (compat "29.1.4.0"))
+;; Package-Requires: ((emacs "27.1") (compat "29.1.4.1"))
 ;; Homepage: https://github.com/minad/consult
 
 ;; This file is part of GNU Emacs.
@@ -724,21 +724,6 @@ The line beginning/ending BEG/END is bound in BODY."
                             (kill-local-variable ',(cdr x))))
                        local)))))))
 
-;; TODO remove these functions if Compat 29.1.4.1 is released
-(defun consult---directory-abbrev-make-regexp (directory)
-  (let ((regexp (concat "\\`" (regexp-quote directory) "\\(/\\|\\'\\)")))
-    (if (multibyte-string-p regexp)
-        regexp
-      (decode-coding-string regexp
-                            (if (eq system-type 'windows-nt)
-                                'utf-8
-                              locale-coding-system)))))
-(defun consult---directory-abbrev-apply (filename)
-  (dolist (dir-abbrev directory-abbrev-alist filename)
-    (when (string-match (car dir-abbrev) filename)
-         (setq filename (concat (cdr dir-abbrev)
-                                (substring filename (match-end 0)))))))
-
 (defvar consult--fast-abbreviate-file-name nil)
 (defun consult--fast-abbreviate-file-name (name)
   "Return abbreviate file NAME.
@@ -748,9 +733,9 @@ that the operation is fast, even for remote paths or paths on
 network file systems."
   (save-match-data
     (let (case-fold-search) ;; Assume that file system is case sensitive.
-      (setq name (consult---directory-abbrev-apply name))
+      (setq name (directory-abbrev-apply name))
       (if (string-match (with-memoization consult--fast-abbreviate-file-name
-                          (consult---directory-abbrev-make-regexp (expand-file-name "~")))
+                          (directory-abbrev-make-regexp (expand-file-name "~")))
                         name)
           (concat "~" (substring name (match-beginning 1)))
         name))))
