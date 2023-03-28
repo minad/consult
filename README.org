@@ -383,7 +383,7 @@ their descriptions.
 - =consult-completion-in-region=: In case you don't use [[https://github.com/minad/corfu][Corfu]] as your in-buffer
   completion UI, this function can be set as =completion-in-region-function=. Then
   your minibuffer completion UI (e.g., Vertico or Icomplete) will be used for
-  =completion-at-point=. If you use Mct, you can give =mct-region-mode= a try.
+  =completion-at-point=.
   #+begin_src emacs-lisp
     ;; Use `consult-completion-in-region' if Vertico is enabled.
     ;; Otherwise use the default `completion--in-region' function.
