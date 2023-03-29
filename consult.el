@@ -699,7 +699,7 @@ The line beginning/ending BEG/END is bound in BODY."
     width))
 
 (defun consult--string-hash (strings)
-  "Create hashtable from STRINGS."
+  "Create hash table from STRINGS."
   (let ((ht (make-hash-table :test #'equal :size (length strings))))
     (dolist (str strings)
       (puthash str t ht))
@@ -1449,7 +1449,7 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
     (when-let (buf (and (markerp pos) (marker-buffer pos)))
       (unless (and (eq (current-buffer) buf) (eq (window-buffer) buf))
         (consult--buffer-action buf 'norecord)))
-    ;; Widen if we cannot jump to the position (idea from flycheck-jump-to-error)
+    ;; Widen if we cannot jump to the position
     (unless (= (goto-char pos) (point))
       (widen)
       (goto-char pos))))
@@ -2483,10 +2483,10 @@ PREVIEW-KEY are the preview keys."
                  (setq-local minibuffer-default-add-function
                              (apply-partially #'consult--add-history (functionp candidates) add-history))))
     (consult--with-async (async candidates)
-      ;; NOTE: Do not unnecessarily let-bind the lambdas to avoid overcapturing
+      ;; NOTE: Do not unnecessarily let-bind the lambdas to avoid over-capturing
       ;; in the interpreter.  This will make closures and the lambda string
       ;; representation larger, which makes debugging much worse.  Fortunately
-      ;; the overcapturing problem does not affect the bytecode interpreter
+      ;; the over-capturing problem does not affect the bytecode interpreter
       ;; which does a proper scope analysis.
       (let* ((metadata `(metadata
                          ,@(when category `((category . ,category)))
@@ -3024,8 +3024,9 @@ These configuration options are supported:
               (completion--replace start end (setq completion (concat completion)))
               (when exit-fun
                 (funcall exit-fun completion
-                         ;; If completion is finished and cannot be further completed,
-                         ;; return 'finished.  Otherwise return 'exact.
+                         ;; If completion is finished and cannot be further
+                         ;; completed, return `finished'.  Otherwise return
+                         ;; `exact'.
                          (if (eq (try-completion completion collection predicate) t)
                              'finished 'exact)))
               t)
@@ -3186,7 +3187,7 @@ The symbol at point is added to the future history."
     (or markers global-mark-ring))
    :prompt "Go to global mark: "
    ;; Despite `consult-global-mark' formatting the candidates in grep-like
-   ;; style, we are not using the 'consult-grep category, since the candidates
+   ;; style, we are not using the `consult-grep' category, since the candidates
    ;; have location markers attached.
    :category 'consult-location
    :sort nil
@@ -3279,12 +3280,12 @@ and the last `isearch-string' is added to the future history."
      :category 'consult-location
      :sort nil
      :require-match t
-     ;; Always add last isearch string to future history
+     ;; Always add last `isearch-string' to future history
      :add-history (list (thing-at-point 'symbol) isearch-string)
      :history '(:input consult--line-history)
      :lookup #'consult--line-match
      :default (car candidates)
-     ;; Add isearch-string as initial input if starting from isearch
+     ;; Add `isearch-string' as initial input if starting from Isearch
      :initial (or initial
                   (and isearch-mode
                        (prog1 isearch-string (isearch-done))))
@@ -3367,13 +3368,13 @@ to `consult--buffer-query'."
      :category 'consult-location
      :sort nil
      :require-match t
-     ;; Always add last isearch string to future history
+     ;; Always add last Isearch string to future history
      :add-history (mapcar #'consult--async-split-initial
                           (delq nil (list (thing-at-point 'symbol)
                                           isearch-string)))
      :history '(:input consult--line-multi-history)
      :lookup #'consult--line-multi-match
-     ;; Add isearch-string as initial input if starting from isearch
+     ;; Add `isearch-string' as initial input if starting from Isearch
      :initial (consult--async-split-initial
                (or initial
                    (and isearch-mode
@@ -4074,14 +4075,14 @@ of the prompt.  See also `cape-history' from the Cape package."
 ;;;;; Command: consult-isearch-history
 
 (defun consult-isearch-forward (&optional reverse)
-  "Continue isearch forward optionally in REVERSE."
+  "Continue Isearch forward optionally in REVERSE."
   (interactive)
   (consult--require-minibuffer)
   (setq isearch-new-forward (not reverse) isearch-new-nonincremental nil)
   (funcall (or (command-remapping #'exit-minibuffer) #'exit-minibuffer)))
 
 (defun consult-isearch-backward (&optional reverse)
-  "Continue isearch backward optionally in REVERSE."
+  "Continue Isearch backward optionally in REVERSE."
   (interactive)
   (consult-isearch-forward (not reverse)))
 
@@ -4095,7 +4096,7 @@ of the prompt.  See also `cape-history' from the Cape package."
   "<remap> <isearch-backward>" #'consult-isearch-backward)
 
 (defun consult--isearch-history-candidates ()
-  "Return isearch history candidates."
+  "Return Isearch history candidates."
   ;; NOTE: Do not throw an error on empty history,
   ;; in order to allow starting a search.
   ;; We do not :require-match here!
@@ -4465,7 +4466,7 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
            (dolist (file (bound-and-true-p recentf-list) (nreverse items))
              ;; Emacs 29 abbreviates file paths by default, see
              ;; `recentf-filename-handlers'.  I recommend to set
-             ;; recentf-filename-handlers to nil to avoid any slow down.
+             ;; `recentf-filename-handlers' to nil to avoid any slow down.
              (unless (eq (aref file 0) ?/)
                (let (file-name-handler-alist) ;; No Tramp slowdown please.
                  (setq file (expand-file-name file))))
