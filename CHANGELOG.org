@@ -14,6 +14,7 @@
   =consult--source-project-recent-file-hidden=. Set the buffer sources of
   =consult-project= to =consult--source-project-buffer= and
   =consult--source-project-recent-file= to ease customization.
+- =consult-buffer=: Explicitly save =window-next-buffers= and =window-prev-buffers=.
 
 * Version 0.33 (2023-03-11)
 
