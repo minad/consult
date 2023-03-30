@@ -4393,21 +4393,31 @@ AS is a conversion function."
 
 (defun consult--buffer-preview ()
   "Buffer preview function."
-  (let ((orig-buf (current-buffer)) other-win)
+  (let ((orig-buf (current-buffer))
+        (orig-prev (copy-sequence (window-prev-buffers)))
+        (orig-next (copy-sequence (window-next-buffers)))
+        other-win)
     (lambda (action cand)
-      (when (eq action 'preview)
-        (when (and (eq consult--buffer-display #'switch-to-buffer-other-window)
-                   (not other-win))
-          (switch-to-buffer-other-window orig-buf)
-          (setq other-win (selected-window)))
-        (let ((win (or other-win (selected-window))))
-          (when (window-live-p win)
-            (with-selected-window win
-              (cond
-               ((and cand (get-buffer cand))
-                (switch-to-buffer cand 'norecord))
-               ((buffer-live-p orig-buf)
-                (switch-to-buffer orig-buf 'norecord))))))))))
+      (pcase action
+        ('exit
+         (set-window-prev-buffers other-win orig-prev)
+         (set-window-next-buffers other-win orig-next))
+        ('preview
+         (when (and (eq consult--buffer-display #'switch-to-buffer-other-window)
+                    (not other-win))
+           (switch-to-buffer-other-window orig-buf)
+           (setq other-win (selected-window)))
+         (let ((win (or other-win (selected-window))))
+           (when (window-live-p win)
+             (with-selected-window win
+               (unless (or orig-prev orig-next)
+                 (setq orig-prev (copy-sequence (window-prev-buffers))
+                       orig-next (copy-sequence (window-next-buffers))))
+               (cond
+                ((and cand (get-buffer cand))
+                 (switch-to-buffer cand 'norecord))
+                ((buffer-live-p orig-buf)
+                 (switch-to-buffer orig-buf 'norecord)))))))))))
 
 (defun consult--buffer-action (buffer &optional norecord)
   "Switch to BUFFER via `consult--buffer-display' function.
