@@ -4407,17 +4407,14 @@ AS is a conversion function."
                     (not other-win))
            (switch-to-buffer-other-window orig-buf)
            (setq other-win (selected-window)))
-         (let ((win (or other-win (selected-window))))
-           (when (window-live-p win)
+         (let ((win (or other-win (selected-window)))
+               (buf (or (and cand (get-buffer cand)) orig-buf)))
+           (when (and (window-live-p win) (buffer-live-p buf))
              (with-selected-window win
                (unless (or orig-prev orig-next)
                  (setq orig-prev (copy-sequence (window-prev-buffers))
                        orig-next (copy-sequence (window-next-buffers))))
-               (cond
-                ((and cand (get-buffer cand))
-                 (switch-to-buffer cand 'norecord))
-                ((buffer-live-p orig-buf)
-                 (switch-to-buffer orig-buf 'norecord)))))))))))
+               (switch-to-buffer buf 'norecord)))))))))
 
 (defun consult--buffer-action (buffer &optional norecord)
   "Switch to BUFFER via `consult--buffer-display' function.
