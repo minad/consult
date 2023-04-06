@@ -3387,6 +3387,7 @@ to `consult--buffer-query'."
 (defun consult--keep-lines-state (filter)
   "State function for `consult-keep-lines' with FILTER function."
   (let ((font-lock-orig font-lock-mode)
+        (whitespace-orig (bound-and-true-p whitespace-mode))
         (hl-line-orig (bound-and-true-p hl-line-mode))
         (point-orig (point))
         lines content-orig replace last-input)
@@ -3447,6 +3448,7 @@ to `consult--buffer-query'."
                                              (funcall filter input (mapcar #'copy-sequence lines)))))))))
           (when (stringp filtered-content)
             (when font-lock-mode (font-lock-mode -1))
+            (when (bound-and-true-p whitespace-mode) (whitespace-mode -1))
             (when (bound-and-true-p hl-line-mode) (hl-line-mode -1))
             (if (eq action 'return)
                 (atomic-change-group
@@ -3460,6 +3462,7 @@ to `consult--buffer-query'."
       ;; Restore modes
       (when (eq action 'return)
         (when hl-line-orig (hl-line-mode 1))
+        (when whitespace-orig (whitespace-mode 1))
         (when font-lock-orig (font-lock-mode 1))))))
 
 ;;;###autoload
