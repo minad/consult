@@ -5033,7 +5033,9 @@ automatically previewed."
              (fun (buffer-local-value 'consult--preview-function buf)))
     (funcall fun)))
 
-;;;; Integration with the default completion system
+;;;; Integration with completion systems
+
+;;;;; Integration: Default *Completions*
 
 (defun consult--default-completion-minibuffer-candidate ()
   "Return current minibuffer candidate from default completion system or Icomplete."
@@ -5068,14 +5070,75 @@ automatically previewed."
       (or (get-text-property beg 'completion--string)
           (buffer-substring-no-properties beg end)))))
 
-;; Announce now that consult has been loaded
-(provide 'consult)
+;;;;; Integration: Vertico
 
-;;;; Integration with other completion systems
+(defvar vertico--input)
+(declare-function vertico--exhibit "ext:vertico")
+(declare-function vertico--candidate "ext:vertico")
+(declare-function vertico--all-completions "ext:vertico")
 
-(with-eval-after-load 'icomplete (require 'consult-icomplete))
-(with-eval-after-load 'vertico (require 'consult-vertico))
+(defun consult--vertico-candidate ()
+  "Return current candidate for Consult preview."
+  (and vertico--input (vertico--candidate 'highlight)))
+
+(defun consult--vertico-refresh ()
+  "Refresh completion UI."
+  (when vertico--input
+    (setq vertico--input t)
+    (vertico--exhibit)))
+
+(defun consult--vertico-filter-adv (orig pattern cands category highlight)
+  "Advice for ORIG `consult--completion-filter' function.
+See `consult--completion-filter' for arguments PATTERN, CANDS, CATEGORY
+and HIGHLIGHT."
+  (if (and (bound-and-true-p vertico-mode) (not highlight))
+      ;; Optimize `consult--completion-filter' using the deferred highlighting
+      ;; from Vertico.  The advice is not necessary - it is a pure optimization.
+      (nconc (car (vertico--all-completions pattern cands nil (length pattern)
+                                            `(metadata (category . ,category))))
+             nil)
+    (funcall orig pattern cands category highlight)))
+
+(with-eval-after-load 'vertico
+  (advice-add #'consult--completion-filter :around #'consult--vertico-filter-adv)
+  (add-hook 'consult--completion-candidate-hook #'consult--vertico-candidate)
+  (add-hook 'consult--completion-refresh-hook #'consult--vertico-refresh)
+  (define-key consult-async-map [remap vertico-insert] 'vertico-next-group))
+
+;;;;; Integration: Mct
+
 (with-eval-after-load 'mct (add-hook 'consult--completion-refresh-hook
                                      'mct--live-completions-refresh))
 
+;;;;; Integration: Icomplete
+
+(defvar icomplete-mode)
+(declare-function icomplete-exhibit "icomplete")
+
+(defun consult--icomplete-refresh ()
+  "Refresh icomplete view."
+  (when icomplete-mode
+    (let ((top (car completion-all-sorted-completions)))
+      (completion--flush-all-sorted-completions)
+      ;; force flushing, otherwise narrowing is broken!
+      (setq completion-all-sorted-completions nil)
+      (when top
+        (let* ((completions (completion-all-sorted-completions))
+               (last (last completions))
+               (before)) ;; completions before top
+          ;; warning: completions is an improper list
+          (while (consp completions)
+            (if (equal (car completions) top)
+                (progn
+                  (setcdr last (append (nreverse before) (cdr last)))
+                  (setq completion-all-sorted-completions completions
+                        completions nil))
+              (push (car completions) before)
+              (setq completions (cdr completions)))))))
+    (icomplete-exhibit)))
+
+(with-eval-after-load 'icomplete
+  (add-hook 'consult--completion-refresh-hook #'consult--icomplete-refresh))
+
+(provide 'consult)
 ;;; consult.el ends here
