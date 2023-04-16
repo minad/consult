@@ -1479,13 +1479,12 @@ The function can be used as the `:state' argument of `consult--read'."
   (let ((saved-min (point-min-marker))
         (saved-max (point-max-marker))
         (saved-pos (point-marker))
-        overlays restore)
+        restore)
     (set-marker-insertion-type saved-max t) ;; Grow when text is inserted
     (lambda (action cand)
       (when (eq action 'preview)
         (mapc #'funcall restore)
-        (mapc #'delete-overlay overlays)
-        (setq restore nil overlays nil)
+        (setq restore nil)
         (if (not cand)
             ;; If position cannot be previewed, return to saved position
             (let ((saved-buffer (marker-buffer saved-pos)))
@@ -1496,33 +1495,41 @@ The function can be used as the `:state' argument of `consult--read'."
                 (goto-char saved-pos)))
           ;; Candidate can be previewed
           (consult--jump-1 (or (car-safe cand) cand))
-          (setq restore (consult--invisible-open-temporarily)
-                overlays
-                (list (save-excursion
-                        (let ((vbeg (progn (beginning-of-visual-line) (point)))
-                              (vend (progn (end-of-visual-line) (point)))
-                              (end (pos-eol)))
-                          (consult--make-overlay vbeg (if (= vend end) (1+ end) vend)
-                                                 'face 'consult-preview-line
-                                                 'window (selected-window)
-                                                 'priority 1)))))
+          (setq restore (consult--invisible-open-temporarily))
           ;; Ensure that cursor is properly previewed (gh:minad/consult#764)
           (unless (eq cursor-in-non-selected-windows 'box)
-            (push
-             (if (local-variable-p 'cursor-in-non-selected-windows)
-                 (let ((orig cursor-in-non-selected-windows))
-                   (lambda () (setq-local cursor-in-non-selected-windows orig)))
-               (lambda () (kill-local-variable 'cursor-in-non-selected-windows)))
-             restore)
-            (setq-local cursor-in-non-selected-windows 'box))
+            (let ((orig cursor-in-non-selected-windows)
+                  (buf (current-buffer)))
+              (push
+               (if (local-variable-p 'cursor-in-non-selected-windows)
+                   (lambda ()
+                     (when (buffer-live-p buf)
+                       (with-current-buffer buf
+                         (setq-local cursor-in-non-selected-windows orig))))
+                 (lambda ()
+                   (when (buffer-live-p buf)
+                     (with-current-buffer buf
+                       (kill-local-variable 'cursor-in-non-selected-windows)))))
+               restore)
+              (setq-local cursor-in-non-selected-windows 'box)))
           ;; Match previews
-          (dolist (match (cdr-safe cand))
-            (push (consult--make-overlay (+ (point) (car match))
-                                         (+ (point) (cdr match))
-                                         'face 'consult-preview-match
-                                         'window (selected-window)
-                                         'priority 2)
-                  overlays))
+          (let ((overlays
+                 (list (save-excursion
+                         (let ((vbeg (progn (beginning-of-visual-line) (point)))
+                               (vend (progn (end-of-visual-line) (point)))
+                               (end (pos-eol)))
+                           (consult--make-overlay vbeg (if (= vend end) (1+ end) vend)
+                                                  'face 'consult-preview-line
+                                                  'window (selected-window)
+                                                  'priority 1))))))
+            (dolist (match (cdr-safe cand))
+              (push (consult--make-overlay (+ (point) (car match))
+                                           (+ (point) (cdr match))
+                                           'face 'consult-preview-match
+                                           'window (selected-window)
+                                           'priority 2)
+                    overlays))
+            (push (lambda () (mapc #'delete-overlay overlays)) restore))
           (run-hooks 'consult-after-jump-hook))))))
 
 (defun consult--jump-state ()
