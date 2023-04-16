@@ -1479,13 +1479,13 @@ The function can be used as the `:state' argument of `consult--read'."
   (let ((saved-min (point-min-marker))
         (saved-max (point-max-marker))
         (saved-pos (point-marker))
-        overlays invisible)
+        overlays restore)
     (set-marker-insertion-type saved-max t) ;; Grow when text is inserted
     (lambda (action cand)
       (when (eq action 'preview)
-        (mapc #'funcall invisible)
+        (mapc #'funcall restore)
         (mapc #'delete-overlay overlays)
-        (setq invisible nil overlays nil)
+        (setq restore nil overlays nil)
         (if (not cand)
             ;; If position cannot be previewed, return to saved position
             (let ((saved-buffer (marker-buffer saved-pos)))
@@ -1494,9 +1494,9 @@ The function can be used as the `:state' argument of `consult--read'."
                 (set-buffer saved-buffer)
                 (narrow-to-region saved-min saved-max)
                 (goto-char saved-pos)))
-          ;; Handle positions with overlay information
+          ;; Candidate can be previewed
           (consult--jump-1 (or (car-safe cand) cand))
-          (setq invisible (consult--invisible-open-temporarily)
+          (setq restore (consult--invisible-open-temporarily)
                 overlays
                 (list (save-excursion
                         (let ((vbeg (progn (beginning-of-visual-line) (point)))
@@ -1505,11 +1505,17 @@ The function can be used as the `:state' argument of `consult--read'."
                           (consult--make-overlay vbeg (if (= vend end) (1+ end) vend)
                                                  'face 'consult-preview-line
                                                  'window (selected-window)
-                                                 'priority 1)))
-                      (consult--make-overlay (point) (1+ (point))
-                                             'face 'consult-preview-cursor
-                                             'window (selected-window)
-                                             'priority 3)))
+                                                 'priority 1)))))
+          ;; Ensure that cursor is properly previewed (gh:minad/consult#764)
+          (unless (eq cursor-in-non-selected-windows 'box)
+            (push
+             (if (local-variable-p 'cursor-in-non-selected-windows)
+                 (let ((orig cursor-in-non-selected-windows))
+                   (lambda () (setq-local cursor-in-non-selected-windows orig)))
+               (lambda () (kill-local-variable 'cursor-in-non-selected-windows)))
+             restore)
+            (setq-local cursor-in-non-selected-windows 'box))
+          ;; Match previews
           (dolist (match (cdr-safe cand))
             (push (consult--make-overlay (+ (point) (car match))
                                          (+ (point) (cdr match))
