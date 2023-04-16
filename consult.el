@@ -1255,13 +1255,16 @@ ORIG is the original function, HOOKS the arguments."
                 name (file-size-human-readable size))
       (let ((buf (find-file-noselect name 'nowarn (>= size consult-preview-raw-size))))
         (cond
-         ((and (>= size consult-preview-raw-size)
-               (with-current-buffer buf
-                 (save-excursion
-                   (goto-char (point-min))
-                   (search-forward "\0" nil 'noerror))))
-          (kill-buffer buf)
-          (format "Binary file `%s' not previewed literally" name))
+         ((>= size consult-preview-raw-size)
+          (with-current-buffer buf
+            (if (save-excursion
+                  (goto-char (point-min))
+                  (search-forward "\0" nil 'noerror))
+                (progn
+                  (kill-buffer buf)
+                  (format "Binary file `%s' not previewed literally" name))
+              (set-buffer-multibyte t)
+              buf)))
          ((ignore-errors (buffer-local-value 'so-long-detected-p buf))
           (kill-buffer buf)
           (format "File `%s' with long lines not previewed" name))
