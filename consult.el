@@ -2219,7 +2219,7 @@ PROPS are optional properties passed to `make-process'."
         (_ (funcall async action))))))
 
 (defun consult--async-highlight (async builder)
-  "Return ASYNC function which highlights the candidates.
+  "Return a new ASYNC function with candidate highlighting.
 BUILDER is the command line builder function."
   (let (highlight)
     (lambda (action)
