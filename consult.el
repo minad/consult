@@ -1950,6 +1950,13 @@ PLIST is the splitter configuration, including the separator."
 
 ;;;; Asynchronous filtering functions
 
+(defun consult--async-p (fun)
+  "Return t if FUN is an asynchronous completion function."
+  (and (functionp fun)
+       (condition-case nil
+           (progn (funcall fun "" nil 'metadata) nil)
+         (wrong-number-of-arguments t))))
+
 (defmacro consult--with-async (bind &rest body)
   "Setup asynchronous completion in BODY.
 
@@ -1965,7 +1972,7 @@ BIND is the asynchronous function binding."
            ;; `consult--split-setup'.
            (:append
             (lambda ()
-              (when (functionp ,async)
+              (when (consult--async-p ,async)
                 (setq orig-chunk read-process-output-max
                       read-process-output-max new-chunk)
                 (funcall ,async 'setup)
@@ -1987,7 +1994,7 @@ BIND is the asynchronous function binding."
                   (fset hook (lambda (&rest _) (run-at-time 0 nil fun)))
                   (add-hook 'after-change-functions hook nil 'local)
                   (funcall hook)))))
-         (let ((,async (if (functionp ,async) ,async (lambda (_) ,async))))
+         (let ((,async (if (consult--async-p ,async) ,async (lambda (_) ,async))))
            (unwind-protect
                ,(macroexp-progn body)
              (funcall ,async 'destroy)
@@ -2024,7 +2031,7 @@ string   Update with the current user input string.  Return nil."
            (when (eq (window-buffer win) buffer)
              (with-selected-window win
                (run-hooks 'consult--completion-refresh-hook)
-               ;; Interaction between asynchronous completion tables and
+               ;; Interaction between asynchronous completion functions and
                ;; preview: We have to trigger preview immediately when
                ;; candidates arrive (gh:minad/consult#436).
                (when (and consult--preview-function candidates)
@@ -2491,18 +2498,18 @@ PREVIEW-KEY are the preview keys."
                         (propertize ann 'face 'completions-annotations))))))
           cands))
 
-(cl-defun consult--read-1 (candidates &key
-                                      prompt predicate require-match history default
-                                      keymap category initial narrow add-history annotate
-                                      state preview-key sort lookup group inherit-input-method)
+(cl-defun consult--read-1 (table &key
+                                 prompt predicate require-match history default
+                                 keymap category initial narrow add-history annotate
+                                 state preview-key sort lookup group inherit-input-method)
   "See `consult--read' for the documentation of the arguments."
   (consult--minibuffer-with-setup-hook
       (:append (lambda ()
                  (add-hook 'after-change-functions #'consult--tofu-hide-in-minibuffer nil 'local)
-                 (consult--setup-keymap keymap (functionp candidates) narrow preview-key)
+                 (consult--setup-keymap keymap (consult--async-p table) narrow preview-key)
                  (setq-local minibuffer-default-add-function
-                             (apply-partially #'consult--add-history (functionp candidates) add-history))))
-    (consult--with-async (async candidates)
+                             (apply-partially #'consult--add-history (consult--async-p table) add-history))))
+    (consult--with-async (async table)
       ;; NOTE: Do not unnecessarily let-bind the lambdas to avoid over-capturing
       ;; in the interpreter.  This will make closures and the lambda string
       ;; representation larger, which makes debugging much worse.  Fortunately
@@ -2528,9 +2535,13 @@ PREVIEW-KEY are the preview keys."
                                    'consult--completion-candidate-hook)
                 (completing-read prompt
                                  (lambda (str pred action)
-                                   (if (eq action 'metadata)
-                                       metadata
-                                     (complete-with-action action (funcall async nil) str pred)))
+                                   (let ((result (complete-with-action action (funcall async nil) str pred)))
+                                     (if (eq action 'metadata)
+                                         (if (and (eq (car result) 'metadata) (cdr result))
+                                             ;; Merge metadata
+                                             `(metadata ,@(cdr metadata) ,@(cdr result))
+                                           metadata)
+                                       result)))
                                  predicate require-match initial
                                  (if (symbolp history) history (cadr history))
                                  default
@@ -2542,11 +2553,11 @@ PREVIEW-KEY are the preview keys."
           ((pred symbolp)))
         (car result)))))
 
-(cl-defun consult--read (candidates &rest options &key
-                                    prompt predicate require-match history default
-                                    keymap category initial narrow add-history annotate
-                                    state preview-key sort lookup group inherit-input-method)
-  "Enhanced completing read function to select from CANDIDATES.
+(cl-defun consult--read (table &rest options &key
+                               prompt predicate require-match history default
+                               keymap category initial narrow add-history annotate
+                               state preview-key sort lookup group inherit-input-method)
+  "Enhanced completing read function to select from TABLE.
 
 The function is a thin wrapper around `completing-read'.  Keyword
 arguments are used instead of positional arguments for code
@@ -2583,17 +2594,17 @@ KEYMAP is a command-specific keymap.
 INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the
 input method."
   ;; supported types
-  (cl-assert (or (functionp candidates)     ;; async table
-                 (obarrayp candidates)      ;; obarray
-                 (hash-table-p candidates)  ;; hash table
-                 (not candidates)           ;; empty list
-                 (stringp (car candidates)) ;; string list
-                 (and (consp (car candidates)) (stringp (caar candidates)))   ;; string alist
-                 (and (consp (car candidates)) (symbolp (caar candidates))))) ;; symbol alist
+  (cl-assert (or (functionp table)     ;; dynamic table or asynchronous function
+                 (obarrayp table)      ;; obarray
+                 (hash-table-p table)  ;; hash table
+                 (not table)           ;; empty list
+                 (stringp (car table)) ;; string list
+                 (and (consp (car table)) (stringp (caar table)))   ;; string alist
+                 (and (consp (car table)) (symbolp (caar table))))) ;; symbol alist
   (ignore prompt predicate require-match history default
           keymap category initial narrow add-history annotate
           state preview-key sort lookup group inherit-input-method)
-  (apply #'consult--read-1 candidates
+  (apply #'consult--read-1 table
          (append
           (consult--customize-get)
           options
