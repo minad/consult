@@ -2,7 +2,7 @@
 #+author: Daniel Mendler
 #+language: en
 
-* Development
+* Version 0.34 (2023-04-21)
 
 - Bugfixes.
 - =consult-org-heading=: Support tag inheritance.
