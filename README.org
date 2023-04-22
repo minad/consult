@@ -960,10 +960,8 @@ There is the [[https://github.com/minad/consult/wiki][Consult wiki]], where we c
 
 Commands and buffer sources allow flexible, individual customization by using
 the =consult-customize= macro. You can override any option passed to the internal
-=consult--read= API. The [[https://github.com/minad/consult/wiki][Consult wiki]] already contains a numerous useful
-configuration examples. Note that since =consult--read= is part of the internal
-API, options could be removed, replaced or renamed in future versions of the
-package.
+=consult--read= API. Note that since =consult--read= is part of the internal API,
+options could be removed, replaced or renamed in future versions of the package.
 
 Useful options are:
 - =:prompt= set the prompt string
