@@ -1085,7 +1085,7 @@ offer functionality based on ~completing-read~.
 - [[https://github.com/astoff/devdocs.el][devdocs]]: Emacs viewer for [[https://devdocs.io/][DevDocs]] with a convenient completion interface.
 - [[https://github.com/d12frosted/flyspell-correct][flyspell-correct]]: Apply spelling corrections by selecting via =completing-read=.
 - [[https://github.com/mhayashi1120/Emacs-wgrep][wgrep]]: Editing of grep buffers, use together with =consult-grep= via =embark-export=.
-- [[https://github.com/iyefrat/all-the-icons-completion][all-the-icons-completion]]: Icons for the completion UI.
+- [[https://github.com/iyefrat/all-the-icons-completion][all-the-icons-completion]], [[https://github.com/rainstormstudio/nerd-icons-completion][nerd-icons-completion]]: Icons for the completion UI.
 
 * Bug reports
 :properties:
