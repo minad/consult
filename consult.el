@@ -4180,7 +4180,7 @@ starts a new Isearch session otherwise."
            (consult--read
             candidates
             :prompt "I-search: "
-            :category 'consult-isearch
+            :category 'consult-isearch-history
             :history t ;; disable history
             :sort nil
             :initial isearch-string
