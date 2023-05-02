@@ -2075,18 +2075,12 @@ SPLIT is the splitting function."
                      (funcall split action))
                     (async-len (length async-str))
                     (input-len (length action))
-                    (prompt (minibuffer-prompt-end))
-                    (field-beg prompt)
-                    (field-idx 0))
+                    (end (minibuffer-prompt-end)))
          ;; Highlight punctuation characters
-         (remove-list-of-text-properties prompt (+ prompt input-len) '(face field))
+         (remove-list-of-text-properties end (+ end input-len) '(face))
          (dolist (hl highlights)
-           (put-text-property field-beg (+ prompt (cdr hl))
-                              'field field-idx)
-           (put-text-property (+ prompt (car hl)) (+ prompt (cdr hl))
-                              'face 'consult-async-split)
-           (setq field-beg (+ prompt (cdr hl))
-                 field-idx (1+ field-idx)))
+           (put-text-property (+ end (car hl)) (+ end (cdr hl))
+                              'face 'consult-async-split))
          (funcall async
                   ;; Pass through if the input is long enough!
                   (if (or force (>= async-len consult-async-min-input))
