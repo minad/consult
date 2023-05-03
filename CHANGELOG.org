@@ -4,6 +4,7 @@
 
 * Development
 
+- Bugfixes.
 - =consult--read= now accepts programmable completion tables as argument, e.g.,
   =completion-table-dynamic= or =completion--file-name-table=. This allows you to
   reuse existing completion tables to write completion commands enhanced with

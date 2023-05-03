@@ -3945,10 +3945,9 @@ There exists no equivalent of this command in Emacs 28."
        preview action
        ;; Only preview bookmarks with the default handler.
        (when-let ((bm (and cand (eq action 'preview) (assoc cand bookmark-alist)))
-                  (handler (bookmark-get-handler bm))
-                  (file (and (or (not handler)
-                                 (eq handler #'bookmark-default-handler))
-                             (bookmark-get-filename bm)))
+                  (handler (or (bookmark-get-handler bm) #'bookmark-default-handler))
+                  ((eq handler #'bookmark-default-handler))
+                  (file (bookmark-get-filename bm))
                   (pos (bookmark-get-position bm))
                   (buf (funcall open file)))
          (set-marker (make-marker) pos buf))))))
