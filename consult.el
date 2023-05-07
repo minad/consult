@@ -375,16 +375,16 @@ Each element of the list must have the form (char name handler)."
   '((t :inherit consult-preview-insertion :extend t))
   "Face used for line previews.")
 
-(defface consult-highlight-mark
-  '((t :inherit match))
-  "Face used for mark positions in completion candidates.
-Used for example by `consult-mark'.  The face should be different
-than the `cursor' face to avoid confusion.")
-
 (defface consult-highlight-match
   '((t :inherit match))
   "Face used to highlight matches in the completion candidates.
 Used for example by `consult-grep'.")
+
+(defface consult-highlight-mark
+  '((t :inherit consult-highlight-match))
+  "Face used for mark positions in completion candidates.
+Used for example by `consult-mark'.  The face should be different
+than the `cursor' face to avoid confusion.")
 
 (defface consult-preview-match
   '((t :inherit isearch))
