@@ -894,12 +894,10 @@ When no project is found and MAY-PROMPT is non-nil ask the user."
   "Show delayed MESSAGE if BODY takes too long.
 Also temporarily increase the GC limit via `consult--with-increased-gc'."
   (declare (indent 1))
-  ;; FIXME `with-delayed-message' is broken in combination with
-  ;; `inhibit-message'. Report this as a bug.
-  (ignore message)
-  `(progn ;; with-delayed-message (1 ,message)
-     (consult--with-increased-gc
-      ,@body)))
+  `(let (set-message-function) ;; bug#63253: Broken `with-delayed-message'
+     (with-delayed-message (1 ,message)
+       (consult--with-increased-gc
+        ,@body))))
 
 (defun consult--count-lines (pos)
   "Move to position POS and return number of lines."
