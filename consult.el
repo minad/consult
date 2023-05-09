@@ -1387,7 +1387,8 @@ ORIG is the original function, HOOKS the arguments."
 See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
   (if (and (derived-mode-p #'org-mode) (fboundp 'org-fold-show-set-visibility))
       ;; New Org 9.6 fold-core API
-      (org-fold-show-set-visibility 'canonical)
+      (let ((inhibit-redisplay t)) ;; HACK: Prevent flicker due to premature redisplay
+        (org-fold-show-set-visibility 'canonical))
     (dolist (ov (overlays-in (pos-bol) (pos-eol)))
       (when-let (fun (overlay-get ov 'isearch-open-invisible))
         (when (invisible-p (overlay-get ov 'invisible))
@@ -1425,7 +1426,8 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
                                  (when (markerp end) (set-marker end nil)))
                                (kill-local-variable 'consult--org-fold-regions))))))))
               (add-hook 'minibuffer-exit-hook hook))))
-        (org-fold-show-set-visibility 'canonical)
+        (let ((inhibit-redisplay t)) ;; HACK: Prevent flicker due to premature redisplay
+          (org-fold-show-set-visibility 'canonical))
         (list (lambda ()
                 (pcase-dolist (`(,beg ,end ,spec) consult--org-fold-regions)
                   (org-fold-core-region beg end t spec)))))
