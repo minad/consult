@@ -3742,7 +3742,8 @@ narrowing and the settings `consult-goto-line-numbers' and
 
 The list of features is searched for files belonging to the modes.
 From these files, the commands are extracted."
-  (let* ((buffer (current-buffer))
+  (let* ((case-fold-search)
+         (buffer (current-buffer))
          (command-filter (consult--regexp-filter (seq-filter #'stringp consult-mode-command-filter)))
          (feature-filter (seq-filter #'symbolp consult-mode-command-filter))
          (minor-hash (consult--string-hash minor-mode-list))
@@ -4385,7 +4386,8 @@ AS is a conversion function."
     (when (or filter mode as root)
       (let ((mode (ensure-list mode))
             (exclude-re (consult--regexp-filter exclude))
-            (include-re (consult--regexp-filter include)))
+            (include-re (consult--regexp-filter include))
+            (case-fold-search))
         (consult--keep! buffers
           (and
            (or (not mode)
