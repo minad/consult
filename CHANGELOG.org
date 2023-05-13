@@ -10,6 +10,7 @@
   reuse existing completion tables to write completion commands enhanced with
   Consult candidate preview.
 - Replace =consult-preview-cursor= face with =cursor-highlight-mark=.
+- Change calling convention of =consult-focus-lines= and =consult-keep-lines=.
 
 * Version 0.34 (2023-04-21)
 
