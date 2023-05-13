@@ -3487,7 +3487,7 @@ to `consult--buffer-query'."
         (when font-lock-orig (font-lock-mode 1))))))
 
 ;;;###autoload
-(defun consult-keep-lines (&optional filter initial)
+(defun consult-keep-lines (filter &optional initial)
   "Select a subset of the lines in the current buffer with live preview.
 
 The selected lines are kept and the other lines are deleted.  When called
@@ -3589,7 +3589,7 @@ INITIAL is the initial input."
           (mapc #'delete-overlay overlays)
           (goto-char pt-orig))
          ((equal input "")
-          (consult-focus-lines 'show)
+          (consult-focus-lines nil 'show)
           (goto-char pt-orig))
          (t
           ;; Successfully terminated -> Remember invisible overlays
@@ -3603,7 +3603,7 @@ INITIAL is the initial input."
                        pt-orig))))))))
 
 ;;;###autoload
-(defun consult-focus-lines (&optional show filter initial)
+(defun consult-focus-lines (filter &optional show initial)
   "Hide or show lines using overlays.
 
 The selected lines are shown and the other lines hidden.  When called
@@ -3616,11 +3616,11 @@ filtering is performed by a FILTER function.  This command obeys narrowing.
 FILTER is the filter function.
 INITIAL is the initial input."
   (interactive
-   (list current-prefix-arg
-         (lambda (pattern cands)
+   (list (lambda (pattern cands)
            ;; Use consult-location completion category when filtering lines
            (consult--completion-filter-dispatch
-            pattern cands 'consult-location nil))))
+            pattern cands 'consult-location nil))
+         current-prefix-arg))
   (if show
       (progn
         (mapc #'delete-overlay consult--focus-lines-overlays)
