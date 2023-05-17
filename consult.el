@@ -238,7 +238,7 @@ See `consult--multi' for a description of the source data structure."
   '(;; Filter commands
     "-mode\\'" "--"
     ;; Filter whole features
-    simple mwheel time so-long recentf)
+    simple mwheel time so-long recentf tab-bar tab-line)
   "Filter commands for `consult-mode-command'."
   :type '(repeat (choice symbol regexp)))
 
