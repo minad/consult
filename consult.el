@@ -321,7 +321,8 @@ individual keys must be strings accepted by `key-valid-p'."
   "Number of files to keep open at once during preview."
   :type 'natnum)
 
-(defcustom consult-preview-excluded-files nil
+(defcustom consult-preview-excluded-files
+  '("\\`/[^/|:]+:") ;; Do not preview remote files
   "List of regexps matched against names of files, which are not previewed."
   :type '(repeat regexp))
 

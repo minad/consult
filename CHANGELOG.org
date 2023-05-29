@@ -14,6 +14,7 @@
 - The regexps in =consult-buffer-filter= are matched case sensitively now.
   Similarly, the =INCLUDE= and =EXCLUDE= arguments of =consult--buffer-query= are also
   case sensitive.
+- Do not preview remote files by default, see =consult-preview-excluded-files=.
 
 * Version 0.34 (2023-04-21)
 
