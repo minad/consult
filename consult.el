@@ -2966,8 +2966,8 @@ These configuration options are supported:
                               (plist-get config :preview-key)
                             consult-preview-key))
              (initial (buffer-substring-no-properties start end))
-             (metadata (completion-metadata initial collection predicate))
-             (threshold (or (plist-get config :cycle-threshold) (completion--cycle-threshold metadata)))
+             (threshold (or (plist-get config :cycle-threshold)
+                            (completion--cycle-threshold (completion-metadata initial collection predicate))))
              (all (completion-all-completions initial collection predicate (length initial)))
              ;; Wrap all annotation functions to ensure that they are executed
              ;; in the original buffer.
@@ -2991,7 +2991,6 @@ These configuration options are supported:
                  (and completion-cycling completion-all-sorted-completions)))
         (completion--in-region start end collection predicate)
       (let* ((limit (car (completion-boundaries initial collection predicate "")))
-             (category (completion-metadata-get metadata 'category))
              (completion
               (cond
                ((atom all) nil)
@@ -3003,44 +3002,18 @@ These configuration options are supported:
                        ;; preview state
                        (consult--insertion-preview start end)
                        ;; transformation function
-                       (if (eq category 'file)
-                           (cond
-                            ;; Transform absolute file names
-                            ((file-name-absolute-p initial)
-                             (lambda (_narrow _inp cand)
-                               (substitute-in-file-name cand)))
-                            ;; Ensure that ./ prefix is kept for the shell
-                            ;; (gh:minad/consult#356).
-                            ((string-match-p "\\`\\.\\.?/" initial)
-                             (lambda (_narrow _inp cand)
-                               (setq cand (file-relative-name (substitute-in-file-name cand)))
-                               (if (string-match-p "\\`\\.\\.?/" cand) cand (concat "./" cand))))
-                            ;; Simplify relative file names
-                            (t
-                             (lambda (_narrow _inp cand)
-                               (file-relative-name (substitute-in-file-name cand)))))
-                         (lambda (_narrow _inp cand) cand))
+                       (lambda (_narrow _inp cand) cand)
                        ;; candidate function
                        (apply-partially #'run-hook-with-args-until-success
                                         'consult--completion-candidate-hook)
                      (consult--local-let ((enable-recursive-minibuffers t))
-                       (if (eq category 'file)
-                           ;; We use read-file-name, since many completion UIs make it nicer to
-                           ;; navigate the file system this way; and we insert the initial text
-                           ;; directly into the minibuffer to allow the user's completion
-                           ;; styles to expand it as appropriate (particularly useful for the
-                           ;; partial-completion and initials styles, which allow for very
-                           ;; condensed path specification).
-                           (consult--minibuffer-with-setup-hook
-                               (lambda () (insert initial))
-                             (read-file-name prompt nil initial require-match nil predicate))
-                         ;; Evaluate completion table in the original buffer.
-                         ;; This is a reasonable thing to do and required by
-                         ;; some completion tables in particular by lsp-mode.
-                         ;; See gh:minad/vertico#61.
-                         (completing-read prompt
-                                          (consult--completion-table-in-buffer collection)
-                                          predicate require-match initial)))))))))
+                       ;; Evaluate completion table in the original buffer.
+                       ;; This is a reasonable thing to do and required by
+                       ;; some completion tables in particular by lsp-mode.
+                       ;; See gh:minad/vertico#61.
+                       (completing-read prompt
+                                        (consult--completion-table-in-buffer collection)
+                                        predicate require-match initial))))))))
         (if completion
             (progn
               ;; bug#55205: completion--replace removes properties!
