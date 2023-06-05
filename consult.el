@@ -574,14 +574,20 @@ We use invalid characters outside the Unicode range.")
   (if (functionp table)
       (consult--in-buffer
        (lambda (str pred action)
-         (if (eq action 'metadata)
-             (mapcar
-              (lambda (x)
-                (if (and (string-suffix-p (symbol-name (car-safe x)) "-function") (cdr x))
-                    (cons (car x) (consult--in-buffer (cdr x)))
-                  x))
-              (funcall table str pred action))
-           (funcall table str pred action)))
+         (let ((result (funcall table str pred action)))
+           (pcase action
+             ('metadata
+              (setq result
+                    (mapcar
+                     (lambda (x)
+                       (if (and (string-suffix-p (symbol-name (car-safe x)) "-function") (cdr x))
+                           (cons (car x) (consult--in-buffer (cdr x)))
+                         x))
+                     result)))
+             ((and 'completion--unquote (guard (functionp (cadr result))))
+              (cl-callf consult--in-buffer (cadr result) buffer)
+              (cl-callf consult--in-buffer (cadddr result) buffer)))
+           result))
        buffer)
     table))
 
