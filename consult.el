@@ -2972,8 +2972,13 @@ These configuration options are supported:
                               (plist-get config :preview-key)
                             consult-preview-key))
              (initial (buffer-substring-no-properties start end))
+             (metadata (completion-metadata initial collection predicate))
+             ;; NOTE: `minibuffer-completing-file-name' is mostly
+             ;; deprecated. Packages should instead use the completion metadata!
+             (minibuffer-completing-file-name
+              (eq 'file (completion-metadata-get metadata 'category)))
              (threshold (or (plist-get config :cycle-threshold)
-                            (completion--cycle-threshold (completion-metadata initial collection predicate))))
+                            (completion--cycle-threshold metadata)))
              (all (completion-all-completions initial collection predicate (length initial)))
              ;; Wrap all annotation functions to ensure that they are executed
              ;; in the original buffer.
