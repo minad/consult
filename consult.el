@@ -4756,10 +4756,9 @@ input."
 
 (defun consult--grep-lookahead-p (&rest cmd)
   "Return t if grep CMD supports look-ahead."
-  (with-temp-buffer
-    (insert "xaxbx")
-    (eq 0 (apply #'call-process-region (point-min) (point-max)
-                 (car cmd) nil nil nil `(,@(cdr cmd) "^(?=.*b)(?=.*a)")))))
+  (eq 0 (process-file-shell-command
+         (concat "echo xaxbx | "
+                 (mapconcat #'shell-quote-argument `(,@cmd "^(?=.*b)(?=.*a)") " ")))))
 
 (defun consult--grep-make-builder (paths)
   "Build grep command line and grep across PATHS."
@@ -4916,7 +4915,7 @@ INITIAL is initial input."
   (let* ((cmd (seq-mapcat (lambda (x)
                             (if (equal x ".") paths (list x)))
                           (consult--build-args consult-find-args)))
-         (type (if (eq 0 (call-process-shell-command
+         (type (if (eq 0 (process-file-shell-command
                           (concat (car cmd) " -regextype emacs -version")))
                    'emacs 'basic)))
     (lambda (input)
