@@ -30,6 +30,14 @@
 
 (defvar consult-kmacro--history nil)
 
+(defcustom consult-kmacro-runner nil
+  "A function used to run the keyboard macro chosen by `consult-kmacro'.
+
+This function receives two arguments: the macro (as a function)
+and the prefix argument of `consult-kmacro'."
+  :group 'consult
+  :type '(choice function (const nil)))
+
 (defun consult-kmacro--candidates ()
   "Return alist of kmacros and indices."
   (thread-last
@@ -66,7 +74,10 @@
   "Run a chosen keyboard macro.
 
 With prefix ARG, run the macro that many times.
-Macros containing mouse clicks are omitted."
+Macros containing mouse clicks are omitted.
+
+When `consult-kmacro-runner' is non-nil, it is used
+to run the chosen keyboard macro."
   (interactive "p")
   (let ((km (consult--read
              (or (consult-kmacro--candidates)
@@ -82,6 +93,7 @@ Macros containing mouse clicks are omitted."
              :lookup #'consult--lookup-candidate)))
     (unless km (user-error "No kmacro selected"))
     (funcall
+     (or consult-kmacro-runner #'funcall)
      ;; Kmacros are lambdas (oclosures) on Emacs 29
      (if (eval-when-compile (> emacs-major-version 28))
          km
