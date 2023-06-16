@@ -156,13 +156,14 @@ of the line after the prompt."
 nil shows all `custom-available-themes'."
   :type '(repeat (choice symbol regexp)))
 
-(defcustom consult-after-jump-hook '(recenter)
+(defcustom consult-after-jump-hook (list #'consult--maybe-recenter)
   "Function called after jumping to a location.
 
-Commonly used functions for this hook are `recenter' and
-`reposition-window'.  You may want to add a function which pulses the
-current line, e.g., `pulse-momentary-highlight-one-line' is supported on
-Emacs 28 and newer.  The hook called during preview and for the jump
+Commonly used functions for this hook are
+`consult--maybe-recenter', `recenter' and `reposition-window'.
+You may want to add a function which pulses the current line,
+e.g., `pulse-momentary-highlight-one-line' is supported on Emacs
+28 and newer.  The hook called during preview and for the jump
 after selection."
   :type 'hook)
 
@@ -555,6 +556,11 @@ We use invalid characters outside the Unicode range.")
   "Stored regions for the org-fold API.")
 
 ;;;; Miscellaneous helper functions
+
+(defun consult--maybe-recenter ()
+  "Maybe recenter current window if point is outside of visible region."
+  (when (or (< (point) (window-start)) (> (point) (window-end nil t)))
+    (recenter)))
 
 (defun consult--key-parse (key)
   "Parse KEY or signal error if invalid."
@@ -1451,7 +1457,7 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
       restore)))
 
 (defun consult--jump-1 (pos)
-  "Go to POS and recenter."
+  "Go to POS, switch buffer and widen if necessary."
   (if (and (markerp pos) (not (marker-buffer pos)))
       ;; Only print a message, no error in order to not mess
       ;; with the minibuffer update hook.
@@ -1466,7 +1472,9 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
       (goto-char pos))))
 
 (defun consult--jump (pos)
-  "Push current position to mark ring, go to POS and recenter."
+  "Jump to POS.
+First push current position to mark ring, then move to new
+position and run `consult-after-jump-hook'."
   (when pos
     ;; Extract marker from list with with overlay positions, see `consult--line-match'
     (when (consp pos) (setq pos (car pos)))
