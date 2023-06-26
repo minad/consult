@@ -179,8 +179,10 @@ their descriptions.
 #+findex: consult-outline
 #+findex: consult-imenu
 #+findex: consult-imenu-multi
-- =consult-goto-line=: Jump to line number enhanced with live preview.
-  This is a drop-in replacement for =goto-line=.
+- =consult-goto-line=: Jump to line number enhanced with live preview. This is a
+  drop-in replacement for =goto-line=. Enter a line number to jump to the first
+  column of the given line. Alternatively enter =line:column= in order to jump to
+  a specific column.
 - =consult-mark=: Jump to a marker in the =mark-ring=. Supports live
   preview and recursive editing.
 - =consult-global-mark=: Jump to a marker in the =global-mark-ring=.

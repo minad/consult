@@ -3636,31 +3636,36 @@ INITIAL is the initial input."
 (defun consult--goto-line-position (str msg)
   "Transform input STR to line number.
 Print an error message with MSG function."
-  (if-let (line (and str
-                     (string-match-p "\\`[[:digit:]]+\\'" str)
-                     (string-to-number str)))
-      (let ((pos (save-excursion
-                   (save-restriction
-                     (when consult-line-numbers-widen
-                       (widen))
-                     (goto-char (point-min))
-                     (forward-line (1- line))
-                     (point)))))
+  (save-match-data
+  (if (and str (string-match "\\`\\([[:digit:]]+\\):?\\([[:digit:]]*\\)\\'" str))
+      (let* ((line (string-to-number (match-string 1 str)))
+             (col (string-to-number (match-string 2 str)))
+             (pos (save-excursion
+                    (save-restriction
+                      (when consult-line-numbers-widen
+                        (widen))
+                      (goto-char (point-min))
+                      (forward-line (1- line))
+                      (when (> col 0)
+                        (goto-char (min (+ (point) (1- col)) (pos-eol))))
+                      (point)))))
         (if (consult--in-range-p pos)
             pos
           (funcall msg "Line number out of range.")
           nil))
     (when (and str (not (equal str "")))
       (funcall msg "Please enter a number."))
-    nil))
+    nil)))
 
 ;;;###autoload
 (defun consult-goto-line (&optional arg)
   "Read line number and jump to the line with preview.
 
-Jump directly if a line number is given as prefix ARG.  The command respects
-narrowing and the settings `consult-goto-line-numbers' and
-`consult-line-numbers-widen'."
+Enter either a line number to jump to the first column of the
+given line or line:column in order to jump to a specific column.
+Jump directly if a line number is given as prefix ARG.  The
+command respects narrowing and the settings
+`consult-goto-line-numbers' and `consult-line-numbers-widen'."
   (interactive "P")
   (if arg
       (call-interactively #'goto-line)

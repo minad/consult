@@ -16,6 +16,7 @@
   case sensitive.
 - Do not preview remote files by default, see =consult-preview-excluded-files=.
 - Use =consult--maybe-recenter= instead of =recenter= in =consult-after-jump-hook=.
+- =consult-goto-line=: Support =line:column= input.
 
 * Version 0.34 (2023-04-21)
 
