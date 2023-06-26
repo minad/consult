@@ -3637,21 +3637,21 @@ INITIAL is the initial input."
   "Transform input STR to line number.
 Print an error message with MSG function."
   (save-match-data
-  (if (and str (string-match "\\`\\([[:digit:]]+\\):?\\([[:digit:]]*\\)\\'" str))
-      (let ((line (string-to-number (match-string 1 str)))
-            (col (string-to-number (match-string 2 str))))
-        (save-excursion
-          (save-restriction
-            (when consult-line-numbers-widen
-              (widen))
-            (goto-char (point-min))
-            (forward-line (1- line))
-            (when (> col 0)
-              (goto-char (min (+ (point) (1- col)) (pos-eol))))
-            (point))))
-    (when (and str (not (equal str "")))
-      (funcall msg "Please enter a number."))
-    nil)))
+    (if (and str (string-match "\\`\\([[:digit:]]+\\):?\\([[:digit:]]*\\)\\'" str))
+        (let ((line (string-to-number (match-string 1 str)))
+              (col (string-to-number (match-string 2 str))))
+          (save-excursion
+            (save-restriction
+              (when consult-line-numbers-widen
+                (widen))
+              (goto-char (point-min))
+              (forward-line (1- line))
+              (when (> col 0)
+                (goto-char (min (+ (point) (1- col)) (pos-eol))))
+              (point))))
+      (when (and str (not (equal str "")))
+        (funcall msg "Please enter a number."))
+      nil)))
 
 ;;;###autoload
 (defun consult-goto-line (&optional arg)
