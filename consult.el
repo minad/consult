@@ -934,7 +934,7 @@ Also temporarily increase the GC limit via `consult--with-increased-gc'."
           ;; Location data might be invalid by now!
           (ignore-errors
             (forward-line (1- line))
-            (forward-char column))
+            (goto-char (min (+ (point) column) (pos-eol))))
           (point-marker))))))
 
 (defun consult--line-prefix (&optional curr-line)
