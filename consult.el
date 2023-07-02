@@ -5,7 +5,7 @@
 ;; Author: Daniel Mendler and Consult contributors
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2020
-;; Version: 0.34
+;; Version: 0.35
 ;; Package-Requires: ((emacs "27.1") (compat "29.1.4.1"))
 ;; Homepage: https://github.com/minad/consult
 ;; Keywords: matching, files, completion

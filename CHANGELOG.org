@@ -2,7 +2,7 @@
 #+author: Daniel Mendler
 #+language: en
 
-* Development
+* Version 0.35 (2023-07-02)
 
 - Bugfixes.
 - =consult--read= now accepts programmable completion tables as argument, e.g.,
