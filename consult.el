@@ -2147,51 +2147,7 @@ PROPS are optional properties passed to `make-process'."
          (setq last-args nil))
         ((pred stringp)
          (funcall async action)
-         (let* ((flush t)
-                (rest "")
-                (proc-filter
-                 (lambda (_ out)
-                   (when flush
-                     (setq flush nil)
-                     (funcall async 'flush))
-                   (let ((lines (split-string out "[\r\n]+")))
-                     (if (not (cdr lines))
-                         (setq rest (concat rest (car lines)))
-                       (setcar lines (concat rest (car lines)))
-                       (let* ((len (length lines))
-                              (last (nthcdr (- len 2) lines)))
-                         (setq rest (cadr last)
-                               count (+ count len -1))
-                         (setcdr last nil)
-                         (funcall async lines))))))
-                (proc-sentinel
-                 (lambda (_ event)
-                   (when flush
-                     (setq flush nil)
-                     (funcall async 'flush))
-                   (funcall async 'indicator
-                            (cond
-                             ((string-prefix-p "killed" event)   'killed)
-                             ((string-prefix-p "finished" event) 'finished)
-                             (t 'failed)))
-                   (when (and (string-prefix-p "finished" event) (not (equal rest "")))
-                     (cl-incf count)
-                     (funcall async (list rest)))
-                   (consult--async-log
-                    "consult--async-process sentinel: event=%s lines=%d\n"
-                    (string-trim event) count)
-                   (when (> (buffer-size proc-buf) 0)
-                     (with-current-buffer (get-buffer-create consult--async-log)
-                       (goto-char (point-max))
-                       (insert ">>>>> stderr >>>>>\n")
-                       (let ((beg (point)))
-                         (insert-buffer-substring proc-buf)
-                         (save-excursion
-                           (goto-char beg)
-                           (message #("%s" 0 2 (face error))
-                                    (buffer-substring-no-properties (pos-bol) (pos-eol)))))
-                       (insert "<<<<< stderr <<<<<\n")))))
-                (args (funcall builder action)))
+         (let* ((args (funcall builder action)))
            (unless (stringp (car args))
              (setq args (car args)))
            (unless (equal args last-args)
@@ -2201,20 +2157,65 @@ PROPS are optional properties passed to `make-process'."
                (kill-buffer proc-buf)
                (setq proc nil proc-buf nil))
              (when args
-               (funcall async 'indicator 'running)
-               (consult--async-log "consult--async-process started %S\n" args)
-               (setq count 0
-                     proc-buf (generate-new-buffer " *consult-async-stderr*")
-                     proc (apply #'make-process
-                                 `(,@props
-                                   :connection-type pipe
-                                   :name ,(car args)
-                                   ;;; XXX tramp bug, the stderr buffer must be empty
-                                   :stderr ,proc-buf
-                                   :noquery t
-                                   :command ,args
-                                   :filter ,proc-filter
-                                   :sentinel ,proc-sentinel))))))
+               (let* ((flush t)
+                      (rest "")
+                      (proc-filter
+                       (lambda (_ out)
+                         (when flush
+                           (setq flush nil)
+                           (funcall async 'flush))
+                         (let ((lines (split-string out "[\r\n]+")))
+                           (if (not (cdr lines))
+                               (setq rest (concat rest (car lines)))
+                             (setcar lines (concat rest (car lines)))
+                             (let* ((len (length lines))
+                                    (last (nthcdr (- len 2) lines)))
+                               (setq rest (cadr last)
+                                     count (+ count len -1))
+                               (setcdr last nil)
+                               (funcall async lines))))))
+                      (proc-sentinel
+                       (lambda (_ event)
+                         (when flush
+                           (setq flush nil)
+                           (funcall async 'flush))
+                         (funcall async 'indicator
+                                  (cond
+                                   ((string-prefix-p "killed" event)   'killed)
+                                   ((string-prefix-p "finished" event) 'finished)
+                                   (t 'failed)))
+                         (when (and (string-prefix-p "finished" event) (not (equal rest "")))
+                           (cl-incf count)
+                           (funcall async (list rest)))
+                         (consult--async-log
+                          "consult--async-process sentinel: event=%s lines=%d\n"
+                          (string-trim event) count)
+                         (when (> (buffer-size proc-buf) 0)
+                           (with-current-buffer (get-buffer-create consult--async-log)
+                             (goto-char (point-max))
+                             (insert ">>>>> stderr >>>>>\n")
+                             (let ((beg (point)))
+                               (insert-buffer-substring proc-buf)
+                               (save-excursion
+                                 (goto-char beg)
+                                 (message #("%s" 0 2 (face error))
+                                          (buffer-substring-no-properties (pos-bol) (pos-eol)))))
+                             (insert "<<<<< stderr <<<<<\n")))))
+                      (process-adaptive-read-buffering nil))
+                 (funcall async 'indicator 'running)
+                 (consult--async-log "consult--async-process started %S\n" args)
+                 (setq count 0
+                       proc-buf (generate-new-buffer " *consult-async-stderr*")
+                       proc (apply #'make-process
+                                   `(,@props
+                                     :connection-type pipe
+                                     :name ,(car args)
+                                     ;;; XXX tramp bug, the stderr buffer must be empty
+                                     :stderr ,proc-buf
+                                     :noquery t
+                                     :command ,args
+                                     :filter ,proc-filter
+                                     :sentinel ,proc-sentinel)))))))
          nil)
         ('destroy
          (when proc
