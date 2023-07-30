@@ -90,7 +90,7 @@ Each element of the list must have the form (char . name).")
 
 (cl-defmethod consult-register--describe ((val (head buffer)))
   "Describe buffer register VAL."
-  (list (propertize (cdr val) 'face 'consult-buffer)
+  (list (propertize (format "%s" (cdr val)) 'face 'consult-buffer)
         'consult--type ?f 'multi-category `(buffer . ,(cdr val))))
 
 (cl-defmethod consult-register--describe ((val (head file-query)))
