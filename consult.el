@@ -1270,7 +1270,7 @@ ORIG is the original function, HOOKS the arguments."
           (with-current-buffer buf
             (if (save-excursion
                   (goto-char (point-min))
-                  (search-forward "\0" nil 'noerror))
+                  (search-forward "\0" 40 'noerror))
                 (progn
                   (kill-buffer buf)
                   (format "Binary file `%s' not previewed literally" name))
