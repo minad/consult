@@ -3367,7 +3367,7 @@ BUFFERS is the list of buffers."
 By default search across all project buffers.  If the prefix
 argument QUERY is non-nil, all buffers are searched.  Optional
 INITIAL input can be provided.  The symbol at point and the last
-`isearch-string' is added to the future history.In order to
+`isearch-string' is added to the future history.  In order to
 search a subset of buffers, QUERY can be set to a plist according
 to `consult--buffer-query'."
   (interactive "P")
