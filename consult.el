@@ -4344,9 +4344,10 @@ DIR can be project, nil or a path."
    (dir (expand-file-name dir))))
 
 (defun consult--buffer-query-prompt (prompt query)
-  "Buffer query function returning a scope description.
-PROMPT is the prompt format string.
-QUERY is passed to `consult--buffer-query'."
+  "Return a list of buffers and create an appropriate prompt string.
+Return a pair of a prompt string and a list of buffers.  PROMPT
+is the prefix of the prompt string.  QUERY specifies the buffers
+to search and is passed to `consult--buffer-query'."
   (let* ((dir (plist-get query :directory))
          (ndir (consult--normalize-directory dir))
          (buffers (apply #'consult--buffer-query :directory ndir query))
@@ -4363,7 +4364,7 @@ QUERY is passed to `consult--buffer-query'."
 (cl-defun consult--buffer-query (&key sort directory mode as predicate (filter t)
                                       include (exclude consult-buffer-filter))
   "Buffer query function.
-DIRECTORY can either be project or a path.
+DIRECTORY can either be the symbol project or a file name.
 SORT can be visibility, alpha or nil.
 FILTER can be either t, nil or invert.
 EXCLUDE is a list of regexps.
