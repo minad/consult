@@ -4706,7 +4706,7 @@ BUILDER is the command line builder function."
 
 (defun consult--grep-position (cand &optional find-file)
   "Return the grep position marker for CAND.
-FIND-FILE is the file open function, defaulting to `find-file'."
+FIND-FILE is the file open function, defaulting to `find-file-noselect'."
   (when cand
     (let* ((file-end (next-single-property-change 0 'face cand))
            (line-end (next-single-property-change (1+ file-end) 'face cand))
@@ -4714,7 +4714,7 @@ FIND-FILE is the file open function, defaulting to `find-file'."
            (file (substring-no-properties cand 0 file-end))
            (line (string-to-number (substring-no-properties cand (+ 1 file-end) line-end))))
       (when-let (pos (consult--marker-from-line-column
-                      (funcall (or find-file #'find-file) file)
+                      (funcall (or find-file #'find-file-noselect) file)
                       line (or (car matches) 0)))
         (cons pos (cdr matches))))))
 
