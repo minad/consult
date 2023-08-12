@@ -1037,15 +1037,15 @@ I use and recommend this combination of packages:
 - [[https://github.com/minad/marginalia][marginalia]]: Annotations for the completion candidates
 - [[https://github.com/oantolin/embark][embark and embark-consult]]: Action commands, which can act on the completion candidates
 - [[https://github.com/oantolin/orderless][orderless]]: Completion style which offers flexible candidate filtering
+- [[https://github.com/mhayashi1120/Emacs-wgrep][wgrep]]: Editing of grep buffers. Use with =consult-grep= via =embark-export=.
 
-There exist many other fine completion UIs beside Vertico, which are supported
-by Consult. Give them a try and find out which interaction model fits best for
-you.
+There exist multiple fine completion UIs beside Vertico, which are supported by
+Consult. Give them a try and find out which interaction model fits best for you.
 
 - The builtin completion UI, which pops up the =*Completions*= buffer.
 - The builtin =icomplete-vertical-mode= in Emacs 28.
 - [[https://git.sr.ht/~protesilaos/mct][mct by Protesilaos Stavrou]]: Minibuffer and Completions in Tandem, which builds
-  on the default completion UI (development currently [[https://protesilaos.com/codelog/2022-04-14-emacs-discontinue-mct/][discontinued]]).
+  on the default completion UI.
 
 Note that all packages are independent and can be exchanged with alternative
 components, since there exist no hard dependencies. Furthermore it is possible
@@ -1096,8 +1096,6 @@ offer functionality based on ~completing-read~.
 - [[https://github.com/minad/bookmark-view][bookmark-view]]: Store window configuration as bookmarks, possible integration with =consult-buffer=.
 - [[https://github.com/bdarcus/citar][citar]]: Versatile package for citation insertion and bibliography management.
 - [[https://github.com/astoff/devdocs.el][devdocs]]: Emacs viewer for [[https://devdocs.io/][DevDocs]] with a convenient completion interface.
-- [[https://github.com/d12frosted/flyspell-correct][flyspell-correct]]: Apply spelling corrections by selecting via =completing-read=.
-- [[https://github.com/mhayashi1120/Emacs-wgrep][wgrep]]: Editing of grep buffers, use together with =consult-grep= via =embark-export=.
 - [[https://github.com/iyefrat/all-the-icons-completion][all-the-icons-completion]], [[https://github.com/rainstormstudio/nerd-icons-completion][nerd-icons-completion]]: Icons for the completion UI.
 
 * Bug reports
