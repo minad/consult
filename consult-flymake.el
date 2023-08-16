@@ -27,6 +27,7 @@
 
 (require 'consult)
 (require 'flymake)
+(eval-when-compile (require 'cl-lib))
 
 (defconst consult-flymake--narrow
   '((?e . "Error")
@@ -41,26 +42,29 @@ DIAGS should be a list of diagnostics as returned from `flymake-diagnostics'."
            (lambda (diag)
              (let ((buffer (flymake-diagnostic-buffer diag))
                    (type (flymake-diagnostic-type diag)))
-               (with-current-buffer buffer
-                 (save-excursion
-                   (save-restriction
-                     (widen)
-                     (goto-char (flymake-diagnostic-beg diag))
-                     (list (buffer-name buffer)
-                           (line-number-at-pos)
-                           type
-                           (flymake-diagnostic-text diag)
-                           (point-marker)
-                           (flymake-diagnostic-end diag)
-                           (pcase (flymake--lookup-type-property type 'flymake-category)
-                              ('flymake-error ?e)
-                              ('flymake-warning ?w)
-                              (_ ?n))))))))
-           (seq-filter (lambda (diag)
-                         (buffer-live-p (flymake-diagnostic-buffer diag)))
-                       diags)))
-         (buffer-width (apply #'max (mapcar (lambda (x) (length (nth 0 x))) diags)))
-         (line-width (apply #'max (mapcar (lambda (x) (length (number-to-string (nth 1 x)))) diags)))
+               (when (buffer-live-p buffer)
+                 (with-current-buffer buffer
+                   (save-excursion
+                     (without-restriction
+                       (goto-char (flymake-diagnostic-beg diag))
+                       (list (buffer-name buffer)
+                             (line-number-at-pos)
+                             type
+                             (flymake-diagnostic-text diag)
+                             (point-marker)
+                             (flymake-diagnostic-end diag)
+                             (pcase (flymake--lookup-type-property type 'flymake-category)
+                               ('flymake-error ?e)
+                               ('flymake-warning ?w)
+                               (_ ?n)))))))))
+           diags))
+         (diags (or (delq nil diags)
+                    (user-error "No flymake errors (Status: %s)"
+                                (if (seq-difference (flymake-running-backends)
+                                                    (flymake-reporting-backends))
+                                    'running 'finished))))
+         (buffer-width (cl-loop for x in diags maximize (length (nth 0 x))))
+         (line-width (cl-loop for x in diags maximize (length (number-to-string (nth 1 x)))))
          (fmt (format "%%-%ds %%-%dd %%-7s %%s" buffer-width line-width)))
     (mapcar
      (pcase-lambda (`(,buffer ,line ,type ,text ,beg ,end ,narrow))
@@ -94,15 +98,10 @@ buffers in the current project instead of just the current buffer."
   (consult--forbid-minibuffer)
   (consult--read
    (consult-flymake--candidates
-    (or
      (if-let (((and project (fboundp 'flymake--project-diagnostics)))
               (project (project-current)))
          (flymake--project-diagnostics project)
-       (flymake-diagnostics))
-     (user-error "No flymake errors (Status: %s)"
-                 (if (seq-difference (flymake-running-backends)
-                                     (flymake-reporting-backends))
-                     'running 'finished))))
+       (flymake-diagnostics)))
    :prompt "Flymake diagnostic: "
    :category 'consult-flymake-error
    :history t ;; disable history

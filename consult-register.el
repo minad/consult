@@ -67,8 +67,7 @@ Each element of the list must have the form (char . name).")
   "Describe marker register VAL."
   (with-current-buffer (marker-buffer val)
     (save-excursion
-      (save-restriction
-        (widen)
+      (without-restriction
         (goto-char val)
         (let* ((line (line-number-at-pos))
                (str (propertize (consult--line-with-mark val)

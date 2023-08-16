@@ -928,8 +928,7 @@ Also temporarily increase the GC limit via `consult--with-increased-gc'."
   (when (buffer-live-p buffer)
     (with-current-buffer buffer
       (save-excursion
-        (save-restriction
-          (widen)
+        (without-restriction
           (goto-char (point-min))
           ;; Location data might be invalid by now!
           (ignore-errors

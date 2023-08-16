@@ -117,8 +117,7 @@ TYPES is the mode-specific types configuration."
          ;; Generate imenu, see `imenu--make-index-alist'.
          (items (imenu--truncate-items
                  (save-excursion
-                   (save-restriction
-                     (widen)
+                   (without-restriction
                      (funcall imenu-create-index-function)))))
          (config (cdr (seq-find (lambda (x) (derived-mode-p (car x))) consult-imenu-config))))
     ;; Fix toplevel items, e.g., emacs-lisp-mode toplevel items are functions
