@@ -258,7 +258,7 @@ See `consult--multi' for a description of the source data structure."
   "Command line arguments for grep, see `consult-grep'.
 The dynamically computed arguments are appended.
 Can be either a string, or a list of strings or expressions."
-  :type '(choice string (repeat (choice string expression))))
+  :type '(choice string (repeat (choice string sexp))))
 
 (defcustom consult-git-grep-args
   "git --no-pager grep --null --color=never --ignore-case\
@@ -266,7 +266,7 @@ Can be either a string, or a list of strings or expressions."
   "Command line arguments for git-grep, see `consult-git-grep'.
 The dynamically computed arguments are appended.
 Can be either a string, or a list of strings or expressions."
-  :type '(choice string (repeat (choice string expression))))
+  :type '(choice string (repeat (choice string sexp))))
 
 (defcustom consult-ripgrep-args
   "rg --null --line-buffered --color=never --max-columns=1000 --path-separator /\
@@ -274,28 +274,28 @@ Can be either a string, or a list of strings or expressions."
   "Command line arguments for ripgrep, see `consult-ripgrep'.
 The dynamically computed arguments are appended.
 Can be either a string, or a list of strings or expressions."
-  :type '(choice string (repeat (choice string expression))))
+  :type '(choice string (repeat (choice string sexp))))
 
 (defcustom consult-find-args
   "find . -not ( -wholename */.* -prune )"
   "Command line arguments for find, see `consult-find'.
 The dynamically computed arguments are appended.
 Can be either a string, or a list of strings or expressions."
-  :type '(choice string (repeat (choice string expression))))
+  :type '(choice string (repeat (choice string sexp))))
 
 (defcustom consult-locate-args
   "locate --ignore-case" ;; --existing not supported by Debian plocate
   "Command line arguments for locate, see `consult-locate'.
 The dynamically computed arguments are appended.
 Can be either a string, or a list of strings or expressions."
-  :type '(choice string (repeat (choice string expression))))
+  :type '(choice string (repeat (choice string sexp))))
 
 (defcustom consult-man-args
   "man -k"
   "Command line arguments for man, see `consult-man'.
 The dynamically computed arguments are appended.
 Can be either a string, or a list of strings or expressions."
-  :type '(choice string (repeat (choice string expression))))
+  :type '(choice string (repeat (choice string sexp))))
 
 (defcustom consult-preview-key 'any
   "Preview trigger keys, can be nil, `any', a single key or a list of keys.
