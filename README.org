@@ -700,11 +700,7 @@ can create similar sources for other major modes, e.g., for Eshell.
             (consult--buffer-action (current-buffer))))
         :items
         (lambda ()
-          (mapcar #'buffer-name
-                  (seq-filter
-                   (lambda (x)
-                     (eq (buffer-local-value 'major-mode x) 'org-mode))
-                   (buffer-list))))))
+          (consult--buffer-query :mode 'org-mode :as #'buffer-name))))
 
 (add-to-list 'consult-buffer-sources 'org-source 'append)
 #+end_src
