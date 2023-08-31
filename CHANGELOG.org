@@ -2,6 +2,10 @@
 #+author: Daniel Mendler
 #+language: en
 
+* Development
+
+- Add =consult-fd= based on the fast =fd/fdfind= search utility.
+
 * Version 0.35 (2023-07-02)
 
 - Bugfixes.

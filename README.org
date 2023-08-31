@@ -241,6 +241,7 @@ their descriptions.
 #+findex: consult-ripgrep
 #+findex: consult-git-grep
 #+findex: consult-find
+#+findex: consult-fd
 #+findex: consult-locate
 - =consult-grep=, =consult-ripgrep=, =consult-git-grep=: Search for regular expression
   in files. Consult invokes Grep asynchronously, while you enter the search
@@ -260,12 +261,12 @@ their descriptions.
   Otherwise the =default-directory= is searched. If =consult-grep= is invoked
   with prefix argument =C-u M-s g=, you can specify one or more comma-separated files
   and directories manually.
-- =consult-find=, =consult-locate=: Find file by matching the path against a regexp.
-  Like for =consult-grep=, either the project root or the current directory is the
-  root directory for the search. The input string is treated similarly to
-  =consult-grep=, where the first part is passed to find, and the second part is
-  used for Emacs filtering.  Prefix arguments to =consult-find= work just like those
-  for the consult grep commands.
+- =consult-find=, =consult-fd=, =consult-locate=: Find file by matching the path
+  against a regexp. Like for =consult-grep=, either the project root or the
+  current directory is the root directory for the search. The input string is
+  treated similarly to =consult-grep=, where the first part is passed to find, and
+  the second part is used for Emacs filtering. Prefix arguments to =consult-find=
+  work just like those for the consult grep commands.
 
 ** Compilation
 :properties:
@@ -816,7 +817,7 @@ configuration examples.
          ("M-g i" . consult-imenu)
          ("M-g I" . consult-imenu-multi)
          ;; M-s bindings in `search-map'
-         ("M-s d" . consult-find)
+         ("M-s d" . consult-find)                  ;; Alternative: consult-fd
          ("M-s D" . consult-locate)
          ("M-s g" . consult-grep)
          ("M-s G" . consult-git-grep)
@@ -925,6 +926,7 @@ an overview of all Consult variables and functions with their descriptions.
 | consult-bookmark-narrow          | Narrowing configuration for =consult-bookmark=          |
 | consult-buffer-filter            | Filter for =consult-buffer=                             |
 | consult-buffer-sources           | List of virtual buffer sources                        |
+| consult-fd-args                  | Command line arguments for fd                         |
 | consult-find-args                | Command line arguments for find                       |
 | consult-fontify-max-size         | Buffers larger than this limit are not fontified      |
 | consult-fontify-preserve         | Preserve fontification for line-based commands.       |
