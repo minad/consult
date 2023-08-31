@@ -4878,11 +4878,13 @@ See `consult-grep' for details."
     (lambda (input)
       (pcase-let* ((`(,arg . ,opts) (consult--command-split input))
                    (flags (append cmd opts))
-                   (ignore-case (if (or (member "-S" flags) (member "--smart-case" flags))
-                                    (let (case-fold-search)
-                                      ;; Case insensitive if there are no uppercase letters
-                                      (not (string-match-p "[[:upper:]]" arg)))
-                                  (or (member "-i" flags) (member "--ignore-case" flags)))))
+                   (ignore-case
+                    (and (not (or (member "-s" flags) (member "--case-sensitive" flags)))
+                         (or (member "-i" flags) (member "--ignore-case" flags)
+                             (and (or (member "-S" flags) (member "--smart-case" flags))
+                                  (let (case-fold-search)
+                                    ;; Case insensitive if there are no uppercase letters
+                                    (not (string-match-p "[[:upper:]]" arg))))))))
         (if (or (member "-F" flags) (member "--fixed-strings" flags))
             (cons (append cmd (list "-e" arg) opts paths)
                   (apply-partially #'consult--highlight-regexps
@@ -4970,12 +4972,23 @@ regarding the asynchronous search and the arguments."
   (let ((cmd (consult--build-args consult-fd-args)))
     (lambda (input)
       (pcase-let* ((`(,arg . ,opts) (consult--command-split input))
-                   (`(,re . ,hl) (funcall consult--regexp-compiler arg 'pcre t)))
-        (when re
-          (cons (append cmd
-                        (cdr (mapcan (lambda (x) `("--and" ,x)) re))
-                        opts paths)
-                hl))))))
+                   (flags (append cmd opts))
+                   (ignore-case
+                    (and (not (or (member "-s" flags) (member "--case-sensitive" flags)))
+                         (or (member "-i" flags) (member "--ignore-case" flags)
+                             (let (case-fold-search)
+                               ;; Case insensitive if there are no uppercase letters
+                               (not (string-match-p "[[:upper:]]" arg)))))))
+        (if (or (member "-F" flags) (member "--fixed-strings" flags))
+            (cons (append cmd (list arg) opts paths)
+                  (apply-partially #'consult--highlight-regexps
+                                   (list (regexp-quote arg)) ignore-case))
+          (pcase-let ((`(,re . ,hl) (funcall consult--regexp-compiler arg 'pcre ignore-case)))
+            (when re
+              (cons (append cmd
+                            (cdr (mapcan (lambda (x) `("--and" ,x)) re))
+                            opts paths)
+                    hl))))))))
 
 ;;;###autoload
 (defun consult-fd (&optional dir initial)
