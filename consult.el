@@ -2537,8 +2537,9 @@ PREVIEW-KEY are the preview keys."
                                 . ,(apply-partially #'consult--read-affixate annotate))
                                (annotation-function
                                 . ,(apply-partially #'consult--read-annotate annotate))))
-                         ,@(unless sort '((cycle-sort-function . identity)
-                                          (display-sort-function . identity)))))
+                         ,@(unless (eq sort t)
+                             `((cycle-sort-function . ,(or sort 'identity))
+                               (display-sort-function . ,(or sort 'identity))))))
              (consult--annotate-align-width 0)
              (result
               (consult--with-preview
@@ -2916,6 +2917,47 @@ corresponding customization options."
   "Get configuration from `consult--customize-alist' for CMD."
   (mapcar (lambda (x) (eval x 'lexical))
           (alist-get (or cmd this-command) consult--customize-alist)))
+
+;;;; Sort functions
+(defun consult-sort-path-commonality
+    (candidates &optional reference-path)
+  "Sort function for paths that favors path components common to the
+last file-visiting buffer. Works well with `consult-xref',
+`consult-git-grep' or other searches that go above the current dir.
+
+The sort is stable (which works well for async). If you need
+a secondary criterion, presort by that and order will be preserved
+when equally-common.
+
+It does *not* assume that the candidate paths are absolute or
+relative to anything, only (weakly and reasonably) that they are
+similar to each other in this regard."
+  ;; In some cases, default-directory is a git-root already, no good.
+  ;; Try to find a "real" file.
+  (let* ((reward-base (or reference-path
+                          (cl-loop for buffer in (buffer-list)
+                                   thereis (buffer-file-name buffer)
+                                   finally return default-directory)))
+         (reward-components (delete-dups
+                             (split-string reward-base "/+" 'omit-nulls)))
+         (num-components (length reward-components))
+         ;; This can run on 10Ks files. See original PR for performance notes
+         (reward-re (format "\\(?:^\\|/\\)%s\\(?:/\\|$\\)"
+                            (regexp-opt reward-components t)))
+         (buckets (make-vector (1+ num-components) nil)))
+    (save-match-data 
+      (dolist (cand candidates)
+        (let ((reward 0) last-index)
+          (while (string-match reward-re cand last-index)
+            (setq reward (1+ reward))
+            ;; subtle: ^ doesn't match at last-index>0 so leave the slash
+            (setq last-index (match-end 1)))
+          ;; The buckets approach is taken from Vertico's fast sort functions.
+          ;; There are potentially duplicate matches (not a big deal)
+          (when (> reward num-components) (setq reward num-components))
+          (aset buckets reward (cons cand (aref buckets reward))))))
+    (mapcan #'nreverse (nreverse buckets))))
+;; Test: (consult-sort-path-commonality '("/foo/" "/boo/fooz/barl" "bar/baz" "/") "/foo/bar/baz")
 
 ;;;; Commands
 

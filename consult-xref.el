@@ -102,7 +102,7 @@ FETCHER and ALIST arguments."
             :prompt "Go to xref: "
             :history 'consult-xref--history
             :require-match t
-            :sort nil
+            :sort #'consult-sort-path-commonality
             :category 'consult-xref
             :group #'consult--prefix-group
             :state
