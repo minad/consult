@@ -284,7 +284,7 @@ Can be either a string, or a list of strings or expressions."
   :type '(choice string (repeat (choice string sexp))))
 
 (defcustom consult-fd-args
-  '((if (executable-find "fdfind") "fdfind" "fd")
+  '((if (executable-find "fdfind" 'remote) "fdfind" "fd")
     "--full-path --color=never")
   "Command line arguments for fd, see `consult-fd'.
 The dynamically computed arguments are appended.
