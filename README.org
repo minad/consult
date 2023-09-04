@@ -397,15 +397,15 @@ their descriptions.
                    #'completion--in-region)
                  args)))
   #+end_src
-  Instead of =consult-completion-in-region=, you may prefer to see the
-  completions directly in the buffer as a small popup. In that case, I recommend
-  either the [[https://github.com/minad/corfu][Corfu]] or the [[https://github.com/company-mode/company-mode][Company]] package. There is a technical limitation of
-  =consult-completion-in-region= in combination with Lsp-mode or Eglot. The Lsp
-  server relies on the input at point, in order to generate refined candidate
-  strings. Since the completion is transferred from the original buffer to the
-  minibuffer, the server does not receive the updated input. LSP completion
-  works with Corfu or Company though, which perform the completion directly in
-  the original buffer.
+  Instead of =consult-completion-in-region=, you may prefer to see the completions
+  directly in the buffer as a small popup. In that case, I recommend the [[https://github.com/minad/corfu][Corfu]]
+  package. There is a technical limitation of =consult-completion-in-region= in
+  combination with the Lsp modes. The Lsp server relies on the input at point,
+  in order to generate refined candidate strings. Since the completion is
+  transferred from the original buffer to the minibuffer, the server does not
+  receive the updated input. In contrast, in-buffer Lsp completion for example
+  via Corfu works properly since the completion takes place directly in the
+  original buffer.
 
 * Special features
 :properties:
@@ -1041,7 +1041,7 @@ There exist multiple fine completion UIs beside Vertico, which are supported by
 Consult. Give them a try and find out which interaction model fits best for you.
 
 - The builtin completion UI, which pops up the =*Completions*= buffer.
-- The builtin =icomplete-vertical-mode= in Emacs 28.
+- The builtin =icomplete-vertical-mode= in Emacs 28 or newer.
 - [[https://git.sr.ht/~protesilaos/mct][mct by Protesilaos Stavrou]]: Minibuffer and Completions in Tandem, which builds
   on the default completion UI.
 
@@ -1053,48 +1053,9 @@ annotations. I highly recommend the Embark package, but in order to familiarize
 yourself with the other components, you can first start without it - or you could
 use with Embark right away and add the other components later on.
 
-* Auxiliary packages
-:properties:
-:description: Integrations with the wider ecosystem
-:end:
-
-You can integrate Consult with special programs or with other packages in the
-wider Emacs ecosystem. You may want to install some of theses packages depending
-on your preferences and requirements.
-
-- [[https://github.com/yadex205/consult-ag][consult-ag]]: Support for the [[https://github.com/ggreer/the_silver_searcher][Silver Searcher]] in the style of =consult-grep=.
-- [[https://github.com/youngker/consult-codesearch.el][consult-codesearch]]: Integration with [[https://github.com/google/codesearch][Code Search]].
-- [[https://github.com/mohkale/consult-company][consult-company]]: Completion at point using the [[https://github.com/company-mode/company-mode][Company]] backends.
-- [[https://github.com/mohkale/consult-compile-multi][consult-compile-multi]]: Integration with [[https://github.com/mohkale/compile-multi][compile-multi]].
-- [[https://github.com/karthink/consult-dir][consult-dir]]: Directory jumper using Consult multi sources.
-- [[https://codeberg.org/ravi/consult-dash][consult-dash]]: Consult interface to [[https://github.com/dash-docs-el/dash-docs][Dash documentation]]
-- [[https://github.com/mohkale/consult-eglot][consult-eglot]]: Integration with Eglot (LSP client).
-- [[https://github.com/minad/consult-flycheck][consult-flycheck]]: Additional Flycheck integration.
-- [[https://gitlab.com/OlMon/consult-flyspell][consult-flyspell]]: Additional Flyspell integration.
-- [[https://github.com/ghosty141/consult-git-log-grep][consult-git-log-grep]]: Consult interface to git log.
-- [[https://github.com/Nyoho/consult-hatena-bookmark][consult-hatena-bookmark]]: Access Hatena bookmarks.
-- [[https://github.com/rcj/consult-ls-git][consult-ls-git]]: List files from git via Consult.
-- [[https://github.com/gagbo/consult-lsp][consult-lsp]]: Integration with Lsp-mode (LSP client).
-- [[https://codeberg.org/jao/consult-notmuch][consult-notmuch]]: Access the [[https://notmuchmail.org/][Notmuch]] email system using Consult.
-- [[https://github.com/mclear-tools/consult-notes][consult-notes]]: Searching notes with Consult.
-- [[https://github.com/jgru/consult-org-roam][consult-org-roam]]: Integration with [[https://github.com/org-roam/org-roam][Org-roam]].
-- [[https://github.com/Qkessler/consult-project-extra/][consult-project-extra]]: Additional project.el extras and buffer sources.
-- [[https://gitlab.com/OlMon/consult-projectile/][consult-projectile]]: Additional [[https://github.com/bbatsov/projectile][Projectile]] integration and buffer sources.
-- [[https://codeberg.org/jao/consult-recoll][consult-recoll]]: Access the [[https://www.lesbonscomptes.com/recoll/][Recoll]] desktop full-text search using Consult.
-- [[https://codeberg.org/jao/espotify][consult-spotify]]: Access the Spotify API and control your local music player.
-- [[https://github.com/mohkale/consult-yasnippet][consult-yasnippet]]: Integration with Yasnippet.
-- [[https://github.com/minad/affe][affe]]: Asynchronous Fuzzy Finder for Emacs based on Consult.
-
-Not directly related to Consult, but maybe still of interest are the following
-packages. These packages should work well with Consult, follow a similar spirit or
-offer functionality based on ~completing-read~.
-
-- [[https://github.com/minad/corfu][corfu]]: Completion systems for =completion-at-point= using small popups (Alternative to [[https://github.com/company-mode/company-mode][Company]]).
-- [[https://github.com/minad/cape][cape]]: Completion At Point Extensions, which can be used with =consult-completion-in-region= and [[https://github.com/minad/corfu][Corfu]].
-- [[https://github.com/minad/bookmark-view][bookmark-view]]: Store window configuration as bookmarks, possible integration with =consult-buffer=.
-- [[https://github.com/bdarcus/citar][citar]]: Versatile package for citation insertion and bibliography management.
-- [[https://github.com/astoff/devdocs.el][devdocs]]: Emacs viewer for [[https://devdocs.io/][DevDocs]] with a convenient completion interface.
-- [[https://github.com/iyefrat/all-the-icons-completion][all-the-icons-completion]], [[https://github.com/rainstormstudio/nerd-icons-completion][nerd-icons-completion]]: Icons for the completion UI.
+We document a [[https://github.com/minad/consult/wiki/Auxillary-packages][list of auxillary packages]] in the Consult wiki. These packages
+integrate Consult with special programs or with other packages in the wider
+Emacs ecosystem.
 
 * Bug reports
 :properties:
@@ -1198,13 +1159,16 @@ Code contributions:
 - [[https://github.com/tecosaur][Tecosaur]]
 - [[https://github.com/mohamed-abdelnour][Mohamed Abdelnour]]
 - [[https://github.com/thisirs][Sylvain Rousseau]]
-- [[https://github.com/jdtsmith][J.D. Smith]]
+- [[https://github.com/jdtsmith][JD Smith]]
 - [[https://github.com/mohkale][Mohsin Kaleem]]
 - [[https://github.com/jyp][Jean-Philippe Bernardy]]
 - [[https://github.com/aagon][Aymeric Agon-Rambosson]]
 - [[https://github.com/geolessel][Geoffrey Lessel]]
 - [[https://github.com/piotrkwiecinski][Piotr Kwiecinski]]
 - [[https://github.com/rswgnu][Robert Weiner]]
+- [[https://github.com/amosbird][Amos Bird]]
+- [[https://github.com/fuzy112][Zhengyi]]
+- [[https://github.com/scvalex][Alexandru Scvorțov]]
 
 Advice and useful discussions:
 - [[https://github.com/clemera/][Clemens Radermacher]]
@@ -1219,26 +1183,9 @@ Advice and useful discussions:
 - [[https://github.com/dgutov/][Dmitry Gutov]]
 - [[https://github.com/iyefrat][Itai Y. Efrat]]
 - [[https://github.com/bdarcus][Bruce d'Arcus]]
-- [[https://github.com/jdtsmith][J.D. Smith]]
+- [[https://github.com/jdtsmith][JD Smith]]
 - [[https://github.com/Qkessler][Enrique Kessler Martínez]]
 - [[https://github.com/raxod502][Radon Rosborough]]
-
-Authors of supplementary =consult-*= packages:
-
-- [[https://codeberg.org/jao/][Jose A Ortega Ruiz]] ([[https://codeberg.org/jao/consult-notmuch][consult-notmuch]], [[https://codeberg.org/jao/consult-recoll][consult-recoll]], [[https://codeberg.org/jao/espotify][consult-spotify]])
-- [[https://github.com/gagbo/][Gerry Agbobada]] ([[https://github.com/gagbo/consult-lsp][consult-lsp]])
-- [[https://github.com/karthink][Karthik Chikmagalur]] ([[https://github.com/karthink/consult-dir][consult-dir]])
-- [[https://github.com/mohkale][Mohsin Kaleem]] ([[https://github.com/mohkale/consult-company][consult-company]], [[https://github.com/mohkale/consult-compile-multi][consult-compile-multi]], [[https://github.com/mohkale/consult-eglot][consult-eglot]], [[https://github.com/mohkale/consult-yasnippet][consult-yasnippet]])
-- [[https://gitlab.com/OlMon][Marco Pawłowski]] ([[https://gitlab.com/OlMon/consult-flyspell][consult-flyspell]], [[https://gitlab.com/OlMon/consult-projectile][consult-projectile]])
-- [[https://github.com/Qkessler][Enrique Kessler Martínez]] ([[https://github.com/Qkessler/consult-project-extra][consult-project-extra]])
-- [[https://github.com/jgru][Jan Gru]] ([[https://github.com/jgru/consult-org-roam][consult-org-roam]])
-- [[https://github.com/yadex205][Kanon Kakuno]] ([[https://github.com/yadex205/consult-ag][consult-ag]])
-- [[https://github.com/rcj][Robin Joy]] ([[https://github.com/rcj/consult-ls-git][consult-ls-git]])
-- [[https://codeberg.org/ravi][Ravi R Kiran]] [[https://codeberg.org/ravi/consult-dash][(consult-dash]])
-- [[https://github.com/mclearc][Colin McLear]] ([[https://github.com/mclear-tools/consult-notes][consult-notes]])
-- [[https://github.com/Nyoho][Yukinori Kitadai]] ([[https://github.com/Nyoho/consult-hatena-bookmark][consult-hatena-bookmark]])
-- [[https://github.com/ghosty141][ghosty141]] ([[https://github.com/ghosty141/consult-git-log-grep][consult-git-log-grep]])
-- [[https://github.com/youngker][YoungJoo Lee]] ([[https://github.com/youngker/consult-codesearch.el][consult-codesearch]])
 
 #+html: <!--
 
