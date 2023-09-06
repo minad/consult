@@ -4,7 +4,8 @@
 
 * Development
 
-- Add =consult-fd= based on the fast =fd/fdfind= search utility.
+- =consult-fd=: New command based on the fast =fd/fdfind= search utility.
+- =consult-outline=: New prefix argument to specify initial narrowing level.
 
 * Version 0.35 (2023-07-02)
 

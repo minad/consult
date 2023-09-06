@@ -1891,7 +1891,9 @@ to make it available for commands with narrowing."
       (define-key map (vconcat key (vector (car pair)))
                   (cons (cdr pair) #'consult-narrow))))
   (when-let ((widen (consult--widen-key)))
-    (define-key map widen (cons "All" #'consult-narrow))))
+    (define-key map widen (cons "All" #'consult-narrow)))
+  (when-let ((init (and (memq :keys settings) (plist-get settings :initial))))
+    (consult-narrow init)))
 
 ;; Emacs 28: hide in M-X
 (put #'consult-narrow-help 'completion-predicate #'ignore)
@@ -3091,12 +3093,14 @@ These configuration options are supported:
     (nreverse candidates)))
 
 ;;;###autoload
-(defun consult-outline ()
+(defun consult-outline (&optional level)
   "Jump to an outline heading, obtained by matching against `outline-regexp'.
 
-This command supports narrowing to a heading level and candidate preview.
-The symbol at point is added to the future history."
-  (interactive)
+This command supports narrowing to a heading level and candidate
+preview.  The initial narrowing LEVEL can be given as prefix
+argument.  The symbol at point is added to the future history."
+  (interactive
+   (list (and current-prefix-arg (prefix-numeric-value current-prefix-arg))))
   (let* ((candidates (consult--slow-operation
                          "Collecting headings..."
                        (consult--outline-candidates)))
@@ -3107,7 +3111,8 @@ The symbol at point is added to the future history."
                         (<= (get-text-property 0 'consult--outline-level cand)
                             (+ consult--narrow min-level))))
          (narrow-keys (mapcar (lambda (c) (cons c (format "Level %c" c)))
-                              (number-sequence ?1 ?9))))
+                              (number-sequence ?1 ?9)))
+         (narrow-init (and level (max ?1 (min ?9 (+ level ?0))))))
     (consult--read
      candidates
      :prompt "Go to heading: "
@@ -3116,7 +3121,7 @@ The symbol at point is added to the future history."
      :sort nil
      :require-match t
      :lookup #'consult--line-match
-     :narrow `(:predicate ,narrow-pred :keys ,narrow-keys)
+     :narrow `(:predicate ,narrow-pred :keys ,narrow-keys :initial ,narrow-init)
      :history '(:input consult--line-history)
      :add-history (thing-at-point 'symbol)
      :state (consult--location-state candidates))))
