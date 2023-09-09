@@ -1675,7 +1675,8 @@ PREVIEW-KEY, STATE, TRANSFORM and CANDIDATE."
                 (funcall state 'setup nil))
               (setq consult--preview-function
                     (lambda ()
-                      (when-let ((cand (funcall candidate)))
+                      (when-let ((cand (funcall candidate))
+                                 (mbwin (active-minibuffer-window)))
                         ;; Drop properties to prevent bugs regarding candidate
                         ;; lookup, which must handle candidates without
                         ;; properties.  Otherwise the arguments passed to the
@@ -1683,10 +1684,11 @@ PREVIEW-KEY, STATE, TRANSFORM and CANDIDATE."
                         ;; the candidate has properties but for the final lookup
                         ;; after completion it does not.
                         (setq cand (substring-no-properties cand))
-                        (with-selected-window (active-minibuffer-window)
+                        (with-selected-window mbwin
                           (let ((input (minibuffer-contents-no-properties))
-                                (narrow consult--narrow))
-                            (with-selected-window (or (minibuffer-selected-window) (next-window))
+                                (narrow consult--narrow)
+                                (pwin (or (minibuffer-selected-window) (next-window))))
+                            (with-selected-window pwin
                               (when-let ((transformed (funcall transform narrow input cand))
                                          (debounce (consult--preview-key-debounce preview-key transformed)))
                                 (when timer
@@ -1710,15 +1712,17 @@ PREVIEW-KEY, STATE, TRANSFORM and CANDIDATE."
                                 ;; the thing which is actually previewed.
                                 (unless (equal-including-properties previewed transformed)
                                   (if (> debounce 0)
-                                      (let ((win (selected-window)))
-                                        (setq timer
-                                              (run-at-time
-                                               debounce nil
-                                               (lambda ()
-                                                 (when (window-live-p win)
-                                                   (with-selected-window win
-                                                     ;; STEP 2: Preview candidate
-                                                     (funcall state 'preview (setq previewed transformed))))))))
+                                      (setq timer
+                                            (run-at-time
+                                             debounce nil
+                                             (lambda ()
+                                               ;; Only preview when the minibuffer is selected
+                                               ;; and when the preview window is alive.
+                                               (when (and (eq (selected-window) mbwin)
+                                                          (window-live-p pwin))
+                                                 (with-selected-window pwin
+                                                   ;; STEP 2: Preview candidate
+                                                   (funcall state 'preview (setq previewed transformed)))))))
                                     ;; STEP 2: Preview candidate
                                     (funcall state 'preview (setq previewed transformed)))))))))))
               (consult--preview-append-local-pch
