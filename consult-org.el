@@ -97,19 +97,21 @@ MATCH, SCOPE and SKIP are as in `org-map-entries'."
       (setq buf (current-buffer)))
     (lambda (cand)
       (unless (buffer-live-p buf)
-        (setq buf (seq-find (lambda (b)
-                              (with-current-buffer b (derived-mode-p #'org-mode)))
-                            (buffer-list))))
-      (pcase-let ((`(,_level ,kwd . ,prio)
-                   (get-text-property 0 'consult-org--heading cand)))
+        (setq buf (seq-find
+                   (lambda (b)
+                     (with-current-buffer b (derived-mode-p #'org-mode)))
+                   (buffer-list))))
         (consult--annotate-align
          cand
-         (concat
-          (propertize (or kwd "") 'face
-                      (with-current-buffer (or buf (current-buffer))
-                        ;; `org-get-todo-face' must be called inside an Org buffer
+         (pcase-let ((`(,_level ,kwd . ,prio)
+                      (get-text-property 0 'consult-org--heading cand)))
+           (when (or kwd prio)
+             (concat
+              (propertize (or kwd "") 'face
+                          (with-current-buffer (or buf (current-buffer))
+                            ;; `org-get-todo-face' must be called inside an Org buffer
                         (org-get-todo-face kwd)))
-          (and prio (format #(" [#%c]" 1 6 (face org-priority)) prio))))))))
+              (and prio (format #(" [#%c]" 1 6 (face org-priority)) prio)))))))))
 
 ;;;###autoload
 (defun consult-org-heading (&optional match scope)
