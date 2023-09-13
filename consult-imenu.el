@@ -64,17 +64,14 @@ ARGS are the arguments to the special item function."
 (defun consult-imenu--normalize (pos)
   "Return normalized imenu POS."
   (pcase pos
-    ;; Simple marker item
-    ((pred markerp) nil)
-    ;; Simple integer item
+    ;; Create marker from integer item
     ((pred integerp) (setq pos (copy-marker pos)))
     ;; Semantic uses overlay for positions
     ((pred overlayp) (setq pos (copy-marker (overlay-start pos))))
     ;; Wrap special item
     (`(,pos ,fn . ,args)
      (setq pos `(,pos ,#'consult-imenu--switch-buffer ,(current-buffer)
-                      ,fn ,@args)))
-    (_ (error "Unknown imenu item: %S" pos)))
+                      ,fn ,@args))))
   (if (or (consp pos)
           (eq imenu-default-goto-function #'imenu-default-goto-function))
       pos
