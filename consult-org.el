@@ -90,6 +90,27 @@ MATCH, SCOPE and SKIP are as in `org-map-entries'."
          cand))
      match scope skip)))
 
+(defun consult-org--annotate ()
+  "Generate annotation function for `consult-org-heading'."
+  (let (buf)
+    (when (derived-mode-p #'org-mode)
+      (setq buf (current-buffer)))
+    (lambda (cand)
+      (unless (buffer-live-p buf)
+        (setq buf (seq-find (lambda (b)
+                              (with-current-buffer b (derived-mode-p #'org-mode)))
+                            (buffer-list))))
+      (pcase-let ((`(,_level ,kwd . ,prio)
+                   (get-text-property 0 'consult-org--heading cand)))
+        (consult--annotate-align
+         cand
+         (concat
+          (propertize (or kwd "") 'face
+                      (with-current-buffer (or buf (current-buffer))
+                        ;; `org-get-todo-face' must be called inside an Org buffer
+                        (org-get-todo-face kwd)))
+          (and prio (format #(" [#%c]" 1 6 (face org-priority)) prio))))))))
+
 ;;;###autoload
 (defun consult-org-heading (&optional match scope)
   "Jump to an Org heading.
@@ -97,7 +118,7 @@ MATCH, SCOPE and SKIP are as in `org-map-entries'."
 MATCH and SCOPE are as in `org-map-entries' and determine which
 entries are offered.  By default, all entries of the current
 buffer are offered."
-  (interactive (unless (derived-mode-p 'org-mode)
+  (interactive (unless (derived-mode-p #'org-mode)
                  (user-error "Must be called from an Org buffer")))
   (let ((prefix (not (memq scope '(nil tree region region-start-level file)))))
     (consult--read
@@ -111,6 +132,7 @@ buffer are offered."
      :history '(:input consult-org--history)
      :narrow (consult-org--narrow)
      :state (consult--jump-state)
+     :annotate (consult-org--annotate)
      :group
      (when prefix
        (lambda (cand transform)
