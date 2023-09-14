@@ -84,7 +84,7 @@ MATCH, SCOPE and SKIP are as in `org-map-entries'."
                               tags (consult--tofu-encode idx))))
          (cl-incf idx)
          (add-text-properties 0 1
-                              `(consult--candidate ,(point-marker)
+                              `(org-marker ,(point-marker)
                                 consult-org--heading (,level ,todo . ,prio))
                               cand)
          cand))
@@ -105,7 +105,7 @@ buffer are offered."
        (or (consult-org--headings prefix match scope)
            (user-error "No headings")))
      :prompt "Go to heading: "
-     :category 'consult-org-heading
+     :category 'org-remote-heading ;; Category for Embark support
      :sort nil
      :require-match t
      :history '(:input consult-org--history)
@@ -116,9 +116,9 @@ buffer are offered."
        (lambda (cand transform)
          (let ((name (buffer-name
                       (marker-buffer
-                       (get-text-property 0 'consult--candidate cand)))))
+                       (get-text-property 0 'org-marker cand)))))
            (if transform (substring cand (1+ (length name))) name))))
-     :lookup #'consult--lookup-candidate)))
+     :lookup (apply-partially #'consult--lookup-prop 'org-marker))))
 
 ;;;###autoload
 (defun consult-org-agenda (&optional match)
