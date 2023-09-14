@@ -105,7 +105,7 @@ buffer are offered."
        (or (consult-org--headings prefix match scope)
            (user-error "No headings")))
      :prompt "Go to heading: "
-     :category 'org-remote-heading ;; Category for Embark support
+     :category 'org-heading
      :sort nil
      :require-match t
      :history '(:input consult-org--history)
