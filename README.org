@@ -1169,6 +1169,7 @@ Code contributions:
 - [[https://github.com/amosbird][Amos Bird]]
 - [[https://github.com/fuzy112][Zhengyi]]
 - [[https://github.com/scvalex][Alexandru Scvorțov]]
+- [[https://github.com/ashton314][Ashton Wiersdorf]]
 
 Advice and useful discussions:
 - [[https://github.com/clemera/][Clemens Radermacher]]
