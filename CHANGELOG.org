@@ -6,8 +6,9 @@
 
 - =consult-fd=: New command based on the fast =fd/fdfind= search utility.
 - =consult-outline=: New prefix argument to specify initial narrowing level.
-- =consult-org-heading=: Specify category =org-remote-heading= such that Embark
-  provides appropriate Org heading actions.
+- =consult-org-heading=: Specify category =org-heading= such that Embark provides
+  appropriate Org heading actions.
+- =consult-org-heading=: Add annotation.
 
 * Version 0.35 (2023-07-02)
 
