@@ -332,12 +332,13 @@ their descriptions.
 
 #+findex: consult-org-heading
 #+findex: consult-org-agenda
-- =consult-org-heading=: Similar to =consult-outline=, for Org
-  buffers. Supports narrowing by heading level, priority and TODO
-  state, as well as live preview and recursive editing.
-- =consult-org-agenda=: Jump to an agenda heading. Supports
-  narrowing by heading level, priority and TODO state, as well as
-  live preview and recursive editing.
+- =consult-org-heading=: Variant of =consult-imenu= or =consult-outline= for Org
+  buffers. The headline and its ancestors headlines are separated by slashes.
+  Supports narrowing by heading level, priority and TODO keyword, as well as live
+  preview and recursive editing.
+- =consult-org-agenda=: Jump to an Org agenda heading. Supports narrowing by
+  heading level, priority and TODO keyword, as well as live preview and
+  recursive editing.
 ** Help
 :properties:
 :description: Searching through help
