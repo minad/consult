@@ -1474,14 +1474,6 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
       ;; command.
       (message "Buffer is dead"))))
 
-(defun consult--jump-1 (pos)
-  "Go to POS, switch buffer and widen if necessary."
-  (consult--jump-to-buffer pos)
-  ;; Widen if we cannot jump to the position
-  (unless (= (goto-char pos) (point))
-    (widen)
-    (goto-char pos)))
-
 (defun consult--jump (pos)
   "Jump to POS.
 First push current position to mark ring, then move to new
@@ -1497,7 +1489,10 @@ position and run `consult-after-jump-hook'."
       ;; We all love side effects!
       (setq pos (+ pos 0))
       (push-mark (point) t))
-    (consult--jump-1 pos)
+    (consult--jump-to-buffer pos)
+    (unless (= (goto-char pos) (point)) ;; Widen if jump failed
+      (widen)
+      (goto-char pos))
     (consult--invisible-open-permanently)
     (run-hooks 'consult-after-jump-hook))
   nil)
@@ -1523,7 +1518,11 @@ The function can be used as the `:state' argument of `consult--read'."
                 (narrow-to-region saved-min saved-max)
                 (goto-char saved-pos)))
           ;; Candidate can be previewed
-          (consult--jump-1 (or (car-safe cand) cand))
+          (let ((pos (or (car-safe cand) cand)))
+            (consult--jump-to-buffer pos)
+            (unless (= (goto-char pos) (point)) ;; Widen if jump failed
+              (widen)
+              (goto-char pos)))
           (setq restore (consult--invisible-open-temporarily))
           ;; Ensure that cursor is properly previewed (gh:minad/consult#764)
           (unless (eq cursor-in-non-selected-windows 'box)
