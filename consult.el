@@ -1496,11 +1496,11 @@ position and run `consult-after-jump-hook'."
 (defun consult--jump-preview ()
   "The preview function used if selecting from a list of candidate positions.
 The function can be used as the `:state' argument of `consult--read'."
-  (let ((saved-min (point-min-marker))
-        (saved-max (point-max-marker))
-        (saved-pos (point-marker))
+  (let ((orig-min (point-min-marker))
+        (orig-max (point-max-marker))
+        (orig-pos (point-marker))
         restore)
-    (set-marker-insertion-type saved-max t) ;; Grow when text is inserted
+    (set-marker-insertion-type orig-max t) ;; Grow when text is inserted
     (lambda (action cand)
       (when (eq action 'preview)
         (mapc #'funcall restore)
@@ -1560,9 +1560,9 @@ The function can be used as the `:state' argument of `consult--read'."
                 (push (lambda () (mapc #'delete-overlay overlays)) restore))
               (run-hooks 'consult-after-jump-hook))
           ;; If position cannot be previewed, return to saved position
-          (when (consult--jump-ensure-buffer saved-pos)
-            (narrow-to-region saved-min saved-max)
-            (goto-char saved-pos)))))))
+          (when (consult--jump-ensure-buffer orig-pos)
+            (narrow-to-region orig-min orig-max)
+            (goto-char orig-pos)))))))
 
 (defun consult--jump-state ()
   "The state function used if selecting from a list of candidate positions."
