@@ -10,6 +10,7 @@
 - =consult-org-heading=: Specify category =org-heading= such that Embark provides
   appropriate Org heading actions.
 - =consult-org-heading=: Add annotation.
+- Remove unreliable =consult--maybe-recenter=.
 
 * Version 0.35 (2023-07-02)
 

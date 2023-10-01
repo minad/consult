@@ -156,15 +156,14 @@ of the line after the prompt."
 nil shows all `custom-available-themes'."
   :type '(repeat (choice symbol regexp)))
 
-(defcustom consult-after-jump-hook (list #'consult--maybe-recenter)
+(defcustom consult-after-jump-hook (list #'recenter)
   "Function called after jumping to a location.
 
-Commonly used functions for this hook are
-`consult--maybe-recenter', `recenter' and `reposition-window'.
-You may want to add a function which pulses the current line,
-e.g., `pulse-momentary-highlight-one-line' is supported on Emacs
-28 and newer.  The hook called during preview and for the jump
-after selection."
+Commonly used functions for this hook are `recenter' and
+`reposition-window'.  You may want to add a function which pulses
+the current line, e.g., `pulse-momentary-highlight-one-line' is
+supported on Emacs 28 and newer.  The hook called during preview
+and for the jump after selection."
   :type 'hook)
 
 (defcustom consult-line-start-from-top nil
@@ -564,11 +563,6 @@ We use invalid characters outside the Unicode range.")
   "Stored regions for the org-fold API.")
 
 ;;;; Miscellaneous helper functions
-
-(defun consult--maybe-recenter ()
-  "Maybe recenter current window if point is outside of visible region."
-  (when (or (< (point) (window-start)) (> (point) (window-end nil t)))
-    (recenter)))
 
 (defun consult--key-parse (key)
   "Parse KEY or signal error if invalid."
