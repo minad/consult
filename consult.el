@@ -1463,16 +1463,18 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
                   restore))))
       restore)))
 
-(defun consult--jump-to-buffer (pos)
-  "Switch to buffer of marker POS."
-  (when (markerp pos)
-    ;; Switch to buffer if it is not visible
-    (if-let ((buf (marker-buffer pos)))
-        (unless (and (eq (current-buffer) buf) (eq (window-buffer) buf))
-          (consult--buffer-action buf 'norecord))
-      ;; Only print a message, since an error would disable the minibuffer post
-      ;; command.
-      (message "Buffer is dead"))))
+(defun consult--jump-ensure-buffer (pos)
+  "Ensure that buffer of marker POS is displayed, return t if successful."
+  (or (not (markerp pos))
+      ;; Switch to buffer if it is not visible
+      (if-let ((buf (marker-buffer pos)))
+          (or (and (eq (current-buffer) buf) (eq (window-buffer) buf))
+              (consult--buffer-action buf 'norecord)
+              t)
+        ;; Only print a message, since an error would disable the minibuffer
+        ;; post command.
+        (message "Buffer is dead")
+        nil)))
 
 (defun consult--jump (pos)
   "Jump to POS.
@@ -1489,12 +1491,12 @@ position and run `consult-after-jump-hook'."
       ;; We all love side effects!
       (setq pos (+ pos 0))
       (push-mark (point) t))
-    (consult--jump-to-buffer pos)
-    (unless (= (goto-char pos) (point)) ;; Widen if jump failed
-      (widen)
-      (goto-char pos))
-    (consult--invisible-open-permanently)
-    (run-hooks 'consult-after-jump-hook))
+    (when (consult--jump-ensure-buffer pos)
+      (unless (= (goto-char pos) (point)) ;; Widen if jump failed
+        (widen)
+        (goto-char pos))
+      (consult--invisible-open-permanently)
+      (run-hooks 'consult-after-jump-hook)))
   nil)
 
 (defun consult--jump-preview ()
@@ -1509,56 +1511,54 @@ The function can be used as the `:state' argument of `consult--read'."
       (when (eq action 'preview)
         (mapc #'funcall restore)
         (setq restore nil)
-        (if (not cand)
-            ;; If position cannot be previewed, return to saved position
-            (let ((saved-buffer (marker-buffer saved-pos)))
-              (if (not saved-buffer)
-                  (message "Buffer is dead")
-                (set-buffer saved-buffer)
-                (narrow-to-region saved-min saved-max)
-                (goto-char saved-pos)))
-          ;; Candidate can be previewed
-          (let ((pos (or (car-safe cand) cand)))
-            (consult--jump-to-buffer pos)
-            (unless (= (goto-char pos) (point)) ;; Widen if jump failed
-              (widen)
-              (goto-char pos)))
-          (setq restore (consult--invisible-open-temporarily))
-          ;; Ensure that cursor is properly previewed (gh:minad/consult#764)
-          (unless (eq cursor-in-non-selected-windows 'box)
-            (let ((orig cursor-in-non-selected-windows)
-                  (buf (current-buffer)))
-              (push
-               (if (local-variable-p 'cursor-in-non-selected-windows)
-                   (lambda ()
-                     (when (buffer-live-p buf)
-                       (with-current-buffer buf
-                         (setq-local cursor-in-non-selected-windows orig))))
-                 (lambda ()
-                   (when (buffer-live-p buf)
-                     (with-current-buffer buf
-                       (kill-local-variable 'cursor-in-non-selected-windows)))))
-               restore)
-              (setq-local cursor-in-non-selected-windows 'box)))
-          ;; Match previews
-          (let ((overlays
-                 (list (save-excursion
-                         (let ((vbeg (progn (beginning-of-visual-line) (point)))
-                               (vend (progn (end-of-visual-line) (point)))
-                               (end (pos-eol)))
-                           (consult--make-overlay vbeg (if (= vend end) (1+ end) vend)
-                                                  'face 'consult-preview-line
-                                                  'window (selected-window)
-                                                  'priority 1))))))
-            (dolist (match (cdr-safe cand))
-              (push (consult--make-overlay (+ (point) (car match))
-                                           (+ (point) (cdr match))
-                                           'face 'consult-preview-match
-                                           'window (selected-window)
-                                           'priority 2)
-                    overlays))
-            (push (lambda () (mapc #'delete-overlay overlays)) restore))
-          (run-hooks 'consult-after-jump-hook))))))
+        (if-let ((pos (or (car-safe cand) cand))) ;; Candidate can be previewed
+            (when (consult--jump-ensure-buffer pos)
+              (unless (= (goto-char pos) (point)) ;; Widen if jump failed
+                (widen)
+                (goto-char pos))
+              (setq restore (consult--invisible-open-temporarily))
+              ;; Ensure that cursor is properly previewed (gh:minad/consult#764)
+              (unless (eq cursor-in-non-selected-windows 'box)
+                (let ((orig cursor-in-non-selected-windows)
+                      (buf (current-buffer)))
+                  (push
+                   (if (local-variable-p 'cursor-in-non-selected-windows)
+                       (lambda ()
+                         (when (buffer-live-p buf)
+                           (with-current-buffer buf
+                             (setq-local cursor-in-non-selected-windows orig))))
+                     (lambda ()
+                       (when (buffer-live-p buf)
+                         (with-current-buffer buf
+                           (kill-local-variable 'cursor-in-non-selected-windows)))))
+                   restore)
+                  (setq-local cursor-in-non-selected-windows 'box)))
+              ;; Match previews
+              (let ((overlays
+                     (list (save-excursion
+                             (let ((vbeg (progn (beginning-of-visual-line) (point)))
+                                   (vend (progn (end-of-visual-line) (point)))
+                                   (end (pos-eol)))
+                               (consult--make-overlay vbeg (if (= vend end) (1+ end) vend)
+                                                      'face 'consult-preview-line
+                                                      'window (selected-window)
+                                                      'priority 1))))))
+                (dolist (match (cdr-safe cand))
+                  (push (consult--make-overlay (+ (point) (car match))
+                                               (+ (point) (cdr match))
+                                               'face 'consult-preview-match
+                                               'window (selected-window)
+                                               'priority 2)
+                        overlays))
+                (push (lambda () (mapc #'delete-overlay overlays)) restore))
+              (run-hooks 'consult-after-jump-hook))
+          ;; If position cannot be previewed, return to saved position
+          (let ((saved-buffer (marker-buffer saved-pos)))
+            (if (not saved-buffer)
+                (message "Buffer is dead")
+              (set-buffer saved-buffer)
+              (narrow-to-region saved-min saved-max)
+              (goto-char saved-pos))))))))
 
 (defun consult--jump-state ()
   "The state function used if selecting from a list of candidate positions."
