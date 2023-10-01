@@ -1513,10 +1513,23 @@ The function can be used as the `:state' argument of `consult--read'."
         (setq restore nil)
         (if-let ((pos (or (car-safe cand) cand))) ;; Candidate can be previewed
             (when (consult--jump-ensure-buffer pos)
+              (let ((saved-min (point-min-marker))
+                    (saved-max (point-max-marker))
+                    (saved-pos (point-marker)))
+                (set-marker-insertion-type saved-max t) ;; Grow when text is inserted
+                (push (lambda ()
+                        (when-let ((buf (marker-buffer saved-pos)))
+                          (with-current-buffer buf
+                            (narrow-to-region saved-min saved-max)
+                            (goto-char saved-pos)
+                            (set-marker saved-pos nil)
+                            (set-marker saved-min nil)
+                            (set-marker saved-max nil))))
+                      restore))
               (unless (= (goto-char pos) (point)) ;; Widen if jump failed
                 (widen)
                 (goto-char pos))
-              (setq restore (consult--invisible-open-temporarily))
+              (setq restore (nconc (consult--invisible-open-temporarily) restore))
               ;; Ensure that cursor is properly previewed (gh:minad/consult#764)
               (unless (eq cursor-in-non-selected-windows 'box)
                 (let ((orig cursor-in-non-selected-windows)
