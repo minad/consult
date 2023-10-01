@@ -1463,20 +1463,24 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
                   restore))))
       restore)))
 
+(defun consult--jump-to-buffer (pos)
+  "Switch to buffer of marker POS."
+  (when (markerp pos)
+    ;; Switch to buffer if it is not visible
+    (if-let ((buf (marker-buffer pos)))
+        (unless (and (eq (current-buffer) buf) (eq (window-buffer) buf))
+          (consult--buffer-action buf 'norecord))
+      ;; Only print a message, since an error would disable the minibuffer post
+      ;; command.
+      (message "Buffer is dead"))))
+
 (defun consult--jump-1 (pos)
   "Go to POS, switch buffer and widen if necessary."
-  (if (and (markerp pos) (not (marker-buffer pos)))
-      ;; Only print a message, no error in order to not mess
-      ;; with the minibuffer update hook.
-      (message "Buffer is dead")
-    ;; Switch to buffer if it is not visible
-    (when-let (buf (and (markerp pos) (marker-buffer pos)))
-      (unless (and (eq (current-buffer) buf) (eq (window-buffer) buf))
-        (consult--buffer-action buf 'norecord)))
-    ;; Widen if we cannot jump to the position
-    (unless (= (goto-char pos) (point))
-      (widen)
-      (goto-char pos))))
+  (consult--jump-to-buffer pos)
+  ;; Widen if we cannot jump to the position
+  (unless (= (goto-char pos) (point))
+    (widen)
+    (goto-char pos)))
 
 (defun consult--jump (pos)
   "Jump to POS.
