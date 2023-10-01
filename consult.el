@@ -1553,12 +1553,9 @@ The function can be used as the `:state' argument of `consult--read'."
                 (push (lambda () (mapc #'delete-overlay overlays)) restore))
               (run-hooks 'consult-after-jump-hook))
           ;; If position cannot be previewed, return to saved position
-          (let ((saved-buffer (marker-buffer saved-pos)))
-            (if (not saved-buffer)
-                (message "Buffer is dead")
-              (set-buffer saved-buffer)
-              (narrow-to-region saved-min saved-max)
-              (goto-char saved-pos))))))))
+          (when (consult--jump-ensure-buffer saved-pos)
+            (narrow-to-region saved-min saved-max)
+            (goto-char saved-pos)))))))
 
 (defun consult--jump-state ()
   "The state function used if selecting from a list of candidate positions."
