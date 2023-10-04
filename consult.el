@@ -2591,7 +2591,7 @@ arguments are used instead of positional arguments for code
 clarity.  On top of `completing-read' it additionally supports
 computing the candidate list asynchronously, candidate preview
 and narrowing.  You should use `completing-read' instead of
-`consult--read' If you don't use asynchronous candidate
+`consult--read' if you don't use asynchronous candidate
 computation or candidate preview.
 
 Keyword OPTIONS:
