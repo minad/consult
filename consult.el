@@ -2590,7 +2590,9 @@ The function is a thin wrapper around `completing-read'.  Keyword
 arguments are used instead of positional arguments for code
 clarity.  On top of `completing-read' it additionally supports
 computing the candidate list asynchronously, candidate preview
-and narrowing.
+and narrowing.  You should use `completing-read' instead of
+`consult--read' If you don't use asynchronous candidate
+computation or candidate preview.
 
 Keyword OPTIONS:
 
