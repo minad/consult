@@ -5,6 +5,10 @@
 * Development
 
 - Bugfixes.
+- Preview large files partially. Add new customization variables
+  =consult-preview-partial-chunk= and =consult-preview-partial-limit=. This new
+  feature is experimental. Please report any issues you observe.
+- Obsoleted =consult-preview-max-size= and =consult-preview-raw-size=.
 - =consult-fd=: New command based on the fast =fd/fdfind= search utility.
 - =consult-outline=: New prefix argument to specify initial narrowing level.
 - =consult-org-heading=: Specify category =org-heading= such that Embark provides

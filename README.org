@@ -484,10 +484,9 @@ for [[https://github.com/minad/org-modern][org-modern]] and [[https://github.com
 (add-to-list 'consult-preview-allowed-hooks 'global-hl-todo-mode-check-buffers)
 #+end_src
 
-Files larger than =consult-preview-raw-size= are previewed literally without
-syntax highlighting and without changing the major mode. Delaying the preview is
-also useful for =consult-theme=, since the theme preview is slow. The delay
-results in a smoother UI experience.
+Files larger than =consult-preview-partial-size= are previewed partially. Delaying
+the preview is also useful for =consult-theme=, since the theme preview is slow.
+The delay results in a smoother UI experience.
 
 #+begin_src emacs-lisp
 ;; Preview on any key press, but delay 0.5s
@@ -915,49 +914,49 @@ configuration examples.
 values and abbreviated description. Alternatively, type =C-h a ^consult= to get
 an overview of all Consult variables and functions with their descriptions.
 
-| Variable                         | Description                                           |
-|----------------------------------+-------------------------------------------------------|
-| consult-after-jump-hook          | Functions to call after jumping to a location         |
-| consult-async-input-debounce     | Input debounce for asynchronous commands              |
-| consult-async-input-throttle     | Input throttle for asynchronous commands              |
-| consult-async-min-input          | Minimum numbers of letters needed for async process   |
-| consult-async-refresh-delay      | Refresh delay for asynchronous commands               |
-| consult-async-split-style        | Splitting style used for async commands               |
-| consult-async-split-styles-alist | Available splitting styles used for async commands    |
-| consult-bookmark-narrow          | Narrowing configuration for =consult-bookmark=          |
-| consult-buffer-filter            | Filter for =consult-buffer=                             |
-| consult-buffer-sources           | List of virtual buffer sources                        |
-| consult-fd-args                  | Command line arguments for fd                         |
-| consult-find-args                | Command line arguments for find                       |
-| consult-fontify-max-size         | Buffers larger than this limit are not fontified      |
-| consult-fontify-preserve         | Preserve fontification for line-based commands.       |
-| consult-git-grep-args            | Command line arguments for git-grep                   |
-| consult-goto-line-numbers        | Show line numbers for =consult-goto-line=               |
-| consult-grep-max-columns         | Maximal number of columns of the matching lines       |
-| consult-grep-args                | Command line arguments for grep                       |
-| consult-imenu-config             | Mode-specific configuration for =consult-imenu=         |
-| consult-line-numbers-widen       | Show absolute line numbers when narrowing is active.  |
-| consult-line-start-from-top      | Start the =consult-line= search from the top            |
-| consult-locate-args              | Command line arguments for locate                     |
-| consult-man-args                 | Command line arguments for man                        |
-| consult-mode-command-filter      | Filter for =consult-mode-command=                       |
-| consult-mode-histories           | Mode-specific history variables                       |
-| consult-narrow-key               | Narrowing prefix key during completion                |
-| consult-point-placement          | Placement of the point when jumping to matches        |
-| consult-preview-key              | Keys which triggers preview                           |
-| consult-preview-allowed-hooks    | List of =find-file= hooks to enable during preview      |
-| consult-preview-excluded-files   | Regexps matched against file names during preview     |
-| consult-preview-max-count        | Maximum number of files to keep open during preview   |
-| consult-preview-max-size         | Files larger than this size are not previewed         |
-| consult-preview-raw-size         | Files larger than this size are previewed in raw form |
-| consult-preview-variables        | Alist of variables to bind during preview             |
-| consult-project-buffer-sources   | List of virtual project buffer sources                |
-| consult-project-function         | Function which returns current project root           |
-| consult-register-prefix          | Prefix string for register keys during completion     |
-| consult-ripgrep-args             | Command line arguments for ripgrep                    |
-| consult-themes                   | List of themes to be presented for selection          |
-| consult-widen-key                | Widening key during completion                        |
-| consult-yank-rotate              | Rotate kill ring                                      |
+| Variable                         | Description                                          |
+|----------------------------------+------------------------------------------------------|
+| consult-after-jump-hook          | Functions to call after jumping to a location        |
+| consult-async-input-debounce     | Input debounce for asynchronous commands             |
+| consult-async-input-throttle     | Input throttle for asynchronous commands             |
+| consult-async-min-input          | Minimum numbers of letters needed for async process  |
+| consult-async-refresh-delay      | Refresh delay for asynchronous commands              |
+| consult-async-split-style        | Splitting style used for async commands              |
+| consult-async-split-styles-alist | Available splitting styles used for async commands   |
+| consult-bookmark-narrow          | Narrowing configuration for =consult-bookmark=         |
+| consult-buffer-filter            | Filter for =consult-buffer=                            |
+| consult-buffer-sources           | List of virtual buffer sources                       |
+| consult-fd-args                  | Command line arguments for fd                        |
+| consult-find-args                | Command line arguments for find                      |
+| consult-fontify-max-size         | Buffers larger than this limit are not fontified     |
+| consult-fontify-preserve         | Preserve fontification for line-based commands.      |
+| consult-git-grep-args            | Command line arguments for git-grep                  |
+| consult-goto-line-numbers        | Show line numbers for =consult-goto-line=              |
+| consult-grep-max-columns         | Maximal number of columns of the matching lines      |
+| consult-grep-args                | Command line arguments for grep                      |
+| consult-imenu-config             | Mode-specific configuration for =consult-imenu=        |
+| consult-line-numbers-widen       | Show absolute line numbers when narrowing is active. |
+| consult-line-start-from-top      | Start the =consult-line= search from the top           |
+| consult-locate-args              | Command line arguments for locate                    |
+| consult-man-args                 | Command line arguments for man                       |
+| consult-mode-command-filter      | Filter for =consult-mode-command=                      |
+| consult-mode-histories           | Mode-specific history variables                      |
+| consult-narrow-key               | Narrowing prefix key during completion               |
+| consult-point-placement          | Placement of the point when jumping to matches       |
+| consult-preview-key              | Keys which triggers preview                          |
+| consult-preview-allowed-hooks    | List of =find-file= hooks to enable during preview     |
+| consult-preview-excluded-files   | Regexps matched against file names during preview    |
+| consult-preview-max-count        | Maximum number of files to keep open during preview  |
+| consult-preview-partial-size     | Files larger than this size are previewed partially  |
+| consult-preview-partial-chunk    | Size of the file chunk which is previewed partially  |
+| consult-preview-variables        | Alist of variables to bind during preview            |
+| consult-project-buffer-sources   | List of virtual project buffer sources               |
+| consult-project-function         | Function which returns current project root          |
+| consult-register-prefix          | Prefix string for register keys during completion    |
+| consult-ripgrep-args             | Command line arguments for ripgrep                   |
+| consult-themes                   | List of themes to be presented for selection         |
+| consult-widen-key                | Widening key during completion                       |
+| consult-yank-rotate              | Rotate kill ring                                     |
 
 ** Fine-tuning of individual commands
 :properties:

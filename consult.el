@@ -317,12 +317,17 @@ individual keys must be strings accepted by `key-valid-p'."
                  (key :tag "Key")
                  (repeat :tag "List of keys" key)))
 
-(defcustom consult-preview-max-size 10485760
-  "Files larger than this byte limit are not previewed."
+(make-obsolete-variable 'consult-preview-raw-size nil "0.35")
+(make-obsolete-variable 'consult-preview-max-size nil "0.35")
+
+(defcustom consult-preview-partial-size 1048576
+  "Files larger than this byte limit are previewed partially."
   :type 'natnum)
 
-(defcustom consult-preview-raw-size 524288
-  "Files larger than this byte limit are previewed in raw form."
+(defcustom consult-preview-partial-chunk 102400
+  "Partial preview chunk size in bytes.
+If a file is larger than `consult-preview-partial-size' only the
+chunk from the beginning of the file is previewed."
   :type 'natnum)
 
 (defcustom consult-preview-max-count 10
@@ -1262,25 +1267,29 @@ ORIG is the original function, HOOKS the arguments."
              ;; file-attributes may throw permission denied error
              (attrs (ignore-errors (file-attributes name)))
              (size (file-attribute-size attrs)))
-    (if (>= size consult-preview-max-size)
-        (format "File `%s' (%s) is too large for preview"
-                name (file-size-human-readable size))
-      (let ((buf (find-file-noselect name 'nowarn (>= size consult-preview-raw-size))))
+    (if (>= size consult-preview-partial-size)
+        (with-current-buffer
+            (generate-new-buffer (format "consult-partial-preview-%s" name))
+          (setq buffer-read-only t)
+          (with-silent-modifications
+            (insert-file-contents name nil 0 consult-preview-partial-chunk))
+          (goto-char (point-min))
+          (cond
+           ((save-excursion (search-forward "\0" nil 'noerror))
+            (kill-buffer)
+            (format "Binary file `%s' not previewed partially" name))
+           (t
+            ;; TODO: Check if most major modes work properly. Some may fail on
+            ;; partial files.
+            (set-auto-mode)
+            (font-lock-mode 1)
+            (current-buffer))))
+      (with-current-buffer (find-file-noselect name 'nowarn)
         (cond
-         ((>= size consult-preview-raw-size)
-          (with-current-buffer buf
-            (if (save-excursion
-                  (goto-char (point-min))
-                  (search-forward "\0" nil 'noerror))
-                (progn
-                  (kill-buffer buf)
-                  (format "Binary file `%s' not previewed literally" name))
-              (set-buffer-multibyte t)
-              buf)))
-         ((ignore-errors (buffer-local-value 'so-long-detected-p buf))
-          (kill-buffer buf)
+         ((bound-and-true-p so-long-detected-p)
+          (kill-buffer)
           (format "File `%s' with long lines not previewed" name))
-         (t buf))))))
+         (t (current-buffer)))))))
 
 (defun consult--find-file-temporarily (name)
   "Open file NAME temporarily for preview."
