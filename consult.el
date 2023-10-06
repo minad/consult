@@ -1274,22 +1274,23 @@ ORIG is the original function, HOOKS the arguments."
           (with-silent-modifications
             (insert-file-contents name nil 0 consult-preview-partial-chunk))
           (goto-char (point-min))
-          (cond
-           ((save-excursion (search-forward "\0" nil 'noerror))
+          (when (save-excursion (search-forward "\0" nil 'noerror))
             (kill-buffer)
-            (format "Binary file `%s' not previewed partially" name))
-           (t
-            ;; TODO: Check if most major modes work properly. Some may fail on
-            ;; partial files.
-            (set-auto-mode)
-            (font-lock-mode 1)
-            (current-buffer))))
+            (error "Binary file `%s' not previewed" name))
+          ;; TODO: Check if most major modes work properly. Some may fail on
+          ;; partial files.
+          (set-auto-mode)
+          (font-lock-mode 1)
+          (current-buffer))
       (with-current-buffer (find-file-noselect name 'nowarn)
-        (cond
-         ((bound-and-true-p so-long-detected-p)
+        (when (bound-and-true-p so-long-detected-p)
           (kill-buffer)
-          (format "File `%s' with long lines not previewed" name))
-         (t (current-buffer)))))))
+          (error "File `%s' with long lines not previewed" name))
+        (when (and (member major-mode '(fundamental-mode hexl-mode))
+                   (save-excursion (search-forward "\0" nil 'noerror)))
+          (kill-buffer)
+          (error "Binary file `%s' not previewed" name))
+        (current-buffer)))))
 
 (defun consult--find-file-temporarily (name)
   "Open file NAME temporarily for preview."
@@ -1300,20 +1301,22 @@ ORIG is the original function, HOOKS the arguments."
                            (list k v (default-value k) (symbol-value k))
                          (message "consult-preview-variables: The variable `%s' is not bound" k)
                          nil))
-                     consult-preview-variables)))
-        buf)
-    (unwind-protect
-        (progn
-          (advice-add #'run-hooks :around #'consult--filter-find-file-hook)
-          (pcase-dolist (`(,k ,v . ,_) vars)
-            (set-default k v)
-            (set k v))
-          (setq buf (consult--find-file-temporarily-1 name)))
-      (advice-remove #'run-hooks #'consult--filter-find-file-hook)
-      (pcase-dolist (`(,k ,_ ,d ,v) vars)
-        (set-default k d)
-        (set k v)))
-    (if (stringp buf) (progn (message "%s" buf) nil) buf)))
+                     consult-preview-variables))))
+    (condition-case err
+        (unwind-protect
+            (progn
+              (advice-add #'run-hooks :around #'consult--filter-find-file-hook)
+              (pcase-dolist (`(,k ,v . ,_) vars)
+                (set-default k v)
+                (set k v))
+              (consult--find-file-temporarily-1 name))
+          (advice-remove #'run-hooks #'consult--filter-find-file-hook)
+          (pcase-dolist (`(,k ,_ ,d ,v) vars)
+            (set-default k d)
+            (set k v)))
+      (error
+       (message "%s" (cdr err))
+       nil))))
 
 (defun consult--temporary-files ()
   "Return a function to open files temporarily for preview."
