@@ -1286,7 +1286,7 @@ ORIG is the original function, HOOKS the arguments."
         (when (bound-and-true-p so-long-detected-p)
           (kill-buffer)
           (error "File `%s' with long lines not previewed" name))
-        (when (and (member major-mode '(fundamental-mode hexl-mode))
+        (when (and (memq major-mode '(fundamental-mode hexl-mode))
                    (save-excursion (search-forward "\0" nil 'noerror)))
           (kill-buffer)
           (error "Binary file `%s' not previewed" name))
