@@ -5039,7 +5039,7 @@ regarding the asynchronous search and the arguments."
   (pcase-let ((`(,arg . ,opts) (consult--command-split input)))
     (unless (string-blank-p arg)
       (cons (append (consult--build-args consult-locate-args)
-                    (list arg) opts)
+                    (consult--split-escaped arg) opts)
             (cdr (consult--default-regexp-compiler input 'basic t))))))
 
 ;;;###autoload

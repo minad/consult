@@ -14,6 +14,7 @@
 - =consult-org-heading=: Specify category =org-heading= such that Embark provides
   appropriate Org heading actions.
 - =consult-org-heading=: Add annotation.
+- =consult-locate=: Split input into multiple words.
 - Remove unreliable =consult--maybe-recenter=.
 
 * Version 0.35 (2023-07-02)
