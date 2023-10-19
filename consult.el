@@ -73,14 +73,14 @@
 
 Good choices for this key are \"<\" and \"C-+\" for example. The
 key must be a string accepted by `key-valid-p'."
-  :type '(choice key (const nil)))
+  :type '(choice key (const :tag "None" nil)))
 
 (defcustom consult-widen-key nil
   "Key used for widening during completion.
 
 If this key is unset, defaults to twice the `consult-narrow-key'.
 The key must be a string accepted by `key-valid-p'."
-  :type '(choice key (const nil)))
+  :type '(choice key (const :tag "None" nil)))
 
 (defcustom consult-project-function
   #'consult--default-project-function
@@ -89,7 +89,10 @@ The function takes one boolean argument MAY-PROMPT.  If
 MAY-PROMPT is non-nil, the function may ask the prompt the user
 for a project directory.  The root directory is used by
 `consult-buffer' and `consult-grep'."
-  :type '(choice function (const nil)))
+  :type '(choice
+          (const :tag "Default project function" #'consult--default-project-function)
+          (function :tag "Custom function")
+          (const :tag "No project integration" nil)))
 
 (defcustom consult-async-refresh-delay 0.2
   "Refreshing delay of the completion UI for asynchronous commands.
@@ -97,7 +100,7 @@ for a project directory.  The root directory is used by
 The completion UI is only updated every
 `consult-async-refresh-delay' seconds.  This applies to
 asynchronous commands like for example `consult-grep'."
-  :type 'float)
+  :type '(float :tag "Delay in seconds"))
 
 (defcustom consult-async-input-throttle 0.4
   "Input throttle for asynchronous commands.
@@ -105,7 +108,7 @@ asynchronous commands like for example `consult-grep'."
 The asynchronous process is started only every
 `consult-async-input-throttle' seconds.  This applies to asynchronous
 commands, e.g., `consult-grep'."
-  :type 'float)
+  :type '(float :tag "Delay in seconds"))
 
 (defcustom consult-async-input-debounce 0.2
   "Input debounce for asynchronous commands.
@@ -113,13 +116,13 @@ commands, e.g., `consult-grep'."
 The asynchronous process is started only when there has not been new
 input for `consult-async-input-debounce' seconds.  This applies to
 asynchronous commands, e.g., `consult-grep'."
-  :type 'float)
+  :type '(float :tag "Delay in seconds"))
 
 (defcustom consult-async-min-input 3
-  "Minimum number of letters needed, before asynchronous process is called.
+  "Minimum number of characters needed, before asynchronous process is called.
 
 This applies to asynchronous commands, e.g., `consult-grep'."
-  :type 'natnum)
+  :type '(natnum :tag "Number of characters"))
 
 (defcustom consult-async-split-style 'perl
   "Async splitting style, see `consult-async-split-styles-alist'."
@@ -197,7 +200,7 @@ See also `display-line-numbers-widen'."
 
 This is necessary in order to prevent a large startup time
 for navigation commands like `consult-line'."
-  :type 'natnum)
+  :type '(natnum :tag "Buffer size in bytes"))
 
 (defcustom consult-buffer-filter
   '("\\` "
@@ -322,17 +325,17 @@ individual keys must be strings accepted by `key-valid-p'."
 
 (defcustom consult-preview-partial-size 1048576
   "Files larger than this byte limit are previewed partially."
-  :type 'natnum)
+  :type '(natnum :tag "File size in bytes"))
 
 (defcustom consult-preview-partial-chunk 102400
   "Partial preview chunk size in bytes.
 If a file is larger than `consult-preview-partial-size' only the
 chunk from the beginning of the file is previewed."
-  :type 'natnum)
+  :type '(natnum :tag "Chunk size in bytes"))
 
 (defcustom consult-preview-max-count 10
-  "Number of files to keep open at once during preview."
-  :type 'natnum)
+  "Number of file buffers to keep open temporarily during preview."
+  :type '(natnum :tag "Number of buffers"))
 
 (defcustom consult-preview-excluded-files
   '("\\`/[^/|:]+:") ;; Do not preview remote files
