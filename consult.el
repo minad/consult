@@ -90,7 +90,7 @@ MAY-PROMPT is non-nil, the function may ask the prompt the user
 for a project directory.  The root directory is used by
 `consult-buffer' and `consult-grep'."
   :type '(choice
-          (const :tag "Default project function" #'consult--default-project-function)
+          (const :tag "Default project function" consult--default-project-function)
           (function :tag "Custom function")
           (const :tag "No project integration" nil)))
 
