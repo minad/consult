@@ -86,14 +86,14 @@ their descriptions.
 #+findex: consult-buffer
 #+findex: consult-buffer-other-window
 #+findex: consult-buffer-other-frame
+#+findex: consult-buffer-other-tab
 #+findex: consult-project-buffer
 #+findex: consult-recent-file
 #+findex: consult-bookmark
-- =consult-buffer= (=-other-window=, =-other-frame=): Enhanced version
-  of =switch-to-buffer= with support for virtual buffers. Supports live preview
-  of buffers and narrowing to the virtual buffer types. You can type =f SPC= in
-  order to narrow to recent files. Press =SPC= to show ephemeral buffers.
-  Supported narrowing keys:
+- =consult-buffer=: Enhanced version of =switch-to-buffer= with support for virtual
+  buffers. Supports live preview of buffers and narrowing to the virtual buffer
+  types. You can type =f SPC= in order to narrow to recent files. Press =SPC= to
+  show ephemeral buffers. Supported narrowing keys:
   - b Buffers
   - SPC Hidden buffers
   - * Modified buffers
@@ -102,6 +102,8 @@ their descriptions.
   - m Bookmarks
   - p Project
   - Custom [[#multiple-sources][other sources]] configured in =consult-buffer-sources=.
+- =consult-buffer-other-window=, =consult-buffer-other-frame=,
+  =consult-buffer-other-tab=: Variants of =consult-buffer=.
 - =consult-project-buffer=: Variant of =consult-buffer= restricted to buffers and
   recent files of the current project. You can add custom sources to
   =consult-project-buffer-sources=. The command may prompt you for a project if
@@ -798,6 +800,7 @@ configuration examples.
          ("C-x b" . consult-buffer)                ;; orig. switch-to-buffer
          ("C-x 4 b" . consult-buffer-other-window) ;; orig. switch-to-buffer-other-window
          ("C-x 5 b" . consult-buffer-other-frame)  ;; orig. switch-to-buffer-other-frame
+         ("C-x t b" . consult-buffer-other-tab)    ;; orig. switch-to-buffer-other-tab
          ("C-x r b" . consult-bookmark)            ;; orig. bookmark-jump
          ("C-x p b" . consult-project-buffer)      ;; orig. project-switch-to-buffer
          ;; Custom M-# bindings for fast register access
@@ -1170,6 +1173,7 @@ Code contributions:
 - [[https://github.com/fuzy112][Zhengyi]]
 - [[https://github.com/scvalex][Alexandru Scvorțov]]
 - [[https://github.com/ashton314][Ashton Wiersdorf]]
+- [[https://github.com/iostapyshyn][Illia Ostapyshyn]]
 
 Advice and useful discussions:
 - [[https://github.com/clemera/][Clemens Radermacher]]
