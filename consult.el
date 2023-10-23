@@ -4696,6 +4696,13 @@ outside a project.  See `consult-buffer' for more details."
   (let ((consult--buffer-display #'switch-to-buffer-other-frame))
     (consult-buffer)))
 
+;;;###autoload
+(defun consult-buffer-other-tab ()
+  "Variant of `consult-buffer' which opens in other tab."
+  (interactive)
+  (let ((consult--buffer-display #'switch-to-buffer-other-tab))
+    (consult-buffer)))
+
 ;;;;; Command: consult-grep
 
 (defun consult--grep-format (async builder)
