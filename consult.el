@@ -4680,21 +4680,21 @@ outside a project.  See `consult-buffer' for more details."
 
 ;;;###autoload
 (defun consult-buffer-other-window ()
-  "Variant of `consult-buffer' which opens in other window."
+  "Variant of `consult-buffer' which switches to a buffer in another window."
   (interactive)
   (let ((consult--buffer-display #'switch-to-buffer-other-window))
     (consult-buffer)))
 
 ;;;###autoload
 (defun consult-buffer-other-frame ()
-  "Variant of `consult-buffer' which opens in other frame."
+  "Variant of `consult-buffer' which switches to a buffer in another frame."
   (interactive)
   (let ((consult--buffer-display #'switch-to-buffer-other-frame))
     (consult-buffer)))
 
 ;;;###autoload
 (defun consult-buffer-other-tab ()
-  "Variant of `consult-buffer' which opens in other tab."
+  "Variant of `consult-buffer' which switches to a buffer in another tab."
   (interactive)
   (let ((consult--buffer-display #'switch-to-buffer-other-tab))
     (consult-buffer)))
