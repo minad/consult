@@ -497,11 +497,7 @@ Used by `consult-completion-in-region', `consult-yank' and `consult-history'.")
 The function must return a list of regular expressions and a highlighter
 function.")
 
-(defvar consult--customize-alist
-  ;; Disable preview in frames, since frames do not get up cleaned
-  ;; properly.  Preview is only supported by `consult-buffer' and
-  ;; `consult-buffer-other-window'.
-  `((,#'consult-buffer-other-frame :preview-key nil))
+(defvar consult--customize-alist nil
   "Command configuration alist for fine-grained configuration.
 
 Each element of the list must have the form (command-name plist...).  The
