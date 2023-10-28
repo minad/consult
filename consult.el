@@ -798,7 +798,8 @@ asked for the directories or files to search via
                         ;; Preserve this-command across `completing-read-multiple' call,
                         ;; such that `consult-customize' continues to work.
                         (let ((this-command this-command)
-                              (def (abbreviate-file-name default-directory)))
+                              (def (abbreviate-file-name default-directory))
+                              (minibuffer-completing-file-name t))
                           (completing-read-multiple "Directories or files: "
                                                     #'completion-file-name-table
                                                     nil t def 'consult--path-history def)))
