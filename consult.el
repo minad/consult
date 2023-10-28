@@ -799,6 +799,8 @@ asked for the directories or files to search via
                         ;; such that `consult-customize' continues to work.
                         (let ((this-command this-command)
                               (def (abbreviate-file-name default-directory))
+                              ;; NOTE: `minibuffer-completing-file-name' is mostly
+                              ;; deprecated. Packages should instead use the completion metadata!
                               (minibuffer-completing-file-name t))
                           (completing-read-multiple "Directories or files: "
                                                     #'completion-file-name-table
