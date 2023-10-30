@@ -279,7 +279,7 @@ Can be either a string, or a list of strings or expressions."
   :type '(choice string (repeat (choice string sexp))))
 
 (defcustom consult-find-args
-  "find . -not ( -wholename */.* -prune )"
+  "find . -not ( -iwholename */.[a-z]* -prune )"
   "Command line arguments for find, see `consult-find'.
 The dynamically computed arguments are appended.
 Can be either a string, or a list of strings or expressions."
