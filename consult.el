@@ -1406,9 +1406,6 @@ ORIG is the original function, HOOKS the arguments."
           (kill-buffer buf))
         (setq temporary-buffers nil)))))
 
-(declare-function org-fold-core-region "org-fold-core")
-(declare-function org-fold-core-get-regions "org-fold-core")
-
 (defun consult--invisible-open-permanently ()
   "Open overlays which hide the current line.
 See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
@@ -1424,7 +1421,10 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
 (defun consult--invisible-open-temporarily ()
   "Temporarily open overlays which hide the current line.
 See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
-  (if (and (derived-mode-p #'org-mode) (fboundp 'org-fold-show-set-visibility))
+  (if (and (derived-mode-p #'org-mode)
+           (fboundp 'org-fold-show-set-visibility)
+           (fboundp 'org-fold-core-get-regions)
+           (fboundp 'org-fold-core-region))
       ;; New Org 9.6 fold-core API
       ;; TODO The provided Org API `org-fold-show-set-visibility' cannot be used
       ;; efficiently.  We obtain all regions in the whole buffer in order to
