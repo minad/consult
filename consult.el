@@ -799,8 +799,9 @@ asked for the directories or files to search via
                         ;; such that `consult-customize' continues to work.
                         (let ((this-command this-command)
                               (def (abbreviate-file-name default-directory))
-                              ;; NOTE: `minibuffer-completing-file-name' is mostly
-                              ;; deprecated. Packages should instead use the completion metadata!
+                              ;; TODO: `minibuffer-completing-file-name' is
+                              ;; mostly deprecated, but still in use. Packages
+                              ;; should instead use the completion metadata.
                               (minibuffer-completing-file-name t))
                           (completing-read-multiple "Directories or files: "
                                                     #'completion-file-name-table
@@ -1723,13 +1724,13 @@ PREVIEW-KEY, STATE, TRANSFORM and CANDIDATE."
                                 ;; is lagging a bit behind and updates
                                 ;; asynchronously.
                                 ;;
-                                ;; NOTE: In older Consult versions the input was
-                                ;; compared instead, since I was worried that
-                                ;; comparing the transformed candidates could be
-                                ;; potentially expensive or problematic. However
+                                ;; In older Consult versions we instead compared
+                                ;; the input without properties, since I worried
+                                ;; that comparing the transformed candidates
+                                ;; could be potentially expensive. However
                                 ;; comparing the transformed candidates is more
-                                ;; correct, since the transformed candidate is
-                                ;; the thing which is actually previewed.
+                                ;; correct. The transformed candidate is the
+                                ;; thing which is actually previewed.
                                 (unless (equal-including-properties previewed transformed)
                                   (if (> debounce 0)
                                       (setq timer
@@ -2551,8 +2552,8 @@ PREVIEW-KEY are the preview keys."
                  (setq-local minibuffer-default-add-function
                              (apply-partially #'consult--add-history (consult--async-p table) add-history))))
     (consult--with-async (async table)
-      ;; NOTE: Do not unnecessarily let-bind the lambdas to avoid over-capturing
-      ;; in the interpreter.  This will make closures and the lambda string
+      ;; Do not unnecessarily let-bind the lambdas to avoid over-capturing in
+      ;; the interpreter.  This will make closures and the lambda string
       ;; representation larger, which makes debugging much worse.  Fortunately
       ;; the over-capturing problem does not affect the bytecode interpreter
       ;; which does a proper scope analysis.
@@ -3004,10 +3005,11 @@ These configuration options are supported:
     * :prompt - The prompt string shown in the minibuffer"
   (barf-if-buffer-read-only)
   (cl-letf* ((config (consult--customize-get #'consult-completion-in-region))
-             ;; Overwrite both the local and global value of `completion-styles', such that the
-             ;; `completing-read' minibuffer sees the overwritten value in any case.  This is
-             ;; necessary if `completion-styles' is buffer-local.
-             ;; NOTE: The completion-styles will be overwritten for recursive editing sessions!
+             ;; Overwrite both the local and global value of
+             ;; `completion-styles', such that the `completing-read' minibuffer
+             ;; sees the overwritten value in any case.  This is necessary if
+             ;; `completion-styles' is buffer-local.  Be aware that the override
+             ;; also affects recursive editing sessions.
              (cs (or (plist-get config :completion-styles) completion-styles))
              (completion-styles cs)
              ((default-value 'completion-styles) cs)
@@ -3018,8 +3020,9 @@ These configuration options are supported:
                             consult-preview-key))
              (initial (buffer-substring-no-properties start end))
              (metadata (completion-metadata initial collection predicate))
-             ;; NOTE: `minibuffer-completing-file-name' is mostly
-             ;; deprecated. Packages should instead use the completion metadata!
+             ;; TODO: `minibuffer-completing-file-name' is mostly deprecated,
+             ;; but still in use. Packages should instead use the completion
+             ;; metadata.
              (minibuffer-completing-file-name
               (eq 'file (completion-metadata-get metadata 'category)))
              (threshold (or (plist-get config :cycle-threshold)
@@ -3575,8 +3578,8 @@ INITIAL is the initial input."
         (setq pt-orig (point) pt-min (point-min) pt-max (point-max))
         (let ((i 0))
           (consult--each-line beg end
-            ;; NOTE: Use "\n" for empty lines, since we need
-            ;; a string to attach the text property to.
+            ;; Use "\n" for empty lines, since we need a non-empty string to
+            ;; attach the text property to.
             (let ((line (if (eq beg end) (char-to-string ?\n)
                           (buffer-substring-no-properties beg end))))
               (put-text-property 0 1 'consult--focus-line (cons (cl-incf i) beg) line)
@@ -3587,7 +3590,7 @@ INITIAL is the initial input."
       (when (and input (not (equal input last-input)))
         (let (new-overlays)
           (pcase (while-no-input
-                   (unless (string-match-p "\\`!? ?\\'" input) ;; empty input.
+                   (unless (string-match-p "\\`!? ?\\'" input) ;; Empty input.
                      (let* ((inhibit-quit (eq action 'return)) ;; Non interruptible, when quitting!
                             (not (string-prefix-p "! " input))
                             (stripped (string-remove-prefix "! " input))
@@ -3601,7 +3604,7 @@ INITIAL is the initial input."
                              (setq prop (get-text-property 0 'consult--focus-line match)
                                    ind (car prop)
                                    beg (cdr prop)
-                                   ;; NOTE: Check for empty lines, see above!
+                                   ;; Check for empty lines, see above.
                                    end (+ 1 beg (if (equal match "\n") 0 (length match)))))
                            (unless (eq ind (1+ old-ind))
                              (let ((a (if not block-beg block-end))
@@ -4153,9 +4156,8 @@ of the prompt.  See also `cape-history' from the Cape package."
 
 (defun consult--isearch-history-candidates ()
   "Return Isearch history candidates."
-  ;; NOTE: Do not throw an error on empty history,
-  ;; in order to allow starting a search.
-  ;; We do not :require-match here!
+  ;; Do not throw an error on empty history, in order to allow starting a
+  ;; search.  We do not :require-match here.
   (let ((history (if (eq t search-default-mode)
                      (append regexp-search-ring search-ring)
                    (append search-ring regexp-search-ring))))
@@ -4683,21 +4685,21 @@ outside a project.  See `consult-buffer' for more details."
 
 ;;;###autoload
 (defun consult-buffer-other-window ()
-  "Variant of `consult-buffer' which switches to a buffer in another window."
+  "Variant of `consult-buffer', switching to a buffer in another window."
   (interactive)
   (let ((consult--buffer-display #'switch-to-buffer-other-window))
     (consult-buffer)))
 
 ;;;###autoload
 (defun consult-buffer-other-frame ()
-  "Variant of `consult-buffer' which switches to a buffer in another frame."
+  "Variant of `consult-buffer', switching to a buffer in another frame."
   (interactive)
   (let ((consult--buffer-display #'switch-to-buffer-other-frame))
     (consult-buffer)))
 
 ;;;###autoload
 (defun consult-buffer-other-tab ()
-  "Variant of `consult-buffer' which switches to a buffer in another tab."
+  "Variant of `consult-buffer', switching to a buffer in another tab."
   (interactive)
   (let ((consult--buffer-display #'switch-to-buffer-other-tab))
     (consult-buffer)))
