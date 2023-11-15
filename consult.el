@@ -1476,14 +1476,10 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
   "Ensure that buffer of marker POS is displayed, return t if successful."
   (or (not (markerp pos))
       ;; Switch to buffer if it is not visible
-      (if-let ((buf (marker-buffer pos)))
-          (or (and (eq (current-buffer) buf) (eq (window-buffer) buf))
-              (consult--buffer-action buf 'norecord)
-              t)
-        ;; Only print a message, since an error would disable the minibuffer
-        ;; post command.
-        (message "Buffer is dead")
-        nil)))
+      (when-let ((buf (marker-buffer pos)))
+        (or (and (eq (current-buffer) buf) (eq (window-buffer) buf))
+            (consult--buffer-action buf 'norecord)
+            t))))
 
 (defun consult--jump (pos)
   "Jump to POS.
@@ -1511,73 +1507,65 @@ position and run `consult-after-jump-hook'."
 (defun consult--jump-preview ()
   "The preview function used if selecting from a list of candidate positions.
 The function can be used as the `:state' argument of `consult--read'."
-  (let ((orig-min (point-min-marker))
-        (orig-max (point-max-marker))
-        (orig-pos (point-marker))
-        restore)
-    (set-marker-insertion-type orig-max t) ;; Grow when text is inserted
+  (let (restore)
     (lambda (action cand)
       (when (eq action 'preview)
         (mapc #'funcall restore)
         (setq restore nil)
-        (if-let ((pos (or (car-safe cand) cand))) ;; Candidate can be previewed
-            (when (consult--jump-ensure-buffer pos)
-              (let ((saved-min (point-min-marker))
-                    (saved-max (point-max-marker))
-                    (saved-pos (point-marker)))
-                (set-marker-insertion-type saved-max t) ;; Grow when text is inserted
-                (push (lambda ()
-                        (when-let ((buf (marker-buffer saved-pos)))
-                          (with-current-buffer buf
-                            (narrow-to-region saved-min saved-max)
-                            (goto-char saved-pos)
-                            (set-marker saved-pos nil)
-                            (set-marker saved-min nil)
-                            (set-marker saved-max nil))))
-                      restore))
-              (unless (= (goto-char pos) (point)) ;; Widen if jump failed
-                (widen)
-                (goto-char pos))
-              (setq restore (nconc (consult--invisible-open-temporarily) restore))
-              ;; Ensure that cursor is properly previewed (gh:minad/consult#764)
-              (unless (eq cursor-in-non-selected-windows 'box)
-                (let ((orig cursor-in-non-selected-windows)
-                      (buf (current-buffer)))
-                  (push
-                   (if (local-variable-p 'cursor-in-non-selected-windows)
-                       (lambda ()
-                         (when (buffer-live-p buf)
-                           (with-current-buffer buf
-                             (setq-local cursor-in-non-selected-windows orig))))
-                     (lambda ()
-                       (when (buffer-live-p buf)
-                         (with-current-buffer buf
-                           (kill-local-variable 'cursor-in-non-selected-windows)))))
-                   restore)
-                  (setq-local cursor-in-non-selected-windows 'box)))
-              ;; Match previews
-              (let ((overlays
-                     (list (save-excursion
-                             (let ((vbeg (progn (beginning-of-visual-line) (point)))
-                                   (vend (progn (end-of-visual-line) (point)))
-                                   (end (pos-eol)))
-                               (consult--make-overlay vbeg (if (= vend end) (1+ end) vend)
-                                                      'face 'consult-preview-line
-                                                      'window (selected-window)
-                                                      'priority 1))))))
-                (dolist (match (cdr-safe cand))
-                  (push (consult--make-overlay (+ (point) (car match))
-                                               (+ (point) (cdr match))
-                                               'face 'consult-preview-match
-                                               'window (selected-window)
-                                               'priority 2)
-                        overlays))
-                (push (lambda () (mapc #'delete-overlay overlays)) restore))
-              (run-hooks 'consult-after-jump-hook))
-          ;; If position cannot be previewed, return to saved position
-          (when (consult--jump-ensure-buffer orig-pos)
-            (narrow-to-region orig-min orig-max)
-            (goto-char orig-pos)))))))
+        (when-let ((pos (or (car-safe cand) cand)) ;; Candidate can be previewed
+                   ((consult--jump-ensure-buffer pos)))
+          (let ((saved-min (point-min-marker))
+                (saved-max (point-max-marker))
+                (saved-pos (point-marker)))
+            (set-marker-insertion-type saved-max t) ;; Grow when text is inserted
+            (push (lambda ()
+                    (when-let ((buf (marker-buffer saved-pos)))
+                      (with-current-buffer buf
+                        (narrow-to-region saved-min saved-max)
+                        (goto-char saved-pos)
+                        (set-marker saved-pos nil)
+                        (set-marker saved-min nil)
+                        (set-marker saved-max nil))))
+                  restore))
+          (unless (= (goto-char pos) (point)) ;; Widen if jump failed
+            (widen)
+            (goto-char pos))
+          (setq restore (nconc (consult--invisible-open-temporarily) restore))
+          ;; Ensure that cursor is properly previewed (gh:minad/consult#764)
+          (unless (eq cursor-in-non-selected-windows 'box)
+            (let ((orig cursor-in-non-selected-windows)
+                  (buf (current-buffer)))
+              (push
+               (if (local-variable-p 'cursor-in-non-selected-windows)
+                   (lambda ()
+                     (when (buffer-live-p buf)
+                       (with-current-buffer buf
+                         (setq-local cursor-in-non-selected-windows orig))))
+                 (lambda ()
+                   (when (buffer-live-p buf)
+                     (with-current-buffer buf
+                       (kill-local-variable 'cursor-in-non-selected-windows)))))
+               restore)
+              (setq-local cursor-in-non-selected-windows 'box)))
+          ;; Match previews
+          (let ((overlays
+                 (list (save-excursion
+                         (let ((vbeg (progn (beginning-of-visual-line) (point)))
+                               (vend (progn (end-of-visual-line) (point)))
+                               (end (pos-eol)))
+                           (consult--make-overlay vbeg (if (= vend end) (1+ end) vend)
+                                                  'face 'consult-preview-line
+                                                  'window (selected-window)
+                                                  'priority 1))))))
+            (dolist (match (cdr-safe cand))
+              (push (consult--make-overlay (+ (point) (car match))
+                                           (+ (point) (cdr match))
+                                           'face 'consult-preview-match
+                                           'window (selected-window)
+                                           'priority 2)
+                    overlays))
+            (push (lambda () (mapc #'delete-overlay overlays)) restore))
+          (run-hooks 'consult-after-jump-hook))))))
 
 (defun consult--jump-state ()
   "The state function used if selecting from a list of candidate positions."
@@ -3360,12 +3348,11 @@ CANDIDATES is the list of candidates."
   "Group function used by `consult-line-multi'.
 If TRANSFORM non-nil, return transformed CAND, otherwise return title."
   (if transform cand
-    (let ((marker (car (get-text-property 0 'consult-location cand))))
-      (buffer-name
-       ;; Handle cheap marker
-       (if (consp marker)
-           (car marker)
-         (marker-buffer marker))))))
+    (let* ((marker (car (get-text-property 0 'consult-location cand)))
+          (buf (if (consp marker)
+                   (car marker) ;; Handle cheap marker
+                 (marker-buffer marker))))
+      (if buf (buffer-name buf) "Dead buffer"))))
 
 (defun consult--line-multi-candidates (buffers input)
   "Collect matching candidates from multiple buffers.
