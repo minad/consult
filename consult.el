@@ -4415,15 +4415,16 @@ AS is a conversion function."
     (when sort
       (setq buffers (funcall (intern (format "consult--buffer-sort-%s" sort)) buffers)))
     (when (or filter mode as root)
-      (let ((mode (ensure-list mode))
-            (exclude-re (consult--regexp-filter exclude))
+      (let ((exclude-re (consult--regexp-filter exclude))
             (include-re (consult--regexp-filter include))
             (case-fold-search))
         (consult--keep! buffers
           (and
            (or (not mode)
-               (apply #'provided-mode-derived-p
-                      (buffer-local-value 'major-mode it) mode))
+               (let ((mm (buffer-local-value 'major-mode it)))
+                 (if (consp mode)
+                     (seq-some (lambda (m) (provided-mode-derived-p mm m)) mode)
+                   (provided-mode-derived-p mm mode))))
            (pcase-exhaustive filter
              ('nil t)
              ((or 't 'invert)
