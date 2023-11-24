@@ -1285,8 +1285,8 @@ ORIG is the original function, HOOKS the arguments."
           (when (save-excursion (search-forward "\0" nil 'noerror))
             (kill-buffer)
             (error "Binary file `%s' not previewed" name))
-          ;; TODO: Check if most major modes work properly. Some may fail on
-          ;; partial files.
+          ;; Auto detect major mode and hope for the best, given the file which
+          ;; is only previewed partially.
           (set-auto-mode)
           (font-lock-mode 1)
           (current-buffer))
@@ -2954,12 +2954,12 @@ The candidates are previewed in the region from START to END.  This function is
 used as the `:state' argument for `consult--read' in the `consult-yank' family
 of functions and in `consult-completion-in-region'."
   (unless (or (minibufferp)
-              ;; XXX Disable preview if anything odd is going on with the
-              ;; markers. Otherwise we get "Marker points into wrong buffer
-              ;; errors".  See gh:minad/consult#375, where Org mode source
-              ;; blocks are completed in a different buffer than the original
-              ;; buffer.  This completion is probably also problematic in my
-              ;; Corfu completion package.
+              ;; Disable preview if anything odd is going on with the markers.
+              ;; Otherwise we get "Marker points into wrong buffer errors".  See
+              ;; gh:minad/consult#375, where Org mode source blocks are
+              ;; completed in a different buffer than the original buffer.  This
+              ;; completion is probably also problematic in my Corfu completion
+              ;; package.
               (not (eq (window-buffer) (current-buffer)))
               (and (markerp start) (not (eq (marker-buffer start) (current-buffer))))
               (and (markerp end) (not (eq (marker-buffer end) (current-buffer)))))
@@ -4401,7 +4401,7 @@ to search and is passed to `consult--buffer-query'."
   "Query for a list of matching buffers.
 The function supports filtering by various criteria which are
 used throughout Consult.  In particular it is the backbone of
-most `consult-buffer' sources.
+most `consult-buffer-sources'.
 DIRECTORY can either be the symbol project or a file name.
 SORT can be visibility, alpha or nil.
 FILTER can be either t, nil or invert.
@@ -4983,7 +4983,7 @@ INITIAL is initial input."
                               (lambda (x)
                                 `("-and" "-iregex"
                                   ,(format ".*%s.*"
-                                           ;; HACK Replace non-capturing groups with capturing groups.
+                                           ;; Replace non-capturing groups with capturing groups.
                                            ;; GNU find does not support non-capturing groups.
                                            (replace-regexp-in-string
                                             "\\\\(\\?:" "\\(" x 'fixedcase 'literal))))
