@@ -4398,7 +4398,10 @@ to search and is passed to `consult--buffer-query'."
 
 (cl-defun consult--buffer-query (&key sort directory mode as predicate (filter t)
                                       include (exclude consult-buffer-filter))
-  "Buffer query function.
+  "Query for a list of matching buffers.
+The function supports filtering by various criteria which are
+used throughout Consult.  In particular it is the backbone of
+most `consult-buffer' sources.
 DIRECTORY can either be the symbol project or a file name.
 SORT can be visibility, alpha or nil.
 FILTER can be either t, nil or invert.
@@ -4407,9 +4410,6 @@ INCLUDE is a list of regexps.
 MODE can be a mode or a list of modes to restrict the returned buffers.
 PREDICATE is a predicate function.
 AS is a conversion function."
-  ;; This function is the backbone of most `consult-buffer' source.  The
-  ;; function supports filtering by various criteria which are used throughout
-  ;; Consult.
   (let ((root (consult--normalize-directory directory))
         (buffers (buffer-list)))
     (when sort
