@@ -1665,10 +1665,10 @@ The result can be passed as :state argument to `consult--read'." type)
                  (list hook)
                  (and (memq t post-command-hook) '(t))))))
 
-(defun consult--with-preview-1 (preview-key state transform candidate fun)
+(defun consult--with-preview-1 (preview-key state transform candidate save-input fun)
   "Add preview support for FUN.
 See `consult--with-preview' for the arguments
-PREVIEW-KEY, STATE, TRANSFORM and CANDIDATE."
+PREVIEW-KEY, STATE, TRANSFORM, CANDIDATE and SAVE-INPUT."
   (let ((mb-input "") mb-narrow selected timer previewed)
     (consult--minibuffer-with-setup-hook
         (if (and state preview-key)
@@ -1755,20 +1755,26 @@ PREVIEW-KEY, STATE, TRANSFORM and CANDIDATE."
                (setq mb-input (minibuffer-contents-no-properties)
                      mb-narrow consult--narrow)))))
       (unwind-protect
-          (cons (setq selected (when-let (result (funcall fun))
-                                 (funcall transform mb-narrow mb-input result)))
-                mb-input)
+          (setq selected (when-let (result (funcall fun))
+                           (when-let ((save-input)
+                                      (list (symbol-value save-input))
+                                      ((equal (car list) result)))
+                             (set save-input (cdr list)))
+                           (funcall transform mb-narrow mb-input result)))
+        (when save-input
+          (add-to-history save-input mb-input))
         (when state
           ;; STEP 5: The preview function should perform its final action
           (funcall state 'return selected))))))
 
-(defmacro consult--with-preview (preview-key state transform candidate &rest body)
+(defmacro consult--with-preview (preview-key state transform candidate save-input &rest body)
   "Add preview support to BODY.
 
 STATE is the state function.
 TRANSFORM is the transformation function.
 CANDIDATE is the function returning the current candidate.
 PREVIEW-KEY are the keys which triggers the preview.
+SAVE-INPUT can be a history variable symbol to save the input.
 
 The state function takes two arguments, an action argument and the
 selected candidate.  The candidate argument can be nil if no candidate is
@@ -1804,8 +1810,8 @@ argument is the continuation of `consult--read'.  Via `unwind-protect' it
 is guaranteed, that if the `setup' action of a state function is
 invoked, the state function will also be called with `exit' and
 `return'."
-  (declare (indent 4))
-  `(consult--with-preview-1 ,preview-key ,state ,transform ,candidate (lambda () ,@body)))
+  (declare (indent 5))
+  `(consult--with-preview-1 ,preview-key ,state ,transform ,candidate ,save-input (lambda () ,@body)))
 
 ;;;; Narrowing and grouping
 
@@ -2554,43 +2560,39 @@ PREVIEW-KEY are the preview keys."
       ;; representation larger, which makes debugging much worse.  Fortunately
       ;; the over-capturing problem does not affect the bytecode interpreter
       ;; which does a proper scope analysis.
-      (let* ((metadata `(metadata
-                         ,@(when category `((category . ,category)))
-                         ,@(when group `((group-function . ,group)))
-                         ,@(when annotate
-                             `((affixation-function
-                                . ,(apply-partially #'consult--read-affixate annotate))
-                               (annotation-function
-                                . ,(apply-partially #'consult--read-annotate annotate))))
-                         ,@(unless sort '((cycle-sort-function . identity)
-                                          (display-sort-function . identity)))))
-             (consult--annotate-align-width 0)
-             (result
-              (consult--with-preview
-                  preview-key state
-                  (lambda (narrow input cand)
-                    (funcall lookup cand (funcall async nil) input narrow))
-                  (apply-partially #'run-hook-with-args-until-success
-                                   'consult--completion-candidate-hook)
-                (completing-read prompt
-                                 (lambda (str pred action)
-                                   (let ((result (complete-with-action action (funcall async nil) str pred)))
-                                     (if (eq action 'metadata)
-                                         (if (and (eq (car result) 'metadata) (cdr result))
-                                             ;; Merge metadata
-                                             `(metadata ,@(cdr metadata) ,@(cdr result))
-                                           metadata)
-                                       result)))
-                                 predicate require-match initial
-                                 (if (symbolp history) history (cadr history))
-                                 default
-                                 inherit-input-method))))
-        (pcase-exhaustive history
-          (`(:input ,var)
-           (set var (cdr (symbol-value var)))
-           (add-to-history var (cdr result)))
-          ((pred symbolp)))
-        (car result)))))
+      (let ((metadata `(metadata
+                        ,@(when category `((category . ,category)))
+                        ,@(when group `((group-function . ,group)))
+                        ,@(when annotate
+                            `((affixation-function
+                               . ,(apply-partially #'consult--read-affixate annotate))
+                              (annotation-function
+                               . ,(apply-partially #'consult--read-annotate annotate))))
+                        ,@(unless sort '((cycle-sort-function . identity)
+                                         (display-sort-function . identity)))))
+            (consult--annotate-align-width 0))
+        (consult--with-preview
+            preview-key state
+            (lambda (narrow input cand)
+              (funcall lookup cand (funcall async nil) input narrow))
+            (apply-partially #'run-hook-with-args-until-success
+                             'consult--completion-candidate-hook)
+            (pcase-exhaustive history
+              (`(:input ,var) var)
+              ((pred symbolp)))
+          (completing-read prompt
+                           (lambda (str pred action)
+                             (let ((result (complete-with-action action (funcall async nil) str pred)))
+                               (if (eq action 'metadata)
+                                   (if (and (eq (car result) 'metadata) (cdr result))
+                                       ;; Merge metadata
+                                       `(metadata ,@(cdr metadata) ,@(cdr result))
+                                     metadata)
+                                 result)))
+                           predicate require-match initial
+                           (if (symbolp history) history (cadr history))
+                           default
+                           inherit-input-method))))))
 
 (cl-defun consult--read (table &rest options &key
                                prompt predicate require-match history default
@@ -2664,11 +2666,12 @@ input method."
                  (consult--setup-keymap keymap nil nil preview-key)
                  (setq-local minibuffer-default-add-function
                              (apply-partially #'consult--add-history nil add-history))))
-    (car (consult--with-preview
-             preview-key state
-             (lambda (_narrow inp _cand) (funcall transform inp))
-             (lambda () "")
-           (read-from-minibuffer prompt initial nil nil history default inherit-input-method)))))
+    (consult--with-preview
+        preview-key state
+        (lambda (_narrow inp _cand) (funcall transform inp))
+        (lambda () "")
+        nil
+        (read-from-minibuffer prompt initial nil nil history default inherit-input-method))))
 
 (cl-defun consult--prompt (&rest options &key prompt history add-history initial default
                                  keymap state preview-key transform inherit-input-method)
@@ -3052,24 +3055,24 @@ These configuration options are supported:
                ((atom all) nil)
                ((and (consp all) (atom (cdr all)))
                 (concat (substring initial 0 limit) (car all)))
-               (t (car
-                   (consult--with-preview
-                       preview-key
-                       ;; preview state
-                       (consult--insertion-preview start end)
-                       ;; transformation function
-                       (lambda (_narrow _inp cand) cand)
-                       ;; candidate function
-                       (apply-partially #'run-hook-with-args-until-success
-                                        'consult--completion-candidate-hook)
-                     (consult--local-let ((enable-recursive-minibuffers t))
-                       ;; Evaluate completion table in the original buffer.
-                       ;; This is a reasonable thing to do and required by
-                       ;; some completion tables in particular by lsp-mode.
-                       ;; See gh:minad/vertico#61.
-                       (completing-read prompt
-                                        (consult--completion-table-in-buffer collection)
-                                        predicate require-match initial))))))))
+               (t (consult--with-preview
+                      preview-key
+                      ;; preview state
+                      (consult--insertion-preview start end)
+                      ;; transformation function
+                      (lambda (_narrow _inp cand) cand)
+                      ;; candidate function
+                      (apply-partially #'run-hook-with-args-until-success
+                                       'consult--completion-candidate-hook)
+                      nil
+                    (consult--local-let ((enable-recursive-minibuffers t))
+                      ;; Evaluate completion table in the original buffer.
+                      ;; This is a reasonable thing to do and required by
+                      ;; some completion tables in particular by lsp-mode.
+                      ;; See gh:minad/vertico#61.
+                      (completing-read prompt
+                                       (consult--completion-table-in-buffer collection)
+                                       predicate require-match initial)))))))
         (if completion
             (progn
               ;; bug#55205: completion--replace removes properties!
