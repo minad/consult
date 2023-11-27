@@ -2668,7 +2668,7 @@ input method."
         preview-key state
         (lambda (_narrow inp _cand) (funcall transform inp))
         (lambda () "")
-        nil
+        history
         (read-from-minibuffer prompt initial nil nil history default inherit-input-method))))
 
 (cl-defun consult--prompt (&rest options &key prompt history add-history initial default
