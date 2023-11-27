@@ -483,6 +483,7 @@ Used by `consult-completion-in-region', `consult-yank' and `consult-history'.")
 (defvar consult--find-history nil)
 (defvar consult--man-history nil)
 (defvar consult--line-history nil)
+(defvar consult--line-multi-history nil)
 (defvar consult--theme-history nil)
 (defvar consult--minor-mode-menu-history nil)
 (defvar consult--buffer-history nil)
@@ -3425,7 +3426,7 @@ to `consult--buffer-query'."
      :add-history (mapcar #'consult--async-split-initial
                           (delq nil (list (thing-at-point 'symbol)
                                           isearch-string)))
-     :history '(:input consult--line-history)
+     :history '(:input consult--line-multi-history)
      :lookup #'consult--line-multi-match
      ;; Add `isearch-string' as initial input if starting from Isearch
      :initial (consult--async-split-initial

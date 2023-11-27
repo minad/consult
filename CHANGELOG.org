@@ -20,8 +20,7 @@
 - Save input history even when using =embark-export= or when aborting from a
   command via C-g. This change affects commands like =consult-line= and
   =consult-grep=.
-- Unify history of =consult-line=, =consult-line-multi=, =consult-keep-lines= and
-  =consult-focus-lines=.
+- Unify history of =consult-line=, =consult-keep-lines= and =consult-focus-lines=.
 
 * Version 0.35 (2023-07-02)
 
