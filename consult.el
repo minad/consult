@@ -4369,7 +4369,7 @@ The command supports previewing the currently selected theme."
             it
           (push it hidden)
           nil)))
-    (nconc (nreverse hidden) buffers (list (current-buffer)))))
+    (nconc (nreverse hidden) buffers (list current))))
 
 (defun consult--normalize-directory (dir)
   "Normalize directory DIR.
