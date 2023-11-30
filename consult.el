@@ -4264,9 +4264,10 @@ starts a new Isearch session otherwise."
     (delq nil
           (mapcar (pcase-lambda (`(,sym ,lighter))
                     (when (and lighter (not (equal "" lighter)))
-                      (setq lighter (string-trim (format-mode-line lighter)))
-                      (unless (string-blank-p lighter)
-                        (cons lighter sym))))
+                      (let (message-log-max)
+                        (setq lighter (string-trim (format-mode-line lighter)))
+                        (unless (string-blank-p lighter)
+                          (cons lighter sym)))))
                   minor-mode-alist)))))
 
 (defconst consult--minor-mode-menu-narrow
