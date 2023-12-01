@@ -2,7 +2,7 @@
 #+author: Daniel Mendler
 #+language: en
 
-* Development
+* Version 1.0 (2023-12-01)
 
 - Bugfixes.
 - Preview large files partially. Add new customization variables
