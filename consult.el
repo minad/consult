@@ -2764,6 +2764,7 @@ KEYMAP is a command-specific keymap."
                                          (eq (or (car-safe n) n -1) narrow)))
                                      sources))
                    ((seq-find (lambda (src) (plist-get src :default)) sources))
+                   ((seq-find (lambda (src) (not (plist-get src :hidden))) sources))
                    ((aref sources 0))))
              (idx (seq-position sources src))
              (def (and (string-blank-p selected) ;; default candidate
