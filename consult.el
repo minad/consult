@@ -89,8 +89,8 @@ The function takes one boolean argument MAY-PROMPT.  If
 MAY-PROMPT is non-nil, the function may ask the prompt the user
 for a project directory.  The root directory is used by
 `consult-buffer' and `consult-grep'."
-  :type '(choice
-          (const :tag "Default project function" consult--default-project-function)
+  :type `(choice
+          (const :tag "Default project function" ,#'consult--default-project-function)
           (function :tag "Custom function")
           (const :tag "No project integration" nil)))
 
@@ -132,10 +132,10 @@ This applies to asynchronous commands, e.g., `consult-grep'."
                  (const :tag "Perl" perl)))
 
 (defcustom consult-async-split-styles-alist
-  '((nil :function consult--split-nil)
-    (comma :separator ?, :function consult--split-separator)
-    (semicolon :separator ?\; :function consult--split-separator)
-    (perl :initial "#" :function consult--split-perl))
+  `((nil :function ,#'consult--split-nil)
+    (comma :separator ?, :function ,#'consult--split-separator)
+    (semicolon :separator ?\; :function ,#'consult--split-separator)
+    (perl :initial "#" :function ,#'consult--split-perl))
   "Async splitting styles."
   :type '(alist :key-type symbol :value-type plist))
 
