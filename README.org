@@ -1119,50 +1119,17 @@ commands originated in the Counsel package or the wiki of the Selectrum package.
 This package exists only thanks to the help of these great contributors and
 thanks to the feedback of many users. Thank you!
 
-Code contributions:
-- [[https://github.com/oantolin/][Omar Antolín Camarena]]
-- [[https://github.com/s-kostyaev/][Sergey Kostyaev]]
-- [[https://github.com/okamsn/][Earl Hyatt]]
-- [[https://github.com/clemera/][Clemens Radermacher]]
-- [[https://github.com/tomfitzhenry/][Tom Fitzhenry]]
-- [[https://github.com/jakanakaevangeli][jakanakaevangeli]]
-- [[https://hg.serna.eu][Iñigo Serna]]
-- [[https://github.com/aspiers/][Adam Spiers]]
-- [[https://github.com/omar-polo][Omar Polo]]
-- [[https://github.com/astoff][Augusto Stoffel]]
-- [[https://github.com/noctuid][Fox Kiester]]
-- [[https://github.com/tecosaur][Tecosaur]]
-- [[https://github.com/mohamed-abdelnour][Mohamed Abdelnour]]
-- [[https://github.com/thisirs][Sylvain Rousseau]]
-- [[https://github.com/jdtsmith][JD Smith]]
-- [[https://github.com/mohkale][Mohsin Kaleem]]
-- [[https://github.com/jyp][Jean-Philippe Bernardy]]
-- [[https://github.com/aagon][Aymeric Agon-Rambosson]]
-- [[https://github.com/geolessel][Geoffrey Lessel]]
-- [[https://github.com/piotrkwiecinski][Piotr Kwiecinski]]
-- [[https://github.com/rswgnu][Robert Weiner]]
-- [[https://github.com/amosbird][Amos Bird]]
-- [[https://github.com/fuzy112][Zhengyi]]
-- [[https://github.com/scvalex][Alexandru Scvorțov]]
-- [[https://github.com/ashton314][Ashton Wiersdorf]]
-- [[https://github.com/iostapyshyn][Illia Ostapyshyn]]
+Code contributions: [[https://github.com/aagon][Aymeric Agon-Rambosson]], [[https://github.com/amosbird][Amos Bird]], [[https://github.com/ashton314][Ashton Wiersdorf]], [[https://github.com/aspiers/][Adam
+Spiers]], [[https://github.com/astoff][Augusto Stoffel]], [[https://github.com/clemera/][Clemens Radermacher]], [[https://github.com/fuzy112][Zhengyi]], [[https://github.com/geolessel][Geoffrey Lessel]], [[https://github.com/iostapyshyn][Illia
+Ostapyshyn]], [[https://github.com/jakanakaevangeli][jakanakaevangeli]], [[https://github.com/jdtsmith][JD Smith]], [[https://github.com/jyp][Jean-Philippe Bernardy]], [[https://github.com/mohamed-abdelnour][Mohamed
+Abdelnour]], [[https://github.com/mohkale][Mohsin Kaleem]], [[https://github.com/noctuid][Fox Kiester]], [[https://github.com/oantolin/][Omar Antolín Camarena]], [[https://github.com/okamsn/][Earl Hyatt]], [[https://github.com/omar-polo][Omar
+Polo]], [[https://github.com/piotrkwiecinski][Piotr Kwiecinski]], [[https://github.com/rswgnu][Robert Weiner]], [[https://github.com/s-kostyaev/][Sergey Kostyaev]], [[https://github.com/scvalex][Alexandru Scvorțov]],
+[[https://github.com/tecosaur][Tecosaur]], [[https://github.com/thisirs][Sylvain Rousseau]], [[https://github.com/tomfitzhenry/][Tom Fitzhenry]] and [[https://hg.serna.eu][Iñigo Serna]].
 
-Advice and useful discussions:
-- [[https://github.com/clemera/][Clemens Radermacher]]
-- [[https://github.com/oantolin/][Omar Antolín Camarena]]
-- [[https://protesilaos.com][Protesilaos Stavrou]]
-- [[https://github.com/purcell/][Steve Purcell]]
-- [[https://github.com/alphapapa/][Adam Porter]]
-- [[https://github.com/manuel-uberti/][Manuel Uberti]]
-- [[https://github.com/tomfitzhenry/][Tom Fitzhenry]]
-- [[https://github.com/hmelman/][Howard Melman]]
-- [[https://github.com/monnier/][Stefan Monnier]]
-- [[https://github.com/dgutov/][Dmitry Gutov]]
-- [[https://github.com/iyefrat][Itai Y. Efrat]]
-- [[https://github.com/bdarcus][Bruce d'Arcus]]
-- [[https://github.com/jdtsmith][JD Smith]]
-- [[https://github.com/Qkessler][Enrique Kessler Martínez]]
-- [[https://github.com/raxod502][Radon Rosborough]]
+Advice and useful discussions: [[https://github.com/Qkessler][Enrique Kessler Martínez]], [[https://github.com/alphapapa/][Adam Porter]], [[https://github.com/bdarcus][Bruce
+d'Arcus]], [[https://github.com/clemera/][Clemens Radermacher]], [[https://github.com/dgutov/][Dmitry Gutov]], [[https://github.com/hmelman/][Howard Melman]], [[https://github.com/iyefrat][Itai Y. Efrat]], [[https://github.com/jdtsmith][JD
+Smith]], [[https://github.com/manuel-uberti/][Manuel Uberti]], [[https://github.com/monnier/][Stefan Monnier]], [[https://github.com/oantolin/][Omar Antolín Camarena]], [[https://github.com/purcell/][Steve Purcell]],
+[[https://github.com/raxod502][Radon Rosborough]], [[https://github.com/tomfitzhenry/][Tom Fitzhenry]] and [[https://protesilaos.com][Protesilaos Stavrou]].
 
 #+html: <!--
 
