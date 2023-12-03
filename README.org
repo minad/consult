@@ -656,36 +656,8 @@ configure a manual preview as follows.
 #+end_src
 
 Sources can be added directly to the =consult-buffer-source= list for convenience.
-For example views/perspectives can be added to the list of virtual buffers from
-a library like [[https://github.com/minad/bookmark-view/][bookmark-view]].
-
-#+begin_src emacs-lisp
-;; Configure new bookmark-view source
-(add-to-list 'consult-buffer-sources
-              (list :name     "View"
-                    :narrow   ?v
-                    :category 'bookmark
-                    :face     'font-lock-keyword-face
-                    :history  'bookmark-view-history
-                    :action   #'consult--bookmark-action
-                    :items    #'bookmark-view-names)
-              'append)
-
-;; Modify bookmark source, such that views are hidden
-(setq consult--source-bookmark
-      (plist-put
-       consult--source-bookmark :items
-       (lambda ()
-         (bookmark-maybe-load-default-file)
-         (mapcar #'car
-                 (seq-remove (lambda (x)
-                               (eq #'bookmark-view-handler
-                                   (alist-get 'handler (cdr x))))
-                             bookmark-alist)))))
-#+end_src
-
-Another useful source lists all Org buffers and lets you create new ones. One
-can create similar sources for other major modes, e.g., for Eshell.
+For example, the following source lists all Org buffers and lets you create new
+ones.
 
 #+begin_src emacs-lisp
 (defvar org-source
@@ -708,10 +680,10 @@ can create similar sources for other major modes, e.g., for Eshell.
 (add-to-list 'consult-buffer-sources 'org-source 'append)
 #+end_src
 
-For more details, see the documentation of =consult-buffer= and of the
-internal =consult--multi= API. The =consult--multi= function can be used to
-create new multi-source commands, but is part of the internal API as of now,
-since some details may still change.
+One can create similar sources for other major modes. See the [[https://github.com/minad/consult/wiki][Consult wiki]] for
+many additional source examples. See also the documentation of =consult-buffer=
+and of the internal =consult--multi= API. The function =consult--multi= can be used
+to create new multi-source commands.
 
 ** Embark integration
 :properties:
