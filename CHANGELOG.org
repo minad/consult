@@ -4,9 +4,11 @@
 
 * Development
 
-- =consult-xref=: Do not error for an empty location list.
-- =consult--read=: Catch null completion if require-match is non-nil.
-- =consult--multi=: Ensure that :new action is invoked on visible source.
+- Bugfixes:
+  + =consult-xref=: Do not error for an empty location list.
+  + =consult--read=: Catch null completion if require-match is non-nil.
+  + =consult--multi=: Ensure that :new action is invoked on visible source.
+  + File preview: Check for long lines when previewing files partially.
 
 * Version 1.0 (2023-12-01)
 
