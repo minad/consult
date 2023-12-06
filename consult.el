@@ -2594,6 +2594,9 @@ PREVIEW-KEY are the preview keys."
                  (if (symbolp history) history (cadr history))
                  default
                  inherit-input-method)))
+          ;; Repair the null completion semantics. `completing-read' may return
+          ;; an empty string even if REQUIRE-MATCH is non-nil. One can always
+          ;; opt-in to null completion by passing the empty string for DEFAULT.
           (when (and require-match (not default) (equal selected ""))
             (user-error "No selection"))
           selected)))))
