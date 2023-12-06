@@ -282,7 +282,7 @@ This function is derived from `register-read-with-preview'."
             (setq action (logxor #x8000000 key)))
            ((characterp key)
             (setq reg key))
-           (t (error "Non-character input"))))
+           (t (user-error "Non-character input"))))
       (when (timerp timer)
         (cancel-timer timer))
       (let ((w (get-buffer-window buffer)))
