@@ -3852,22 +3852,21 @@ If no MODES are specified, use currently active major and minor modes."
                   (?l . "Local Minor")
                   (?g . "Global Minor"))))
     (command-execute
-     (or (consult--read
-          (consult--mode-command-candidates modes)
-          :prompt "Mode command: "
-          :predicate
-          (lambda (cand)
-            (let ((key (get-text-property 0 'consult--type cand)))
-              (if consult--narrow
-                  (= key consult--narrow)
-                (/= key ?g))))
-          :lookup #'consult--lookup-candidate
-          :group (consult--type-group narrow)
-          :narrow narrow
-          :require-match t
-          :history 'extended-command-history
-          :category 'command)
-         (user-error "No command selected")))))
+     (consult--read
+      (consult--mode-command-candidates modes)
+      :prompt "Mode command: "
+      :predicate
+      (lambda (cand)
+        (let ((key (get-text-property 0 'consult--type cand)))
+          (if consult--narrow
+              (= key consult--narrow)
+            (/= key ?g))))
+      :lookup #'consult--lookup-candidate
+      :group (consult--type-group narrow)
+      :narrow narrow
+      :require-match t
+      :history 'extended-command-history
+      :category 'command))))
 
 ;;;;; Command: consult-yank
 
@@ -4290,25 +4289,24 @@ starts a new Isearch session otherwise."
 This is an alternative to `minor-mode-menu-from-indicator'."
   (interactive)
   (call-interactively
-   (or (consult--read
-        (consult--minor-mode-candidates)
-        :prompt "Minor mode: "
-        :require-match t
-        :category 'minor-mode
-        :group
-        (lambda (cand transform)
-          (if transform cand (get-text-property 0 'consult--minor-mode-group cand)))
-        :narrow
-        (list :predicate
-              (lambda (cand)
-                (let ((narrow (get-text-property 0 'consult--minor-mode-narrow cand)))
-                  (or (= (logand narrow 255) consult--narrow)
-                      (= (ash narrow -8) consult--narrow))))
-              :keys
-              consult--minor-mode-menu-narrow)
-        :lookup #'consult--lookup-candidate
-        :history 'consult--minor-mode-menu-history)
-       (user-error "No minor mode selected"))))
+   (consult--read
+    (consult--minor-mode-candidates)
+    :prompt "Minor mode: "
+    :require-match t
+    :category 'minor-mode
+    :group
+    (lambda (cand transform)
+      (if transform cand (get-text-property 0 'consult--minor-mode-group cand)))
+    :narrow
+    (list :predicate
+          (lambda (cand)
+            (let ((narrow (get-text-property 0 'consult--minor-mode-narrow cand)))
+              (or (= (logand narrow 255) consult--narrow)
+                  (= (ash narrow -8) consult--narrow))))
+          :keys
+          consult--minor-mode-menu-narrow)
+    :lookup #'consult--lookup-candidate
+    :history 'consult--minor-mode-menu-history)))
 
 ;;;;; Command: consult-theme
 

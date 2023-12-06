@@ -80,13 +80,11 @@ Macros containing mouse clicks are omitted."
              (lambda (cand)
                (get-text-property 0 'consult-kmacro--annotation cand))
              :lookup #'consult--lookup-candidate)))
-    (unless km (user-error "No kmacro selected"))
-    (funcall
-     ;; Kmacros are lambdas (oclosures) on Emacs 29
-     (if (eval-when-compile (> emacs-major-version 28))
-         km
-       (kmacro-lambda-form km))
-     arg)))
+    ;; Kmacros are lambdas (oclosures) on Emacs 29
+    (funcall (if (eval-when-compile (> emacs-major-version 28))
+                 km
+               (kmacro-lambda-form km))
+             arg)))
 
 (provide 'consult-kmacro)
 ;;; consult-kmacro.el ends here
