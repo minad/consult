@@ -2554,44 +2554,49 @@ PREVIEW-KEY are the preview keys."
                  (setq-local minibuffer-default-add-function
                              (apply-partially #'consult--add-history (consult--async-p table) add-history))))
     (consult--with-async (async table)
-      ;; Do not unnecessarily let-bind the lambdas to avoid over-capturing in
-      ;; the interpreter.  This will make closures and the lambda string
-      ;; representation larger, which makes debugging much worse.  Fortunately
-      ;; the over-capturing problem does not affect the bytecode interpreter
-      ;; which does a proper scope analysis.
-      (let ((metadata `(metadata
-                        ,@(when category `((category . ,category)))
-                        ,@(when group `((group-function . ,group)))
-                        ,@(when annotate
-                            `((affixation-function
-                               . ,(apply-partially #'consult--read-affixate annotate))
-                              (annotation-function
-                               . ,(apply-partially #'consult--read-annotate annotate))))
-                        ,@(unless sort '((cycle-sort-function . identity)
-                                         (display-sort-function . identity)))))
-            (consult--annotate-align-width 0))
-        (consult--with-preview
-            preview-key state
-            (lambda (narrow input cand)
-              (funcall lookup cand (funcall async nil) input narrow))
-            (apply-partially #'run-hook-with-args-until-success
-                             'consult--completion-candidate-hook)
-            (pcase-exhaustive history
-              (`(:input ,var) var)
-              ((pred symbolp)))
-          (completing-read prompt
-                           (lambda (str pred action)
-                             (let ((result (complete-with-action action (funcall async nil) str pred)))
-                               (if (eq action 'metadata)
-                                   (if (and (eq (car result) 'metadata) (cdr result))
-                                       ;; Merge metadata
-                                       `(metadata ,@(cdr metadata) ,@(cdr result))
-                                     metadata)
-                                 result)))
-                           predicate require-match initial
-                           (if (symbolp history) history (cadr history))
-                           default
-                           inherit-input-method))))))
+      (consult--with-preview
+          preview-key state
+          (lambda (narrow input cand)
+            (funcall lookup cand (funcall async nil) input narrow))
+          (apply-partially #'run-hook-with-args-until-success
+                           'consult--completion-candidate-hook)
+          (pcase-exhaustive history
+            (`(:input ,var) var)
+            ((pred symbolp)))
+        ;; Do not unnecessarily let-bind the lambdas to avoid over-capturing in
+        ;; the interpreter.  This will make closures and the lambda string
+        ;; representation larger, which makes debugging much worse.  Fortunately
+        ;; the over-capturing problem does not affect the bytecode interpreter
+        ;; which does a proper scope analysis.
+        (let* ((metadata `(metadata
+                           ,@(when category `((category . ,category)))
+                           ,@(when group `((group-function . ,group)))
+                           ,@(when annotate
+                               `((affixation-function
+                                  . ,(apply-partially #'consult--read-affixate annotate))
+                                 (annotation-function
+                                  . ,(apply-partially #'consult--read-annotate annotate))))
+                           ,@(unless sort '((cycle-sort-function . identity)
+                                            (display-sort-function . identity)))))
+               (consult--annotate-align-width 0)
+               (selected
+                (completing-read
+                 prompt
+                 (lambda (str pred action)
+                   (let ((result (complete-with-action action (funcall async nil) str pred)))
+                     (if (eq action 'metadata)
+                         (if (and (eq (car result) 'metadata) (cdr result))
+                             ;; Merge metadata
+                             `(metadata ,@(cdr metadata) ,@(cdr result))
+                           metadata)
+                       result)))
+                 predicate require-match initial
+                 (if (symbolp history) history (cadr history))
+                 default
+                 inherit-input-method)))
+          (when (and require-match (not default) (equal selected ""))
+            (user-error "No selection"))
+          selected)))))
 
 (cl-defun consult--read (table &rest options &key
                                prompt predicate require-match history default
