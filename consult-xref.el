@@ -114,7 +114,7 @@ FETCHER and ALIST arguments."
                   (consult-xref--preview fun))
                 :lookup (apply-partially #'consult--lookup-prop 'consult-xref))))
            (get-text-property 0 'consult-xref (car candidates)))
-         (user-error "No location selected"))
+         (user-error "No xref location"))
      display)))
 
 (provide 'consult-xref)
