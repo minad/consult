@@ -1274,30 +1274,26 @@ ORIG is the original function, HOOKS the arguments."
              ;; file-attributes may throw permission denied error
              (attrs (ignore-errors (file-attributes name)))
              (size (file-attribute-size attrs)))
-    (if (>= size consult-preview-partial-size)
-        (with-current-buffer
-            (generate-new-buffer (format "consult-partial-preview-%s" name))
-          (setq buffer-read-only t)
-          (with-silent-modifications
-            (insert-file-contents name nil 0 consult-preview-partial-chunk))
-          (goto-char (point-min))
-          (when (save-excursion (search-forward "\0" nil 'noerror))
-            (kill-buffer)
-            (error "Binary file `%s' not previewed" name))
-          ;; Auto detect major mode and hope for the best, given the file which
-          ;; is only previewed partially.
-          (set-auto-mode)
-          (font-lock-mode 1)
-          (current-buffer))
-      (with-current-buffer (find-file-noselect name 'nowarn)
-        (when (bound-and-true-p so-long-detected-p)
-          (kill-buffer)
-          (error "File `%s' with long lines not previewed" name))
-        (when (and (memq major-mode '(fundamental-mode hexl-mode))
-                   (save-excursion (search-forward "\0" nil 'noerror)))
-          (kill-buffer)
-          (error "Binary file `%s' not previewed" name))
-        (current-buffer)))))
+    (with-current-buffer (if (>= size consult-preview-partial-size)
+                             (generate-new-buffer (format "consult-partial-preview-%s" name))
+                           (find-file-noselect name 'nowarn))
+      (when (>= size consult-preview-partial-size)
+        (setq buffer-read-only t)
+        (with-silent-modifications
+          (insert-file-contents name nil 0 consult-preview-partial-chunk))
+        (goto-char (point-min))
+        ;; Auto detect major mode and hope for the best, given the file which
+        ;; is only previewed partially.
+        (set-auto-mode)
+        (font-lock-mode 1))
+      (when (bound-and-true-p so-long-detected-p)
+        (kill-buffer)
+        (error "File `%s' with long lines not previewed" name))
+      (when (and (memq major-mode '(fundamental-mode hexl-mode))
+                 (save-excursion (search-forward "\0" nil 'noerror)))
+        (kill-buffer)
+        (error "Binary file `%s' not previewed" name))
+      (current-buffer))))
 
 (defun consult--find-file-temporarily (name)
   "Open file NAME temporarily for preview."
