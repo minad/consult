@@ -320,9 +320,6 @@ individual keys must be strings accepted by `key-valid-p'."
                  (key :tag "Key")
                  (repeat :tag "List of keys" key)))
 
-(make-obsolete-variable 'consult-preview-raw-size nil "0.35")
-(make-obsolete-variable 'consult-preview-max-size nil "0.35")
-
 (defcustom consult-preview-partial-size 1048576
   "Files larger than this byte limit are previewed partially."
   :type '(natnum :tag "File size in bytes"))

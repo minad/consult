@@ -5,12 +5,14 @@
 * Development
 
 - Bugfixes:
-  + =consult-xref=: Do not error for an empty location list.
-  + =consult--read=: Catch null completion if require-match is non-nil.
-  + =consult--multi=: Ensure that :new action is invoked on visible source.
+  + ~consult-xref~: Do not error for an empty location list.
+  + ~consult--read~: Catch null completion if require-match is non-nil.
+  + ~consult--multi~: Ensure that :new action is invoked on visible source.
 - File preview: Check for long lines when previewing files partially.
 - Use ~minibuffer-local-filename-syntax~ and ~read-file-name-completion-ignore-case~
   for directory prompt of the ~consult-grep~ and ~consult--find~ family of commands.
+- Remove obsolete variables ~consult-preview-max-size~ and
+  ~consult-preview-raw-size~.
 
 * Version 1.0 (2023-12-01)
 
