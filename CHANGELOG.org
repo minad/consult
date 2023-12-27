@@ -2,7 +2,7 @@
 #+author: Daniel Mendler
 #+language: en
 
-* Development
+* Version 1.1 (2023-12-27)
 
 - Bugfixes:
   + ~consult-xref~: Do not error for an empty location list.
