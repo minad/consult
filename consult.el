@@ -1282,7 +1282,9 @@ ORIG is the original function, HOOKS the arguments."
       (when (>= size consult-preview-partial-size)
         (setq buffer-read-only t)
         (with-silent-modifications
-          (insert-file-contents name nil 0 consult-preview-partial-chunk))
+          (insert-file-contents name nil 0 consult-preview-partial-chunk)
+          (goto-char (point-max))
+          (insert "\nFile truncated. End of partial preview.\n"))
         (goto-char (point-min))
         ;; Auto detect major mode and hope for the best, given the file which
         ;; is only previewed partially.
