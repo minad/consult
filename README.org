@@ -1028,7 +1028,7 @@ annotations. I highly recommend the Embark package, but in order to familiarize
 yourself with the other components, you can first start without it - or you could
 use with Embark right away and add the other components later on.
 
-We document a [[https://github.com/minad/consult/wiki/Auxillary-packages][list of auxillary packages]] in the Consult wiki. These packages
+We document a [[https://github.com/minad/consult/wiki/Auxiliary-packages][list of auxiliary packages]] in the Consult wiki. These packages
 integrate Consult with special programs or with other packages in the wider
 Emacs ecosystem.
 
