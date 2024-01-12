@@ -233,6 +233,15 @@ for the meaning of prefix ARG."
      (unless (string-search "access aborted" (error-message-string err))
        (insert-register reg (not arg))))))
 
+;; When `register-read-with-preview' is called, and `register-use-preview' is
+;; set to nil or `never', it checks whether the command calling it just wants
+;; to jump to a register, and skips an additional confirmation in that case.
+;; This restores the register behaviour of earlier versions of Emacs.
+(when (>= emacs-major-version 30)
+  (cl-defmethod register-command-info ((_command (eql consult-register-load)))
+    "Register command info for `consult-register-load'."
+    (register-command-info #'jump-to-register)))
+
 (defun consult-register--action (action-list)
   "Read register key and execute action from ACTION-LIST.
 
