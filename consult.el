@@ -4479,11 +4479,11 @@ AS is a conversion function."
          (let ((win (or other-win (selected-window)))
                (buf (or (and cand (get-buffer cand)) orig-buf)))
            (when (and (window-live-p win) (buffer-live-p buf))
-             (with-selected-window win
-               (unless (or orig-prev orig-next)
-                 (setq orig-prev (copy-sequence (window-prev-buffers))
-                       orig-next (copy-sequence (window-next-buffers))))
-               (switch-to-buffer buf 'norecord)))))))))
+             (select-window win 'norecord)
+             (unless (or orig-prev orig-next)
+               (setq orig-prev (copy-sequence (window-prev-buffers))
+                     orig-next (copy-sequence (window-next-buffers))))
+             (switch-to-buffer buf 'norecord))))))))
 
 (defun consult--buffer-action (buffer &optional norecord)
   "Switch to BUFFER via `consult--buffer-display' function.
