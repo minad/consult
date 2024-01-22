@@ -4474,7 +4474,7 @@ AS is a conversion function."
         ('preview
          (when (and (eq consult--buffer-display #'switch-to-buffer-other-window)
                     (not other-win))
-           (switch-to-buffer-other-window orig-buf)
+           (switch-to-buffer-other-window orig-buf 'norecord)
            (setq other-win (selected-window)))
          (let ((win (or other-win (selected-window)))
                (buf (or (and cand (get-buffer cand)) orig-buf)))
