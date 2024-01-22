@@ -1476,15 +1476,6 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
                   restore))))
       restore)))
 
-(defun consult--jump-ensure-buffer (pos)
-  "Ensure that buffer of marker POS is displayed, return t if successful."
-  (or (not (markerp pos))
-      ;; Switch to buffer if it is not visible
-      (when-let ((buf (marker-buffer pos)))
-        (or (and (eq (current-buffer) buf) (eq (window-buffer) buf))
-            (consult--buffer-action buf 'norecord)
-            t))))
-
 (defun consult--jump (pos)
   "Jump to POS.
 First push current position to mark ring, then move to new
@@ -1492,16 +1483,20 @@ position and run `consult-after-jump-hook'."
   (when pos
     ;; Extract marker from list with with overlay positions, see `consult--line-match'
     (when (consp pos) (setq pos (car pos)))
-    ;; When the marker is in the same buffer, record previous location
-    ;; such that the user can jump back quickly.
-    (when (or (not (markerp pos)) (eq (current-buffer) (marker-buffer pos)))
-      ;; push-mark mutates markers in the mark-ring and the mark-marker.
-      ;; Therefore we transform the marker to a number to be safe.
-      ;; We all love side effects!
-      (setq pos (+ pos 0))
-      (push-mark (point) t))
-    (when (consult--jump-ensure-buffer pos)
-      (unless (= (goto-char pos) (point)) ;; Widen if jump failed
+    (when-let ((buf (if (markerp pos) (marker-buffer pos) (current-buffer))))
+      ;; When the marker is in the same buffer, record previous location
+      ;; such that the user can jump back quickly.
+      (when (eq buf (current-buffer))
+        ;; push-mark mutates markers in the mark-ring and the mark-marker.
+        ;; Therefore we transform the marker to a number to be safe.
+        ;; We all love side effects!
+        (setq pos (+ pos 0))
+        (push-mark (point) t))
+      ;; Switch to buffer if it is not visible
+      (unless (and (eq (current-buffer) buf) (eq (window-buffer) buf))
+        (consult--buffer-action buf 'norecord))
+      ;; Widen if jump failed
+      (unless (= (goto-char pos) (point))
         (widen)
         (goto-char pos))
       (consult--invisible-open-permanently)
@@ -1511,17 +1506,18 @@ position and run `consult-after-jump-hook'."
 (defun consult--jump-preview ()
   "The preview function used if selecting from a list of candidate positions.
 The function can be used as the `:state' argument of `consult--read'."
-  (let (restore)
+  (let (restore preview)
     (lambda (action cand)
-      (when (eq action 'preview)
+      (cond
+       ((eq action 'preview)
         (mapc #'funcall restore)
         (setq restore nil)
-        ;; TODO Better buffer preview support
-        ;; 1. Use consult--buffer-preview instead of consult--jump-ensure-buffer
-        ;; 2. Remove function consult--jump-ensure-buffer
-        ;; 3. Remove consult-buffer-other-* from consult-customize-alist
         (when-let ((pos (or (car-safe cand) cand)) ;; Candidate can be previewed
-                   ((consult--jump-ensure-buffer pos)))
+                   (buf (if (markerp pos) (marker-buffer pos) (current-buffer))))
+          (unless (and (eq buf (current-buffer)) (eq buf (window-buffer)))
+            (unless preview (setq preview (consult--buffer-preview)))
+            (funcall preview 'preview nil)
+            (funcall preview 'preview buf))
           (let ((saved-min (point-min-marker))
                 (saved-max (point-max-marker))
                 (saved-pos (point-marker)))
@@ -1573,7 +1569,10 @@ The function can be used as the `:state' argument of `consult--read'."
                                            'priority 2)
                     overlays))
             (push (lambda () (mapc #'delete-overlay overlays)) restore))
-          (run-hooks 'consult-after-jump-hook))))))
+          (run-hooks 'consult-after-jump-hook)))
+       ((and (eq action 'exit) preview)
+        (funcall preview 'preview nil)
+        (funcall preview 'exit nil))))))
 
 (defun consult--jump-state ()
   "The state function used if selecting from a list of candidate positions."
