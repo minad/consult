@@ -2,6 +2,11 @@
 #+author: Daniel Mendler
 #+language: en
 
+* Development
+
+- =consult-buffer=: Bugfix. Ensure that null completion works properly.
+- File preview: Add indication if previewed file got truncated.
+
 * Version 1.1 (2023-12-27)
 
 - Bugfixes:
