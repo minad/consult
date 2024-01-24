@@ -886,6 +886,15 @@ When no project is found and MAY-PROMPT is non-nil ask the user."
   (or (eq (selected-window) (active-minibuffer-window))
       (eq #'completion-list-mode (buffer-local-value 'major-mode (window-buffer)))))
 
+(defun consult--original-window ()
+  "Return window which was just selected just before the minibuffer was entered.
+In contrast to `minibuffer-selected-window' never return nil and
+always return an appropriate non-minibuffer window."
+  (or (minibuffer-selected-window)
+      (if (window-minibuffer-p (selected-window))
+          (next-window)
+        (selected-window))))
+
 (defun consult--forbid-minibuffer ()
   "Raise an error if executed from the minibuffer."
   (when (minibufferp)
@@ -1681,7 +1690,7 @@ PREVIEW-KEY, STATE, TRANSFORM, CANDIDATE and SAVE-INPUT."
                           (when timer
                             (cancel-timer timer)
                             (setq timer nil))
-                          (with-selected-window (or (minibuffer-selected-window) (next-window))
+                          (with-selected-window (consult--original-window)
                             ;; STEP 3: Reset preview
                             (when previewed
                               (funcall state 'preview nil))
@@ -1689,7 +1698,7 @@ PREVIEW-KEY, STATE, TRANSFORM, CANDIDATE and SAVE-INPUT."
                             (funcall state 'exit nil)))))
                 (add-hook 'minibuffer-exit-hook hook))
               ;; STEP 1: Setup the preview function
-              (with-selected-window (or (minibuffer-selected-window) (next-window))
+              (with-selected-window (consult--original-window)
                 (funcall state 'setup nil))
               (setq consult--preview-function
                     (lambda ()
@@ -1704,7 +1713,7 @@ PREVIEW-KEY, STATE, TRANSFORM, CANDIDATE and SAVE-INPUT."
                         (with-selected-window (active-minibuffer-window)
                           (let ((input (minibuffer-contents-no-properties))
                                 (narrow consult--narrow)
-                                (win (or (minibuffer-selected-window) (next-window))))
+                                (win (consult--original-window)))
                             (with-selected-window win
                               (when-let ((transformed (funcall transform narrow input cand))
                                          (debounce (consult--preview-key-debounce preview-key transformed)))
@@ -1790,7 +1799,7 @@ sequence with the following arguments:
   5. \\='return CAND/nil   After leaving the mb, CAND has been selected.
 
 The state function is always executed with the original window selected,
-see `minibuffer-selected-window'.  The state function is called once in
+see `consult--original-window'.  The state function is called once in
 the beginning of the minibuffer setup with the `setup' argument.  This is
 useful in order to perform certain setup operations which require that
 the minibuffer is initialized.  During completion candidates are
