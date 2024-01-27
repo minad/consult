@@ -1332,7 +1332,7 @@ ORIG is the original function, HOOKS the arguments."
             (set-default k d)
             (set k v)))
       (error
-       (message "%s" (cdr err))
+       (message "%s" (error-message-string err))
        nil))))
 
 (defun consult--temporary-files ()
