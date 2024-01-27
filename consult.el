@@ -4472,7 +4472,7 @@ AS is a conversion function."
 
 (defun consult--buffer-preview ()
   "Buffer preview function."
-  (let ((orig-buf (current-buffer))
+  (let ((orig-buf (window-buffer (consult--original-window)))
         (orig-prev (copy-sequence (window-prev-buffers)))
         (orig-next (copy-sequence (window-next-buffers)))
         other-win)
