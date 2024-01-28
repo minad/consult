@@ -2,6 +2,14 @@
 #+author: Daniel Mendler
 #+language: en
 
+* Development
+
+- Bugfix: Ensure that preview is always executed in a non-minibuffer window.
+- Bugfix: File preview: Do not preview ~hexl-mode~ buffers.
+- Bugfix: File preview: use ~error-message-string~ to access error string.
+- Bugfix: Buffer preview: Retrieve original window correctly.
+- Bugfix: Fix ~consult-global-mark~ for ~embark-export~.
+
 * Version 1.2 (2024-01-23)
 
 - =consult-buffer=: Bugfix. Ensure that null completion works properly.
