@@ -177,5 +177,26 @@
        :add-history (consult--async-split-thingatpt 'symbol)
        :lookup #'consult--lookup-member))))
 
+;;;###autoload
+(defmacro consult-info-define (name &rest manuals)
+  "Define `consult-info-NAME' command to search in MANUALS.
+MANUALS is a list of manual names as strings.  NAME can be a
+symbol or a string.  If it is a string it is added to the front
+of the list of MANUALS to search.  The macro returns the symbol
+`consult-info-NAME'."
+  (declare (indent 1))
+  (let ((sym (intern (format "consult-info-%s" name))))
+    (when (stringp name) (push name manuals))
+    `(prog1 ',sym
+       (defun ,sym ()
+         ,(with-temp-buffer
+            (insert (format "Full text search through info manuals listed below.
+
+Searched manuals: %s." (string-join manuals ", ")))
+            (let ((fill-column 80))
+              (fill-region (point-min) (point-max)))
+            (buffer-string))
+         (interactive) (consult-info ,@manuals)))))
+
 (provide 'consult-info)
 ;;; consult-info.el ends here
