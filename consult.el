@@ -3236,15 +3236,12 @@ The symbol at point is added to the future history."
               (when (consult--in-range-p pos)
                 (goto-char pos)
                 ;; `line-number-at-pos' is slow, see comment in `consult--mark-candidates'.
-                (let ((line (line-number-at-pos pos consult-line-numbers-widen)))
-                  (push (concat
-                         (propertize
-                          (consult--format-file-line-match (buffer-name buf) line "")
-                          'consult-location (cons marker line)
-                          'consult-strip t)
-                         (consult--line-with-mark marker)
-                         (consult--tofu-encode marker))
-                        candidates))))))))
+                (let* ((line (line-number-at-pos pos consult-line-numbers-widen))
+                       (prefix (consult--format-file-line-match (buffer-name buf) line ""))
+                       (cand (concat prefix (consult--line-with-mark marker) (consult--tofu-encode marker))))
+                  (put-text-property 0 (length prefix) 'consult-strip t cand)
+                  (put-text-property 0 (length cand) 'consult-location (cons marker line) cand)
+                  (push cand candidates))))))))
     (unless candidates
       (user-error "No global marks"))
     (nreverse (delete-dups candidates))))
