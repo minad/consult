@@ -1424,7 +1424,7 @@ ORIG is the original function, HOOKS the arguments."
 (defun consult--invisible-open-permanently ()
   "Open overlays which hide the current line.
 See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
-  (if (and (derived-mode-p #'org-mode) (fboundp 'org-fold-show-set-visibility))
+  (if (and (derived-mode-p 'org-mode) (fboundp 'org-fold-show-set-visibility))
       ;; New Org 9.6 fold-core API
       (let ((inhibit-redisplay t)) ;; HACK: Prevent flicker due to premature redisplay
         (org-fold-show-set-visibility 'canonical))
@@ -1436,7 +1436,7 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
 (defun consult--invisible-open-temporarily ()
   "Temporarily open overlays which hide the current line.
 See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
-  (if (and (derived-mode-p #'org-mode)
+  (if (and (derived-mode-p 'org-mode)
            (fboundp 'org-fold-show-set-visibility)
            (fboundp 'org-fold-core-get-regions)
            (fboundp 'org-fold-core-region))
