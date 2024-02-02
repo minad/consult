@@ -4,6 +4,8 @@
 
 * Development
 
+- =consult-bookmark-narrow=: More flexible grouping which supports multiple
+  bookmark handlers per group.
 - Bugfix: Ensure that preview is always executed in a non-minibuffer window.
 - Bugfix: File preview: Do not preview ~hexl-mode~ buffers.
 - Bugfix: File preview: use ~error-message-string~ to access error string.

@@ -355,22 +355,20 @@ chunk from the beginning of the file is previewed."
   :type '(alist :key-type symbol))
 
 (defcustom consult-bookmark-narrow
-  `((?f "File" ,#'bookmark-default-handler)
-    (?h "Help" ,#'help-bookmark-jump)
-    (?i "Info" ,#'Info-bookmark-jump)
-    (?p "Picture" ,#'image-bookmark-jump)
-    (?d "Docview" ,#'doc-view-bookmark-jump)
-    (?m "Man" ,#'Man-bookmark-jump)
-    (?w "Woman" ,#'woman-bookmark-jump)
-    (?g "Gnus" ,#'gnus-summary-bookmark-jump)
-    ;; Introduced on Emacs 28
+  `((?f "File" bookmark-default-handler)
+    (?h "Help" help-bookmark-jump Info-bookmark-jump
+               Man-bookmark-jump woman-bookmark-jump)
+    (?p "Picture" image-bookmark-jump)
+    (?d "Docview" doc-view-bookmark-jump)
+    (?m "Mail" gnus-summary-bookmark-jump)
     (?s "Eshell" eshell-bookmark-jump)
-    (?e "Eww" eww-bookmark-jump)
-    (?v "VC Directory" vc-dir-bookmark-jump))
+    (?w "Web" eww-bookmark-jump xwidget-webkit-bookmark-jump-handler)
+    (?v "VC Directory" vc-dir-bookmark-jump)
+    (nil "Other"))
   "Bookmark narrowing configuration.
 
-Each element of the list must have the form (char name handler)."
-  :type '(repeat (list character string function)))
+Each element of the list must have the form (char name handlers...)."
+  :type '(alist :key-type character :value-type (cons string (repeat function))))
 
 (defcustom consult-yank-rotate
   (if (boundp 'yank-from-kill-ring-rotate)
@@ -4007,15 +4005,14 @@ There exists no equivalent of this command in Emacs 28."
 (defun consult--bookmark-candidates ()
   "Return bookmark candidates."
   (bookmark-maybe-load-default-file)
-  (let ((narrow (mapcar (pcase-lambda (`(,y ,_ ,x)) (cons x y))
-                        consult-bookmark-narrow)))
-    (mapcar (lambda (cand)
-              (propertize (car cand)
-                          'consult--type
-                          (alist-get
-                           (or (bookmark-get-handler cand) #'bookmark-default-handler)
-                           narrow)))
-            bookmark-alist)))
+  (let ((narrow (cl-loop for (y _ . xs) in consult-bookmark-narrow nconc
+                         (cl-loop for x in xs collect (cons x y)))))
+    (cl-loop for bm in bookmark-alist collect
+             (propertize (car bm)
+                         'consult--type
+                         (alist-get
+                          (or (bookmark-get-handler bm) #'bookmark-default-handler)
+                          narrow)))))
 
 ;;;###autoload
 (defun consult-bookmark (name)
@@ -4025,8 +4022,7 @@ The command supports preview of file bookmarks and narrowing.  See the
 variable `consult-bookmark-narrow' for the narrowing configuration."
   (interactive
    (list
-    (let ((narrow (mapcar (pcase-lambda (`(,x ,y ,_)) (cons x y))
-                          consult-bookmark-narrow)))
+    (let ((narrow (cl-loop for (x y . _) in consult-bookmark-narrow collect (cons x y))))
       (consult--read
        (consult--bookmark-candidates)
        :prompt "Bookmark: "
