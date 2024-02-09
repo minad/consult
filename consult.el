@@ -3029,11 +3029,6 @@ These configuration options are supported:
              (cs (or (plist-get config :completion-styles) completion-styles))
              (completion-styles cs)
              ((default-value 'completion-styles) cs)
-             (prompt (or (plist-get config :prompt) "Completion: "))
-             (require-match (plist-get config :require-match))
-             (preview-key (if (plist-member config :preview-key)
-                              (plist-get config :preview-key)
-                            consult-preview-key))
              (initial (buffer-substring-no-properties start end))
              (metadata (completion-metadata initial collection predicate))
              ;; TODO: `minibuffer-completing-file-name' is mostly deprecated,
@@ -3066,29 +3061,23 @@ These configuration options are supported:
                  (and completion-cycling completion-all-sorted-completions)))
         (completion--in-region start end collection predicate)
       (let* ((limit (car (completion-boundaries initial collection predicate "")))
+             (this-command #'consult-completion-in-region)
              (completion
               (cond
                ((atom all) nil)
                ((and (consp all) (atom (cdr all)))
                 (concat (substring initial 0 limit) (car all)))
-               (t (consult--with-preview
-                      preview-key
-                      ;; preview state
-                      (consult--insertion-preview start end)
-                      ;; transformation function
-                      (lambda (_narrow _inp cand) cand)
-                      ;; candidate function
-                      (apply-partially #'run-hook-with-args-until-success
-                                       'consult--completion-candidate-hook)
-                      nil
-                    (consult--local-let ((enable-recursive-minibuffers t))
-                      ;; Evaluate completion table in the original buffer.
-                      ;; This is a reasonable thing to do and required by
-                      ;; some completion tables in particular by lsp-mode.
-                      ;; See gh:minad/vertico#61.
-                      (completing-read prompt
-                                       (consult--completion-table-in-buffer collection)
-                                       predicate require-match initial)))))))
+               (t
+                (consult--local-let ((enable-recursive-minibuffers t))
+                  ;; Evaluate completion table in the original buffer.
+                  ;; This is a reasonable thing to do and required by
+                  ;; some completion tables in particular by lsp-mode.
+                  ;; See gh:minad/vertico#61.
+                  (consult--read (consult--completion-table-in-buffer collection)
+                                 :prompt "Completion: "
+                                 :state (consult--insertion-preview start end)
+                                 :predicate predicate
+                                 :initial initial))))))
         (if completion
             (progn
               ;; bug#55205: completion--replace removes properties!
