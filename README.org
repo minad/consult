@@ -40,8 +40,8 @@ local actions, comparable to a context menu. These actions operate on the
 selected candidate in the minibuffer or at point in normal buffers. For example,
 when selecting from a list of files, Embark offers an action to delete the file.
 Additionally Embark offers a facility to collect completion candidates in a
-collect buffer. The section [[#embark-integration][Embark integration]] documents in greater detail how
-Consult and Embark work together.
+collect buffer. The section [[#embark-integration][Embark integration]] documents in detail how Consult
+and Embark work together.
 
 #+toc: headlines 8
 
@@ -734,9 +734,9 @@ repository via other non-standard package managers.
 There is the [[https://github.com/minad/consult/wiki][Consult wiki]], where additional configuration examples can be
 contributed.
 
-*IMPORTANT:* It is strongly recommended that you enable [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Lexical-Binding.html][lexical binding]] in your
-configuration. Consult relies on lambdas and lexical closures. For this reason
-many Consult-related snippets require lexical binding.
+*IMPORTANT:* It is recommended that you enable [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Lexical-Binding.html][lexical binding]] in your
+configuration. Many Consult-related code snippets require lexical binding, since
+they use lambdas and closures.
 
 ** Use-package example
 :properties:
@@ -1044,7 +1044,7 @@ out the following steps:
    has been resolved eventually) in the meantime.
 2. *Remove all packages involved in the suspected bug from your installation.*
 3. *Reinstall the newest version of all relevant packages*. Updating alone is not
-   sufficient, since package.el is known to cause miscompilation. The list of
+   sufficient, since package.el sometimes causes miscompilation. The list of
    packages includes Consult, Compat, Vertico or other completion UIs,
    Marginalia, Embark and Orderless.
 4. Either use the default completion UI or ensure that exactly one of
@@ -1081,14 +1081,13 @@ Please provide the necessary important information with your bug report:
 - Your completion UI (Default completion, Vertico, Mct or Icomplete).
 - A stack trace in case the bug triggers an exception.
 - Your Emacs version, since bugs may be fixed or introduced in newer versions.
-- Your operating system, since Emacs behavior varies between Linux, Mac and
-  Windows.
-- The package manager, e.g., straight.el or package.el, used to install
-  the Emacs packages, in order to exclude update issues. Did you install
-  Consult as part of the Doom or Spacemacs Emacs distributions?
-- Do you use Evil or other packages which apply deep changes?
-  Consult does not provide Evil integration out of the box, but there is some
-  support in [[https://github.com/emacs-evil/evil-collection][evil-collection]].
+- Your operating system, since Emacs behavior varies subtly between Linux, Mac
+  and Windows.
+- The package manager, e.g., straight.el or package.el, used to install the
+  Emacs packages, in order to exclude update issues. Did you install Consult as
+  part of the Doom Emacs distribution?
+- Do you use Evil? Consult does not provide Evil integration out of the box, but
+  there is some support in [[https://github.com/emacs-evil/evil-collection][evil-collection]].
 
 When evaluating Consult-related code snippets you should enable [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Lexical-Binding.html][lexical binding]].
 Consult often relies on lambdas and lexical closures.
@@ -1121,10 +1120,11 @@ thanks to the feedback of many users. Thank you!
 
 Code contributions: [[https://github.com/aagon][Aymeric Agon-Rambosson]], [[https://github.com/amosbird][Amos Bird]], [[https://github.com/ashton314][Ashton Wiersdorf]], [[https://github.com/aspiers/][Adam
 Spiers]], [[https://github.com/astoff][Augusto Stoffel]], [[https://github.com/clemera/][Clemens Radermacher]], [[https://github.com/fuzy112][Zhengyi]], [[https://github.com/geolessel][Geoffrey Lessel]], [[https://github.com/iostapyshyn][Illia
-Ostapyshyn]], [[https://github.com/jakanakaevangeli][jakanakaevangeli]], [[https://github.com/jdtsmith][JD Smith]], [[https://github.com/jyp][Jean-Philippe Bernardy]], [[https://github.com/mohamed-abdelnour][Mohamed
-Abdelnour]], [[https://github.com/mohkale][Mohsin Kaleem]], [[https://github.com/noctuid][Fox Kiester]], [[https://github.com/oantolin/][Omar Antolín Camarena]], [[https://github.com/okamsn/][Earl Hyatt]], [[https://github.com/omar-polo][Omar
-Polo]], [[https://github.com/piotrkwiecinski][Piotr Kwiecinski]], [[https://github.com/rswgnu][Robert Weiner]], [[https://github.com/s-kostyaev/][Sergey Kostyaev]], [[https://github.com/scvalex][Alexandru Scvorțov]],
-[[https://github.com/tecosaur][Tecosaur]], [[https://github.com/thisirs][Sylvain Rousseau]], [[https://github.com/tomfitzhenry/][Tom Fitzhenry]], [[https://hg.serna.eu][Iñigo Serna]] and [[https://github.com/akreisher][Alex Kreisher]].
+Ostapyshyn]], [[https://github.com/jakanakaevangeli][jakanakaevangeli]], [[https://github.com/jdtsmith][JD Smith]], [[https://github.com/jyp][Jean-Philippe Bernardy]], [[https://github.com/mattiasdrp][mattiasdrp]],
+[[https://github.com/mohamed-abdelnour][Mohamed Abdelnour]], [[https://github.com/mohkale][Mohsin Kaleem]], [[https://github.com/noctuid][Fox Kiester]], [[https://github.com/oantolin/][Omar Antolín Camarena]], [[https://github.com/okamsn/][Earl
+Hyatt]], [[https://github.com/omar-polo][Omar Polo]], [[https://github.com/piotrkwiecinski][Piotr Kwiecinski]], [[https://github.com/rswgnu][Robert Weiner]], [[https://github.com/s-kostyaev/][Sergey Kostyaev]], [[https://github.com/scvalex][Alexandru
+Scvorțov]], [[https://github.com/tecosaur][Tecosaur]], [[https://github.com/thisirs][Sylvain Rousseau]], [[https://github.com/tomfitzhenry/][Tom Fitzhenry]], [[https://hg.serna.eu][Iñigo Serna]] and [[https://github.com/akreisher][Alex
+Kreisher]].
 
 Advice and useful discussions: [[https://github.com/Qkessler][Enrique Kessler Martínez]], [[https://github.com/alphapapa/][Adam Porter]], [[https://github.com/bdarcus][Bruce
 d'Arcus]], [[https://github.com/clemera/][Clemens Radermacher]], [[https://github.com/dgutov/][Dmitry Gutov]], [[https://github.com/hmelman/][Howard Melman]], [[https://github.com/iyefrat][Itai Y. Efrat]], [[https://github.com/jdtsmith][JD
