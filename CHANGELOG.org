@@ -2,7 +2,7 @@
 #+author: Daniel Mendler
 #+language: en
 
-* Development
+* Version 1.3 (2024-02-23)
 
 - =consult-bookmark-narrow=: More flexible grouping which supports multiple
   bookmark handlers per group.
