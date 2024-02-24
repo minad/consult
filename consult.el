@@ -1298,7 +1298,7 @@ ORIG is the original function, HOOKS the arguments."
                 (insert "\nFile truncated. End of partial preview.\n")
                 (goto-char (point-min))))
             (when (or (eq major-mode 'hexl-mode)
-                      (and (or partial (eq major-mode 'fundamental-mode))
+                      (and (eq major-mode 'fundamental-mode)
                            (save-excursion (search-forward "\0" nil 'noerror))))
               (error "Binary file `%s' not previewed" (file-name-nondirectory name)))
             (when partial
