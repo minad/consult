@@ -94,7 +94,7 @@ for a project directory.  The root directory is used by
           (function :tag "Custom function")
           (const :tag "No project integration" nil)))
 
-(defcustom consult-async-refresh-delay 0.2
+(defcustom consult-async-refresh-delay 0.1
   "Refreshing delay of the completion UI for asynchronous commands.
 
 The completion UI is only updated every
