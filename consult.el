@@ -1283,29 +1283,34 @@ ORIG is the original function, HOOKS the arguments."
              ;; file-attributes may throw permission denied error
              (attrs (ignore-errors (file-attributes name)))
              (size (file-attribute-size attrs)))
-    (with-current-buffer (if (>= size consult-preview-partial-size)
-                             (generate-new-buffer (format "consult-partial-preview-%s" name))
-                           (find-file-noselect name 'nowarn))
-      (when (>= size consult-preview-partial-size)
-        (setq buffer-read-only t)
-        (with-silent-modifications
-          (insert-file-contents name nil 0 consult-preview-partial-chunk)
-          (goto-char (point-max))
-          (insert "\nFile truncated. End of partial preview.\n"))
-        (goto-char (point-min))
-        ;; Auto detect major mode and hope for the best, given the file which
-        ;; is only previewed partially.
-        (set-auto-mode)
-        (font-lock-mode 1))
-      (when (bound-and-true-p so-long-detected-p)
-        (kill-buffer)
-        (error "File `%s' with long lines not previewed" name))
-      (when (or (eq major-mode 'hexl-mode)
-                (and (eq major-mode 'fundamental-mode)
-                     (save-excursion (search-forward "\0" nil 'noerror))))
-        (kill-buffer)
-        (error "Binary file `%s' not previewed" name))
-      (current-buffer))))
+    (let* ((partial (>= size consult-preview-partial-size))
+           (buffer (if partial
+                       (generate-new-buffer (format "consult-partial-preview-%s" name))
+                     (find-file-noselect name 'nowarn)))
+           (success nil))
+      (unwind-protect
+          (with-current-buffer buffer
+            (when partial
+              (with-silent-modifications
+                (setq buffer-read-only t)
+                (insert-file-contents name nil 0 consult-preview-partial-chunk)
+                (goto-char (point-max))
+                (insert "\nFile truncated. End of partial preview.\n")
+                (goto-char (point-min))))
+            (when (or (eq major-mode 'hexl-mode)
+                      (and (or partial (eq major-mode 'fundamental-mode))
+                           (save-excursion (search-forward "\0" nil 'noerror))))
+              (error "Binary file `%s' not previewed" (file-name-nondirectory name)))
+            (when partial
+              ;; Auto detect major mode and hope for the best, given the file which
+              ;; is only previewed partially.
+              (set-auto-mode)
+              (font-lock-mode 1))
+            (when (bound-and-true-p so-long-detected-p)
+              (error "File `%s' with long lines not previewed" (file-name-nondirectory name)))
+            (setq success (current-buffer)))
+        (unless success
+          (kill-buffer buffer))))))
 
 (defun consult--find-file-temporarily (name)
   "Open file NAME temporarily for preview."
