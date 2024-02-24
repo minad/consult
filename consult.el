@@ -2344,20 +2344,20 @@ The refresh happens immediately when candidates are pushed."
   "Create async function from ASYNC, which refreshes the display.
 
 The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
-  (let ((timer) (refresh) (delay (or delay consult-async-refresh-delay)))
+  (let ((delay (or delay consult-async-refresh-delay)) timer)
     (lambda (action)
       (prog1 (funcall async action)
         (pcase action
           ((or (pred consp) 'flush)
-           (setq refresh t)
            (unless timer
              (setq timer (run-at-time
-                          nil delay
+                          delay nil
                           (lambda ()
-                            (when refresh
-                              (setq refresh nil)
-                              (funcall async 'refresh)))))))
-          ('destroy (when timer (cancel-timer timer))))))))
+                            (setq timer nil)
+                            (funcall async 'refresh))))))
+          ('destroy (when timer
+                      (cancel-timer timer)
+                      (setq timer nil))))))))
 
 (defmacro consult--async-command (builder &rest args)
   "Asynchronous command pipeline.
