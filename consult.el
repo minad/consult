@@ -1290,25 +1290,29 @@ ORIG is the original function, HOOKS the arguments."
            (success nil))
       (unwind-protect
           (with-current-buffer buffer
-            (when partial
+            (if (not partial)
+                (when (or (eq major-mode 'hexl-mode)
+                        (and (eq major-mode 'fundamental-mode)
+                             (save-excursion (search-forward "\0" nil 'noerror))))
+                  (error "No preview of binary file `%s'"
+                         (file-name-nondirectory name)))
               (with-silent-modifications
                 (setq buffer-read-only t)
                 (insert-file-contents name nil 0 consult-preview-partial-chunk)
                 (goto-char (point-max))
                 (insert "\nFile truncated. End of partial preview.\n")
-                (goto-char (point-min))))
-            (when (or (eq major-mode 'hexl-mode)
-                      (and (eq major-mode 'fundamental-mode)
-                           (save-excursion (search-forward "\0" nil 'noerror))))
-              (error "Binary file `%s' not previewed" (file-name-nondirectory name)))
-            (when partial
+                (goto-char (point-min)))
+              (when (save-excursion (search-forward "\0" nil 'noerror))
+                (error "No partial preview of binary file `%s'"
+                       (file-name-nondirectory name)))
               ;; Auto detect major mode and hope for the best, given that the
               ;; file is only previewed partially.  If an error is thrown the
               ;; buffer will be killed and preview is aborted.
               (set-auto-mode)
               (font-lock-mode 1))
             (when (bound-and-true-p so-long-detected-p)
-              (error "File `%s' with long lines not previewed" (file-name-nondirectory name)))
+              (error "No preview of file `%s' with long lines"
+                     (file-name-nondirectory name)))
             (setq success (current-buffer)))
         (unless success
           (kill-buffer buffer))))))
