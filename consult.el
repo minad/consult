@@ -1302,8 +1302,9 @@ ORIG is the original function, HOOKS the arguments."
                            (save-excursion (search-forward "\0" nil 'noerror))))
               (error "Binary file `%s' not previewed" (file-name-nondirectory name)))
             (when partial
-              ;; Auto detect major mode and hope for the best, given the file which
-              ;; is only previewed partially.
+              ;; Auto detect major mode and hope for the best, given that the
+              ;; file is only previewed partially.  If an error is thrown the
+              ;; buffer will be killed and preview is aborted.
               (set-auto-mode)
               (font-lock-mode 1))
             (when (bound-and-true-p so-long-detected-p)
