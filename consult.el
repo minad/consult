@@ -5163,6 +5163,7 @@ automatically previewed."
 (defvar vertico--input)
 (declare-function vertico--exhibit "ext:vertico")
 (declare-function vertico--candidate "ext:vertico")
+(declare-function vertico--filter-completions "ext:vertico")
 
 (defun consult--vertico-candidate ()
   "Return current candidate for Consult preview."
@@ -5178,9 +5179,7 @@ automatically previewed."
   "Advice for ORIG `consult--completion-filter' function.
 See `consult--completion-filter' for arguments PATTERN, CANDS, CATEGORY
 and HIGHLIGHT."
-  (if (and (not highlight)
-           (bound-and-true-p vertico-mode)
-           (fboundp 'vertico--filter-completions))
+  (if (and (not highlight) (bound-and-true-p vertico-mode))
       ;; Optimize `consult--completion-filter' using the deferred highlighting
       ;; from Vertico.  The advice is not necessary - it is a pure optimization.
       (nconc (car (vertico--filter-completions pattern cands nil (length pattern)
