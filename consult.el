@@ -102,7 +102,7 @@ The completion UI is only updated every
 asynchronous commands like for example `consult-grep'."
   :type '(float :tag "Delay in seconds"))
 
-(defcustom consult-async-input-throttle 0.4
+(defcustom consult-async-input-throttle 0.5
   "Input throttle for asynchronous commands.
 
 The asynchronous process is started only every
@@ -2317,7 +2317,7 @@ The DEBOUNCE delay defaults to `consult-async-input-debounce'."
              (timer-set-time
               timer
               (timer-relative-time
-               nil (+ debounce (if last (min (- (float-time) last) throttle) 0))))
+               nil (max debounce (if last (min (- (float-time) last) throttle) 0))))
              (timer-activate timer)))
          nil)
         ('destroy
