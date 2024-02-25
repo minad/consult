@@ -2302,30 +2302,26 @@ The THROTTLE delay defaults to `consult-async-input-throttle'.
 The DEBOUNCE delay defaults to `consult-async-input-debounce'."
   (setq throttle (or throttle consult-async-input-throttle)
         debounce (or debounce consult-async-input-debounce))
-  (let ((input "") last timer)
+  (let* ((input "") (timer (timer-create)) last)
     (lambda (action)
       (pcase action
         ((pred stringp)
          (unless (equal action input)
-           (when timer
-             (cancel-timer timer)
-             (setq timer nil))
+           (cancel-timer timer)
            (funcall async "") ;; cancel running process
            (setq input action)
            (unless (equal action "")
-             (setq timer
-                   (run-at-time
-                    (+ debounce
-                       (if last
-                           (min (- (float-time) last) throttle)
-                         0))
-                    nil
-                    (lambda ()
-                      (setq last (float-time))
-                      (funcall async action))))))
+             (timer-set-function timer (lambda ()
+                                         (setq last (float-time))
+                                         (funcall async action)))
+             (timer-set-time
+              timer
+              (timer-relative-time
+               nil (+ debounce (if last (min (- (float-time) last) throttle) 0))))
+             (timer-activate timer)))
          nil)
         ('destroy
-         (when timer (cancel-timer timer))
+         (cancel-timer timer)
          (funcall async 'destroy))
         (_ (funcall async action))))))
 
