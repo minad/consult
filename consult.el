@@ -5108,7 +5108,7 @@ the asynchronous search."
   "Preview minor mode for *Completions* buffers.
 When moving around in the *Completions* buffer, the candidate at point is
 automatically previewed."
-  :init-value nil :group 'consult
+  :group 'consult
   (if consult-preview-at-point-mode
       (add-hook 'post-command-hook #'consult-preview-at-point nil 'local)
     (remove-hook 'post-command-hook #'consult-preview-at-point 'local)))
