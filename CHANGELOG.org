@@ -9,6 +9,8 @@
 - ~consult--async-refresh-timer~: Optimize timer reuse and efficiency. This change
   improves the performance of commands like ~consult-ripgrep~ for small values of
   ~consult-async-refresh-delay~.
+- ~consult-completion-in-region~: Remove ~:cycle-threshold~ and ~:completion-styles~
+  customization options.
 
 * Version 1.3 (2024-02-23)
 
