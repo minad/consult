@@ -65,16 +65,19 @@ Each element of the list must have the form (char . name).")
 
 (cl-defmethod consult-register--describe ((val marker))
   "Describe marker register VAL."
-  (with-current-buffer (marker-buffer val)
-    (save-excursion
-      (without-restriction
-        (goto-char val)
-        (let* ((line (line-number-at-pos))
-               (str (propertize (consult--line-with-mark val)
-                                'consult-location (cons val line))))
-          (list (consult--format-file-line-match (buffer-name) line str)
-                'multi-category `(consult-location . ,str)
-                'consult--type ?p))))))
+  (if-let ((buf (marker-buffer val)))
+      (with-current-buffer buf
+        (save-excursion
+          (without-restriction
+            (goto-char val)
+            (let* ((line (line-number-at-pos))
+                   (str (propertize (consult--line-with-mark val)
+                                    'consult-location (cons val line))))
+              (list (consult--format-file-line-match (buffer-name) line str)
+                    'multi-category `(consult-location . ,str)
+                    'consult--type ?p)))))
+    (list (propertize (prin1-to-string val) 'face 'warning)
+          'consult--type ?p)))
 
 (defmacro consult-register--describe-kmacro ()
   "Generate method which describes kmacro register."
