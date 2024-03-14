@@ -153,8 +153,7 @@ If COMPLETION is non-nil format the register for completion."
                (`(,str . ,props) (consult-register--describe val)))
     (when (string-search "\n" str)
       (let* ((lines (seq-take (seq-remove #'string-blank-p (split-string str "\n")) 3))
-             (space (apply #'min most-positive-fixnum
-                           (mapcar (lambda (x) (string-match-p "[^ ]" x)) lines))))
+             (space (cl-loop for x in lines minimize (string-match-p "[^ ]" x))))
         (setq str (mapconcat (lambda (x) (substring x space))
                              lines (concat "\n" (make-string (1+ key-len) ?\s))))))
     (setq str (concat
