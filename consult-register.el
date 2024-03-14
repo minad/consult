@@ -170,11 +170,14 @@ If COMPLETION is non-nil format the register for completion."
 (defun consult-register--alist (&optional noerror filter)
   "Return register list, sorted and filtered with FILTER.
 Raise an error if the list is empty and NOERROR is nil."
-  (or (sort (seq-filter
-             ;; Sometimes, registers are made without a `cdr'.
-             ;; Such registers don't do anything, and can be ignored.
-             (lambda (x) (and (cdr x) (or (not filter) (funcall filter x))))
-             register-alist)
+  (or (sort (cl-loop for reg in register-alist
+                     ;; Sometimes, registers are made without a `cdr' or with
+                     ;; invalid markers.  Such registers don't do anything, and
+                     ;; can be ignored.
+                     if (and (cdr reg)
+                             (or (not (markerp (cdr reg))) (marker-buffer (cdr reg)))
+                             (or (not filter) (funcall filter reg)))
+                     collect reg)
             #'car-less-than-car)
       (and (not noerror) (user-error "All registers are empty"))))
 
