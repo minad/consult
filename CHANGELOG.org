@@ -2,6 +2,11 @@
 #+author: Daniel Mendler
 #+language: en
 
+* Development
+
+- Bugfix: Handle buffer renaming during minibuffer completion gracefully, by
+  attaching the actual buffer objects to the completion candidate strings.
+
 * Version 1.4 (2024-03-08)
 
 - Bugfix: File preview: Ensure that binary files are not previewed partially.

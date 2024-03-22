@@ -2808,13 +2808,15 @@ KEYMAP is a command-specific keymap."
              (items (plist-get src :items))
              (items (if (functionp items) (funcall items) items)))
         (dolist (item items)
-          (let ((cand (consult--tofu-append item idx)))
+          (let* ((str (or (car-safe item) item))
+                 (cand (consult--tofu-append str idx)))
             ;; Preserve existing `multi-category' datum of the candidate.
-            (if (get-text-property 0 'multi-category cand)
-                (when face (add-text-properties 0 (length item) face cand))
+            (if (and (eq str item) (get-text-property 0 'multi-category str))
+                (when face (add-text-properties 0 (length str) face cand))
               ;; Attach `multi-category' datum and face.
-              (add-text-properties 0 (length item)
-                                   `(multi-category (,cat . ,item) ,@face) cand))
+              (add-text-properties
+               0 (length str)
+               `(multi-category (,cat . ,(or (cdr-safe item) item)) ,@face) cand))
             (push cand candidates))))
       (cl-incf idx))
     (nreverse candidates)))
@@ -4433,6 +4435,10 @@ AS is a conversion function."
   "Return hash table of all buffer file names."
   (consult--string-hash (consult--buffer-query :as #'buffer-file-name)))
 
+(defun consult--buffer-pair (buffer)
+  "Return a pair of name of BUFFER and BUFFER."
+  (cons (buffer-name buffer) buffer))
+
 (defun consult--buffer-preview ()
   "Buffer preview function."
   (let ((orig-buf (window-buffer (consult--original-window)))
@@ -4488,7 +4494,7 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
        (when-let (root (consult--project-root))
          (consult--buffer-query :sort 'visibility
                                 :directory root
-                                :as #'buffer-name))))
+                                :as #'consult--buffer-pair))))
   "Project buffer candidate source for `consult-buffer'.")
 
 (defvar consult--source-project-recent-file
@@ -4545,7 +4551,7 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
     :items
     ,(lambda () (consult--buffer-query :sort 'visibility
                                        :filter 'invert
-                                       :as #'buffer-name)))
+                                       :as #'consult--buffer-pair)))
   "Hidden buffer candidate source for `consult-buffer'.")
 
 (defvar consult--source-modified-buffer
@@ -4558,7 +4564,7 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
     :state    ,#'consult--buffer-state
     :items
     ,(lambda () (consult--buffer-query :sort 'visibility
-                                       :as #'buffer-name
+                                       :as #'consult--buffer-pair
                                        :predicate
                                        (lambda (buf)
                                          (and (buffer-modified-p buf)
@@ -4575,7 +4581,7 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
     :default  t
     :items
     ,(lambda () (consult--buffer-query :sort 'visibility
-                                       :as #'buffer-name)))
+                                       :as #'consult--buffer-pair)))
   "Buffer candidate source for `consult-buffer'.")
 
 (defun consult--file-register-p (reg)
