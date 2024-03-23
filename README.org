@@ -675,7 +675,7 @@ ones.
             (consult--buffer-action (current-buffer))))
         :items
         (lambda ()
-          (consult--buffer-query :mode 'org-mode :as #'buffer-name))))
+          (consult--buffer-query :mode 'org-mode :as #'consult--buffer-pair))))
 
 (add-to-list 'consult-buffer-sources 'org-source 'append)
 #+end_src
