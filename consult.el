@@ -339,6 +339,12 @@ chunk from the beginning of the file is previewed."
   "List of regexps matched against names of files, which are not previewed."
   :type '(repeat regexp))
 
+(defcustom consult-preview-excluded-buffers
+  '(:remote)
+  "List of buffer name regexps, major modes and special keywords
+like :remote. Or maybe predicate functions?"
+  :type '(repeat regexp))
+
 (defcustom consult-preview-allowed-hooks
   '(global-font-lock-mode-check-buffers
     save-place-find-file-hook)
@@ -4444,6 +4450,11 @@ AS is a conversion function."
   (let ((orig-buf (window-buffer (consult--original-window)))
         (orig-prev (copy-sequence (window-prev-buffers)))
         (orig-next (copy-sequence (window-next-buffers)))
+        (exclude-modes
+         (seq-filter #'symbolp consult-preview-excluded-buffers))
+        (exclude-regexp
+         (consult--regexp-filter
+          (seq-filter #'stringp consult-preview-excluded-buffers)))
         other-win)
     (lambda (action cand)
       (pcase action
@@ -4456,7 +4467,11 @@ AS is a conversion function."
            (switch-to-buffer-other-window orig-buf 'norecord)
            (setq other-win (selected-window)))
          (let ((win (or other-win (selected-window)))
-               (buf (or (and cand (get-buffer cand)) orig-buf)))
+               (buf (and cand (get-buffer cand))))
+           (when (or (not buf)
+                     (string-match-p exclude-regexp (buffer-name buf))
+                     (memq (buffer-local-value 'major-mode buf) exclude-modes))
+             (setq buf orig-buf))
            (when (and (window-live-p win) (buffer-live-p buf))
              (with-selected-window win
                (unless (or orig-prev orig-next)
