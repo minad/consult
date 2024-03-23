@@ -77,6 +77,9 @@ MATCH, SCOPE and SKIP are as in `org-map-entries'."
                            most-positive-fixnum)))
          (when todo
            (put-text-property 0 (length todo) 'face (org-get-todo-face todo) todo))
+         (when prio
+           (setq prio (format "[#%c]" prio))
+           (put-text-property 0 4 'face 'org-priority prio))
          (when tags
            (put-text-property 0 (length tags) 'face 'org-tag tags))
          (setq cand (if prefix
@@ -92,14 +95,38 @@ MATCH, SCOPE and SKIP are as in `org-map-entries'."
          cand))
      match scope skip)))
 
-(defun consult-org--annotate (cand)
-  "Annotate CAND for `consult-org-heading'."
-  (pcase-let ((`(,_level ,todo . ,prio)
-               (get-text-property 0 'consult-org--heading cand)))
-    (consult--annotate-align
-     cand
-     (concat todo
-             (and prio (format #(" [#%c]" 1 6 (face org-priority)) prio))))))
+(defun consult-org--annotate (&optional todo-keyword priority filename-func)
+  "Generate annotation function for Org headings.
+
+Non-nil TODO-KEYWORD and/or PRIORITY will add those attributes as
+annotations.
+
+FILENAME-FUNC is a function called on the name of the Org file the heading
+is from; it must return a string which will be added as an annotation."
+  (let ((ann-maxlens (list 0 0 0))) ; 1 elt per annotation type supported
+    (lambda (cand)
+      (let* ((heading-prop (get-text-property 0 'consult-org--heading cand))
+             (file (if (functionp filename-func)
+                       (funcall filename-func
+                                (buffer-file-name
+                                 (marker-buffer
+                                  (get-text-property 0 'org-marker cand))))
+                     ""))
+             (kwd (when todo-keyword (or (cadr heading-prop) "")))
+             (prio (when priority (or (cddr heading-prop) "")))
+             (anns (list kwd prio file)))
+        ;; pad annotations so they're aligned into columns
+        (dotimes (i (length anns))
+          (let* ((str (nth i anns))
+                 (len (length str))
+                 (prevlen (nth i ann-maxlens))
+                 maxlen)
+            (if (>= prevlen len)
+                (setq maxlen prevlen)
+              (setq maxlen len)
+              (setcar (nthcdr i ann-maxlens) maxlen))
+            (setcar (nthcdr i anns) (string-pad str maxlen))))
+        (consult--annotate-align cand (mapconcat #'identity anns " "))))))
 
 ;;;###autoload
 (defun consult-org-heading (&optional match scope)
@@ -122,7 +149,7 @@ buffer are offered."
      :history '(:input consult-org--history)
      :narrow (consult-org--narrow)
      :state (consult--jump-state)
-     :annotate #'consult-org--annotate
+     :annotate (consult-org--annotate t t)
      :group
      (when prefix
        (lambda (cand transform)
