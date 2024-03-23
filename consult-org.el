@@ -75,6 +75,12 @@ MATCH, SCOPE and SKIP are as in `org-map-entries'."
                     (cand (org-format-outline-path
                            (org-get-outline-path 'with-self 'use-cache)
                            most-positive-fixnum)))
+         (when todo
+           (put-text-property 0 (length todo)
+                              'face (org-get-todo-face todo) todo))
+         (when prio
+           (setq prio (format "[#%c]" prio))
+           (put-text-property 0 4 'face 'org-priority prio))
          (when tags
            (put-text-property 0 (length tags) 'face 'org-tag tags))
          (setq cand (if prefix
@@ -90,26 +96,58 @@ MATCH, SCOPE and SKIP are as in `org-map-entries'."
          cand))
      match scope skip)))
 
-(defun consult-org--annotate ()
-  "Generate annotation function for `consult-org-heading'."
-  (let (buf)
-    (when (derived-mode-p #'org-mode)
-      (setq buf (current-buffer)))
+(defun consult-org--heading-state ()
+  "State function for Org headings with preview."
+  (consult--state-with-return
+   (consult-org--heading-preview)
+   #'consult-org--heading-jump))
+
+(defun consult-org--heading-preview ()
+  "The preview function used if selecting from a list of Org headings."
+  ;; the closure that `consult--jump-preview' returns must be retained for the
+  ;; duration of completion, since it stores the list of overlays to remove
+  ;; ('restore' variable)
+  (let ((preview-fn (consult--jump-preview)))
+    (lambda (action cand)
+      (funcall preview-fn action
+               (when cand (get-text-property 0 'org-marker cand))))))
+
+(defun consult-org--heading-jump (heading)
+  "Jump to Org HEADING."
+  (consult--jump (get-text-property 0 'org-marker heading)))
+
+(defun consult-org--annotate (&optional todo-keyword priority filename-func)
+  "Generate annotation function for Org headings.
+
+Non-nil TODO-KEYWORD and/or PRIORITY will add those attributes as
+annotations.
+
+FILENAME-FUNC is a function called on the name of the Org file the heading
+is from; it must return a string which will be added as an annotation."
+  (let ((ann-maxlens (list 0 0 0))) ; 1 elt per annotation type supported
     (lambda (cand)
-      (unless (buffer-live-p buf)
-        (setq buf (seq-find (lambda (b)
-                              (with-current-buffer b (derived-mode-p #'org-mode)))
-                            (buffer-list))))
-      (pcase-let ((`(,_level ,kwd . ,prio)
-                   (get-text-property 0 'consult-org--heading cand)))
-        (consult--annotate-align
-         cand
-         (concat
-          (propertize (or kwd "") 'face
-                      (with-current-buffer (or buf (current-buffer))
-                        ;; `org-get-todo-face' must be called inside an Org buffer
-                        (org-get-todo-face kwd)))
-          (and prio (format #(" [#%c]" 1 6 (face org-priority)) prio))))))))
+      (let* ((heading-prop (get-text-property 0 'consult-org--heading cand))
+             (file (if (functionp filename-func)
+                       (funcall filename-func
+                                (buffer-file-name
+                                 (marker-buffer
+                                  (get-text-property 0 'org-marker cand))))
+                     ""))
+             (kwd (when todo-keyword (or (cadr heading-prop) "")))
+             (prio (when priority (or (cddr heading-prop) "")))
+             (anns (list kwd prio file)))
+        ;; pad annotations so they're aligned into columns
+        (dotimes (i (length anns))
+          (let* ((str (nth i anns))
+                 (len (length str))
+                 (prevlen (nth i ann-maxlens))
+                 maxlen)
+            (if (>= prevlen len)
+                (setq maxlen prevlen)
+              (setq maxlen len)
+              (setcar (nthcdr i ann-maxlens) maxlen))
+            (setcar (nthcdr i anns) (string-pad str maxlen))))
+        (consult--annotate-align cand (mapconcat #'identity anns " "))))))
 
 ;;;###autoload
 (defun consult-org-heading (&optional match scope)
@@ -131,8 +169,8 @@ buffer are offered."
      :require-match t
      :history '(:input consult-org--history)
      :narrow (consult-org--narrow)
-     :state (consult--jump-state)
-     :annotate (consult-org--annotate)
+     :state (consult-org--heading-state)
+     :annotate (consult-org--annotate 'todo-keyword 'priority)
      :group
      (when prefix
        (lambda (cand transform)
@@ -140,7 +178,7 @@ buffer are offered."
                       (marker-buffer
                        (get-text-property 0 'org-marker cand)))))
            (if transform (substring cand (1+ (length name))) name))))
-     :lookup (apply-partially #'consult--lookup-prop 'org-marker))))
+     :lookup (lambda (sel cands &rest _) (car-safe (member sel cands))))))
 
 ;;;###autoload
 (defun consult-org-agenda (&optional match)
@@ -152,6 +190,36 @@ By default, all agenda entries are offered.  MATCH is as in
   (unless org-agenda-files
     (user-error "No agenda files"))
   (consult-org-heading match 'agenda))
+
+(defun consult-org--heading-source
+    (name items-args annotate-args)
+  "Generate Org heading candidate source called NAME.
+
+ITEMS-ARGS is a list of arguments passed to `consult--org-headings' to generate
+the list of candidates. ANNOTATE-ARGS is a list of arguments passed to
+`consult-org--annotate' to generate the annotation function."
+  `(:name ,name
+    :category org-heading
+    :items ,(apply #'consult-org--headings items-args)
+    :history consult-org--history
+    :narrow ,(consult-org--narrow)
+    :state ,#'consult-org--heading-state
+    :annotate ,(apply #'consult-org--annotate annotate-args)))
+
+;;;###autoload
+(defun consult-org-agenda-multi ()
+  "Jump to an Org agenda heading or file."
+  (interactive)
+  (consult--multi
+   (list
+    (consult--file-relative-source "Agenda Files"
+                                   (org-agenda-files) org-directory)
+    (consult-org--heading-source
+     "Agenda Headings"
+     '(nil nil agenda)
+     '(t t (lambda (f) (file-relative-name f (file-truename org-directory))))))
+   :require-match t
+   :sort t))
 
 (provide 'consult-org)
 ;;; consult-org.el ends here

@@ -2933,6 +2933,21 @@ Optional source fields:
       (setq selected `(,(car selected) :match t ,@(cdr selected))))
     selected))
 
+;;;; Source generators for consult--multi
+
+(defun consult--file-relative-source (name filenames dir)
+  "Generate file candatate source NAME; FILENAMES are presented relative to DIR."
+  `(:name ,name
+    :category file
+    :narrow ?f
+    :history file-name-history
+    :state ,#'consult--file-state
+    :items
+    ,(mapcar (lambda (f)
+               (propertize (file-relative-name f dir)
+                           'multi-category (cons 'file f)))
+             filenames)))
+
 ;;;; Customization macro
 
 (defun consult--customize-put (cmds prop form)
