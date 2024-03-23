@@ -84,7 +84,7 @@ MATCH, SCOPE and SKIP are as in `org-map-entries'."
          (cl-incf idx)
          (add-text-properties 0 1
                               `(org-marker ,(point-marker)
-                                consult-org--heading (,level ,todo ,prio . ,(and prefix buffer)))
+                                consult-org--heading (,level ,todo ,prio . ,buffer))
                               cand)
          cand))
      match scope skip)))
