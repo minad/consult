@@ -4,8 +4,10 @@
 
 * Development
 
-- Bugfix: Handle buffer renaming during minibuffer completion gracefully, by
-  attaching the actual buffer objects to the completion candidate strings.
+- Bugfix ~consult-buffer~: Handle buffer renaming during minibuffer completion
+  gracefully, by attaching the actual buffer objects to the completion candidate
+  strings.
+- Bugfix ~consult-register~: Ignore marker registers pointing to dead buffers.
 
 * Version 1.4 (2024-03-08)
 
