@@ -591,7 +591,7 @@ We use invalid characters outside the Unicode range.")
               (setq result
                     (mapcar
                      (lambda (x)
-                       (if (and (string-suffix-p (symbol-name (car-safe x)) "-function") (cdr x))
+                       (if (and (string-suffix-p "-function" (symbol-name (car-safe x))) (cdr x))
                            (cons (car x) (consult--in-buffer (cdr x)))
                          x))
                      result)))
