@@ -2,6 +2,11 @@
 #+author: Daniel Mendler
 #+language: en
 
+* Development
+
+- ~consult-grep~ (and similar): Preserve files which are already open literally
+  and do not reopen them in normal mode.
+
 * Version 1.5 (2024-04-19)
 
 - Bugfix ~consult-buffer~: Handle buffer renaming during minibuffer completion

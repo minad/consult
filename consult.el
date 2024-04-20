@@ -1366,7 +1366,7 @@ ORIG is the original function, HOOKS the arguments."
                   (kill-buffer buf))
                 (setq temporary-buffers nil)
                 (pcase-dolist (`(,file . ,wins) live-files)
-                  (when-let (buf (find-file-noselect file))
+                  (when-let (buf (consult--file-action file))
                     (push buf orig-buffers)
                     (pcase-dolist (`(,win . ,state) wins)
                       (setf (car (alist-get 'buffer state)) buf)
@@ -3721,7 +3721,10 @@ command respects narrowing and the settings
 
 (defun consult--file-action (file)
   "Open FILE via `consult--buffer-action'."
-  (consult--buffer-action (find-file-noselect file)))
+  ;; Try to preserve the buffer as is, if it has already been opened, for
+  ;; example in literal or raw mode.
+  (setq file (abbreviate-file-name (expand-file-name file)))
+  (consult--buffer-action (or (get-file-buffer file) (find-file-noselect file))))
 
 (consult--define-state file)
 
@@ -4748,7 +4751,7 @@ FIND-FILE is the file open function, defaulting to `find-file-noselect'."
            (file (substring-no-properties cand 0 file-end))
            (line (string-to-number (substring-no-properties cand (+ 1 file-end) line-end))))
       (when-let (pos (consult--marker-from-line-column
-                      (funcall (or find-file #'find-file-noselect) file)
+                      (funcall (or find-file #'consult--file-action) file)
                       line (or (car matches) 0)))
         (cons pos (cdr matches))))))
 
