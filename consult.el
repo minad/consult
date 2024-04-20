@@ -697,7 +697,7 @@ The line beginning/ending BEG/END is bound in BODY."
   (declare (indent 2))
   (cl-with-gensyms (max)
     `(save-excursion
-       (let ((,beg (point-min)) (,max (point-max)) end)
+       (let ((,beg (point-min)) (,max (point-max)) ,end)
          (while (< ,beg ,max)
            (goto-char ,beg)
            (setq ,end (pos-eol))
