@@ -4587,6 +4587,22 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
                                        :as #'consult--buffer-pair)))
   "Buffer candidate source for `consult-buffer'.")
 
+(defvar consult--source-tab-buffer
+  `(:name     "Tab buffer"
+    :narrow   ?b
+    :category buffer
+    :face     consult-buffer
+    :history  buffer-name-history
+    :state    ,#'consult--buffer-state
+    :enabled (lambda () tab-bar-mode)
+    :items
+    ,(lambda ()
+       (consult--buffer-query
+        :sort 'visibility
+        :as #'consult--buffer-pair
+        :buffer-list (frame-parameter nil 'buffer-list))))
+  "Buffer candidate source in current tab for `consult-buffer'.")
+
 (defun consult--file-register-p (reg)
   "Return non-nil if REG is a file register."
   (memq (car-safe (cdr reg)) '(file-query file)))
