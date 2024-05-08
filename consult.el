@@ -342,7 +342,9 @@ chunk from the beginning of the file is previewed."
 (defcustom consult-preview-allowed-hooks
   '(global-font-lock-mode-check-buffers
     save-place-find-file-hook)
-  "List of `find-file' hooks, which should be executed during file preview."
+  "List of hooks, which should be executed during file preview.
+This variable applies to both `find-file-hook' and mode hooks,
+e.g., `prog-mode-hook'."
   :type '(repeat symbol))
 
 (defcustom consult-preview-variables
@@ -1313,6 +1315,12 @@ ORIG is the original function, HOOKS the arguments."
             (when (bound-and-true-p so-long-detected-p)
               (error "No preview of file `%s' with long lines"
                      (file-name-nondirectory name)))
+            ;; Run delayed hooks listed in `consult-preview-allowed-hooks'.
+            (dolist (hook (reverse delayed-mode-hooks))
+              (run-hook-wrapped hook (lambda (fun)
+                                       (when (memq fun consult-preview-allowed-hooks)
+                                         (funcall fun))
+                                       nil)))
             (setq success (current-buffer)))
         (unless success
           (kill-buffer buffer))))))
