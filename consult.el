@@ -4395,7 +4395,8 @@ to search and is passed to `consult--buffer-query'."
           buffers)))
 
 (cl-defun consult--buffer-query (&key sort directory mode as predicate (filter t)
-                                      include (exclude consult-buffer-filter))
+                                      include (exclude consult-buffer-filter)
+                                      buffer-list)
   "Query for a list of matching buffers.
 The function supports filtering by various criteria which are
 used throughout Consult.  In particular it is the backbone of
@@ -4407,16 +4408,16 @@ EXCLUDE is a list of regexps.
 INCLUDE is a list of regexps.
 MODE can be a mode or a list of modes to restrict the returned buffers.
 PREDICATE is a predicate function.
+BUFFER-LIST is the unfiltered list of buffers.
 AS is a conversion function."
-  (let ((root (consult--normalize-directory directory))
-        (buffers (buffer-list)))
+  (let ((root (consult--normalize-directory directory)))
     (when sort
-      (setq buffers (funcall (intern (format "consult--buffer-sort-%s" sort)) buffers)))
+      (setq buffer-list (funcall (intern (format "consult--buffer-sort-%s" sort)) buffer-list)))
     (when (or filter mode as root)
       (let ((exclude-re (consult--regexp-filter exclude))
             (include-re (consult--regexp-filter include))
             (case-fold-search))
-        (consult--keep! buffers
+        (consult--keep! buffer-list
           (and
            (or (not mode)
                (let ((mm (buffer-local-value 'major-mode it)))
@@ -4440,7 +4441,7 @@ AS is a conversion function."
                                     (expand-file-name dir)))))
            (or (not predicate) (funcall predicate it))
            (if as (funcall as it) it)))))
-    buffers))
+    buffer-list))
 
 (defun consult--buffer-file-hash ()
   "Return hash table of all buffer file names."
