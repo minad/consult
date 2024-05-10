@@ -4396,7 +4396,7 @@ to search and is passed to `consult--buffer-query'."
 
 (cl-defun consult--buffer-query (&key sort directory mode as predicate (filter t)
                                       include (exclude consult-buffer-filter)
-                                      (buffer-list (buffer-list)))
+                                      (buffer-list t))
   "Query for a list of matching buffers.
 The function supports filtering by various criteria which are
 used throughout Consult.  In particular it is the backbone of
@@ -4411,6 +4411,7 @@ PREDICATE is a predicate function.
 BUFFER-LIST is the unfiltered list of buffers.
 AS is a conversion function."
   (let ((root (consult--normalize-directory directory)))
+    (setq buffer-list (if (eq buffer-list t) (buffer-list) (copy-sequence buffer-list)))
     (when sort
       (setq buffer-list (funcall (intern (format "consult--buffer-sort-%s" sort)) buffer-list)))
     (when (or filter mode as root)
