@@ -4396,7 +4396,7 @@ to search and is passed to `consult--buffer-query'."
 
 (cl-defun consult--buffer-query (&key sort directory mode as predicate (filter t)
                                       include (exclude consult-buffer-filter)
-                                      buffer-list)
+                                      (buffer-list (buffer-list)))
   "Query for a list of matching buffers.
 The function supports filtering by various criteria which are
 used throughout Consult.  In particular it is the backbone of
