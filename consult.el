@@ -4360,14 +4360,14 @@ The command supports previewing the currently selected theme."
 (defun consult--buffer-sort-visibility (buffers)
   "Sort BUFFERS by visibility."
   (let ((hidden)
-        (current (current-buffer)))
+        (current (car (memq (current-buffer) buffers))))
     (consult--keep! buffers
       (unless (eq it current)
         (if (get-buffer-window it 'visible)
             it
           (push it hidden)
           nil)))
-    (nconc (nreverse hidden) buffers (list current))))
+    (nconc (nreverse hidden) buffers (and current (list current)))))
 
 (defun consult--normalize-directory (dir)
   "Normalize directory DIR.
