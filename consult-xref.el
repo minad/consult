@@ -41,7 +41,8 @@ The fetch is stored globally such that it can be accessed by
   (let ((root (consult--project-root)))
     (mapcar (lambda (xref)
               (let* ((loc (xref-item-location xref))
-                     (group (string-remove-prefix root (xref-location-group loc)))
+                     (group (xref-location-group loc))
+                     (group (if root (string-remove-prefix root group) group))
                      (cand (consult--format-file-line-match
                             group
                             (or (xref-location-line loc) 0)
