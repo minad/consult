@@ -4,10 +4,12 @@
 
 * Development
 
+- ~consult-xref~: Compatibility with xref.el in Emacs 30.
 - ~consult-grep~ (and similar): Preserve files which are already open literally
   and do not reopen them in normal mode.
 - ~consult-preview-allowed-hooks~: Run delayed mode hooks listed in this variable
   during preview.
+- ~consult--buffer-query~: Add buffer-list keyword argument.
 
 * Version 1.5 (2024-04-19)
 
