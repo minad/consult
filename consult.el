@@ -343,8 +343,8 @@ chunk from the beginning of the file is previewed."
   '(global-font-lock-mode
     save-place-find-file-hook)
   "List of hooks, which should be executed during file preview.
-This variable applies to both `find-file-hook', `change-major-mode-hook'
-and mode hooks, e.g., `prog-mode-hook'."
+This variable applies to `find-file-hook', `change-major-mode-hook' and
+mode hooks, e.g., `prog-mode-hook'."
   :type '(repeat symbol))
 
 (defcustom consult-preview-variables
