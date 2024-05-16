@@ -482,12 +482,12 @@ locking during preview, add the corresponding hooks to the allow list. The
 following code demonstrates this for [[https://github.com/minad/org-modern][org-modern]] and [[https://github.com/tarsius/hl-todo][hl-todo]].
 
 #+begin_src emacs-lisp
-;; mode hook examples
+;; local modes added to prog-mode hooks
 (add-to-list 'consult-preview-allowed-hooks 'hl-todo-mode)
 (add-to-list 'consult-preview-allowed-hooks 'elide-head-mode)
-;; find-file-hook examples
-(add-to-list 'consult-preview-allowed-hooks 'global-org-modern-mode-check-buffers)
-(add-to-list 'consult-preview-allowed-hooks 'global-hl-todo-mode-check-buffers)
+;; enabled global modes
+(add-to-list 'consult-preview-allowed-hooks 'global-org-modern-mode)
+(add-to-list 'consult-preview-allowed-hooks 'global-hl-todo-mode)
 #+end_src
 
 Files larger than =consult-preview-partial-size= are previewed partially. Delaying

@@ -340,11 +340,11 @@ chunk from the beginning of the file is previewed."
   :type '(repeat regexp))
 
 (defcustom consult-preview-allowed-hooks
-  '(global-font-lock-mode-check-buffers
+  '(global-font-lock-mode
     save-place-find-file-hook)
   "List of hooks, which should be executed during file preview.
-This variable applies to both `find-file-hook' and mode hooks,
-e.g., `prog-mode-hook'."
+This variable applies to both `find-file-hook', `change-major-mode-hook'
+and mode hooks, e.g., `prog-mode-hook'."
   :type '(repeat symbol))
 
 (defcustom consult-preview-variables
@@ -1265,14 +1265,25 @@ Return the location marker."
 
 ;;;; Preview support
 
+(defun consult--preview-allowed-p (fun)
+  "Return non-nil if FUN is an allowed preview mode hook."
+  (or (memq fun consult-preview-allowed-hooks)
+      (when-let (((symbolp fun))
+                 (name (symbol-name fun))
+                 (suffix (if (eval-when-compile (>= emacs-major-version 30))
+                             "-enable-in-buffer"
+                           "-check-buffers"))
+                 ((string-suffix-p suffix name)))
+        (memq (intern (string-remove-suffix suffix name))
+              consult-preview-allowed-hooks))))
+
 (defun consult--filter-find-file-hook (orig &rest hooks)
   "Filter `find-file-hook' by `consult-preview-allowed-hooks'.
 This function is an advice for `run-hooks'.
 ORIG is the original function, HOOKS the arguments."
   (if (memq 'find-file-hook hooks)
       (cl-letf* (((default-value 'find-file-hook)
-                  (seq-filter (lambda (x)
-                                (memq x consult-preview-allowed-hooks))
+                  (seq-filter #'consult--preview-allowed-p
                               (default-value 'find-file-hook)))
                  (find-file-hook (default-value 'find-file-hook)))
         (apply orig hooks))
@@ -1316,9 +1327,9 @@ ORIG is the original function, HOOKS the arguments."
               (error "No preview of file `%s' with long lines"
                      (file-name-nondirectory name)))
             ;; Run delayed hooks listed in `consult-preview-allowed-hooks'.
-            (dolist (hook (reverse delayed-mode-hooks))
+            (dolist (hook (reverse (cons 'after-change-major-mode-hook delayed-mode-hooks)))
               (run-hook-wrapped hook (lambda (fun)
-                                       (when (memq fun consult-preview-allowed-hooks)
+                                       (when (consult--preview-allowed-p fun)
                                          (funcall fun))
                                        nil)))
             (setq success (current-buffer)))
