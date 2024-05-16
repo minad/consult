@@ -5039,7 +5039,7 @@ regarding the asynchronous search and the arguments."
           (pcase-let ((`(,re . ,hl) (funcall consult--regexp-compiler arg 'pcre ignore-case)))
             (when re
               (cons (append cmd
-                            (cdr (mapcan (lambda (x) `("--and" ,x)) re))
+                            (mapcan (lambda (x) `("--and" ,x)) re)
                             opts paths)
                     hl))))))))
 
