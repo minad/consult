@@ -1270,6 +1270,10 @@ Return the location marker."
   (or (memq fun consult-preview-allowed-hooks)
       (when-let (((symbolp fun))
                  (name (symbol-name fun))
+                 ;; Global modes in Emacs 29 are activated via a
+                 ;; `find-file-hook' ending with `-check-buffers'. This has been
+                 ;; changed in Emacs 30. Now a `change-major-mode-hook' is used
+                 ;; instead with the suffix `-check-buffers'.
                  (suffix (if (eval-when-compile (>= emacs-major-version 30))
                              "-enable-in-buffer"
                            "-check-buffers"))
