@@ -4,7 +4,14 @@
 
 * Development
 
-- Bugfixes
+- Emacs 30 bug fix: Ensure that font locking is enabled when previewing files.
+- ~consult-preview-allowed-hooks~: Global minor modes, which should be enabled
+  during preview, can be added to this list. See the README for examples.
+- ~consult-xref~: Bug fix: Do not error when project root directory is nil.
+- ~consult-fd~: Bug fix: Avoid confusion of input pattern with options by
+  prefixing the input pattern with ~--and~.
+- ~consult--buffer-sort-visibility~: Bug fix: Only add current buffer to sorted
+  list, if already present in the original list.
 
 * Version 1.6 (2024-05-15)
 
