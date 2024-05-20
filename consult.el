@@ -4841,15 +4841,15 @@ input."
                    (flags (append cmd opts))
                    (ignore-case (or (member "-i" flags) (member "--ignore-case" flags))))
         (if (or (member "-F" flags) (member "--fixed-strings" flags))
-            (cons (append cmd (list "-e" arg) opts paths)
+            (cons (append (list "grep") opts (cdr cmd) (list "-e" arg) paths)
                   (apply-partially #'consult--highlight-regexps
                                    (list (regexp-quote arg)) ignore-case))
           (pcase-let ((`(,re . ,hl) (funcall consult--regexp-compiler arg type ignore-case)))
             (when re
-              (cons (append cmd
+              (cons (append (list "grep") opts (cdr cmd)
                             (list (if (eq type 'pcre) "-P" "-E") ;; perl or extended
                                   "-e" (consult--join-regexps re type))
-                            opts paths)
+                            paths)
                     hl))))))))
 
 ;;;###autoload
