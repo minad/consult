@@ -4978,6 +4978,7 @@ INITIAL is initial input."
      :file-handler t) ;; allow tramp
    :prompt prompt
    :sort nil
+   :state (consult--file-preview)
    :require-match t
    :initial (consult--async-split-initial initial)
    :add-history (consult--async-split-thingatpt 'filename)
