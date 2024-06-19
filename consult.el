@@ -4351,6 +4351,28 @@ The command supports previewing the currently selected theme."
           (enable-theme theme)
         (load-theme theme :no-confirm)))))
 
+;;;;; Command: consult-font
+
+;;;###autoload
+(defun consult-font (font)
+  "Replace current font with FONT from `font-family-list'."
+  (interactive
+   (list
+    (let ((saved-font (symbol-name (font-get (face-attribute 'default :font) :family))))
+      (consult--read
+       (font-family-list)
+       :prompt "Font: "
+       :require-match t
+       :state (lambda (action font)
+                (pcase action
+                  ('return (consult-font (or font saved-font)))
+                  ((and 'preview (guard font)) (consult-font font))))
+       ))))
+  (when font
+    ;; size doesn't change during scrolling so we can reuse that to
+    ;; configure new selected font
+    (set-face-attribute 'default nil :font (format "%s %d" font (font-get (face-attribute 'default :font) :size)))))
+
 ;;;;; Command: consult-buffer
 
 (defun consult--buffer-sort-alpha (buffers)
