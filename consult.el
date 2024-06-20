@@ -4960,6 +4960,12 @@ See `consult-grep' for details."
   (interactive "P")
   (consult--grep "Ripgrep" #'consult--ripgrep-make-builder dir initial))
 
+;;;###autoload
+(defun consult-rg-dir ()
+  "Search with `rg` for files in prompted DIR with symbol under cursor."
+  (interactive)
+  (consult-ripgrep (read-directory-name "rg directory: ") (thing-at-point 'symbol)))
+
 ;;;;; Command: consult-find
 
 (defun consult--find (prompt builder initial)
