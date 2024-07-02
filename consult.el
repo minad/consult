@@ -5044,7 +5044,8 @@ regarding the asynchronous search and the arguments."
             (when re
               (cons (append cmd
                             (mapcan (lambda (x) `("--and" ,x)) re)
-                            opts paths)
+                            opts
+                            (mapcan (lambda (x) `("--search-path" ,x)) paths))
                     hl))))))))
 
 ;;;###autoload
