@@ -38,7 +38,7 @@
     ;; Emacs 29 uses OClosures.  I like OClosures but it would have been better
     ;; if public APIs wouldn't change like that.
     (mapcar (lambda (x)
-              (if (eval-when-compile (> emacs-major-version 28))
+              (static-if (> emacs-major-version 28)
                   (list (kmacro--keys x) (kmacro--counter x) (kmacro--format x) x)
                 `(,@x ,x))))
     ;; Filter mouse clicks
@@ -81,7 +81,7 @@ Macros containing mouse clicks are omitted."
                (get-text-property 0 'consult-kmacro--annotation cand))
              :lookup #'consult--lookup-candidate)))
     ;; Kmacros are lambdas (oclosures) on Emacs 29
-    (funcall (if (eval-when-compile (> emacs-major-version 28))
+    (funcall (static-if (> emacs-major-version 28)
                  km
                (kmacro-lambda-form km))
              arg)))

@@ -1274,7 +1274,7 @@ Return the location marker."
                  ;; `find-file-hook' ending with `-check-buffers'. This has been
                  ;; changed in Emacs 30. Now a `change-major-mode-hook' is used
                  ;; instead with the suffix `-check-buffers'.
-                 (suffix (if (eval-when-compile (>= emacs-major-version 30))
+                 (suffix (static-if (>= emacs-major-version 30)
                              "-enable-in-buffer"
                            "-check-buffers"))
                  ((string-suffix-p suffix name)))
