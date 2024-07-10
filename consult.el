@@ -207,6 +207,8 @@ for navigation commands like `consult-line'."
     "\\`\\*Completions\\*\\'"
     "\\`\\*Flymake log\\*\\'"
     "\\`\\*Semantic SymRef\\*\\'"
+    "\\`\\*vc\\*\\'"
+    "\\`newsrc-dribble\\'" ;; Gnus
     "\\`\\*tramp/.*\\*\\'")
   "Filter regexps for `consult-buffer'.
 
