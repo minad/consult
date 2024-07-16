@@ -910,6 +910,7 @@ an overview of all Consult variables and functions with their descriptions.
 | consult-point-placement          | Placement of the point when jumping to matches      |
 | consult-preview-key              | Keys which triggers preview                         |
 | consult-preview-allowed-hooks    | List of hooks to allow during preview               |
+| consult-preview-excluded-buffers | Predicate to exclude buffers from preview           |
 | consult-preview-excluded-files   | Regexps matched against file names during preview   |
 | consult-preview-max-count        | Maximum number of files to keep open during preview |
 | consult-preview-partial-size     | Files larger than this size are previewed partially |

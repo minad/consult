@@ -2,6 +2,12 @@
 #+author: Daniel Mendler
 #+language: en
 
+* Development
+
+- =consult-preview-excluded-buffers=: New customization variable.
+- =consult-fd=: Support multiple paths.
+- Bump Compat dependency to Compat 30.
+
 * Version 1.7 (2024-05-23)
 
 - Emacs 30 bug fix: Ensure that font locking is enabled when previewing files.
