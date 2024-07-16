@@ -2995,10 +2995,10 @@ corresponding customization options."
           (setq args (cddr args)))))
     (macroexp-progn setter)))
 
-(defun consult--customize-get (&optional cmd)
-  "Get configuration from `consult--customize-alist' for CMD."
+(defun consult--customize-get ()
+  "Get configuration from `consult--customize-alist' for `this-command'."
   (mapcar (lambda (x) (eval x 'lexical))
-          (alist-get (or cmd this-command) consult--customize-alist)))
+          (alist-get this-command consult--customize-alist)))
 
 ;;;; Commands
 
