@@ -25,6 +25,8 @@
 
 ;;; Code:
 
+(eval-when-compile
+  (require 'subr-x))
 (require 'consult)
 (require 'kmacro)
 
