@@ -2,7 +2,7 @@
 #+author: Daniel Mendler
 #+language: en
 
-* Development
+* Version 1.8 (2024-07-25)
 
 - =consult-preview-excluded-buffers=: New customization variable.
 - =consult-fd=: Support multiple paths.
