@@ -817,9 +817,10 @@ asked for the directories or files to search via
                               (lambda ()
                                 (setq-local completion-ignore-case ignore-case)
                                 (set-syntax-table minibuffer-local-filename-syntax))
-                            (completing-read-multiple "Directories or files: "
-                                                      #'completion-file-name-table
-                                                      nil t def 'consult--path-history def))))
+                            (mapcar #'substitute-in-file-name
+                                    (completing-read-multiple "Directories or files: "
+                                                              #'read-file-name-internal
+                                                              nil t def 'consult--path-history def)))))
                  ((and `(,p) (guard (file-directory-p p))) p)
                  (ps (setq paths (mapcar (lambda (p)
                                            (file-relative-name (expand-file-name p)))
@@ -2289,7 +2290,8 @@ PROPS are optional properties passed to `make-process'."
                              (insert "<<<<< stderr <<<<<\n")))))
                       (process-adaptive-read-buffering nil))
                  (funcall async 'indicator 'running)
-                 (consult--async-log "consult--async-process started %S\n" args)
+                 (consult--async-log "consult--async-process started: args=%S default-directory=%S\n"
+                                     args default-directory)
                  (setq count 0
                        proc-buf (generate-new-buffer " *consult-async-stderr*")
                        proc (apply #'make-process
