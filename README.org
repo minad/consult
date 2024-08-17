@@ -240,6 +240,7 @@ their descriptions.
 #+cindex: locate
 
 #+findex: consult-grep
+#+findex: consult-project-grep
 #+findex: consult-ripgrep
 #+findex: consult-git-grep
 #+findex: consult-find
@@ -262,6 +263,7 @@ their descriptions.
   [[#project-support][project directory]] if a project is found. Otherwise the =default-directory= is
   searched. If =consult-grep= is invoked with prefix argument =C-u M-s g=, you can
   specify one or more comma-separated files and directories manually.
+- =consult-project-grep=: Variant of =consult-grep=, prompting for a project if not in one.
 - =consult-find=, =consult-fd=, =consult-locate=: Find file by matching the path
   against a regexp. Like for =consult-grep=, either the project root or the
   current directory is the root directory for the search. The input string is
@@ -779,6 +781,7 @@ configuration examples.
          ("C-x t b" . consult-buffer-other-tab)    ;; orig. switch-to-buffer-other-tab
          ("C-x r b" . consult-bookmark)            ;; orig. bookmark-jump
          ("C-x p b" . consult-project-buffer)      ;; orig. project-switch-to-buffer
+         ("C-x p g" . consult-project-grep)	     ;; orig. project-find-regexp
          ;; Custom M-# bindings for fast register access
          ("M-#" . consult-register-load)
          ("M-'" . consult-register-store)          ;; orig. abbrev-prefix-mark (unrelated)

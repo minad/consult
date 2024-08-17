@@ -4691,14 +4691,14 @@ configuration of the virtual buffer sources."
   ;; project.  But who does that? Working on the first level on project A
   ;; and on the second level on project B and on the third level on project C?
   ;; You mustn't be afraid to dream a little bigger, darling.
-  `(let ((consult-project-function
-          (let ((root (or (consult--project-root t) (user-error "No project found")))
-                (depth (recursion-depth))
-                (orig consult-project-function))
-            (lambda (may-prompt)
-              (if (= depth (recursion-depth))
-                  root
-                (funcall orig may-prompt))))))
+  `(let* ((root (or (consult--project-root t) (user-error "No project found")))
+          (depth (recursion-depth))
+          (orig consult-project-function)
+          (consult-project-function
+           (lambda (may-prompt)
+             (if (= depth (recursion-depth))
+                 root
+               (funcall orig may-prompt)))))
      ,@body))
 
 ;;;###autoload
@@ -4709,6 +4709,16 @@ outside a project.  See `consult-buffer' for more details."
   (interactive)
   (consult--with-project
    (consult-buffer consult-project-buffer-sources)))
+
+;;;###autoload
+(defun consult-project-grep ()
+  "Variant of `consult-grep`, meant to be a replacement for `project-find-regexp`.
+The command prompts you for a project directory if it is invoked from
+outside a project."
+  (interactive)
+  (consult--with-project
+   (consult--grep "Grep" #'consult--grep-make-builder nil nil))))
+
 
 ;;;###autoload
 (defun consult-buffer-other-window ()
