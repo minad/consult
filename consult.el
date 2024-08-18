@@ -800,7 +800,7 @@ asked for the directories or files to search via
          (dir
           (pcase dir
             ((pred stringp) dir)
-            ('nil (or (consult--project-root) default-directory))
+            ((or 'nil '(16)) (or (consult--project-root dir) default-directory))
             (_
                (pcase (if (stringp (car-safe dir))
                           dir
