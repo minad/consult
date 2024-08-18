@@ -261,7 +261,9 @@ their descriptions.
   orderless. =consult-grep= supports preview. =consult-grep= searches the current
   [[#project-support][project directory]] if a project is found. Otherwise the =default-directory= is
   searched. If =consult-grep= is invoked with prefix argument =C-u M-s g=, you can
-  specify one or more comma-separated files and directories manually.
+  specify one or more comma-separated files and directories manually. If invoked
+  with two prefix arguments =C-u C-u M-s g=, you can first select a project if you
+  are not yet inside a project.
 - =consult-find=, =consult-fd=, =consult-locate=: Find file by matching the path
   against a regexp. Like for =consult-grep=, either the project root or the
   current directory is the root directory for the search. The input string is
