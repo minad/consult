@@ -819,7 +819,7 @@ asked for the directories or files to search via
                                 (set-syntax-table minibuffer-local-filename-syntax))
                             (mapcar #'substitute-in-file-name
                                     (completing-read-multiple "Directories or files: "
-                                                              #'read-file-name-internal
+                                                              #'completion-file-name-table
                                                               nil t def 'consult--path-history def)))))
                  ((and `(,p) (guard (file-directory-p p))) p)
                  (ps (setq paths (mapcar (lambda (p)
