@@ -817,10 +817,9 @@ asked for the directories or files to search via
                               (lambda ()
                                 (setq-local completion-ignore-case ignore-case)
                                 (set-syntax-table minibuffer-local-filename-syntax))
-                            (mapcar #'substitute-in-file-name
-                                    (completing-read-multiple "Directories or files: "
-                                                              #'completion-file-name-table
-                                                              nil t def 'consult--path-history def)))))
+                            (completing-read-multiple "Directories or files: "
+                                                      #'completion-file-name-table
+                                                      nil t def 'consult--path-history def))))
                  ((and `(,p) (guard (file-directory-p p))) p)
                  (ps (setq paths (mapcar (lambda (p)
                                            (file-relative-name (expand-file-name p)))
