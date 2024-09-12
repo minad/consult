@@ -924,7 +924,6 @@ an overview of all Consult variables and functions with their descriptions.
 | consult-ripgrep-args             | Command line arguments for ripgrep                  |
 | consult-themes                   | List of themes to be presented for selection        |
 | consult-widen-key                | Widening key during completion                      |
-| consult-yank-rotate              | Rotate kill ring                                    |
 
 ** Project support
 :properties:
@@ -1037,7 +1036,7 @@ There exist multiple fine completion UIs beside Vertico, which are supported by
 Consult. Give them a try and find out which interaction model fits best for you.
 
 - The builtin completion UI, which pops up the =*Completions*= buffer.
-- The builtin =icomplete-vertical-mode= in Emacs 28 or newer.
+- The builtin =icomplete-vertical-mode=.
 - [[https://git.sr.ht/~protesilaos/mct][mct by Protesilaos Stavrou]]: Minibuffer and Completions in Tandem, which builds
   on the default completion UI.
 

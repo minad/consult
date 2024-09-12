@@ -4,8 +4,10 @@
 
 * Development
 
+- Require Emacs 28.1.
 - ~consult-grep~, ~consult-find~ and similar commands: Ask for project first, when
   invoked with double prefix argument ~C-u C-u~.
+- Deprecate ~consult-yank-rotate~ in favor of ~yank-from-kill-ring-rotate~.
 
 * Version 1.8 (2024-07-25)
 
