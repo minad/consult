@@ -915,10 +915,8 @@ always return an appropriate non-minibuffer window."
   "Show delayed MESSAGE if BODY takes too long.
 Also temporarily increase the GC limit via `consult--with-increased-gc'."
   (declare (indent 1))
-  `(let (set-message-function) ;; bug#63253: Broken `with-delayed-message'
-     (with-delayed-message (1 ,message)
-       (consult--with-increased-gc
-        ,@body))))
+  `(with-delayed-message (1 ,message)
+     (consult--with-increased-gc ,@body)))
 
 (defun consult--count-lines (pos)
   "Move to position POS and return number of lines."
