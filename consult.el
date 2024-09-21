@@ -247,8 +247,11 @@ See `consult--multi' for a description of the source data structure."
   :type '(repeat (choice symbol regexp)))
 
 (defcustom consult-grep-max-columns 300
-  "Maximal number of columns of grep output."
-  :type 'natnum)
+  "Maximal number of columns of grep output.
+If set to nil, do not truncate candidates.  This can have negative
+performance implications but helps if you want to export long lines via
+`embark-export'."
+  :type '(choice natnum (const nil)))
 
 (defconst consult--grep-match-regexp
   "\\`\\(?:\\./\\)?\\([^\n\0]+\\)\0\\([0-9]+\\)\\([-:\0]\\)"
@@ -4726,7 +4729,8 @@ BUILDER is the command line builder function."
                        (sep (if ctx "-" ":"))
                        (content (substring str (match-end 0)))
                        (line-len (length line)))
-                  (when (length> content consult-grep-max-columns)
+                  (when (and consult-grep-max-columns
+                             (length> content consult-grep-max-columns))
                     (setq content (substring content 0 consult-grep-max-columns)))
                   (when highlight
                     (funcall highlight content))

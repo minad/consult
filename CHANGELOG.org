@@ -8,6 +8,7 @@
 - ~consult-grep~, ~consult-find~ and similar commands: Ask for project first, when
   invoked with double prefix argument ~C-u C-u~.
 - Deprecate ~consult-yank-rotate~ in favor of ~yank-from-kill-ring-rotate~.
+- ~consult-grep-max-columns~: Support value ~nil~ to disable truncation.
 
 * Version 1.8 (2024-07-25)
 
