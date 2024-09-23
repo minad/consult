@@ -808,7 +808,7 @@ asked for the directories or files to search via
     (list
      (format "%s (%s): " prompt
              (pcase paths
-               ((guard (length< paths 3))
+               ((guard (<= 1 (length paths) 2))
                 (string-join (mapcar #'consult--left-truncate-file paths) ", "))
                (`(,p . ,_)
                 (format "%d paths, %s, …" (length paths) (consult--left-truncate-file p)))
