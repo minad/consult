@@ -7,7 +7,7 @@
 ;; Created: 2020
 ;; Version: 1.8
 ;; Package-Requires: ((emacs "28.1") (compat "30"))
-;; Homepage: https://github.com/minad/consult
+;; URL: https://github.com/minad/consult
 ;; Keywords: matching, files, completion
 
 ;; This file is part of GNU Emacs.
@@ -59,7 +59,7 @@
 (defgroup consult nil
   "Consulting `completing-read'."
   :link '(info-link :tag "Info Manual" "(consult)")
-  :link '(url-link :tag "Homepage" "https://github.com/minad/consult")
+  :link '(url-link :tag "Website" "https://github.com/minad/consult")
   :link '(emacs-library-link :tag "Library Source" "consult.el")
   :group 'files
   :group 'outlines
