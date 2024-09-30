@@ -751,11 +751,15 @@ network file systems."
 (defun consult--left-truncate-file (file)
   "Return abbreviated file name of FILE for use in `completing-read' prompt."
   (save-match-data
-    (setq file (directory-file-name (abbreviate-file-name file)))
-    (if (and (string-match "/\\([^/]+\\)/\\([^/]+\\)\\'" file)
-             (< (- (match-end 0) (match-beginning 0) -3) (length file)))
-        (format "…/%s/%s" (match-string 1 file) (match-string 2 file))
-      file)))
+    (let ((file (directory-file-name (abbreviate-file-name file)))
+          (prefix nil))
+      (when (string-match "\\`/\\([^/|:]+:\\)" file)
+        (setq prefix (propertize (match-string 1 file) 'face 'error)
+              file (substring file (match-end 0))))
+      (when (and (string-match "/\\([^/]+\\)/\\([^/]+\\)\\'" file)
+                 (< (- (match-end 0) (match-beginning 0) -3) (length file)))
+        (setq file (format "…/%s/%s" (match-string 1 file) (match-string 2 file))))
+      (concat prefix file))))
 
 (defun consult--directory-prompt (prompt dir)
   "Return prompt, paths and default directory.
