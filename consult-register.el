@@ -175,7 +175,7 @@ Raise an error if the list is empty and NOERROR is nil."
                      ;; invalid markers.  Such registers don't do anything, and
                      ;; can be ignored.
                      if (and (cdr reg)
-                             (not (equal (cadr reg) "Unprintable entity"))
+                             (not (equal (car-safe (cdr reg)) "Unprintable entity"))
                              (or (not (markerp (cdr reg))) (marker-buffer (cdr reg)))
                              (or (not filter) (funcall filter reg)))
                      collect reg)
