@@ -2776,12 +2776,13 @@ KEYMAP is a command-specific keymap."
             consult-preview-key))
         :keys
         (delete-dups
-         (seq-mapcat (lambda (src)
-                       (let ((key (if (plist-member src :preview-key)
-                                      (plist-get src :preview-key)
-                                    consult-preview-key)))
-                         (ensure-list key)))
-                     sources))))
+         (seq-filter (lambda (k) (or (eq k 'any) (stringp k)))
+                     (seq-mapcat (lambda (src)
+                                   (ensure-list
+                                    (if (plist-member src :preview-key)
+                                        (plist-get src :preview-key)
+                                      consult-preview-key)))
+                                 sources)))))
 
 (defun consult--multi-lookup (sources selected candidates _input narrow &rest _)
   "Lookup SELECTED in CANDIDATES given SOURCES, with potential NARROW."
