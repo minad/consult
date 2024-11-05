@@ -60,6 +60,7 @@
   "Consulting `completing-read'."
   :link '(info-link :tag "Info Manual" "(consult)")
   :link '(url-link :tag "Website" "https://github.com/minad/consult")
+  :link '(url-link :tag "Wiki" "https://github.com/minad/consult/wiki")
   :link '(emacs-library-link :tag "Library Source" "consult.el")
   :group 'files
   :group 'outlines
