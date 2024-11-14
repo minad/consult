@@ -5165,20 +5165,18 @@ automatically previewed."
 
 (defun consult--default-completion-list-candidate ()
   "Return current candidate at point from completions buffer."
-  (let (beg end)
+  (let (beg)
     (when (and
            (derived-mode-p 'completion-list-mode)
            ;; Logic taken from `choose-completion'.
            ;; TODO Upstream a `completion-list-get-candidate' function.
            (cond
-            ((and (not (eobp)) (get-text-property (point) 'mouse-face))
-             (setq end (point) beg (1+ (point))))
-            ((and (not (bobp)) (get-text-property (1- (point)) 'mouse-face))
-             (setq end (1- (point)) beg (point)))))
-      (setq beg (previous-single-property-change beg 'mouse-face)
-            end (or (next-single-property-change end 'mouse-face) (point-max)))
-      (or (get-text-property beg 'completion--string)
-          (buffer-substring-no-properties beg end)))))
+            ((and (not (eobp)) (get-text-property (point) 'completion--string))
+             (setq beg (1+ (point))))
+            ((and (not (bobp)) (get-text-property (1- (point)) 'completion--string))
+             (setq beg (point)))))
+      (get-text-property (previous-single-property-change beg 'completion--string)
+                         'completion--string))))
 
 ;;;;; Integration: Vertico
 
