@@ -653,11 +653,18 @@ Turn ARG into a list, and for each element either:
 CATEGORY is the completion category, used to find the completion style via
 `completion-category-defaults' and `completion-category-overrides'.
 HIGHLIGHT must be non-nil if the resulting strings should be highlighted."
-  ;; completion-all-completions returns an improper list
-  ;; where the last link is not necessarily nil.
-  (nconc (completion-all-completions pattern cands nil (length pattern)
-                                     `(metadata (category . ,category)))
-         nil))
+  ;; Ensure that the global completion style settings are used for
+  ;; `consult-line', `consult-focus-lines' and `consult-keep-lines' filtering.
+  ;; This override is necessary since users may want to override the settings
+  ;; buffer-locally for in-buffer completion via Corfu.
+  (let ((completion-styles (default-value 'completion-styles))
+        (completion-category-defaults (default-value 'completion-category-defaults))
+        (completion-category-overrides (default-value 'completion-category-overrides)))
+    ;; `completion-all-completions' returns an improper list where the last link
+    ;; is not necessarily nil.
+    (nconc (completion-all-completions pattern cands nil (length pattern)
+                                       `(metadata (category . ,category)))
+           nil)))
 
 (defun consult--completion-filter-complement (pattern cands category _highlight)
   "Filter CANDS with complement of PATTERN.
