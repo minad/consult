@@ -1237,7 +1237,3 @@ Smith]], [[https://github.com/manuel-uberti/][Manuel Uberti]], [[https://github.
 :end:
 
 #+html: -->
-
-# Local Variables:
-# fill-column: 80
-# End:
