@@ -9,6 +9,8 @@
   invoked with double prefix argument ~C-u C-u~.
 - Deprecate ~consult-yank-rotate~ in favor of ~yank-from-kill-ring-rotate~.
 - ~consult-grep-max-columns~: Support value ~nil~ to disable truncation.
+- ~consult-line~: Enforce global completion style settings for compatibility with
+  buffer-local completion style settings, which may be used by Corfu.
 
 * Version 1.8 (2024-07-25)
 
