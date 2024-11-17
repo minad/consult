@@ -5166,11 +5166,10 @@ automatically previewed."
 
 (defun consult--default-completion-list-candidate ()
   "Return current candidate at point from completions buffer."
+  ;; See feature request bug#74408 for `completion-list-candidate-at-point'.
   (let (beg)
     (when (and
            (derived-mode-p 'completion-list-mode)
-           ;; Logic taken from `choose-completion'.
-           ;; TODO Upstream a `completion-list-get-candidate' function.
            (cond
             ((and (not (eobp)) (get-text-property (point) 'completion--string))
              (setq beg (1+ (point))))
