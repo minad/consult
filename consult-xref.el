@@ -36,6 +36,10 @@
 The fetch is stored globally such that it can be accessed by
  Embark for `embark-export'.")
 
+(defvar consult-xref--preview
+  '(xref-buffer-location xref-file-location xref-etags-location)
+  "Only the xref types listed here are previewed.")
+
 (defun consult-xref--candidates ()
   "Return xref candidate list."
   (let ((root (consult--project-root)))
@@ -61,23 +65,23 @@ The fetch is stored globally such that it can be accessed by
         (funcall open))
       (let ((consult--buffer-display display))
         (funcall preview action
-                 (when-let (loc (and cand (eq action 'preview)
-                                     (xref-item-location cand)))
-                   (let ((type (type-of loc)))
-                     ;; Only preview file and buffer markers
-                     (pcase type
-                       ('xref-buffer-location
-                        (xref-location-marker loc))
-                       ((or 'xref-file-location 'xref-etags-location)
-                        (consult--marker-from-line-column
-                         (funcall open
-                                  ;; xref-location-group returns the file name
-                                  (let ((xref-file-name-display 'abs))
-                                    (xref-location-group loc)))
-                         (xref-location-line loc)
-                         (if (eq type 'xref-file-location)
-                             (xref-file-location-column loc)
-                           0)))))))))))
+                 (when-let ((loc (and cand (eq action 'preview)
+                                      (xref-item-location cand)))
+                            (type (type-of loc))
+                            ;; Only preview xrefs listed in consult-xref--preview
+                            ((memq type consult-xref--preview)))
+                   (pcase type
+                     ((or 'xref-file-location 'xref-etags-location)
+                      (consult--marker-from-line-column
+                       (funcall open
+                                ;; xref-location-group returns the file name
+                                (let ((xref-file-name-display 'abs))
+                                  (xref-location-group loc)))
+                       (xref-location-line loc)
+                       (if (eq type 'xref-file-location)
+                           (xref-file-location-column loc)
+                         0)))
+                     (_ (xref-location-marker loc)))))))))
 
 ;;;###autoload
 (defun consult-xref (fetcher &optional alist)
