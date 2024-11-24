@@ -117,5 +117,85 @@ FETCHER and ALIST arguments."
        (get-text-property 0 'consult-xref (car candidates)))
      display)))
 
+(defun consult--xref-go-back (pos)
+  "Jump to POS in the Xref backward stack."
+  (when pos
+    (when (consp pos) (setq pos (car pos)))
+    ;; Pop from the backward stack until we reach the selected marker, and
+    ;; push the current position to the forward stack.
+    (let ((history (xref--get-history)))
+      (while (not (or (null (car (car history))) (equal (car (car history)) pos)))
+        (pop (car history)))
+      (xref--push-forward (point-marker)))
+    ;; Jump to the selected marker, ensuring the buffer exists and any narrowed
+    ;; regions are visible.
+    (when (consult--jump-ensure-buffer pos)
+      (unless (= (goto-char pos) (point))
+        (widen)
+        (goto-char pos)))
+    (consult--invisible-open-permanently)
+    (run-hooks 'consult-after-jump-hook))
+  nil)
+
+(defun consult--xref-back-state ()
+  "The state function used to select a candidate position in backward history."
+  (consult--state-with-return (consult--jump-preview)
+                              #'consult--xref-go-back))
+
+;;;###autoload
+(defun consult-xref-back ()
+  "Jump to a marker in the current Xref backward stack.
+
+The command supports preview of the currently selected marker position."
+  (interactive)
+  (consult--read
+   (consult--global-mark-candidates (car (xref--get-history)))
+   :prompt "Go to previous bookmark: "
+   :category 'consult-location
+   :sort nil
+   :require-match t
+   :lookup #'consult--lookup-location
+   :state (consult--xref-back-state)))
+
+(defun consult--xref-go-forward (pos)
+  "Jump to POS in the Xref forward stack."
+  (when pos
+    (when (consp pos) (setq pos (car pos)))
+    ;; Pop from the forward stack until we reach the selected marker, and push
+    ;; the current position to the backward stack.
+    (let ((history (xref--get-history)))
+      (while (not (or (null (car (cdr history))) (equal (car (cdr history)) pos)))
+        (pop (cdr history)))
+      (xref--push-backward (point-marker)))
+    ;; Jump to the selected marker, ensuring the buffer exists and any narrowed
+    ;; regions are visible.
+    (when (consult--jump-ensure-buffer pos)
+      (unless (= (goto-char pos) (point))
+        (widen)
+        (goto-char pos)))
+    (consult--invisible-open-permanently)
+    (run-hooks 'consult-after-jump-hook))
+  nil)
+
+(defun consult--xref-forward-state ()
+  "The state function used to selected a candidate position in forward history."
+  (consult--state-with-return (consult--jump-preview)
+                              #'consult--xref-go-forward))
+
+;;;###autoload
+(defun consult-xref-forward ()
+  "Jump to a marker in the current Xref forward stack.
+
+The command supports preview of the currently selected marker position."
+  (interactive)
+  (consult--read
+   (consult--global-mark-candidates (cdr (xref--get-history)))
+   :prompt "Go to previous bookmark: "
+   :category 'consult-location
+   :sort nil
+   :require-match t
+   :lookup #'consult--lookup-location
+   :state (consult--xref-forward-state)))
+
 (provide 'consult-xref)
 ;;; consult-xref.el ends here
