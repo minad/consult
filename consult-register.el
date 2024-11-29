@@ -140,7 +140,7 @@ SHOW-EMPTY must be t if the window should be shown for an empty register list."
                     scroll-margin 0)
         (insert (mapconcat
                  (lambda (reg)
-                   (concat (funcall register-preview-function reg) separator))
+                   (concat (consult-register-format reg) separator))
                  regs nil))))))
 
 ;;;###autoload
