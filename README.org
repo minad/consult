@@ -753,11 +753,15 @@ they use lambdas and closures.
 
 The Consult package only provides commands and does not add any keybindings or
 modes. Therefore the package is non-intrusive but requires a little setup
-effort. In order to use the Consult commands, it is advised to add keybindings
-for commands which are accessed often. Rarely used commands can be invoked via
-=M-x=. Feel free to only bind the commands you consider useful to your workflow.
-The configuration shown here relies on the =use-package= macro, which is a
-convenient tool to manage package configurations.
+effort. While the configuration example is long, it consists essentially of key
+bindings only, such that the risk of interference with other Emacs functionality
+is minimized.
+
+In order to use the Consult commands, it is recommended to add keybindings for
+commands which are accessed often. Rarely used commands can be invoked via =M-x=.
+Feel free to only bind the commands you consider useful to your workflow. The
+configuration shown here relies on the =use-package= macro, which is a convenient
+tool to manage package configurations.
 
 *NOTE:* There is the [[https://github.com/minad/consult/wiki][Consult wiki]], where you can contribute additional
 configuration examples.
