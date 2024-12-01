@@ -571,9 +571,6 @@ We use invalid characters outside the Unicode range.")
 (defvar-local consult--focus-lines-overlays nil
   "Overlays used by `consult-focus-lines'.")
 
-(defvar-local consult--org-fold-regions nil
-  "Stored regions for the org-fold API.")
-
 ;;;; Miscellaneous helper functions
 
 (defun consult--key-parse (key)
@@ -1451,67 +1448,26 @@ ORIG is the original function, HOOKS the arguments."
 (defun consult--invisible-open-permanently ()
   "Open overlays which hide the current line.
 See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
-  (if (and (derived-mode-p 'org-mode) (fboundp 'org-fold-show-set-visibility))
-      ;; New Org 9.6 fold-core API
-      (let ((inhibit-redisplay t)) ;; HACK: Prevent flicker due to premature redisplay
-        (org-fold-show-set-visibility 'canonical))
-    (dolist (ov (overlays-in (pos-bol) (pos-eol)))
-      (when-let (fun (overlay-get ov 'isearch-open-invisible))
-        (when (invisible-p (overlay-get ov 'invisible))
-          (funcall fun ov))))))
+  (dolist (ov (overlays-in (pos-bol) (pos-eol)))
+    (when-let (fun (overlay-get ov 'isearch-open-invisible))
+      (when (invisible-p (overlay-get ov 'invisible))
+        (funcall fun ov)))))
 
 (defun consult--invisible-open-temporarily ()
   "Temporarily open overlays which hide the current line.
 See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
-  (if (and (derived-mode-p 'org-mode)
-           (fboundp 'org-fold-show-set-visibility)
-           (fboundp 'org-fold-core-get-regions)
-           (fboundp 'org-fold-core-region))
-      ;; New Org 9.6 fold-core API
-      ;; TODO The provided Org API `org-fold-show-set-visibility' cannot be used
-      ;; efficiently.  We obtain all regions in the whole buffer in order to
-      ;; restore them.  A better show API would return all the applied
-      ;; modifications such that we can restore the ones which got modified.
-      (progn
-        (unless consult--org-fold-regions
-          (setq consult--org-fold-regions
-                (delq nil (org-fold-core-get-regions
-                           :with-markers t :from (point-min) :to (point-max))))
-          (when consult--org-fold-regions
-            (let ((hook (make-symbol "consult--invisible-open-temporarily-cleanup-hook"))
-                  (buffer (current-buffer))
-                  (depth (recursion-depth)))
-              (fset hook
-                    (lambda ()
-                      (when (= (recursion-depth) depth)
-                        (remove-hook 'minibuffer-exit-hook hook)
-                        (run-at-time
-                         0 nil
-                         (lambda ()
-                           (when (buffer-live-p buffer)
-                             (with-current-buffer buffer
-                               (pcase-dolist (`(,beg ,end ,_) consult--org-fold-regions)
-                                 (when (markerp beg) (set-marker beg nil))
-                                 (when (markerp end) (set-marker end nil)))
-                               (kill-local-variable 'consult--org-fold-regions))))))))
-              (add-hook 'minibuffer-exit-hook hook))))
-        (let ((inhibit-redisplay t)) ;; HACK: Prevent flicker due to premature redisplay
-          (org-fold-show-set-visibility 'canonical))
-        (list (lambda ()
-                (pcase-dolist (`(,beg ,end ,spec) consult--org-fold-regions)
-                  (org-fold-core-region beg end t spec)))))
-    (let (restore)
-      (dolist (ov (overlays-in (pos-bol) (pos-eol)))
-        (let ((inv (overlay-get ov 'invisible)))
-          (when (and (invisible-p inv) (overlay-get ov 'isearch-open-invisible))
-            (push (if-let (fun (overlay-get ov 'isearch-open-invisible-temporary))
-                      (progn
-                        (funcall fun ov nil)
-                        (lambda () (funcall fun ov t)))
-                    (overlay-put ov 'invisible nil)
-                    (lambda () (overlay-put ov 'invisible inv)))
-                  restore))))
-      restore)))
+  (let (restore)
+    (dolist (ov (overlays-in (pos-bol) (pos-eol)))
+      (let ((inv (overlay-get ov 'invisible)))
+        (when (and (invisible-p inv) (overlay-get ov 'isearch-open-invisible))
+          (push (if-let (fun (overlay-get ov 'isearch-open-invisible-temporary))
+                    (progn
+                      (funcall fun ov nil)
+                      (lambda () (funcall fun ov t)))
+                  (overlay-put ov 'invisible nil)
+                  (lambda () (overlay-put ov 'invisible inv)))
+                restore))))
+    restore))
 
 (defun consult--jump-ensure-buffer (pos)
   "Ensure that buffer of marker POS is displayed, return t if successful."
