@@ -122,7 +122,8 @@ asynchronous commands, e.g., `consult-grep'."
 (defcustom consult-async-min-input 3
   "Minimum number of characters needed, before asynchronous process is called.
 
-This applies to asynchronous commands, e.g., `consult-grep'."
+This applies to asynchronous commands, e.g., `consult-grep'.  Note that
+the smallest supported value is 1."
   :type '(natnum :tag "Number of characters"))
 
 (defcustom consult-async-split-style 'perl
