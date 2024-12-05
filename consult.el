@@ -122,8 +122,7 @@ asynchronous commands, e.g., `consult-grep'."
 (defcustom consult-async-min-input 3
   "Minimum number of characters needed, before asynchronous process is called.
 
-This applies to asynchronous commands, e.g., `consult-grep'.  Note that
-the smallest supported value is 1."
+This applies to asynchronous commands, e.g., `consult-grep'."
   :type '(natnum :tag "Number of characters"))
 
 (defcustom consult-async-split-style 'perl
@@ -2054,6 +2053,7 @@ context can be made.
 \\='destroy Destroy the internal closure state.  Return nil.
 \\='flush   Flush the list of candidates.  Return nil.
 \\='refresh Request UI refresh.  Return nil.
+\\='cancel  Cancel any running process.  Return nil.
 nil      Return the list of candidates.
 list     Append the list to the already existing candidates list and return it.
 string   Update with the current user input string.  Return nil."
@@ -2063,7 +2063,7 @@ string   Update with the current user input string.  Return nil."
         ('setup
          (setq buffer (current-buffer))
          nil)
-        ((or (pred stringp) 'destroy) nil)
+        ((or (pred stringp) 'destroy 'cancel) nil)
         ('flush (setq candidates nil last nil))
         ('refresh
          ;; Refresh the UI when the current minibuffer window belongs
@@ -2083,6 +2083,13 @@ string   Update with the current user input string.  Return nil."
          (setq last (last (if last (setcdr last action) (setq candidates action))))
          candidates)))))
 
+(defun consult--async-debug (async prefix)
+  "Create async function from ASYNC with debug messages.
+The messages are prefixed with PREFIX."
+  (lambda (action)
+    (consult--async-log "%s: %S\n" prefix action)
+    (funcall async action)))
+
 (defun consult--async-split-style ()
   "Return the async splitting style function and initial string."
   (or (alist-get consult-async-split-style consult-async-split-styles-alist)
@@ -2098,33 +2105,32 @@ INITIAL is the additional initial string."
   (when-let (str (thing-at-point thing))
     (consult--async-split-initial str)))
 
-(defun consult--async-split (async &optional split)
+(defun consult--async-split (async &optional split min-input)
   "Create async function, which splits the input string.
 ASYNC is the async sink.
-SPLIT is the splitting function."
+SPLIT is the splitting function.
+MIN-INPUT is the minimum input length."
   (unless split
     (let* ((style (consult--async-split-style))
            (fn (plist-get style :function)))
       (setq split (lambda (str) (funcall fn str style)))))
+  (setq min-input (or min-input consult-async-min-input))
   (lambda (action)
     (pcase action
       ('setup
        (consult--split-setup split)
        (funcall async 'setup))
       ((pred stringp)
-       (pcase-let* ((`(,async-str ,_ ,force . ,highlights)
-                     (funcall split action))
-                    (async-len (length async-str))
-                    (input-len (length action))
-                    (end (minibuffer-prompt-end)))
+       (pcase-let ((`(,async-str ,_ ,force . ,highlights) (funcall split action))
+                   (end (minibuffer-prompt-end)))
          ;; Highlight punctuation characters
-         (remove-list-of-text-properties end (+ end input-len) '(face))
+         (remove-list-of-text-properties end (+ end (length action)) '(face))
          (dolist (hl highlights)
            (put-text-property (+ end (car hl)) (+ end (cdr hl))
                               'face 'consult-async-split))
          (funcall async
                   ;; Pass through if the input is long enough!
-                  (if (or force (>= async-len consult-async-min-input))
+                  (if (or force (>= (length async-str) min-input))
                       async-str
                     ;; Pretend that there is no input
                     ""))))
@@ -2168,12 +2174,6 @@ PROPS are optional properties passed to `make-process'."
   (let (proc proc-buf last-args count)
     (lambda (action)
       (pcase action
-        ("" ;; If no input is provided kill current process
-         (when proc
-           (delete-process proc)
-           (kill-buffer proc-buf)
-           (setq proc nil proc-buf nil))
-         (setq last-args nil))
         ((pred stringp)
          (funcall async action)
          (let* ((args (funcall builder action)))
@@ -2205,17 +2205,18 @@ PROPS are optional properties passed to `make-process'."
                                (funcall async lines))))))
                       (proc-sentinel
                        (lambda (_ event)
-                         (when flush
+                         (cond
+                          (flush
                            (setq flush nil)
                            (funcall async 'flush))
+                          ((and (string-prefix-p "finished" event) (not (equal rest "")))
+                           (cl-incf count)
+                           (funcall async (list rest))))
                          (funcall async 'indicator
                                   (cond
                                    ((string-prefix-p "killed" event)   'killed)
                                    ((string-prefix-p "finished" event) 'finished)
                                    (t 'failed)))
-                         (when (and (string-prefix-p "finished" event) (not (equal rest "")))
-                           (cl-incf count)
-                           (funcall async (list rest)))
                          (consult--async-log
                           "consult--async-process sentinel: event=%s lines=%d\n"
                           (string-trim event) count)
@@ -2247,12 +2248,13 @@ PROPS are optional properties passed to `make-process'."
                                      :filter ,proc-filter
                                      :sentinel ,proc-sentinel)))))))
          nil)
-        ('destroy
+        ((or 'cancel 'destroy)
          (when proc
            (delete-process proc)
            (kill-buffer proc-buf)
            (setq proc nil proc-buf nil))
-         (funcall async 'destroy))
+         (setq last-args nil)
+         (funcall async action))
         (_ (funcall async action))))))
 
 (defun consult--async-highlight (async builder)
@@ -2277,27 +2279,26 @@ The THROTTLE delay defaults to `consult-async-input-throttle'.
 The DEBOUNCE delay defaults to `consult-async-input-debounce'."
   (setq throttle (or throttle consult-async-input-throttle)
         debounce (or debounce consult-async-input-debounce))
-  (let* ((input "") (timer (timer-create)) (last 0))
+  (let* ((input nil) (timer (timer-create)) (last 0))
     (lambda (action)
       (pcase action
         ((pred stringp)
          (unless (equal action input)
            (cancel-timer timer)
-           (funcall async "") ;; cancel running process
+           (funcall async 'cancel)
+           (timer-set-function timer (lambda ()
+                                       (setq last (float-time))
+                                       (funcall async action)))
+           (timer-set-time
+            timer
+            (timer-relative-time
+             nil (if input (max debounce (- (+ last throttle) (float-time))) 0)))
            (setq input action)
-           (unless (equal action "")
-             (timer-set-function timer (lambda ()
-                                         (setq last (float-time))
-                                         (funcall async action)))
-             (timer-set-time
-              timer
-              (timer-relative-time
-               nil (max debounce (- (+ last throttle) (float-time)))))
-             (timer-activate timer)))
+           (timer-activate timer))
          nil)
-        ('destroy
+        ((or 'cancel 'destroy)
          (cancel-timer timer)
-         (funcall async 'destroy))
+         (funcall async action))
         (_ (funcall async action))))))
 
 (defun consult--async-refresh-immediate (async)
@@ -2363,14 +2364,16 @@ highlighting function."
 
 ;;;; Dynamic collections based
 
-(defun consult--dynamic-compute (async fun &optional debounce)
+(defun consult--dynamic-compute (async fun &optional debounce min-input)
   "Dynamic computation of candidates.
 ASYNC is the sink.
 FUN computes the candidates given the input.
 DEBOUNCE is the time after which an interrupted computation
-should be restarted."
-  (setq debounce (or debounce consult-async-input-debounce))
-  (setq async (consult--async-indicator async))
+should be restarted.
+MIN-INPUT is the minimal input length."
+  (setq debounce (or debounce consult-async-input-debounce)
+        min-input (or min-input consult-async-min-input)
+        async (consult--async-indicator async))
   (let* ((request) (current) (timer)
          (cancel (lambda () (when timer (cancel-timer timer) (setq timer nil))))
          (start (lambda (req) (setq request req) (funcall async 'refresh))))
@@ -2398,22 +2401,22 @@ should be restarted."
              (setq request nil))))
         ((pred stringp)
          (funcall cancel)
-         (if (or (equal action "") (equal action current))
+         (if (or (length< action min-input) (equal action current))
              (funcall async 'indicator 'finished)
            (funcall start action)))
-        ('destroy
+        ((or 'destroy 'cancel)
          (funcall cancel)
-         (funcall async 'destroy))
+         (funcall async action))
         (_ (funcall async action))))))
 
-(defun consult--dynamic-collection (fun)
+(defun consult--dynamic-collection (fun &optional debounce min-input)
   "Dynamic collection with input splitting.
-FUN computes the candidates given the input."
+See `consult--dynamic-compute' for the arguments FUN, DEBOUNCE and MIN-INPUT."
   (thread-first
     (consult--async-sink)
-    (consult--dynamic-compute fun)
+    (consult--dynamic-compute fun debounce min-input)
     (consult--async-throttle)
-    (consult--async-split)))
+    (consult--async-split nil min-input)))
 
 ;;;; Special keymaps
 
@@ -3337,29 +3340,30 @@ BUFFERS is the list of buffers."
                         input 'emacs completion-ignore-case))
               (candidates nil)
               (cand-idx 0))
-    (save-match-data
-      (dolist (buf buffers (nreverse candidates))
-        (with-current-buffer buf
-          (save-excursion
-            (let ((line (line-number-at-pos (point-min) consult-line-numbers-widen)))
-              (goto-char (point-min))
-              (while (and (not (eobp))
-                          (save-excursion (re-search-forward (car regexps) nil t)))
-                (cl-incf line (consult--count-lines (match-beginning 0)))
-                (let ((bol (pos-bol))
-                      (eol (pos-eol)))
-                  (goto-char bol)
-                  (when (and (not (looking-at-p "^\\s-*$"))
-                             (seq-every-p (lambda (r)
-                                            (goto-char bol)
-                                            (re-search-forward r eol t))
-                                          (cdr regexps)))
-                    (push (consult--location-candidate
-                           (funcall hl (buffer-substring-no-properties bol eol))
-                           (cons buf bol) (1- line) cand-idx)
-                          candidates)
-                    (cl-incf cand-idx))
-                  (goto-char (1+ eol)))))))))))
+    (when regexps
+      (save-match-data
+        (dolist (buf buffers (nreverse candidates))
+          (with-current-buffer buf
+            (save-excursion
+              (let ((line (line-number-at-pos (point-min) consult-line-numbers-widen)))
+                (goto-char (point-min))
+                (while (and (not (eobp))
+                            (save-excursion (re-search-forward (car regexps) nil t)))
+                  (cl-incf line (consult--count-lines (match-beginning 0)))
+                  (let ((bol (pos-bol))
+                        (eol (pos-eol)))
+                    (goto-char bol)
+                    (when (and (not (looking-at-p "^\\s-*$"))
+                               (seq-every-p (lambda (r)
+                                              (goto-char bol)
+                                              (re-search-forward r eol t))
+                                            (cdr regexps)))
+                      (push (consult--location-candidate
+                             (funcall hl (buffer-substring-no-properties bol eol))
+                             (cons buf bol) (1- line) cand-idx)
+                            candidates)
+                      (cl-incf cand-idx))
+                    (goto-char (1+ eol))))))))))))
 
 ;;;###autoload
 (defun consult-line-multi (query &optional initial)

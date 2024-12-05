@@ -39,51 +39,52 @@
                (cand-idx 0)
                (last-node nil)
                (full-node nil))
-    (pcase-dolist (`(,manual . ,buf) manuals)
-      (with-current-buffer buf
-        (setq last-node nil full-node nil)
-        (widen)
-        (goto-char (point-min))
-        ;; TODO Info has support for subfiles, which is currently not supported
-        ;; by the `consult-info' search routine.  Fortunately most (or all?)
-        ;; Emacs info files are generated with the --no-split option.  See the
-        ;; comment in doc/emacs/Makefile.in.  Given the computing powers these
-        ;; days split info files are probably also not necessary anymore.
-        ;; However it could happen that info files installed as part of the
-        ;; Linux distribution are split.
-        (while (and (not (eobp)) (re-search-forward re nil t))
-          (if (match-end 1)
-              (progn
-                (if-let ((node (match-string 2)))
-                    (unless (equal node last-node)
-                      (setq full-node (concat "(" manual ")" node)
-                            last-node node))
-                  (setq last-node nil full-node nil))
-                (goto-char (1+ (pos-eol))))
-            (let ((bol (pos-bol))
-                  (eol (pos-eol)))
-              (goto-char bol)
-              (when (and
-                     full-node
-                     ;; Information separator character
-                     (>= (- (point) 2) (point-min))
-                     (not (eq (char-after (- (point) 2)) ?\^_))
-                     ;; Non-blank line, only printable characters on the line.
-                     (not (looking-at-p "^\\s-*$"))
-                     (looking-at-p "^[[:print:]]*$")
-                     ;; Matches all regexps
-                     (seq-every-p (lambda (r)
-                                    (goto-char bol)
-                                    (re-search-forward r eol t))
-                                  (cdr regexps)))
-                (let ((cand (concat
-                             (funcall hl (buffer-substring-no-properties bol eol))
-                             (consult--tofu-encode cand-idx))))
-                  (put-text-property 0 1 'consult--info (list full-node bol buf) cand)
-                  (cl-incf cand-idx)
-                  (push cand candidates)))
-              (goto-char (1+ eol)))))))
-    (nreverse candidates)))
+    (when regexps
+      (pcase-dolist (`(,manual . ,buf) manuals)
+        (with-current-buffer buf
+          (setq last-node nil full-node nil)
+          (widen)
+          (goto-char (point-min))
+          ;; TODO Info has support for subfiles, which is currently not supported
+          ;; by the `consult-info' search routine.  Fortunately most (or all?)
+          ;; Emacs info files are generated with the --no-split option.  See the
+          ;; comment in doc/emacs/Makefile.in.  Given the computing powers these
+          ;; days split info files are probably also not necessary anymore.
+          ;; However it could happen that info files installed as part of the
+          ;; Linux distribution are split.
+          (while (and (not (eobp)) (re-search-forward re nil t))
+            (if (match-end 1)
+                (progn
+                  (if-let ((node (match-string 2)))
+                      (unless (equal node last-node)
+                        (setq full-node (concat "(" manual ")" node)
+                              last-node node))
+                    (setq last-node nil full-node nil))
+                  (goto-char (1+ (pos-eol))))
+              (let ((bol (pos-bol))
+                    (eol (pos-eol)))
+                (goto-char bol)
+                (when (and
+                       full-node
+                       ;; Information separator character
+                       (>= (- (point) 2) (point-min))
+                       (not (eq (char-after (- (point) 2)) ?\^_))
+                       ;; Non-blank line, only printable characters on the line.
+                       (not (looking-at-p "^\\s-*$"))
+                       (looking-at-p "^[[:print:]]*$")
+                       ;; Matches all regexps
+                       (seq-every-p (lambda (r)
+                                      (goto-char bol)
+                                      (re-search-forward r eol t))
+                                    (cdr regexps)))
+                  (let ((cand (concat
+                               (funcall hl (buffer-substring-no-properties bol eol))
+                               (consult--tofu-encode cand-idx))))
+                    (put-text-property 0 1 'consult--info (list full-node bol buf) cand)
+                    (cl-incf cand-idx)
+                    (push cand candidates)))
+                (goto-char (1+ eol)))))))
+      (nreverse candidates))))
 
 (defun consult-info--position (cand)
   "Return position information for CAND."
