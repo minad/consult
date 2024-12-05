@@ -2108,8 +2108,10 @@ INITIAL is the additional initial string."
 (defun consult--async-split (async &optional split min-input)
   "Create async function, which splits the input string.
 ASYNC is the async sink.
-SPLIT is the splitting function.
-MIN-INPUT is the minimum input length."
+SPLIT is the splitting function and defaults to the splitting style
+configured by `consult-async-split-style'.
+MIN-INPUT is the minimum input length and defaults to
+`consult-async-min-input'."
   (unless split
     (let* ((style (consult--async-split-style))
            (fn (plist-get style :function)))
@@ -2368,9 +2370,10 @@ highlighting function."
   "Dynamic computation of candidates.
 ASYNC is the sink.
 FUN computes the candidates given the input.
-DEBOUNCE is the time after which an interrupted computation
-should be restarted.
-MIN-INPUT is the minimal input length."
+DEBOUNCE is the time after which an interrupted computation should be
+restarted and defaults to `consult-async-input-debounce'.
+MIN-INPUT is the minimal input length and defaults to
+`consult-async-min-input'."
   (setq debounce (or debounce consult-async-input-debounce)
         min-input (or min-input consult-async-min-input)
         async (consult--async-indicator async))
