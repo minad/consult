@@ -5142,7 +5142,6 @@ automatically previewed."
 (defvar vertico--input)
 (declare-function vertico--exhibit "ext:vertico")
 (declare-function vertico--candidate "ext:vertico")
-(declare-function vertico--filter-completions "ext:vertico")
 
 (defun consult--vertico-candidate ()
   "Return current candidate for Consult preview."
