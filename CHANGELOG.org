@@ -15,6 +15,7 @@
   in Org files does not work for you.
 - Support the value 0 for ~consult-async-min-input~.
 - ~consult--async-sink~: The new action ~cancel~ was added to the async protocol.
+- ~consult-info~: Support sub files.
 
 * Version 1.8 (2024-07-25)
 

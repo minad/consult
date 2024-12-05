@@ -27,11 +27,13 @@
 
 (require 'consult)
 (require 'info)
+(eval-when-compile (require 'cl-lib))
 
+(defvar-local consult-info--manual nil)
 (defvar consult-info--history nil)
 
-(defun consult-info--candidates (manuals input)
-  "Dynamically find lines in MANUALS matching INPUT."
+(defun consult-info--candidates (buffers input)
+  "Dynamically find lines in BUFFERS matching INPUT."
   (pcase-let* ((`(,regexps . ,hl)
                 (funcall consult--regexp-compiler input 'emacs t))
                (re (concat "\\(\^_\n\\(?:.*Node:[ \t]*\\([^,\t\n]+\\)\\)?.*\n\\)\\|" (car regexps)))
@@ -40,24 +42,17 @@
                (last-node nil)
                (full-node nil))
     (when regexps
-      (pcase-dolist (`(,manual . ,buf) manuals)
+      (dolist (buf buffers)
         (with-current-buffer buf
           (setq last-node nil full-node nil)
           (widen)
           (goto-char (point-min))
-          ;; TODO Info has support for subfiles, which is currently not supported
-          ;; by the `consult-info' search routine.  Fortunately most (or all?)
-          ;; Emacs info files are generated with the --no-split option.  See the
-          ;; comment in doc/emacs/Makefile.in.  Given the computing powers these
-          ;; days split info files are probably also not necessary anymore.
-          ;; However it could happen that info files installed as part of the
-          ;; Linux distribution are split.
           (while (and (not (eobp)) (re-search-forward re nil t))
             (if (match-end 1)
                 (progn
                   (if-let ((node (match-string 2)))
                       (unless (equal node last-node)
-                        (setq full-node (concat "(" manual ")" node)
+                        (setq full-node (concat consult-info--manual node)
                               last-node node))
                     (setq last-node nil full-node nil))
                   (goto-char (1+ (pos-eol))))
@@ -124,6 +119,18 @@
   (if transform cand
     (car (get-text-property 0 'consult--info cand))))
 
+(defun consult-info--buffer (manual init)
+  "Make preview buffer for MANUAL and call INIT."
+  (let (buf)
+    (unwind-protect
+        (with-current-buffer (setq buf (generate-new-buffer (format "*info-preview-%s*" manual)))
+          (let (Info-history Info-history-list Info-history-forward)
+            (Info-mode)
+            (Info-find-node manual "Top")
+            (setq consult-info--manual (concat "(" manual ")"))
+            (and (ignore-errors (funcall init)) (prog1 buf (setq buf nil)))))
+      (when buf (kill-buffer buf)))))
+
 (defun consult-info--prepare-buffers (manuals fun)
   "Prepare buffers for MANUALS and call FUN with buffers."
   (declare (indent 1))
@@ -131,20 +138,29 @@
     (unwind-protect
         (let ((reporter (make-progress-reporter "Preparing" 0 (length manuals))))
           (consult--with-increased-gc
-           (seq-do-indexed
-            (lambda (manual idx)
-              (push (cons manual (generate-new-buffer (format "*info-preview-%s*" manual)))
-                    buffers)
-              (with-current-buffer (cdar buffers)
-                (let (Info-history Info-history-list Info-history-forward)
-                  (Info-mode)
-                  (Info-find-node manual "Top")))
-              (progress-reporter-update reporter (1+ idx) manual))
-            manuals))
+           (cl-loop
+            for idx from 0 for manual in manuals do
+            (push (consult-info--buffer manual #'always) buffers)
+            ;; Create a separate buffer if the info manual has subfiles. They
+            ;; are present on my system and have names like
+            ;; /usr/share/info/texinfo.info-2.gz.
+            (while-let
+                ((sub (buffer-local-value 'Info-current-subfile (car buffers)))
+                 (pos (string-match-p "-\\([0-9]+\\)\\'" sub))
+                 (buf (consult-info--buffer
+                       manual
+                       (lambda ()
+                         (ignore-errors
+                           (Info-read-subfile
+                            (format "%s-%s" (substring sub 0 pos)
+                                    (1+ (string-to-number (substring sub (1+ pos))))))
+                           (Info-select-node)
+                           t)))))
+              (push buf buffers))
+            (progress-reporter-update reporter (1+ idx) manual)))
           (progress-reporter-done reporter)
           (funcall fun (reverse buffers)))
-      (dolist (buf buffers)
-        (kill-buffer (cdr buf))))))
+      (mapc #'kill-buffer buffers))))
 
 ;;;###autoload
 (defun consult-info (&rest manuals)
