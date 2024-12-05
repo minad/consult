@@ -644,7 +644,7 @@ Turn ARG into a list, and for each element either:
        (setq ,list (cdr ,head))
        nil)))
 
-(defun consult--completion-filter (pattern cands category _highlight)
+(defun consult--completion-filter (pattern cands category highlight)
   "Filter CANDS with PATTERN.
 
 CATEGORY is the completion category, used to find the completion style via
@@ -654,18 +654,18 @@ HIGHLIGHT must be non-nil if the resulting strings should be highlighted."
   ;; `consult-line', `consult-focus-lines' and `consult-keep-lines' filtering.
   ;; This override is necessary since users may want to override the settings
   ;; buffer-locally for in-buffer completion via Corfu.
-  (let ((completion-styles (default-value 'completion-styles))
-        (completion-category-defaults (default-value 'completion-category-defaults))
-        (completion-category-overrides (default-value 'completion-category-overrides)))
+  (dlet ((completion-lazy-hilit (not highlight))
+         (completion-styles (default-value 'completion-styles))
+         (completion-category-defaults (default-value 'completion-category-defaults))
+         (completion-category-overrides (default-value 'completion-category-overrides)))
     ;; `completion-all-completions' returns an improper list where the last link
     ;; is not necessarily nil.
     (nconc (completion-all-completions pattern cands nil (length pattern)
                                        `(metadata (category . ,category)))
            nil)))
 
-(defun consult--completion-filter-complement (pattern cands category _highlight)
-  "Filter CANDS with complement of PATTERN.
-See `consult--completion-filter' for the arguments CATEGORY and HIGHLIGHT."
+(defun consult--completion-filter-complement (pattern cands category)
+  "Filter CANDS with complement of PATTERN given completion CATEGORY."
   (let ((ht (consult--string-hash (consult--completion-filter pattern cands category nil))))
     (seq-remove (lambda (x) (gethash x ht)) cands)))
 
@@ -678,7 +678,7 @@ HIGHLIGHT."
   (cond
    ((string-match-p "\\`!? ?\\'" pattern) cands) ;; empty pattern
    ((string-prefix-p "! " pattern) (consult--completion-filter-complement
-                                    (substring pattern 2) cands category nil))
+                                    (substring pattern 2) cands category))
    (t (consult--completion-filter pattern cands category highlight))))
 
 (defmacro consult--each-line (beg end &rest body)
@@ -5154,20 +5154,7 @@ automatically previewed."
     (setq vertico--input t)
     (vertico--exhibit)))
 
-(defun consult--vertico-filter-adv (orig pattern cands category highlight)
-  "Advice for ORIG `consult--completion-filter' function.
-See `consult--completion-filter' for arguments PATTERN, CANDS, CATEGORY
-and HIGHLIGHT."
-  (if (and (not highlight) (bound-and-true-p vertico-mode))
-      ;; Optimize `consult--completion-filter' using the deferred highlighting
-      ;; from Vertico.  The advice is not necessary - it is a pure optimization.
-      (nconc (car (vertico--filter-completions pattern cands nil (length pattern)
-                                               `(metadata (category . ,category))))
-             nil)
-    (funcall orig pattern cands category highlight)))
-
 (with-eval-after-load 'vertico
-  (advice-add #'consult--completion-filter :around #'consult--vertico-filter-adv)
   (add-hook 'consult--completion-candidate-hook #'consult--vertico-candidate)
   (add-hook 'consult--completion-refresh-hook #'consult--vertico-refresh)
   (define-key consult-async-map [remap vertico-insert] 'vertico-next-group))
