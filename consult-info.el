@@ -152,8 +152,8 @@
                        (lambda ()
                          (ignore-errors
                            (Info-read-subfile
-                            (format "%s-%s" (substring sub 0 pos)
-                                    (1+ (string-to-number (substring sub (1+ pos))))))
+                            (format "%s%s" (substring sub 0 pos)
+                                    (1- (string-to-number (substring sub pos)))))
                            (Info-select-node)
                            t)))))
               (push buf buffers))
