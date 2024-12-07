@@ -2126,10 +2126,10 @@ MIN-INPUT is the minimum input length and defaults to
        (pcase-let ((`(,async-str ,_ ,force . ,highlights) (funcall split action))
                    (end (minibuffer-prompt-end)))
          ;; Highlight punctuation characters
-         (remove-list-of-text-properties end (+ end (length action)) '(face))
-         (dolist (hl highlights)
-           (put-text-property (+ end (car hl)) (+ end (cdr hl))
-                              'face 'consult-async-split))
+         (pcase-dolist (`(,x . ,y) highlights)
+           (let ((x (+ end x)) (y (+ end y)))
+             (put-text-property x y 'rear-nonsticky t)
+             (add-face-text-property x y 'consult-async-split)))
          (funcall async
                   ;; Pass through if the input is long enough!
                   (if (or force (>= (length async-str) min-input))
