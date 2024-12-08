@@ -1195,8 +1195,9 @@ matches case insensitively."
     (string-join regexps ".*"))
    (t
     (when (length> regexps 3)
-      (message "Too many regexps, %S ignored. Use post-filtering!"
-               (string-join (seq-drop regexps 3) " "))
+      (consult--minibuffer-message
+       "Too many regexps, %S ignored. Use post-filtering!"
+       (string-join (seq-drop regexps 3) " "))
       (setq regexps (seq-take regexps 3)))
     (consult--join-regexps-permutations regexps (and (eq type 'emacs) "\\")))))
 
@@ -1284,14 +1285,20 @@ ORIG is the original function, HOOKS the arguments."
                               (default-value 'find-file-hook)))
                  (find-file-hook (default-value 'find-file-hook)))
         (apply orig hooks))
-    (apply orig hooks)))
+      (apply orig hooks)))
+
+(defun consult--minibuffer-message (&rest app)
+  (with-selected-window (or (active-minibuffer-window) (selected-window))
+    (let (message-log-max minibuffer-message-timeout)
+      (apply #'minibuffer-message app))))
 
 (defun consult--find-file-temporarily-1 (name)
   "Open file NAME, helper function for `consult--find-file-temporarily'."
-  (when-let (((not (seq-find (lambda (x) (string-match-p x name))
-                             consult-preview-excluded-files)))
-             ;; file-attributes may throw permission denied error
-             (attrs (ignore-errors (file-attributes name)))
+  (when (seq-find (lambda (x) (string-match-p x name))
+                  consult-preview-excluded-files)
+    (error "File excluded from preview"))
+  ;; file-attributes may throw permission denied error
+  (when-let ((attrs (ignore-errors (file-attributes name)))
              (size (file-attribute-size attrs)))
     (let* ((partial (>= size consult-preview-partial-size))
            (buffer (if partial
@@ -1304,8 +1311,7 @@ ORIG is the original function, HOOKS the arguments."
                 (when (or (eq major-mode 'hexl-mode)
                           (and (eq major-mode 'fundamental-mode)
                                (save-excursion (search-forward "\0" nil 'noerror))))
-                  (error "No preview of binary file `%s'"
-                         (file-name-nondirectory name)))
+                  (error "No preview of binary file"))
               (with-silent-modifications
                 (setq buffer-read-only t)
                 (insert-file-contents name nil 0 consult-preview-partial-chunk)
@@ -1313,16 +1319,14 @@ ORIG is the original function, HOOKS the arguments."
                 (insert "\nFile truncated. End of partial preview.\n")
                 (goto-char (point-min)))
               (when (save-excursion (search-forward "\0" nil 'noerror))
-                (error "No partial preview of binary file `%s'"
-                       (file-name-nondirectory name)))
+                (error "No partial preview of binary file"))
               ;; Auto detect major mode and hope for the best, given that the
               ;; file is only previewed partially.  If an error is thrown the
               ;; buffer will be killed and preview is aborted.
               (set-auto-mode)
               (font-lock-mode 1))
             (when (bound-and-true-p so-long-detected-p)
-              (error "No preview of file `%s' with long lines"
-                     (file-name-nondirectory name)))
+              (error "No preview of file with long lines"))
             ;; Run delayed hooks listed in `consult-preview-allowed-hooks'.
             (dolist (hook (reverse (cons 'after-change-major-mode-hook delayed-mode-hooks)))
               (run-hook-wrapped hook (lambda (fun)
@@ -1356,7 +1360,7 @@ ORIG is the original function, HOOKS the arguments."
             (set-default k d)
             (set k v)))
       (error
-       (message "%s" (error-message-string err))
+       (consult--minibuffer-message "%s" (error-message-string err))
        nil))))
 
 (defun consult--temporary-files ()
@@ -1891,15 +1895,14 @@ to make it available for commands with narrowing."
   (declare (completion ignore))
   (interactive)
   (consult--require-minibuffer)
-  (let ((minibuffer-message-timeout 1000000))
-    (minibuffer-message
-     (mapconcat (lambda (x)
-                  (concat
-                   (propertize (key-description (list (car x))) 'face 'consult-key)
-                   " "
-                   (propertize (cdr x) 'face 'consult-help)))
-                consult--narrow-keys
-                " "))))
+  (consult--minibuffer-message
+   (mapconcat (lambda (x)
+                (concat
+                 (propertize (key-description (list (car x))) 'face 'consult-key)
+                 " "
+                 (propertize (cdr x) 'face 'consult-help)))
+              consult--narrow-keys
+              " ")))
 
 (defun consult--narrow-setup (settings map)
   "Setup narrowing with SETTINGS and keymap MAP."
@@ -3512,7 +3515,7 @@ INITIAL is the initial input."
         (minibuffer-with-setup-hook
             (lambda ()
               (when ro
-                (minibuffer-message
+                (consult--minibuffer-message
                  (substitute-command-keys
                   " [Unlocked read-only buffer. \\[minibuffer-keyboard-quit] to quit.]"))))
           (setq buffer-read-only nil)
@@ -3685,7 +3688,7 @@ command respects narrowing and the settings
                               (lambda (action str)
                                 (funcall preview action
                                          (consult--goto-line-position str #'ignore)))))
-                           #'minibuffer-message))
+                           #'consult--minibuffer-message))
                  (consult--jump pos)
                t)))))
 
@@ -4440,9 +4443,10 @@ AS is a conversion function."
         ('preview
          (funcall restore)
          (when-let ((buf (and cand (get-buffer cand)))
-                    ((and (buffer-live-p buf)
-                          (not (buffer-match-p consult-preview-excluded-buffers buf)))))
-           (funcall consult--buffer-display buf 'norecord)))))))
+                    ((buffer-live-p buf)))
+           (if (buffer-match-p consult-preview-excluded-buffers buf)
+               (consult--minibuffer-message "Buffer excluded from preview")
+             (funcall consult--buffer-display buf 'norecord))))))))
 
 (defun consult--buffer-action (buffer &optional norecord)
   "Switch to BUFFER via `consult--buffer-display' function.
