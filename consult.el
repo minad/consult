@@ -4434,19 +4434,23 @@ AS is a conversion function."
          (set-window-prev-buffers other-win orig-prev)
          (set-window-next-buffers other-win orig-next))
         ('preview
-         (when (and (eq consult--buffer-display #'switch-to-buffer-other-window)
-                    (not other-win))
-           (switch-to-buffer-other-window orig-buf 'norecord)
-           (setq other-win (selected-window)))
-         (let ((win (or other-win (selected-window)))
-               (buf (or (and cand (get-buffer cand)) orig-buf)))
-           (when (and (window-live-p win) (buffer-live-p buf)
-                      (not (buffer-match-p consult-preview-excluded-buffers buf)))
-             (with-selected-window win
-               (unless (or orig-prev orig-next)
-                 (setq orig-prev (copy-sequence (window-prev-buffers))
-                       orig-next (copy-sequence (window-next-buffers))))
-               (switch-to-buffer buf 'norecord)))))))))
+         ;; Prevent opening the preview in another tab, since restoring the tab
+         ;; status is difficult and also costly.
+         (cl-letf* (((symbol-function #'display-buffer-in-tab) #'ignore)
+                    ((symbol-function #'display-buffer-in-new-tab) #'ignore))
+           (when (and (eq consult--buffer-display #'switch-to-buffer-other-window)
+                      (not other-win))
+             (switch-to-buffer-other-window orig-buf 'norecord)
+             (setq other-win (selected-window)))
+           (let ((win (or other-win (selected-window)))
+                 (buf (or (and cand (get-buffer cand)) orig-buf)))
+             (when (and (window-live-p win) (buffer-live-p buf)
+                        (not (buffer-match-p consult-preview-excluded-buffers buf)))
+               (with-selected-window win
+                 (unless (or orig-prev orig-next)
+                   (setq orig-prev (copy-sequence (window-prev-buffers))
+                         orig-next (copy-sequence (window-next-buffers))))
+                 (switch-to-buffer buf 'norecord))))))))))
 
 (defun consult--buffer-action (buffer &optional norecord)
   "Switch to BUFFER via `consult--buffer-display' function.
