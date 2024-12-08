@@ -4427,9 +4427,15 @@ AS is a conversion function."
   (let ((orig-buf (window-buffer (consult--original-window)))
         (orig-prev (copy-sequence (window-prev-buffers)))
         (orig-next (copy-sequence (window-next-buffers)))
+        (orig-bl (copy-sequence (frame-parameter nil 'buffer-list)))
+        (orig-bbl (copy-sequence (frame-parameter nil 'buried-buffer-list)))
         other-win)
     (lambda (action cand)
       (pcase action
+        ('return
+         ;; Restore buffer list for the current tab
+         (set-frame-parameter nil 'buffer-list orig-bl)
+         (set-frame-parameter nil 'buried-buffer-list orig-bbl))
         ('exit
          (set-window-prev-buffers other-win orig-prev)
          (set-window-next-buffers other-win orig-next))
