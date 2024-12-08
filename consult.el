@@ -1294,11 +1294,10 @@ ORIG is the original function, HOOKS the arguments."
 
 (defun consult--find-file-temporarily-1 (name)
   "Open file NAME, helper function for `consult--find-file-temporarily'."
-  (when (seq-find (lambda (x) (string-match-p x name))
-                  consult-preview-excluded-files)
-    (error "File excluded from preview"))
-  ;; file-attributes may throw permission denied error
-  (when-let ((attrs (ignore-errors (file-attributes name)))
+  (when-let (((not (seq-find (lambda (x) (string-match-p x name))
+                             consult-preview-excluded-files)))
+             ;; file-attributes may throw permission denied error
+             (attrs (ignore-errors (file-attributes name)))
              (size (file-attribute-size attrs)))
     (let* ((partial (>= size consult-preview-partial-size))
            (buffer (if partial
