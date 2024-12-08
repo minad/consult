@@ -4431,7 +4431,7 @@ AS is a conversion function."
          (restore (lambda ()
                     (set-window-configuration wc nil t)
                     (when tabs
-                      (tab-bar-tabs-set tabs)
+                      (tab-bar-tabs-set (copy-tree (tab-bar-tabs)))
                       (tab-bar-select-tab (1+ tidx))))))
     (when tab-bar-mode
       (setq tabs (copy-tree (tab-bar-tabs))
