@@ -4425,28 +4425,29 @@ AS is a conversion function."
 
 (defun consult--buffer-preview ()
   "Buffer preview function."
-  (let* ((wc (current-window-configuration))
-         (tabs nil)
-         (tidx nil)
-         (restore (lambda ()
-                    (set-window-configuration wc nil t)
-                    (when tabs
-                      (tab-bar-tabs-set (copy-tree (tab-bar-tabs)))
-                      (tab-bar-select-tab (1+ tidx))))))
-    (when tab-bar-mode
-      (setq tabs (copy-tree (tab-bar-tabs))
-            tidx (tab-bar--current-tab-index tabs)))
+  (let ((orig-buf (window-buffer (consult--original-window)))
+        (orig-prev (copy-sequence (window-prev-buffers)))
+        (orig-next (copy-sequence (window-next-buffers)))
+        other-win)
     (lambda (action cand)
       (pcase action
-        ('return
-         (funcall restore))
+        ('exit
+         (set-window-prev-buffers other-win orig-prev)
+         (set-window-next-buffers other-win orig-next))
         ('preview
-         (funcall restore)
-         (when-let ((buf (and cand (get-buffer cand)))
-                    ((buffer-live-p buf)))
-           (if (buffer-match-p consult-preview-excluded-buffers buf)
-               (consult--minibuffer-message "Buffer excluded from preview")
-             (funcall consult--buffer-display buf 'norecord))))))))
+         (when (and (eq consult--buffer-display #'switch-to-buffer-other-window)
+                    (not other-win))
+           (switch-to-buffer-other-window orig-buf 'norecord)
+           (setq other-win (selected-window)))
+         (let ((win (or other-win (selected-window)))
+               (buf (or (and cand (get-buffer cand)) orig-buf)))
+           (when (and (window-live-p win) (buffer-live-p buf)
+                      (not (buffer-match-p consult-preview-excluded-buffers buf)))
+             (with-selected-window win
+               (unless (or orig-prev orig-next)
+                 (setq orig-prev (copy-sequence (window-prev-buffers))
+                       orig-next (copy-sequence (window-next-buffers))))
+               (switch-to-buffer buf 'norecord)))))))))
 
 (defun consult--buffer-action (buffer &optional norecord)
   "Switch to BUFFER via `consult--buffer-display' function.
