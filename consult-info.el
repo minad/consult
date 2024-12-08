@@ -123,12 +123,16 @@
   "Make preview buffer for MANUAL and call INIT."
   (let (buf)
     (unwind-protect
-        (with-current-buffer (setq buf (generate-new-buffer (format "*info-preview-%s*" manual)))
+        (with-current-buffer (setq buf (generate-new-buffer
+                                        (format "*info-%s*" manual)))
           (let (Info-history Info-history-list Info-history-forward)
             (Info-mode)
             (Info-find-node manual "Top")
             (setq consult-info--manual (concat "(" manual ")"))
-            (and (ignore-errors (funcall init)) (prog1 buf (setq buf nil)))))
+            (and (ignore-errors (funcall init))
+                 (prog1 buf
+                   (rename-buffer (concat " Preview:" (buffer-name)))
+                   (setq buf nil)))))
       (when buf (kill-buffer buf)))))
 
 (defun consult-info--prepare-buffers (manuals fun)
