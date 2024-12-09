@@ -1917,9 +1917,7 @@ to make it available for commands with narrowing."
       (define-key map (vconcat key (vector (car pair)))
                   (cons (cdr pair) #'consult-narrow))))
   (when-let ((widen (consult--widen-key)))
-    (define-key map widen (cons "All" #'consult-narrow)))
-  (when-let ((init (and (memq :keys settings) (plist-get settings :initial))))
-    (consult-narrow init)))
+    (define-key map widen (cons "All" #'consult-narrow))))
 
 ;;;; Splitting completion style
 
@@ -2539,14 +2537,15 @@ PREVIEW-KEY are the preview keys."
           cands))
 
 (cl-defun consult--read-1 (table &key
-                                 prompt predicate require-match history default
-                                 keymap category initial narrow add-history annotate
-                                 state preview-key sort lookup group inherit-input-method)
+                                 prompt predicate require-match history default keymap category
+                                 initial narrow initial-narrow add-history annotate state
+                                 preview-key sort lookup group inherit-input-method)
   "See `consult--read' for the documentation of the arguments."
   (minibuffer-with-setup-hook
       (:append (lambda ()
                  (add-hook 'after-change-functions #'consult--tofu-hide-in-minibuffer nil 'local)
                  (consult--setup-keymap keymap (consult--async-p table) narrow preview-key)
+                 (when initial-narrow (consult-narrow initial-narrow))
                  (setq-local minibuffer-default-add-function
                              (apply-partially #'consult--add-history (consult--async-p table) add-history))))
     (consult--with-async (async table)
@@ -2599,8 +2598,9 @@ PREVIEW-KEY are the preview keys."
 
 (cl-defun consult--read (table &rest options &key
                                prompt predicate require-match history default
-                               keymap category initial narrow add-history annotate
-                               state preview-key sort lookup group inherit-input-method)
+                               keymap category initial narrow initial-narrow
+                               add-history annotate state preview-key sort
+                               lookup group inherit-input-method)
   "Enhanced completing read function to select from TABLE.
 
 The function is a thin wrapper around `completing-read'.  Keyword
@@ -2636,6 +2636,7 @@ the Elisp manual.
 PREVIEW-KEY are the preview keys.  Can be nil, `any', a single
 key or a list of keys.
 NARROW is an alist of narrowing prefix strings and description.
+INITIAL-NARROW is an initial narrow key.
 KEYMAP is a command-specific keymap.
 INHERIT-INPUT-METHOD, if non-nil the minibuffer inherits the
 input method."
@@ -2647,9 +2648,9 @@ input method."
                  (stringp (car table)) ;; string list
                  (and (consp (car table)) (stringp (caar table)))   ;; string alist
                  (and (consp (car table)) (symbolp (caar table))))) ;; symbol alist
-  (ignore prompt predicate require-match history default
-          keymap category initial narrow add-history annotate
-          state preview-key sort lookup group inherit-input-method)
+  (ignore prompt predicate require-match history default keymap category
+          initial narrow initial-narrow add-history annotate state
+          preview-key sort lookup group inherit-input-method)
   (apply #'consult--read-1 table
          (append
           (consult--customize-get)
@@ -2857,9 +2858,9 @@ KEYMAP is a command-specific keymap."
 
 OPTIONS is the plist of options passed to `consult--read'.  The following
 options are supported: :require-match, :history, :keymap, :initial,
-:add-history, :sort and :inherit-input-method.  The other options of
-`consult--read' are used by the implementation of `consult--multi' and
-should not be overwritten, except in in special scenarios.
+:initial-narrow, :add-history, :sort and :inherit-input-method.  The other
+options of `consult--read' are used by the `consult--multi' implementation
+and should not be overwritten, except in in special scenarios.
 
 The function returns the selected candidate in the form (cons candidate
 source-plist).  The plist has the key :match with a value nil if the
@@ -3125,7 +3126,8 @@ argument.  The symbol at point is added to the future history."
      :sort nil
      :require-match t
      :lookup #'consult--line-match
-     :narrow `(:predicate ,narrow-pred :keys ,narrow-keys :initial ,narrow-init)
+     :initial-narrow narrow-init
+     :narrow (list :predicate narrow-pred :keys narrow-keys)
      :history '(:input consult--line-history)
      :add-history (thing-at-point 'symbol)
      :state (consult--location-state candidates))))
