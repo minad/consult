@@ -11,11 +11,11 @@
 - ~consult-grep-max-columns~: Support value ~nil~ to disable truncation.
 - ~consult-line~: Enforce global completion style settings for compatibility with
   buffer-local completion style settings, which may be used by Corfu.
+- Support the value 0 for ~consult-async-min-input~.
 - Remove special ~org-fold~ code. Set ~org-fold-core-style~ to ~overlays~ if unfolding
   in Org files does not work for you.
-- Support the value 0 for ~consult-async-min-input~.
-- ~consult--async-sink~: The new action ~cancel~ was added to the async protocol.
 - ~consult-info~: Support sub files.
+- ~consult--async-sink~: The new action ~cancel~ was added to the async protocol.
 - ~consult--read~: Add new keyword argument ~:initial-narrow~.
 
 * Version 1.8 (2024-07-25)
