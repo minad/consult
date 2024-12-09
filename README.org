@@ -973,6 +973,7 @@ Useful options are:
 - =:prompt= set the prompt string
 - =:preview-key= set the preview key, default is =consult-preview-key=
 - =:initial= set the initial input
+- =:initial-narrow= set the initial narrow key
 - =:default= set the default value
 - =:history= set the history variable symbol
 - =:add-history= add items to the future history, for example symbol at point
