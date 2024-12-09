@@ -1287,10 +1287,11 @@ ORIG is the original function, HOOKS the arguments."
         (apply orig hooks))
       (apply orig hooks)))
 
-(defun consult--minibuffer-message (&rest app)
+(defun consult--minibuffer-message (&rest msg)
+  "Show MSG in the minibuffer without logging."
   (with-selected-window (or (active-minibuffer-window) (selected-window))
     (let (message-log-max minibuffer-message-timeout)
-      (apply #'minibuffer-message app))))
+      (apply #'minibuffer-message msg))))
 
 (defun consult--find-file-temporarily-1 (name)
   "Open file NAME, helper function for `consult--find-file-temporarily'."
