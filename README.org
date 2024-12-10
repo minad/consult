@@ -103,6 +103,7 @@ their descriptions.
   - p Project
   - B Project buffers
   - F Project files
+  - R Project roots
   - Custom [[#multiple-sources][other sources]] configured in =consult-buffer-sources=.
 - =consult-buffer-other-window=, =consult-buffer-other-frame=,
   =consult-buffer-other-tab=: Variants of =consult-buffer=.

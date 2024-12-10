@@ -15,6 +15,7 @@
 - Remove special ~org-fold~ code. Set ~org-fold-core-style~ to ~overlays~ if unfolding
   in Org files does not work for you.
 - ~consult-info~: Support sub files.
+- ~consult-buffer~, ~consult-project-buffer~: Add sources for known project roots.
 - ~consult--multi~: Support multiple narrow keys per source. Used by the project
   buffer and project recent file source.
 - ~consult--async-sink~: The new action ~cancel~ was added to the async protocol.
