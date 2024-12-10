@@ -4036,8 +4036,6 @@ This command can act as a drop-in replacement for `repeat-complex-command'."
 
 ;;;;; Command: consult-history
 
-(declare-function ring-elements "ring")
-
 (defun consult--current-history ()
   "Return the history and index variable relevant to the current buffer.
 If the minibuffer is active, the minibuffer history is returned,
@@ -4077,6 +4075,7 @@ variable as argument.  INDEX is the name of the index variable to
 update, if any.  BOL is the function which jumps to the beginning
 of the prompt.  See also `cape-history' from the Cape package."
   (interactive)
+  (declare-function ring-elements "ring")
   (pcase-let* ((`(,history ,index ,bol) (if history
                                             (list history index bol)
                                           (consult--current-history)))
@@ -5188,15 +5187,15 @@ automatically previewed."
 ;;;;; Integration: Vertico
 
 (defvar vertico--input)
-(declare-function vertico--exhibit "ext:vertico")
-(declare-function vertico--candidate "ext:vertico")
 
 (defun consult--vertico-candidate ()
   "Return current candidate for Consult preview."
+  (declare-function vertico--candidate "ext:vertico")
   (and vertico--input (vertico--candidate 'highlight)))
 
 (defun consult--vertico-refresh ()
   "Refresh completion UI."
+  (declare-function vertico--exhibit "ext:vertico")
   (when vertico--input
     (setq vertico--input t)
     (vertico--exhibit)))
@@ -5213,11 +5212,10 @@ automatically previewed."
 
 ;;;;; Integration: Icomplete
 
-(defvar icomplete-mode)
-(declare-function icomplete-exhibit "icomplete")
-
 (defun consult--icomplete-refresh ()
   "Refresh icomplete view."
+  (defvar icomplete-mode)
+  (declare-function icomplete-exhibit "icomplete")
   (when icomplete-mode
     (let ((top (car completion-all-sorted-completions)))
       (completion--flush-all-sorted-completions)
