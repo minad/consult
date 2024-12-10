@@ -2711,21 +2711,23 @@ KEYMAP is a command-specific keymap."
 (defun consult--multi-predicate (sources cand)
   "Predicate function called for each candidate CAND given SOURCES."
   (let* ((src (consult--multi-source sources cand))
-         (narrow (plist-get src :narrow))
-         (type (or (car-safe narrow) narrow -1)))
-    (or (eq consult--narrow type)
+         (narrow (or (plist-get src :narrow) -1)))
+    (or (pcase narrow
+          (`((,_ . ,_) . ,_) (assq consult--narrow narrow))
+          (`(,k . ,_) (eq consult--narrow k))
+          (k (eq consult--narrow k)))
         (not (or consult--narrow (plist-get src :hidden))))))
 
 (defun consult--multi-narrow (sources)
   "Return narrow list from SOURCES."
   (thread-last
     sources
-    (mapcar (lambda (src)
+    (mapcan (lambda (src)
               (when-let (narrow (plist-get src :narrow))
                 (if (consp narrow)
-                    narrow
+                    (if (consp (car narrow)) (append narrow nil) (list narrow))
                   (when-let (name (plist-get src :name))
-                    (cons narrow name))))))
+                    (list (cons narrow name)))))))
     (delq nil)
     (delete-dups)))
 
@@ -4530,11 +4532,13 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
   "Project file candidate source for `consult-buffer'.")
 
 (defvar consult--source-project-buffer-hidden
-  `(:hidden t :narrow (?p . "Project") ,@consult--source-project-buffer)
+  `(:hidden t :narrow ((?p . "Project") (?B . "Project Buffer"))
+            ,@consult--source-project-buffer)
   "Like `consult--source-project-buffer' but hidden by default.")
 
 (defvar consult--source-project-recent-file-hidden
-  `(:hidden t :narrow (?p . "Project") ,@consult--source-project-recent-file)
+  `(:hidden t :narrow ((?p . "Project") (?F . "Project File"))
+            ,@consult--source-project-recent-file)
   "Like `consult--source-project-recent-file' but hidden by default.")
 
 (defvar consult--source-hidden-buffer
