@@ -570,6 +570,13 @@ We use invalid characters outside the Unicode range.")
   " *consult-async*"
   "Buffer for async logging output used by `consult--async-process'.")
 
+(defvar consult--async-indicator-states
+  '((running . #("*" 0 1 (face consult-async-running)))
+    (finished . #(":" 0 1 (face consult-async-finished)))
+    (killed . #(";" 0 1 (face consult-async-failed)))
+    (failed . #("!" 0 1 (face consult-async-failed))))
+  "Async indicator states.")
+
 (defvar-local consult--focus-lines-overlays nil
   "Overlays used by `consult-focus-lines'.")
 
@@ -2155,12 +2162,8 @@ ASYNC is the async sink."
     (lambda (action &optional state)
       (pcase action
         ('indicator
-         (overlay-put ov 'display
-                      (pcase-exhaustive state
-                        ('running  #("*" 0 1 (face consult-async-running)))
-                        ('finished #(":" 0 1 (face consult-async-finished)))
-                        ('killed   #(";" 0 1 (face consult-async-failed)))
-                        ('failed   #("!" 0 1 (face consult-async-failed))))))
+         (when-let ((display (alist-get state consult--async-indicator-states)))
+          (overlay-put ov 'display display)))
         ('setup
          (setq ov (make-overlay (- (minibuffer-prompt-end) 2)
                                 (- (minibuffer-prompt-end) 1)))
