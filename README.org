@@ -894,6 +894,7 @@ an overview of all Consult variables and functions with their descriptions.
 | consult-async-refresh-delay      | Refresh delay for asynchronous commands             |
 | consult-async-split-style        | Splitting style used for async commands             |
 | consult-async-split-styles-alist | Available splitting styles used for async commands  |
+| consult-async-indicator          | Async indicator characters                          |
 | consult-bookmark-narrow          | Narrowing configuration for =consult-bookmark=        |
 | consult-buffer-filter            | Filter for =consult-buffer=                           |
 | consult-buffer-sources           | List of virtual buffer sources                      |

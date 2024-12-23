@@ -140,6 +140,15 @@ This applies to asynchronous commands, e.g., `consult-grep'."
   "Async splitting styles."
   :type '(alist :key-type symbol :value-type plist))
 
+(defcustom consult-async-indicator
+  `((running  ?*  consult-async-running)
+    (finished ?:  consult-async-finished)
+    (killed   ?\; consult-async-failed)
+    (failed   ?!  consult-async-failed))
+  "Async indicator characters and faces.
+Set to nil to disable."
+  :type '(alist :key-type symbol :value-type (list character face)))
+
 (defcustom consult-mode-histories
   '((eshell-mode eshell-history-ring eshell-history-index    eshell-bol)
     (comint-mode comint-input-ring   comint-input-ring-index comint-bol)
@@ -2151,24 +2160,19 @@ MIN-INPUT is the minimum input length and defaults to
 (defun consult--async-indicator (async)
   "Create async function with a state indicator overlay.
 ASYNC is the async sink."
-  (let (ov)
-    (lambda (action &optional state)
-      (pcase action
-        ('indicator
-         (overlay-put ov 'display
-                      (pcase-exhaustive state
-                        ('running  #("*" 0 1 (face consult-async-running)))
-                        ('finished #(":" 0 1 (face consult-async-finished)))
-                        ('killed   #(";" 0 1 (face consult-async-failed)))
-                        ('failed   #("!" 0 1 (face consult-async-failed))))))
-        ('setup
-         (setq ov (make-overlay (- (minibuffer-prompt-end) 2)
-                                (- (minibuffer-prompt-end) 1)))
-         (funcall async 'setup))
-        ('destroy
-         (delete-overlay ov)
-         (funcall async 'destroy))
-        (_ (funcall async action))))))
+  (if-let ((ind (cl-loop for (k c f) in consult-async-indicator
+                         collect (cons k (propertize (string c) 'face f))))
+           (ov t))
+      (lambda (action &optional state)
+        (pcase action
+          ('setup (setq ov (make-overlay (- (minibuffer-prompt-end) 2)
+                                         (- (minibuffer-prompt-end) 1)))
+                  (funcall async 'setup))
+          ('destroy (delete-overlay ov)
+                    (funcall async 'destroy))
+          ('indicator (overlay-put ov 'display (alist-get state ind)))
+          (_ (funcall async action))))
+    async))
 
 (defun consult--async-log (formatted &rest args)
   "Log FORMATTED ARGS to variable `consult--async-log'."

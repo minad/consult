@@ -2,6 +2,10 @@
 #+author: Daniel Mendler
 #+language: en
 
+* Development
+
+- Add customizable variable ~consult-async-indicator~.
+
 * Version 1.9 (2024-12-22)
 
 - Require Emacs 28.1.
