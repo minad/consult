@@ -2160,19 +2160,18 @@ MIN-INPUT is the minimum input length and defaults to
 (defun consult--async-indicator (async)
   "Create async function with a state indicator overlay.
 ASYNC is the async sink."
-  (if-let ((ind (cl-loop for (k c f) in consult-async-indicator
-                         collect (cons k (propertize (string c) 'face f))))
-           (ov t))
-      (lambda (action &optional state)
-        (pcase action
-          ('setup (setq ov (make-overlay (- (minibuffer-prompt-end) 2)
-                                         (- (minibuffer-prompt-end) 1)))
-                  (funcall async 'setup))
-          ('destroy (delete-overlay ov)
-                    (funcall async 'destroy))
-          ('indicator (overlay-put ov 'display (alist-get state ind)))
-          (_ (funcall async action))))
-    async))
+  (let ((ind (cl-loop for (k c f) in consult-async-indicator
+                      collect (cons k (propertize (string c) 'face f))))
+        ov)
+    (lambda (action &optional state)
+      (pcase action
+        ('setup (setq ov (make-overlay (- (minibuffer-prompt-end) 2)
+                                       (- (minibuffer-prompt-end) 1)))
+                (funcall async 'setup))
+        ('destroy (delete-overlay ov)
+                  (funcall async 'destroy))
+        ('indicator (overlay-put ov 'display (alist-get state ind)))
+        (_ (funcall async action))))))
 
 (defun consult--async-log (formatted &rest args)
   "Log FORMATTED ARGS to variable `consult--async-log'."
