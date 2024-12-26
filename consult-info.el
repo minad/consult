@@ -131,7 +131,7 @@
             (setq consult-info--manual (concat "(" manual ")"))
             (and (ignore-errors (funcall init))
                  (prog1 buf
-                   (rename-buffer (concat " Preview:" (buffer-name)))
+                   (rename-buffer (format " Preview:%s" (buffer-name)) 'unique)
                    (setq buf nil)))))
       (when buf (kill-buffer buf)))))
 
