@@ -5,6 +5,8 @@
 * Development
 
 - Add customizable variable ~consult-async-indicator~.
+- ~consult-completion-in-region~: When inside minibuffer, use minibuffer content
+  as prompt.
 
 * Version 1.9 (2024-12-22)
 

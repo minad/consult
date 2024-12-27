@@ -3057,11 +3057,19 @@ value for `completion-in-region-function'."
                   ;; This is a reasonable thing to do and required by
                   ;; some completion tables in particular by lsp-mode.
                   ;; See gh:minad/vertico#61.
-                  (consult--read (consult--completion-table-in-buffer collection)
-                                 :prompt "Completion: "
-                                 :state (consult--insertion-preview start end)
-                                 :predicate predicate
-                                 :initial initial))))))
+                  (consult--read
+                   (consult--completion-table-in-buffer collection)
+                   :prompt (if (minibufferp)
+                               ;; Use existing minibuffer prompt and input
+                               (let ((prompt (buffer-substring (point-min) start)))
+                                 (put-text-property
+                                  (max 0 (1- (minibuffer-prompt-end))) (length prompt)
+                                  'face 'shadow prompt)
+                                 prompt)
+                             "Complete: ")
+                   :state (consult--insertion-preview start end)
+                   :predicate predicate
+                   :initial initial))))))
         (if completion
             (progn
               ;; bug#55205: completion--replace removes properties!
