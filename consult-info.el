@@ -68,10 +68,10 @@
                        (not (looking-at-p "^\\s-*$"))
                        (looking-at-p "^[[:print:]]*$")
                        ;; Matches all regexps
-                       (seq-every-p (lambda (r)
-                                      (goto-char bol)
-                                      (re-search-forward r eol t))
-                                    (cdr regexps)))
+                       (cl-loop for r in (cdr regexps) always
+                                (progn
+                                  (goto-char bol)
+                                  (re-search-forward r eol t))))
                   (let ((cand (concat
                                (funcall hl (buffer-substring-no-properties bol eol))
                                (consult--tofu-encode cand-idx))))

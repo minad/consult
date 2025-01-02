@@ -3382,10 +3382,10 @@ BUFFERS is the list of buffers."
                         (eol (pos-eol)))
                     (goto-char bol)
                     (when (and (not (looking-at-p "^\\s-*$"))
-                               (seq-every-p (lambda (r)
-                                              (goto-char bol)
-                                              (re-search-forward r eol t))
-                                            (cdr regexps)))
+                               (cl-loop for r in (cdr regexps) always
+                                        (progn
+                                          (goto-char bol)
+                                          (re-search-forward r eol t))))
                       (push (consult--location-candidate
                              (funcall hl (buffer-substring-no-properties bol eol))
                              (cons buf bol) (1- line) cand-idx)
