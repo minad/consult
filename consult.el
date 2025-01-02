@@ -2281,8 +2281,7 @@ BUILDER is the command line builder function."
         (setq highlight (cdr (funcall builder action)))
         (funcall async action))
        ((and (consp action) highlight)
-        (dolist (str action)
-          (funcall highlight str))
+        (mapc highlight action)
         (funcall async action))
        (t (funcall async action))))))
 
@@ -5132,8 +5131,8 @@ the asynchronous search."
   (interactive)
   (man (consult--read
         (consult--async-command #'consult--man-builder
-          (consult--async-transform consult--man-format)
-          (consult--async-highlight #'consult--man-builder))
+          (consult--async-highlight #'consult--man-builder)
+          (consult--async-transform consult--man-format))
         :prompt "Manual entry: "
         :require-match t
         :category 'consult-man
