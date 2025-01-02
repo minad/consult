@@ -1303,7 +1303,7 @@ ORIG is the original function, HOOKS the arguments."
                               (default-value 'find-file-hook)))
                  (find-file-hook (default-value 'find-file-hook)))
         (apply orig hooks))
-      (apply orig hooks)))
+    (apply orig hooks)))
 
 (defun consult--minibuffer-message (&rest msg)
   "Show MSG in the minibuffer without logging."
@@ -2185,7 +2185,6 @@ ASYNC is the async sink."
 ASYNC is the async function which receives the candidates.
 BUILDER is the command line builder function.
 PROPS are optional properties passed to `make-process'."
-  (setq async (consult--async-indicator async))
   (let (proc proc-buf last-args count)
     (lambda (action)
       (pcase action
@@ -2356,6 +2355,7 @@ highlighting function."
      (consult--async-sink)
      (consult--async-refresh-timer)
      ,@(seq-take-while (lambda (x) (not (keywordp x))) args)
+     (consult--async-indicator)
      (consult--async-process
       ,builder
       ,@(seq-drop-while (lambda (x) (not (keywordp x))) args))
@@ -2388,8 +2388,7 @@ restarted and defaults to `consult-async-input-debounce'.
 MIN-INPUT is the minimal input length and defaults to
 `consult-async-min-input'."
   (setq debounce (or debounce consult-async-input-debounce)
-        min-input (or min-input consult-async-min-input)
-        async (consult--async-indicator async))
+        min-input (or min-input consult-async-min-input))
   (let* ((request) (current) (timer)
          (cancel (lambda () (when timer (cancel-timer timer) (setq timer nil))))
          (start (lambda (req) (setq request req) (funcall async 'refresh))))
@@ -2430,6 +2429,7 @@ MIN-INPUT is the minimal input length and defaults to
 See `consult--dynamic-compute' for the arguments FUN, DEBOUNCE and MIN-INPUT."
   (thread-first
     (consult--async-sink)
+    (consult--async-indicator)
     (consult--dynamic-compute fun debounce min-input)
     (consult--async-throttle)
     (consult--async-split nil min-input)))
