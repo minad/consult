@@ -2804,20 +2804,19 @@ KEYMAP is a command-specific keymap."
   (let (candidates)
     (cl-loop
      for src across sources for idx from 0 do
-     (let* ((face (and (plist-member src :face) `(face ,(plist-get src :face))))
+     (let* ((face (plist-get src :face))
             (cat (plist-get src :category))
             (items (plist-get src :items))
             (items (if (functionp items) (funcall items) items)))
        (dolist (item items)
          (let* ((str (or (car-safe item) item))
+                (len (length str))
                 (cand (consult--tofu-append str idx)))
            ;; Preserve existing `multi-category' datum of the candidate.
-           (if (and (eq str item) (get-text-property 0 'multi-category str))
-               (when face (add-text-properties 0 (length str) face cand))
-             ;; Attach `multi-category' datum and face.
-             (add-text-properties
-              0 (length str)
-              `(multi-category (,cat . ,(or (cdr-safe item) item)) ,@face) cand))
+           (unless (and (eq str item) (get-text-property 0 'multi-category str))
+             (put-text-property 0 len 'multi-category (cons cat (or (cdr-safe item) item)) cand))
+           (when face
+             (add-face-text-property 0 len face t cand))
            (push cand candidates)))))
     (nreverse candidates)))
 
