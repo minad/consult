@@ -2472,29 +2472,50 @@ highlighting function."
 
 ;;;; Dynamic collections based
 
-(defun consult--dynamic-compute (async fun)
+(defun consult--dynamic-compute (async fun &optional restart)
   "Dynamic computation of candidates.
 ASYNC is the sink.
-FUN computes the candidates given the input."
-  (let (current)
-    (lambda (action)
-      (prog1 (funcall async action)
-        (when (stringp action)
-          (if (equal action current)
-              (funcall async [indicator finished])
+FUN computes the candidates given the input.
+RESTART is the time after which an interrupted computation should be
+restarted and defaults to `consult-async-input-debounce'."
+  (setq restart (or restart consult-async-input-debounce))
+  (let* ((current nil)
+         (timer nil)
+         (compute nil)
+         (cancel
+          (lambda ()
+            (when timer
+              (cancel-timer timer)
+              (setq timer nil)))))
+    (setq compute
+          (lambda (input)
             (let ((state 'killed))
               (unwind-protect
                   (while-no-input
                     (funcall async [indicator running])
                     (redisplay)
                     ;; Run computation
-                    (let ((response (funcall fun action)))
+                    (let ((response (funcall fun input)))
                       ;; Flush and update candidate list
                       (funcall async 'flush)
                       (funcall async response)
                       (funcall async 'refresh)
-                      (setq state 'finished current action)))
-                (funcall async `[indicator ,state])))))))))
+                      (setq state 'finished current input)))
+                ;; If the computation was killed, restart it after some time.  This
+                ;; can happen when moving point around.  Then the input doesn't
+                ;; change and the computation isn't started again otherwise.
+                (when (eq state 'killed)
+                  (setq timer (run-at-time restart nil compute input)))
+                (funcall async `[indicator ,state])))))
+    (lambda (action)
+      (prog1 (funcall async action)
+        (pcase action
+          ((or 'cancel 'destroy) (funcall cancel))
+          ((pred stringp)
+           (funcall cancel)
+           (if (equal action current)
+               (funcall async [indicator finished])
+             (funcall compute action))))))))
 
 (defun consult--dynamic-collection (fun &optional debounce min-input)
   "Dynamic collection with input splitting.
