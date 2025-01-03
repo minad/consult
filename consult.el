@@ -2112,24 +2112,18 @@ string   Update with the current user input string.  Return nil."
 (defun consult--async-static (async items)
   "Create async function with static ITEMS.
 ASYNC is the async sink."
-  (lambda (action)
-    (prog1 (funcall async action)
-      (pcase action
-        ('setup (funcall async (copy-sequence items)))
-        ((pred stringp)
-         (pcase-let* ((`(,re . ,hl) (consult--compile-regexp
-                                     action 'emacs completion-ignore-case))
-                      (filtered
-                       (if re
-                           (let* ((completion-regexp-list re)
-                                  (all (all-completions "" items)))
-                             (cl-loop for s in-ref all do
-                                      (funcall hl (setf s (copy-sequence s))))
-                             all)
-                         (copy-sequence items))))
-           (funcall async 'flush)
-           (funcall async filtered)
-           nil))))))
+  (consult--dynamic-compute
+   async
+   (lambda (input)
+     (pcase-let* ((`(,re . ,hl) (consult--compile-regexp
+                                 input 'emacs completion-ignore-case)))
+       (if re
+           (let* ((completion-regexp-list re)
+                  (all (all-completions "" items)))
+             (cl-loop for s in-ref all do
+                      (funcall hl (setf s (copy-sequence s))))
+             all)
+         (copy-sequence items))))))
 
 (defun consult--async-merge-sink (sink tail idx)
   "Create sink for the async sub-functions which merges the sub-lists.
