@@ -2984,6 +2984,7 @@ Required source fields:
   list of strings.  Note that the strings can use text properties
   to carry metadata, which is then available to the :annotate,
   :action and :state functions.
+* :async Alternative to :items for asynchronous sources.
 
 Optional source fields:
 * :name - Name of the source as a string, used for narrowing,
