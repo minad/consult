@@ -34,8 +34,7 @@
 
 (defun consult-info--candidates (buffers input)
   "Dynamically find lines in BUFFERS matching INPUT."
-  (pcase-let* ((`(,regexps . ,hl)
-                (funcall consult--regexp-compiler input 'emacs t))
+  (pcase-let* ((`(,regexps . ,hl) (consult--compile-regexp input 'emacs t))
                (re (concat "\\(\^_\n\\(?:.*Node:[ \t]*\\([^,\t\n]+\\)\\)?.*\n\\)\\|" (car regexps)))
                (candidates nil)
                (cand-idx 0)

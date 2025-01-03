@@ -1180,17 +1180,21 @@ if IGNORE-CASE is non-nil."
      regexp 'fixedcase 'literal)))
 
 (defun consult--default-regexp-compiler (input type ignore-case)
-  "Compile the INPUT string to a list of regular expressions.
-The function should return a pair, the list of regular expressions and a
-highlight function.  The highlight function should take a single
-argument, the string to highlight given the INPUT.  TYPE is the desired
-type of regular expression, which can be `basic', `extended', `emacs' or
-`pcre'.  If IGNORE-CASE is non-nil return a highlight function which
-matches case insensitively."
+  "Compile a string to a list of regular expressions.
+See `consult--compile-regexp' for INPUT, TYPE and IGNORE-CASE."
   (setq input (consult--split-escaped input))
   (cons (mapcar (lambda (x) (consult--convert-regexp x type)) input)
         (when-let (regexps (seq-filter #'consult--valid-regexp-p input))
           (apply-partially #'consult--highlight-regexps regexps ignore-case))))
+
+(defun consult--compile-regexp (input type ignore-case)
+  "Compile the INPUT string to a list of regular expressions.
+Return a pair, the list of regular expressions and a highlight function.
+The highlight function takes a single argument, the string to highlight
+given the INPUT.  TYPE is the desired type of regular expression, which
+can be `basic', `extended', `emacs' or `pcre'.  If IGNORE-CASE is
+non-nil the highlight function matches case insensitively."
+  (funcall consult--regexp-compiler input type ignore-case))
 
 (defun consult--split-escaped (str)
   "Split STR at spaces, which can be escaped with backslash."
@@ -3348,9 +3352,7 @@ If TRANSFORM non-nil, return transformed CAND, otherwise return title."
   "Collect matching candidates from multiple buffers.
 INPUT is the user input which should be matched.
 BUFFERS is the list of buffers."
-  (pcase-let ((`(,regexps . ,hl)
-               (funcall consult--regexp-compiler
-                        input 'emacs completion-ignore-case))
+  (pcase-let ((`(,regexps . ,hl) (consult--compile-regexp input 'emacs completion-ignore-case))
               (candidates nil)
               (cand-idx 0))
     (when regexps
@@ -4837,7 +4839,7 @@ input."
             (cons (append cmd (list "-e" arg) opts paths)
                   (apply-partially #'consult--highlight-regexps
                                    (list (regexp-quote arg)) ignore-case))
-          (pcase-let ((`(,re . ,hl) (funcall consult--regexp-compiler arg type ignore-case)))
+          (pcase-let ((`(,re . ,hl) (consult--compile-regexp arg type ignore-case)))
             (when re
               (cons (append cmd
                             (list (if (eq type 'pcre) "-P" "-E") ;; perl or extended
@@ -4904,7 +4906,7 @@ The symbol at point is added to the future history."
             (cons (append cmd (list "-e" arg) opts paths)
                   (apply-partially #'consult--highlight-regexps
                                    (list (regexp-quote arg)) ignore-case))
-          (pcase-let ((`(,re . ,hl) (funcall consult--regexp-compiler arg 'extended ignore-case)))
+          (pcase-let ((`(,re . ,hl) (consult--compile-regexp arg 'extended ignore-case)))
             (when re
               (cons (append cmd
                             (cdr (mapcan (lambda (x) (list "--and" "-e" x)) re))
@@ -4938,7 +4940,7 @@ See `consult-grep' for details."
             (cons (append cmd (list "-e" arg) opts paths)
                   (apply-partially #'consult--highlight-regexps
                                    (list (regexp-quote arg)) ignore-case))
-          (pcase-let ((`(,re . ,hl) (funcall consult--regexp-compiler arg type ignore-case)))
+          (pcase-let ((`(,re . ,hl) (consult--compile-regexp arg type ignore-case)))
             (when re
               (cons (append cmd (and (eq type 'pcre) '("-P"))
                             (list "-e" (consult--join-regexps re type))
@@ -4987,7 +4989,7 @@ INITIAL is initial input."
     (lambda (input)
       (pcase-let* ((`(,arg . ,opts) (consult--command-split input))
                    ;; ignore-case=t since -iregex is used below
-                   (`(,re . ,hl) (funcall consult--regexp-compiler arg type t)))
+                   (`(,re . ,hl) (consult--compile-regexp arg type t)))
         (when re
           (cons (append cmd
                         (cdr (mapcan
@@ -5032,7 +5034,7 @@ regarding the asynchronous search and the arguments."
             (cons (append cmd (list arg) opts paths)
                   (apply-partially #'consult--highlight-regexps
                                    (list (regexp-quote arg)) ignore-case))
-          (pcase-let ((`(,re . ,hl) (funcall consult--regexp-compiler arg 'pcre ignore-case)))
+          (pcase-let ((`(,re . ,hl) (consult--compile-regexp arg 'pcre ignore-case)))
             (when re
               (cons (append cmd
                             (mapcan (lambda (x) `("--and" ,x)) re)
@@ -5079,7 +5081,7 @@ details regarding the asynchronous search."
 (defun consult--man-builder (input)
   "Build command line from INPUT."
   (pcase-let* ((`(,arg . ,opts) (consult--command-split input))
-               (`(,re . ,hl) (funcall consult--regexp-compiler arg 'extended t)))
+               (`(,re . ,hl) (consult--compile-regexp arg 'extended t)))
     (when re
       (cons (append (consult--build-args consult-man-args)
                     (list (consult--join-regexps re 'extended))
