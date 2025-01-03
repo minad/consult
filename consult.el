@@ -2233,8 +2233,7 @@ MIN-INPUT is the minimum input length and defaults to
                               (get-text-property 0 'consult--force action))
                          (>= (length action) min-input))
                      action
-                   ;; Pretend that there is no input
-                   ""))
+                   'cancel))
       (funcall async action))))
 
 (defun consult--async-split (async &optional split min-input)
