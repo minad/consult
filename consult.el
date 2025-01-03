@@ -2109,6 +2109,72 @@ string   Update with the current user input string.  Return nil."
            (setq last (last (setcdr (or last (last candidates)) action)))
            candidates))))))
 
+(defun consult--async-static (async items)
+  "Create async function with static ITEMS from ASYNC."
+  (lambda (action)
+    (prog1 (funcall async action)
+      (pcase action
+        ('setup (funcall async (copy-sequence items)))
+        ((pred stringp)
+         (funcall async 'flush)
+         (funcall async
+                  (pcase-let ((`(,re . ,hl)
+                               (consult--compile-regexp
+                                action 'emacs completion-ignore-case)))
+                    (if re
+                        (let* ((completion-regexp-list re)
+                               (all (all-completions "" items)))
+                          (cl-loop for s in-ref all do
+                                   (funcall hl (setf s (copy-sequence s))))
+                          all)
+                      (copy-sequence items)))))))))
+
+(defun consult--async-merge-sink (sink tail idx)
+  "Create sink for the async sub-functions which merges the sub-lists.
+SINK is the candidate sink.
+TAIL is a vector of list tail links for each sub-list.
+IDX is the index of the corresponding link in TAIL."
+  (lambda (action)
+    ;; Ignore all actions except flush and append for now.
+    (pcase action
+      ('flush
+       ;; Flush items if sub-list exists.
+       (when-let ((tl (aref tail idx)) (pre t))
+         (let ((i idx)) (while (not (setq pre (aref tail (cl-decf i))))))
+         (setcdr pre (cdr tl))
+         (aset tail idx nil)
+         (funcall sink 'flush)
+         (funcall sink (cdr (aref tail 0)))))
+      ((pred consp)
+       (let ((tl (aref tail idx))
+             (last (last action))
+             pre)
+         (aset tail idx last)
+         (if tl ;; Append items if sub-list exists.
+             (progn
+               (setcdr last (cdr tl))
+               (setcdr tl action))
+           ;; Otherwise insert new sub-list.
+           (let ((i idx)) (while (not (setq pre (aref tail (cl-decf i))))))
+           (setcdr last (cdr pre))
+           (setcdr pre action))
+         (funcall sink 'flush)
+         (funcall sink (cdr (aref tail 0))))))))
+
+(defun consult--async-merge (sink asyncs)
+  "Create merged async function from ASYNCS which drains into SINK."
+  (let* ((tail (make-vector (1+ (length asyncs)) nil))
+         (asyncs
+          (seq-map-indexed
+           (lambda (async idx)
+             (funcall async (consult--async-merge-sink sink tail (1+ idx))))
+           asyncs)))
+    (aset tail 0 (list nil)) ;; Guard element
+    (lambda (action)
+      (dolist (async asyncs)
+        (funcall async action))
+      (funcall sink action))))
+
 (defun consult--async-debug (async prefix)
   "Create async function from ASYNC with debug messages.
 The messages are prefixed with PREFIX."
@@ -2804,26 +2870,44 @@ KEYMAP is a command-specific keymap."
       ;; Non-existing Tofu'ed candidate submitted, e.g., via Embark
       `(,(substring selected 0 -1) :match nil ,@(consult--multi-source sources selected)))))
 
-(defun consult--multi-candidates (sources)
-  "Return `consult--multi' candidates from SOURCES."
-  (let (candidates)
+(defun consult--multi-candidates (idx src &optional items)
+  "Create completion candidate strings from ITEMS.
+Attach source IDX and SRC properties to each item."
+  (when (plist-member src :items)
+    (setq items (plist-get src :items)
+          items (if (functionp items) (funcall items) items)))
+  (let ((face (plist-get src :face))
+        (cat (plist-get src :category)))
     (cl-loop
-     for src across sources for idx from 0 do
-     (let* ((face (plist-get src :face))
-            (cat (plist-get src :category))
-            (items (plist-get src :items))
-            (items (if (functionp items) (funcall items) items)))
-       (dolist (item items)
-         (let* ((str (or (car-safe item) item))
-                (len (length str))
-                (cand (consult--tofu-append str idx)))
-           ;; Preserve existing `multi-category' datum of the candidate.
-           (unless (and (eq str item) (get-text-property 0 'multi-category str))
-             (put-text-property 0 len 'multi-category (cons cat (or (cdr-safe item) item)) cand))
-           (when face
-             (add-face-text-property 0 len face t cand))
-           (push cand candidates)))))
-    (nreverse candidates)))
+     for item in items collect
+     (let* ((str (or (car-safe item) item))
+            (len (length str))
+            (cand (consult--tofu-append str idx)))
+       ;; Preserve existing `multi-category' datum of the candidate.
+       (unless (and (eq str item) (get-text-property 0 'multi-category str))
+         (put-text-property 0 len 'multi-category (cons cat (or (cdr-safe item) item)) cand))
+       (when face
+         (add-face-text-property 0 len face t cand))
+       cand))))
+
+(defun consult--multi-async (sources)
+  "Return async table from multi SOURCES."
+  (thread-first
+    (consult--async-sink)
+    (consult--async-refresh-timer)
+    (consult--async-merge
+     (cl-loop
+      for idx from 0 for src across sources collect
+      (let ((idx idx) (src src) (async (plist-get src :async)))
+        (when (and async (plist-member src :items))
+          (error "Source must not specify both :items and :async"))
+        (if async
+            (lambda (sink)
+              (funcall async (consult--async-transform
+                              sink consult--multi-candidates idx src)))
+          (let ((cands (consult--multi-candidates idx src)))
+            (lambda (sink) (consult--async-static sink cands)))))))
+    (consult--async-split nil 0)))
 
 (defun consult--multi-enabled-sources (sources)
   "Return vector of enabled SOURCES."
@@ -2870,6 +2954,14 @@ KEYMAP is a command-specific keymap."
              (when selected-fun
                (funcall selected-fun 'return cand)))))))))
 
+(defun consult--multi-table (sources)
+  "Create static or asynchronous completion table for SOURCES."
+  (consult--with-increased-gc
+   (if (cl-loop for src across sources thereis (plist-get src :async))
+       (consult--multi-async sources)
+     (cl-loop for idx from 0 for src across sources nconc
+              (consult--multi-candidates idx src)))))
+
 (defun consult--multi (sources &rest options)
   "Select from candidates taken from a list of SOURCES.
 
@@ -2912,11 +3004,10 @@ Optional source fields:
   case.  Note that the source is returned by `consult--multi'
   together with the selected candidate."
   (let* ((sources (consult--multi-enabled-sources sources))
-         (candidates (consult--with-increased-gc
-                      (consult--multi-candidates sources)))
+         (table (consult--multi-table sources))
          (selected
           (apply #'consult--read
-                 candidates
+                 table
                  (append
                   options
                   (list
