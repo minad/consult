@@ -2054,7 +2054,10 @@ BIND is the asynchronous function binding."
                   ;; asynchronous search right before exiting the minibuffer.
                   (fset hook (lambda (&rest _) (run-at-time 0 nil fun)))
                   (add-hook 'after-change-functions hook nil 'local)
-                  (funcall hook)))))
+                  ;; Immediately start asynchronous computation. This may lead
+                  ;; to problems unnecessary work if content is inserted shortly
+                  ;; afterwards.
+                  (funcall fun)))))
          (let ((,async (if (consult--async-p ,async) ,async (lambda (_) ,async))))
            (unwind-protect
                ,(macroexp-progn body)
