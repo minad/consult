@@ -2403,12 +2403,13 @@ FUN computes the candidates given the input."
                (funcall async 'indicator state))))
          (funcall async nil))
         ((pred stringp)
-         (unless (equal action current)
-           ;; Do not perform the computation immediately, only when the
-           ;; candidates are requested.
+         ;; Do not perform the computation immediately, only when the
+         ;; candidates are requested.
+         (if (equal action current)
+             (setq request nil)
            (setq request action)
            (funcall async 'refresh)))
-        (_ (funcall async action))))))
+        (_ (funcall async action)))))
 
 (defun consult--dynamic-collection (fun &optional debounce min-input)
   "Dynamic collection with input splitting.
