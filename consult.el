@@ -2099,8 +2099,13 @@ string   Update with the current user input string.  Return nil."
          nil)
         ('nil candidates)
         ((pred consp)
-         (setq last (last (if last (setcdr last action) (setq candidates action))))
-         candidates)))))
+         ;; Lazily initialize last link, such that it is only initialized when
+         ;; appending, and not for one-shot async functions like
+         ;; `consult--dynamic-compute'.
+         (if (not candidates)
+             (setq candidates action)
+           (setq last (last (setcdr (or last (last candidates)) action)))
+           candidates))))))
 
 (defun consult--async-debug (async prefix)
   "Create async function from ASYNC with debug messages.
