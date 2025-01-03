@@ -7,6 +7,9 @@
 - Add customizable variable ~consult-async-indicator~.
 - ~consult-completion-in-region~: When inside minibuffer, use minibuffer content
   as prompt.
+- ~consult--multi~: Add support for ~:async~ sources. See the docstring of
+  ~consult--multi~ and commit 1d760971c110c573228b62043e5a4ea295662353 for
+  details.
 
 * Version 1.9 (2024-12-22)
 
