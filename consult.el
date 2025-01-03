@@ -2196,6 +2196,21 @@ INITIAL is the additional initial string."
   (when-let (str (thing-at-point thing))
     (consult--async-split-initial str)))
 
+(defun consult--async-predicate (async pred)
+  "Create async function, running only if PRED is non-nil.
+ASYNC is the async sink."
+  (let (input)
+    (lambda (action)
+      (prog1 (and (not (stringp action))
+                  (funcall async action))
+        (pcase action
+          ('setup (setq pred (consult--in-buffer pred)))
+          ((or 'cancel 'destroy) (setq input nil))
+          ((pred stringp) (setq input action)))
+        (when (and input (funcall pred))
+          (funcall async input)
+          (setq input nil))))))
+
 (defun consult--async-min-input (async &optional min-input)
   "Create async function, which ensures a minimum input length.
 ASYNC is the async sink.
@@ -2810,15 +2825,17 @@ KEYMAP is a command-specific keymap."
   "Lookup source for CAND in SOURCES list."
   (aref sources (consult--tofu-get cand)))
 
+(defsubst consult--multi-visible-p (src)
+  "Is SRC visible according to `consult--narrow'?"
+  (or (pcase (or (plist-get src :narrow) -1)
+        ((and narrow `((,_ . ,_) . ,_)) (assq consult--narrow narrow))
+        (`(,k . ,_) (eq consult--narrow k))
+        (k (eq consult--narrow k)))
+      (not (or consult--narrow (plist-get src :hidden)))))
+
 (defun consult--multi-predicate (sources cand)
   "Predicate function called for each candidate CAND given SOURCES."
-  (let* ((src (consult--multi-source sources cand))
-         (narrow (or (plist-get src :narrow) -1)))
-    (or (pcase narrow
-          (`((,_ . ,_) . ,_) (assq consult--narrow narrow))
-          (`(,k . ,_) (eq consult--narrow k))
-          (k (eq consult--narrow k)))
-        (not (or consult--narrow (plist-get src :hidden))))))
+  (consult--multi-visible-p (consult--multi-source sources cand)))
 
 (defun consult--multi-narrow (sources)
   "Return narrow list from SOURCES."
@@ -2921,8 +2938,10 @@ Attach source IDX and SRC properties to each item."
       (let ((idx idx) (src src))
         (if-let ((async (plist-get src :async)))
             (lambda (sink)
-              (funcall async (consult--async-transform
-                              sink consult--multi-candidates idx src)))
+              (consult--async-predicate
+               (funcall async (consult--async-transform
+                               sink consult--multi-candidates idx src))
+               (apply-partially #'consult--multi-visible-p src)))
           (let ((cands (consult--multi-candidates idx src)))
             (lambda (sink) (consult--async-static sink cands)))))))
     (consult--async-split nil 0)))
