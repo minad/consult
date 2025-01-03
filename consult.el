@@ -2110,24 +2110,26 @@ string   Update with the current user input string.  Return nil."
            candidates))))))
 
 (defun consult--async-static (async items)
-  "Create async function with static ITEMS from ASYNC."
+  "Create async function with static ITEMS.
+ASYNC is the async sink."
   (lambda (action)
     (prog1 (funcall async action)
       (pcase action
         ('setup (funcall async (copy-sequence items)))
         ((pred stringp)
-         (funcall async 'flush)
-         (funcall async
-                  (pcase-let ((`(,re . ,hl)
-                               (consult--compile-regexp
-                                action 'emacs completion-ignore-case)))
-                    (if re
-                        (let* ((completion-regexp-list re)
-                               (all (all-completions "" items)))
-                          (cl-loop for s in-ref all do
-                                   (funcall hl (setf s (copy-sequence s))))
-                          all)
-                      (copy-sequence items)))))))))
+         (pcase-let* ((`(,re . ,hl) (consult--compile-regexp
+                                     action 'emacs completion-ignore-case))
+                      (filtered
+                       (if re
+                           (let* ((completion-regexp-list re)
+                                  (all (all-completions "" items)))
+                             (cl-loop for s in-ref all do
+                                      (funcall hl (setf s (copy-sequence s))))
+                             all)
+                         (copy-sequence items))))
+           (funcall async 'flush)
+           (funcall async filtered)
+           nil))))))
 
 (defun consult--async-merge-sink (sink tail idx)
   "Create sink for the async sub-functions which merges the sub-lists.
@@ -2161,14 +2163,14 @@ IDX is the index of the corresponding link in TAIL."
          (funcall sink 'flush)
          (funcall sink (cdr (aref tail 0))))))))
 
-(defun consult--async-merge (sink asyncs)
-  "Create merged async function from ASYNCS which drains into SINK."
-  (let* ((tail (make-vector (1+ (length asyncs)) nil))
+(defun consult--async-merge (sink funs)
+  "Create merged async function from multiple FUNS which drains into SINK."
+  (let* ((tail (make-vector (1+ (length funs)) nil))
          (asyncs
           (seq-map-indexed
-           (lambda (async idx)
-             (funcall async (consult--async-merge-sink sink tail (1+ idx))))
-           asyncs)))
+           (lambda (fun idx)
+             (funcall fun (consult--async-merge-sink sink tail (1+ idx))))
+           funs)))
     (aset tail 0 (list nil)) ;; Guard element
     (lambda (action)
       (dolist (async asyncs)
@@ -2176,8 +2178,8 @@ IDX is the index of the corresponding link in TAIL."
       (funcall sink action))))
 
 (defun consult--async-debug (async prefix)
-  "Create async function from ASYNC with debug messages.
-The messages are prefixed with PREFIX."
+  "Create async function with debug messages.
+ASYNC is the async sink. The messages are prefixed with PREFIX."
   (lambda (action)
     (consult--async-log "%s: %S\n" prefix action)
     (funcall async action)))
@@ -2378,8 +2380,8 @@ highlight function."
        (t (funcall async action))))))
 
 (defun consult--async-throttle (async &optional throttle debounce)
-  "Create async function from ASYNC which throttles input.
-
+  "Create async function which throttles input.
+ASYNC is the async sink.
 The THROTTLE delay defaults to `consult-async-input-throttle'.
 The DEBOUNCE delay defaults to `consult-async-input-debounce'."
   (setq throttle (or throttle consult-async-input-throttle)
@@ -2407,9 +2409,9 @@ The DEBOUNCE delay defaults to `consult-async-input-debounce'."
         (_ (funcall async action))))))
 
 (defun consult--async-refresh-immediate (async)
-  "Create async function from ASYNC, which refreshes the display.
-
-The refresh happens immediately when candidates are pushed."
+  "Create async function, which refreshes the display.
+ASYNC is the async sink.  The refresh happens immediately when
+candidates are pushed."
   (lambda (action)
     (pcase action
       ((or (pred consp) 'flush)
@@ -2418,9 +2420,9 @@ The refresh happens immediately when candidates are pushed."
       (_ (funcall async action)))))
 
 (defun consult--async-refresh-timer (async &optional delay)
-  "Create async function from ASYNC, which refreshes the display.
-
-The refresh happens after a DELAY, defaulting to `consult-async-refresh-delay'."
+  "Create async function, which refreshes the display with a timer.
+ASYNC is the async sink.  The refresh happens after a DELAY, defaulting
+to `consult-async-refresh-delay'."
   (let ((delay (or delay consult-async-refresh-delay))
         (timer (timer-create)))
     (timer-set-function timer async '(refresh))
@@ -2985,7 +2987,10 @@ Required source fields:
   list of strings.  Note that the strings can use text properties
   to carry metadata, which is then available to the :annotate,
   :action and :state functions.
-* :async Alternative to :items for asynchronous sources.
+* :async - Alternative to :items for asynchronous sources.  The function
+  receives an asynchronous sink as argument and should return a new
+  asynchronous function taking an action argument as documented by
+  `consult--async-sink'.
 
 Optional source fields:
 * :name - Name of the source as a string, used for narrowing,

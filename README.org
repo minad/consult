@@ -628,7 +628,8 @@ Required source fields:
 - =:category= Completion category.
 - =:items= List of strings to select from or function returning list of strings.
   A list of cons cells is not supported.
-- =:async= Alternative to =:items= for asynchronous sources.
+- =:async= Alternative to =:items= for asynchronous sources. See the docstring for
+  details.
 
 Optional source fields:
 - =:name= Name of the source, used for narrowing, group titles and annotations.
