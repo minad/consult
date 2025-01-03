@@ -2382,34 +2382,26 @@ highlighting function."
   "Dynamic computation of candidates.
 ASYNC is the sink.
 FUN computes the candidates given the input."
-  (let (request current)
+  (let (current)
     (lambda (action)
-      (pcase action
-        ('nil
-         ;; Perform the computation when the candidates are requested, since
-         ;; then the computation can be interrupted by the completion UI.
-         (when request
-           (let ((state 'killed))
-             (unwind-protect
-                 (progn
-                   (funcall async 'indicator 'running)
-                   (redisplay)
-                   ;; Run computation
-                   (let ((response (funcall fun request)))
-                     ;; Flush and update candidate list
-                     (funcall async 'flush)
-                     (funcall async response)
-                     (setq state 'finished current request request nil)))
-               (funcall async 'indicator state))))
-         (funcall async nil))
-        ((pred stringp)
-         ;; Do not perform the computation immediately, only when the
-         ;; candidates are requested.
-         (if (equal action current)
-             (setq request nil)
-           (setq request action)
-           (funcall async 'refresh)))
-        (_ (funcall async action))))))
+      (cond
+       ((stringp action)
+        (if (equal action current)
+            (funcall async 'indicator 'finished)
+          (let ((state 'killed))
+            (unwind-protect
+                (while-no-input
+                  (funcall async 'indicator 'running)
+                  (redisplay)
+                  ;; Run computation
+                  (let ((response (funcall fun action)))
+                    ;; Flush and update candidate list
+                    (funcall async 'flush)
+                    (funcall async response)
+                    (funcall async 'refresh)
+                    (setq state 'finished current action)))
+              (funcall async 'indicator state)))))
+       (t (funcall async action))))))
 
 (defun consult--dynamic-collection (fun &optional debounce min-input)
   "Dynamic collection with input splitting.
