@@ -2163,14 +2163,14 @@ ASYNC is the async sink."
   (let ((ind (cl-loop for (k c f) in consult-async-indicator
                       collect (cons k (propertize (string c) 'face f))))
         ov)
-    (lambda (action &optional state)
+    (lambda (action)
       (pcase action
         ('setup (setq ov (make-overlay (- (minibuffer-prompt-end) 2)
                                        (- (minibuffer-prompt-end) 1)))
                 (funcall async 'setup))
         ('destroy (delete-overlay ov)
                   (funcall async 'destroy))
-        ('indicator (overlay-put ov 'display (alist-get state ind)))
+        (`[indicator ,state] (overlay-put ov 'display (alist-get state ind)))
         (_ (funcall async action))))))
 
 (defun consult--async-log (formatted &rest args)
@@ -2226,11 +2226,11 @@ PROPS are optional properties passed to `make-process'."
                           ((and (string-prefix-p "finished" event) (not (equal rest "")))
                            (cl-incf count)
                            (funcall async (list rest))))
-                         (funcall async 'indicator
-                                  (cond
-                                   ((string-prefix-p "killed" event)   'killed)
-                                   ((string-prefix-p "finished" event) 'finished)
-                                   (t 'failed)))
+                         (funcall async `[indicator
+                                          ,(cond
+                                            ((string-prefix-p "killed" event)   'killed)
+                                            ((string-prefix-p "finished" event) 'finished)
+                                            (t 'failed))])
                          (consult--async-log
                           "consult--async-process sentinel: event=%s lines=%d\n"
                           (string-trim event) count)
@@ -2246,7 +2246,7 @@ PROPS are optional properties passed to `make-process'."
                                           (buffer-substring-no-properties (pos-bol) (pos-eol)))))
                              (insert "<<<<< stderr <<<<<\n")))))
                       (process-adaptive-read-buffering nil))
-                 (funcall async 'indicator 'running)
+                 (funcall async [indicator running])
                  (consult--async-log "consult--async-process started: args=%S default-directory=%S\n"
                                      args default-directory)
                  (setq count 0
@@ -2387,11 +2387,11 @@ FUN computes the candidates given the input."
       (cond
        ((stringp action)
         (if (equal action current)
-            (funcall async 'indicator 'finished)
+            (funcall async [indicator finished])
           (let ((state 'killed))
             (unwind-protect
                 (while-no-input
-                  (funcall async 'indicator 'running)
+                  (funcall async [indicator running])
                   (redisplay)
                   ;; Run computation
                   (let ((response (funcall fun action)))
@@ -2400,7 +2400,7 @@ FUN computes the candidates given the input."
                     (funcall async response)
                     (funcall async 'refresh)
                     (setq state 'finished current action)))
-              (funcall async 'indicator state)))))
+              (funcall async `[indicator ,state])))))
        (t (funcall async action))))))
 
 (defun consult--dynamic-collection (fun &optional debounce min-input)
