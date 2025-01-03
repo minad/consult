@@ -1955,10 +1955,9 @@ determines the separator.  Examples: \"/async/filter\",
       (save-match-data
         (let ((q (regexp-quote (substring str 0 1))))
           (string-match (concat "^" q "\\([^" q "]*\\)\\(" q "\\)?") str)
-          `(,(match-string 1 str)
+          ;; Force update it two punctuation characters are entered.
+          `(,(propertize (match-string 1 str) 'consult--force (match-end 2))
             ,(match-end 0)
-            ;; Force update it two punctuation characters are entered.
-            ,(match-end 2)
             ;; List of highlights
             (0 . ,(match-beginning 1))
             ,@(and (match-end 2) `((,(match-beginning 2) . ,(match-end 2)))))))
@@ -1974,10 +1973,9 @@ PLIST is the splitter configuration, including the separator."
   (let ((sep (regexp-quote (char-to-string (plist-get plist :separator)))))
     (save-match-data
       (if (string-match (format "^\\([^%s]+\\)\\(%s\\)?" sep sep) str)
-          `(,(match-string 1 str)
+          ;; Force update if separator is entered.
+          `(,(propertize (match-string 1 str) 'consult--force (match-end 2))
             ,(match-end 0)
-            ;; Force update it space is entered.
-            ,(match-end 2)
             ;; List of highlights
             ,@(and (match-end 2) `((,(match-beginning 2) . ,(match-end 2)))))
         `(,str ,(length str))))))
@@ -2133,6 +2131,25 @@ INITIAL is the additional initial string."
   (when-let (str (thing-at-point thing))
     (consult--async-split-initial str)))
 
+(defun consult--async-min-input (async &optional min-input)
+  "Create async function, which ensures a minimum input length.
+ASYNC is the async sink.
+MIN-INPUT is the minimum input length and defaults to
+`consult-async-min-input'."
+  (setq min-input (or min-input consult-async-min-input))
+  (lambda (action)
+    (if (stringp action)
+        (funcall async
+                 ;; Input can be marked with the `consult--force' property such
+                 ;; that it is passed through in any case.
+                 (if (or (and (not (equal action ""))
+                              (get-text-property 0 'consult--force action))
+                         (>= (length action) min-input))
+                     action
+                   ;; Pretend that there is no input
+                   ""))
+      (funcall async action))))
+
 (defun consult--async-split (async &optional split min-input)
   "Create async function, which splits the input string.
 ASYNC is the async sink.
@@ -2144,26 +2161,22 @@ MIN-INPUT is the minimum input length and defaults to
     (let* ((style (consult--async-split-style))
            (fn (plist-get style :function)))
       (setq split (lambda (str) (funcall fn str style)))))
-  (setq min-input (or min-input consult-async-min-input))
+  (unless (eq min-input 0)
+    (setq async (consult--async-min-input async min-input)))
   (lambda (action)
     (pcase action
       ('setup
        (consult--split-setup split)
        (funcall async 'setup))
       ((pred stringp)
-       (pcase-let ((`(,async-str ,_ ,force . ,highlights) (funcall split action))
+       (pcase-let ((`(,input ,_ . ,highlights) (funcall split action))
                    (end (minibuffer-prompt-end)))
          ;; Highlight punctuation characters
          (pcase-dolist (`(,x . ,y) highlights)
            (let ((x (+ end x)) (y (+ end y)))
              (put-text-property x y 'rear-nonsticky t)
              (add-face-text-property x y 'consult-async-split)))
-         (funcall async
-                  ;; Pass through if the input is long enough!
-                  (if (or force (>= (length async-str) min-input))
-                      async-str
-                    ;; Pretend that there is no input
-                    ""))))
+         (funcall async input)))
       (_ (funcall async action)))))
 
 (defun consult--async-indicator (async)
