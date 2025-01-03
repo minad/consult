@@ -2898,10 +2898,8 @@ Attach source IDX and SRC properties to each item."
     (consult--async-merge
      (cl-loop
       for idx from 0 for src across sources collect
-      (let ((idx idx) (src src) (async (plist-get src :async)))
-        (when (and async (plist-member src :items))
-          (error "Source must not specify both :items and :async"))
-        (if async
+      (let ((idx idx) (src src))
+        (if-let ((async (plist-get src :async)))
             (lambda (sink)
               (funcall async (consult--async-transform
                               sink consult--multi-candidates idx src)))
@@ -2912,13 +2910,16 @@ Attach source IDX and SRC properties to each item."
 (defun consult--multi-enabled-sources (sources)
   "Return vector of enabled SOURCES."
   (vconcat
-   (seq-filter (lambda (src)
-                 (if-let (pred (plist-get src :enabled))
-                     (funcall pred)
-                   t))
-               (mapcar (lambda (src)
-                         (if (symbolp src) (symbol-value src) src))
-                       sources))))
+   (cl-loop
+    for src in sources
+    if (progn
+         (setq src (if (symbolp src) (symbol-value src) src))
+         (unless (xor (plist-member src :async) (plist-member src :items))
+           (error "Source must specify either :items or :async"))
+         (unless (plist-get src :category)
+           (error "Source must specify a :category"))
+         (funcall (or (plist-get src :enabled) #'always)))
+    collect src)))
 
 (defun consult--multi-state (sources)
   "State function given SOURCES."
