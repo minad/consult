@@ -2393,24 +2393,23 @@ ASYNC is the sink.
 FUN computes the candidates given the input."
   (let (current)
     (lambda (action)
-      (cond
-       ((stringp action)
-        (if (equal action current)
-            (funcall async [indicator finished])
-          (let ((state 'killed))
-            (unwind-protect
-                (while-no-input
-                  (funcall async [indicator running])
-                  (redisplay)
-                  ;; Run computation
-                  (let ((response (funcall fun action)))
-                    ;; Flush and update candidate list
-                    (funcall async 'flush)
-                    (funcall async response)
-                    (funcall async 'refresh)
-                    (setq state 'finished current action)))
-              (funcall async `[indicator ,state])))))
-       (t (funcall async action))))))
+      (prog1 (funcall async action)
+        (when (stringp action)
+          (if (equal action current)
+              (funcall async [indicator finished])
+            (let ((state 'killed))
+              (unwind-protect
+                  (while-no-input
+                    (funcall async [indicator running])
+                    (redisplay)
+                    ;; Run computation
+                    (let ((response (funcall fun action)))
+                      ;; Flush and update candidate list
+                      (funcall async 'flush)
+                      (funcall async response)
+                      (funcall async 'refresh)
+                      (setq state 'finished current action)))
+                (funcall async `[indicator ,state])))))))))
 
 (defun consult--dynamic-collection (fun &optional debounce min-input)
   "Dynamic collection with input splitting.
