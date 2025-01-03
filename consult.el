@@ -2409,7 +2409,7 @@ FUN computes the candidates given the input."
              (setq request nil)
            (setq request action)
            (funcall async 'refresh)))
-        (_ (funcall async action)))))
+        (_ (funcall async action))))))
 
 (defun consult--dynamic-collection (fun &optional debounce min-input)
   "Dynamic collection with input splitting.
