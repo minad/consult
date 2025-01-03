@@ -2378,49 +2378,36 @@ highlighting function."
 
 ;;;; Dynamic collections based
 
-(defun consult--dynamic-compute (async fun &optional debounce min-input)
+(defun consult--dynamic-compute (async fun)
   "Dynamic computation of candidates.
 ASYNC is the sink.
-FUN computes the candidates given the input.
-DEBOUNCE is the time after which an interrupted computation should be
-restarted and defaults to `consult-async-input-debounce'.
-MIN-INPUT is the minimal input length and defaults to
-`consult-async-min-input'."
-  (setq debounce (or debounce consult-async-input-debounce)
-        min-input (or min-input consult-async-min-input))
-  (let* ((request) (current) (timer)
-         (cancel (lambda () (when timer (cancel-timer timer) (setq timer nil))))
-         (start (lambda (req) (setq request req) (funcall async 'refresh))))
+FUN computes the candidates given the input."
+  (let (request current)
     (lambda (action)
       (pcase action
-        ((and 'nil (guard (not request)))
-         (funcall async nil))
         ('nil
-         (funcall cancel)
-         (let ((state 'killed))
-           (unwind-protect
-               (progn
-                 (funcall async 'indicator 'running)
-                 (redisplay)
-                 ;; Run computation
-                 (let ((response (funcall fun request)))
-                   ;; Flush and update candidate list
-                   (funcall async 'flush)
-                   (setq state 'finished current request)
-                   (funcall async response)))
-             (funcall async 'indicator state)
-             ;; If the computation was killed, restart it after some time.
-             (when (eq state 'killed)
-               (setq timer (run-at-time debounce nil start request)))
-             (setq request nil))))
+         ;; Perform the computation when the candidates are requested,
+         ;; since then the computation can be interrupted by the completion UI.
+         (when request
+           (let ((state 'killed))
+             (unwind-protect
+                 (progn
+                   (funcall async 'indicator 'running)
+                   (redisplay)
+                   ;; Run computation
+                   (let ((response (funcall fun request)))
+                     ;; Flush and update candidate list
+                     (funcall async 'flush)
+                     (funcall async response)
+                     (setq state 'finished current request request nil)))
+               (funcall async 'indicator state))))
+         (funcall async nil))
         ((pred stringp)
-         (funcall cancel)
-         (if (or (length< action min-input) (equal action current))
-             (funcall async 'indicator 'finished)
-           (funcall start action)))
-        ((or 'destroy 'cancel)
-         (funcall cancel)
-         (funcall async action))
+         (unless (equal action current)
+           ;; Do not perform the computation immediately, only when the
+           ;; candidates are requested.
+           (setq request action)
+           (funcall async 'refresh)))
         (_ (funcall async action))))))
 
 (defun consult--dynamic-collection (fun &optional debounce min-input)
@@ -2429,8 +2416,8 @@ See `consult--dynamic-compute' for the arguments FUN, DEBOUNCE and MIN-INPUT."
   (thread-first
     (consult--async-sink)
     (consult--async-indicator)
-    (consult--dynamic-compute fun debounce min-input)
-    (consult--async-throttle)
+    (consult--dynamic-compute fun)
+    (consult--async-throttle nil debounce)
     (consult--async-split nil min-input)))
 
 ;;;; Special keymaps
