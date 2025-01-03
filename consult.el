@@ -2293,17 +2293,21 @@ PROPS are optional properties passed to `make-process'."
          (funcall async action))
         (_ (funcall async action))))))
 
-(defun consult--async-highlight (async builder)
+(defun consult--async-highlight (async highlight)
   "Return a new ASYNC function with candidate highlighting.
-BUILDER is the command line builder function."
-  (let (highlight)
+HIGHLIGHT is a function called with the input string.  It should return
+a function which mutably adds highlighting to a candidate string.
+HIGHLIGHT can also return a pair where the second element is the actual
+highlight function."
+  (let (hl)
     (lambda (action)
       (cond
        ((stringp action)
-        (setq highlight (cdr (funcall builder action)))
+        (setq hl (funcall highlight action))
+        (unless (functionp hl) (setq hl (cdr hl)))
         (funcall async action))
-       ((and (consp action) highlight)
-        (mapc highlight action)
+       ((and (consp action) hl)
+        (mapc hl action)
         (funcall async action))
        (t (funcall async action))))))
 
