@@ -2386,8 +2386,8 @@ FUN computes the candidates given the input."
     (lambda (action)
       (pcase action
         ('nil
-         ;; Perform the computation when the candidates are requested,
-         ;; since then the computation can be interrupted by the completion UI.
+         ;; Perform the computation when the candidates are requested, since
+         ;; then the computation can be interrupted by the completion UI.
          (when request
            (let ((state 'killed))
              (unwind-protect
