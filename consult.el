@@ -141,7 +141,7 @@ This applies to asynchronous commands, e.g., `consult-grep'."
   :type '(alist :key-type symbol :value-type plist))
 
 (defcustom consult-async-indicator
-  `((running  ?*  consult-async-running)
+  '((running  ?*  consult-async-running)
     (finished ?:  consult-async-finished)
     (killed   ?\; consult-async-failed)
     (failed   ?!  consult-async-failed))
@@ -2128,14 +2128,20 @@ ASYNC is the async sink."
              all)
          (copy-sequence items))))))
 
-(defun consult--async-merge-sink (sink tail idx)
+(defun consult--async-merge-sink (sink indicator tail idx)
   "Create sink for the async sub-functions which merges the sub-lists.
 SINK is the candidate sink.
+INDICATOR is a vector of indicator symbols.
 TAIL is a vector of list tail links for each sub-list.
 IDX is the index of the corresponding link in TAIL."
   (lambda (action)
-    ;; Ignore all actions except flush and append for now.
     (pcase action
+      (`[indicator ,state]
+       (aset indicator (1- idx) state)
+       (let* ((severity [nil finished running killed failed])
+              (state (aref severity (cl-loop for i across indicator maximize
+                                             (or (seq-position severity i) 0)))))
+         (funcall sink `[indicator ,state])))
       ('flush
        ;; Flush items if sub-list exists.
        (when-let ((tl (aref tail idx)) (pre t))
@@ -2162,11 +2168,12 @@ IDX is the index of the corresponding link in TAIL."
 
 (defun consult--async-merge (sink funs)
   "Create merged async function from multiple FUNS which drains into SINK."
-  (let* ((tail (make-vector (1+ (length funs)) nil))
+  (let* ((indicator (make-vector (length funs)  nil))
+         (tail (make-vector (1+ (length indicator)) nil))
          (asyncs
           (seq-map-indexed
            (lambda (fun idx)
-             (funcall fun (consult--async-merge-sink sink tail (1+ idx))))
+             (funcall fun (consult--async-merge-sink sink indicator tail (1+ idx))))
            funs)))
     (aset tail 0 (list nil)) ;; Guard element
     (lambda (action)
@@ -2932,6 +2939,7 @@ Attach source IDX and SRC properties to each item."
   (thread-first
     (consult--async-sink)
     (consult--async-refresh-timer)
+    (consult--async-indicator)
     (consult--async-merge
      (cl-loop
       for idx from 0 for src across sources collect
