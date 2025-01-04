@@ -2390,7 +2390,8 @@ highlight function."
         (unless (functionp hl) (setq hl (cdr hl)))
         (funcall async action))
        ((and (consp action) hl)
-        (mapc hl action)
+        (dolist (x action)
+          (funcall hl (if (consp x) (car x) x)))
         (funcall async action))
        (t (funcall async action))))))
 
