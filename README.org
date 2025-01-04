@@ -624,8 +624,7 @@ As an example, the bookmark source is defined as follows:
     :action   ,#'consult--bookmark-action))
 #+end_src
 
-Required source fields:
-- =:category= Completion category.
+Either the =:items= or the =:async= source field is required:
 - =:items= List of strings to select from or function returning list of strings.
   The strings can carry metadata in text properties, which is then available to
   the :annotate, :action and :state functions. The list can also consist of
@@ -637,6 +636,7 @@ Required source fields:
 Optional source fields:
 - =:name= Name of the source, used for narrowing, group titles and annotations.
 - =:narrow= Narrowing character or =(character . string)= pair.
+- =:category= Completion category.
 - =:preview-key= Preview key or keys which trigger preview.
 - =:enabled= Function which must return t if the source is enabled.
 - =:hidden= When t candidates of this source are hidden by default.

@@ -2944,7 +2944,7 @@ Attach source IDX and SRC properties to each item."
     (setq items (plist-get src :items)
           items (if (functionp items) (funcall items) items)))
   (let ((face (plist-get src :face))
-        (cat (plist-get src :category)))
+        (cat (or (plist-get src :category) 'general)))
     (cl-loop
      for item in items collect
      (let* ((str (or (car-safe item) item))
@@ -2990,8 +2990,6 @@ Attach source IDX and SRC properties to each item."
          (setq src (if (symbolp src) (symbol-value src) src))
          (unless (xor (plist-member src :async) (plist-member src :items))
            (error "Source must specify either :items or :async"))
-         (unless (plist-get src :category)
-           (error "Source must specify a :category"))
          (funcall (or (plist-get src :enabled) #'always)))
     collect src)))
 
@@ -3053,8 +3051,7 @@ candidate has been created.  The sources of the source list can either be
 symbols of source variables or source values.  Source values must be
 plists with fields from the following list.
 
-Required source fields:
-* :category - Completion category symbol.
+Either the :items or the :async source field is required:
 * :items - List of strings to select from or function returning list of
   strings.  The strings can carry metadata in text properties, which is
   then available to the :annotate, :action and :state functions.  The
@@ -3069,6 +3066,7 @@ Optional source fields:
 * :name - Name of the source as a string, used for narrowing,
   group titles and annotations.
 * :narrow - Narrowing character or (character . string) pair.
+* :category - Completion category symbol.
 * :enabled - Function which must return t if the source is enabled.
 * :hidden - When t candidates of this source are hidden by default.
 * :face - Face used for highlighting the candidates.
