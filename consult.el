@@ -3007,8 +3007,8 @@ Attach source IDX and SRC properties to each item."
              (when selected-fun
                (funcall selected-fun 'return cand)))))))))
 
-(defun consult--multi-table (sources)
-  "Create static or asynchronous completion table for SOURCES."
+(defun consult--multi-collection (sources)
+  "Create static or asynchronous completion function from SOURCES."
   (consult--with-increased-gc
    (if (cl-loop for src across sources thereis (plist-get src :async))
        (consult--multi-async sources)
@@ -3061,10 +3061,10 @@ Optional source fields:
   case.  Note that the source is returned by `consult--multi'
   together with the selected candidate."
   (let* ((sources (consult--multi-enabled-sources sources))
-         (table (consult--multi-table sources))
+         (collection (consult--multi-collection sources))
          (selected
           (apply #'consult--read
-                 table
+                 collection
                  (append
                   options
                   (list
