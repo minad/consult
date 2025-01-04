@@ -557,11 +557,8 @@ We use invalid characters outside the Unicode range.")
 (defvar-local consult--narrow nil
   "Current narrowing key.")
 
-(defvar-local consult--narrow-keys nil
-  "Narrowing prefixes of the current completion.")
-
-(defvar-local consult--narrow-predicate nil
-  "Narrowing predicate of the current completion.")
+(defvar-local consult--narrow-config nil
+  "Narrowing config of the current completion.")
 
 (defvar-local consult--narrow-overlay nil
   "Narrowing indicator overlay.")
@@ -1874,8 +1871,8 @@ This command is used internally by the narrowing system of `consult--read'."
            last-command-event)))
   (consult--require-minibuffer)
   (setq consult--narrow key)
-  (when consult--narrow-predicate
-    (setq minibuffer-completion-predicate (and consult--narrow consult--narrow-predicate)))
+  (when-let ((pred (plist-get consult--narrow-config :predicate)))
+    (setq minibuffer-completion-predicate (and consult--narrow pred)))
   (when consult--narrow-overlay
     (delete-overlay consult--narrow-overlay))
   (when consult--narrow
@@ -1883,9 +1880,9 @@ This command is used internally by the narrowing system of `consult--read'."
           (consult--make-overlay
            (1- (minibuffer-prompt-end)) (minibuffer-prompt-end)
            'before-string
-           (propertize (format " [%s]" (alist-get consult--narrow
-                                                  consult--narrow-keys))
-                       'face 'consult-narrow-indicator))))
+           (format #(" [%s]" 0 5 (face consult-narrow-indicator))
+                   (alist-get consult--narrow
+                              (plist-get consult--narrow-config :keys))))))
   (run-hooks 'consult--completion-refresh-hook))
 
 (defconst consult--narrow-delete
@@ -1902,10 +1899,9 @@ This command is used internally by the narrowing system of `consult--read'."
     "" nil :filter
     ,(lambda (&optional _)
        (let ((str (minibuffer-contents-no-properties)))
-         (when-let (pair (or (and (length= str 1)
-                                  (assoc (aref str 0) consult--narrow-keys))
-                             (and (equal str "")
-                                  (assoc ?\s consult--narrow-keys))))
+         (when-let ((keys (plist-get consult--narrow-config :keys))
+                    (pair (or (and (length= str 1) (assoc (aref str 0) keys))
+                             (and (equal str "") (assoc ?\s keys)))))
            (lambda ()
              (interactive)
              (delete-minibuffer-contents)
@@ -1925,19 +1921,16 @@ to make it available for commands with narrowing."
                  (propertize (key-description (list (car x))) 'face 'consult-key)
                  " "
                  (propertize (cdr x) 'face 'consult-help)))
-              consult--narrow-keys
+              (plist-get consult--narrow-config :keys)
               " ")))
 
-(defun consult--narrow-setup (settings map)
-  "Setup narrowing with SETTINGS and keymap MAP."
-  (if (memq :keys settings)
-      (setq consult--narrow-predicate (plist-get settings :predicate)
-            consult--narrow-keys (plist-get settings :keys))
-    (setq consult--narrow-predicate nil
-          consult--narrow-keys settings))
+(defun consult--narrow-setup (config map)
+  "Setup narrowing with CONFIG and keymap MAP."
+  (setq consult--narrow-config (if (memq :keys config)
+                                     config (list :keys config)))
   (when-let ((key consult-narrow-key))
     (setq key (consult--key-parse key))
-    (dolist (pair consult--narrow-keys)
+    (dolist (pair (plist-get consult--narrow-config :keys))
       (define-key map (vconcat key (vector (car pair)))
                   (cons (cdr pair) #'consult-narrow))))
   (when-let ((widen (consult--widen-key)))
@@ -2624,7 +2617,7 @@ ASYNC must be non-nil for async completion functions."
 
 KEYMAP is a command-specific keymap.
 ASYNC must be non-nil for async completion functions.
-NARROW are the narrow settings.
+NARROW is the narrowing configuration.
 PREVIEW-KEY are the preview keys."
   (let ((old-map (current-local-map))
         (map (make-sparse-keymap)))
