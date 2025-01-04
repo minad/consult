@@ -2857,11 +2857,11 @@ KEYMAP is a command-specific keymap."
 
 (defsubst consult--multi-visible-p (src)
   "Is SRC visible according to `consult--narrow'?"
-  (or (pcase (or (plist-get src :narrow) -1)
-        ((and narrow `((,_ . ,_) . ,_)) (assq consult--narrow narrow))
-        (`(,k . ,_) (eq consult--narrow k))
-        (k (eq consult--narrow k)))
-      (not (or consult--narrow (plist-get src :hidden)))))
+  (if-let ((n consult--narrow))
+      (pcase (plist-get src :narrow)
+        ((and ks `((,_ . ,_) . ,_)) (assq n ks))
+        ((or `(,k . ,_) k) (eq n k)))
+    (not (plist-get src :hidden))))
 
 (defun consult--multi-predicate (sources cand)
   "Predicate function called for each candidate CAND given SOURCES."
