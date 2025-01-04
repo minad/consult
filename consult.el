@@ -2942,15 +2942,19 @@ Attach source IDX and SRC properties to each item."
     (consult--async-merge
      (cl-loop
       for idx from 0 for src across sources collect
-      (let ((idx idx) (src src))
+      (let ((idx idx) (src src)
+            (pred (apply-partially #'consult--multi-visible-p src)))
         (if-let ((async (plist-get src :async)))
             (lambda (sink)
               (consult--async-predicate
                (funcall async (consult--async-transform
                                sink consult--multi-candidates idx src))
-               (apply-partially #'consult--multi-visible-p src)))
+               pred))
           (let ((cands (consult--multi-candidates idx src)))
-            (lambda (sink) (consult--async-static sink cands)))))))
+            (lambda (sink)
+              (consult--async-predicate
+               (consult--async-static sink cands)
+               pred)))))))
     (consult--async-split nil 0)))
 
 (defun consult--multi-enabled-sources (sources)
