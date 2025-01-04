@@ -1980,9 +1980,8 @@ PLIST is the splitter configuration, including the separator."
             ,@(and (match-end 2) `((,(match-beginning 2) . ,(match-end 2)))))
         `(,str ,(length str))))))
 
-(defun consult--split-setup (fun initial)
-  "Setup splitting completion style.
-FUN is the splitter function and INITIAL is the initial input."
+(defun consult--split-setup (split)
+  "Setup splitting completion style with splitter function SPLIT."
   (let* ((styles completion-styles)
          (catdef completion-category-defaults)
          (catovr completion-category-overrides)
@@ -1990,28 +1989,22 @@ FUN is the splitter function and INITIAL is the initial input."
                 (let ((completion-styles styles)
                       (completion-category-defaults catdef)
                       (completion-category-overrides catovr)
-                      (pos (cadr (funcall fun str))))
+                      (pos (cadr (funcall split str))))
                   (pcase (completion-try-completion (substring str pos) table pred
                                                     (max 0 (- point pos)))
                     ('t t)
                     (`(,newstr . ,newpt)
                      (setq newstr (concat (substring str 0 pos) newstr))
-                     (if (eq (cadr (funcall fun newstr)) pos)
+                     (if (eq (cadr (funcall split newstr)) pos)
                          (cons newstr (+ pos newpt))
                        (cons str point)))))))
          (all (lambda (str table pred point)
                 (let ((completion-styles styles)
                       (completion-category-defaults catdef)
                       (completion-category-overrides catovr)
-                      (pos (cadr (funcall fun str))))
+                      (pos (cadr (funcall split str))))
                   (completion-all-completions (substring str pos) table pred
                                               (max 0 (- point pos)))))))
-    (when initial
-      (save-excursion
-        (goto-char (minibuffer-prompt-end))
-        (insert-before-markers
-         (propertize initial 'face 'consult-async-split
-                     'consult--async-split t 'rear-nonsticky t))))
     (setq-local completion-styles-alist (cons `(consult--split ,try ,all "")
                                               completion-styles-alist)
                 completion-styles '(consult--split)
@@ -2256,8 +2249,11 @@ MIN-INPUT is the minimum input length and defaults to
     (pcase action
       ('setup
        (consult--split-setup (let ((fun (plist-get style :function)))
-                               (lambda (str) (funcall fun str style)))
-                             (plist-get style :initial))
+                               (lambda (str) (funcall fun str style))))
+       (when-let ((initial (plist-get style :initial)))
+         (save-excursion
+           (goto-char (minibuffer-prompt-end))
+           (insert-before-markers initial)))
        (funcall async 'setup))
       ((pred stringp)
        (pcase-let ((`(,input ,_ . ,highlights)
@@ -2266,7 +2262,7 @@ MIN-INPUT is the minimum input length and defaults to
          ;; Highlight punctuation characters
          (pcase-dolist (`(,x . ,y) highlights)
            (let ((x (+ end x)) (y (+ end y)))
-             (add-text-properties x y '(consult--async-split t rear-nonsticky t))
+             (add-text-properties x y '(consult--split t rear-nonsticky t))
              (add-face-text-property x y 'consult-async-split)))
          (funcall async input)))
       (_ (funcall async action)))))
@@ -2601,9 +2597,9 @@ ASYNC must be non-nil for async completion functions."
             (all-completions "" minibuffer-completion-table
                              minibuffer-completion-predicate)))))
   ;; Prefix all items with the initial input from the async split style.
-  (when (and async (get-text-property (minibuffer-prompt-end) 'consult--async-split))
+  (when (and async (get-text-property (minibuffer-prompt-end) 'consult--split))
     (let* ((beg (minibuffer-prompt-end))
-           (end (or (text-property-any beg (point-max) 'consult--async-split nil)
+           (end (or (text-property-any beg (point-max) 'consult--split nil)
                     (point-max)))
            (pre (buffer-substring beg end)))
       (cl-loop for item in-ref items do
