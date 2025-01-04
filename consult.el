@@ -2200,12 +2200,12 @@ ASYNC is the async sink. The messages are prefixed with PREFIX."
 (defun consult--async-split-initial (initial)
   "Deprecated function, return INITIAL unchanged."
   initial)
-(make-obsolete 'consult--async-split-initial "Not needed anymore." "1.9")
+(make-obsolete 'consult--async-split-initial "Not needed anymore, use INITIAL string directly." "1.9")
 
 (defun consult--async-split-thingatpt (thing)
   "Deprecated function, return THING at point."
   (thing-at-point thing))
-(make-obsolete 'consult--async-split-thingatpt "Not needed anymore." "1.9")
+(make-obsolete 'consult--async-split-thingatpt "Not needed anymore, use `thing-at-point' instead." "1.9")
 
 (defun consult--async-predicate (async pred)
   "Create async function, running only if PRED is non-nil.
