@@ -10,6 +10,9 @@
 - ~consult--multi~: Add support for ~:async~ sources. See the docstring of
   ~consult--multi~ and commit 1d760971c110c573228b62043e5a4ea295662353 for
   details.
+- ~consult--async-split-thingatpt~ and ~consult--async-split-initial~: Mark as
+  obsolete. These functions are not needed anymore since ~consult--read~ will
+  automatically insert the splitter prefix if needed.
 
 * Version 1.9 (2024-12-22)
 

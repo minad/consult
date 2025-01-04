@@ -193,8 +193,7 @@
        :category 'consult-info
        :history '(:input consult-info--history)
        :group #'consult-info--group
-       :initial (consult--async-split-initial "")
-       :add-history (consult--async-split-thingatpt 'symbol)
+       :add-history (thing-at-point 'symbol)
        :lookup #'consult--lookup-member))))
 
 (provide 'consult-info)

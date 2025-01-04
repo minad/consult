@@ -1980,8 +1980,9 @@ PLIST is the splitter configuration, including the separator."
             ,@(and (match-end 2) `((,(match-beginning 2) . ,(match-end 2)))))
         `(,str ,(length str))))))
 
-(defun consult--split-setup (split)
-  "Setup splitting completion style with splitter function SPLIT."
+(defun consult--split-setup (fun initial)
+  "Setup splitting completion style.
+FUN is the splitter function and INITIAL is the initial input."
   (let* ((styles completion-styles)
          (catdef completion-category-defaults)
          (catovr completion-category-overrides)
@@ -1989,22 +1990,28 @@ PLIST is the splitter configuration, including the separator."
                 (let ((completion-styles styles)
                       (completion-category-defaults catdef)
                       (completion-category-overrides catovr)
-                      (pos (cadr (funcall split str))))
+                      (pos (cadr (funcall fun str))))
                   (pcase (completion-try-completion (substring str pos) table pred
                                                     (max 0 (- point pos)))
                     ('t t)
                     (`(,newstr . ,newpt)
                      (setq newstr (concat (substring str 0 pos) newstr))
-                     (if (eq (cadr (funcall split newstr)) pos)
+                     (if (eq (cadr (funcall fun newstr)) pos)
                          (cons newstr (+ pos newpt))
                        (cons str point)))))))
          (all (lambda (str table pred point)
                 (let ((completion-styles styles)
                       (completion-category-defaults catdef)
                       (completion-category-overrides catovr)
-                      (pos (cadr (funcall split str))))
+                      (pos (cadr (funcall fun str))))
                   (completion-all-completions (substring str pos) table pred
                                               (max 0 (- point pos)))))))
+    (when initial
+      (save-excursion
+        (goto-char (minibuffer-prompt-end))
+        (insert-before-markers
+         (propertize initial 'face 'consult-async-split
+                     'consult--async-split t 'rear-nonsticky t))))
     (setq-local completion-styles-alist (cons `(consult--split ,try ,all "")
                                               completion-styles-alist)
                 completion-styles '(consult--split)
@@ -2190,20 +2197,15 @@ ASYNC is the async sink. The messages are prefixed with PREFIX."
     (consult--async-log "%s: %S\n" prefix action)
     (funcall async action)))
 
-(defun consult--async-split-style ()
-  "Return the async splitting style function and initial string."
-  (or (alist-get consult-async-split-style consult-async-split-styles-alist)
-      (user-error "Splitting style `%s' not found" consult-async-split-style)))
-
 (defun consult--async-split-initial (initial)
-  "Return initial string for async command.
-INITIAL is the additional initial string."
-  (concat (plist-get (consult--async-split-style) :initial) initial))
+  "Deprecated function, return INITIAL unchanged."
+  initial)
+(make-obsolete 'consult--async-split-initial "Not needed anymore." "1.9")
 
 (defun consult--async-split-thingatpt (thing)
-  "Return THING at point with async initial prefix."
-  (when-let (str (thing-at-point thing))
-    (consult--async-split-initial str)))
+  "Deprecated function, return THING at point."
+  (thing-at-point thing))
+(make-obsolete 'consult--async-split-thingatpt "Not needed anymore." "1.9")
 
 (defun consult--async-predicate (async pred)
   "Create async function, running only if PRED is non-nil.
@@ -2238,31 +2240,33 @@ MIN-INPUT is the minimum input length and defaults to
                    'cancel))
       (funcall async action))))
 
-(defun consult--async-split (async &optional split min-input)
+(defun consult--async-split (async &optional style min-input)
   "Create async function, which splits the input string.
 ASYNC is the async sink.
-SPLIT is the splitting function and defaults to the splitting style
+STYLE is the splitting style and defaults to the splitting style
 configured by `consult-async-split-style'.
 MIN-INPUT is the minimum input length and defaults to
 `consult-async-min-input'."
-  (unless split
-    (let* ((style (consult--async-split-style))
-           (fn (plist-get style :function)))
-      (setq split (lambda (str) (funcall fn str style)))))
+  (setq style (or style consult-async-split-style)
+        style (or (alist-get style consult-async-split-styles-alist)
+                  (user-error "Splitting style `%s' not found" style)))
   (unless (eq min-input 0)
     (setq async (consult--async-min-input async min-input)))
   (lambda (action)
     (pcase action
       ('setup
-       (consult--split-setup split)
+       (consult--split-setup (let ((fun (plist-get style :function)))
+                               (lambda (str) (funcall fun str style)))
+                             (plist-get style :initial))
        (funcall async 'setup))
       ((pred stringp)
-       (pcase-let ((`(,input ,_ . ,highlights) (funcall split action))
+       (pcase-let ((`(,input ,_ . ,highlights)
+                    (funcall (plist-get style :function) action style))
                    (end (minibuffer-prompt-end)))
          ;; Highlight punctuation characters
          (pcase-dolist (`(,x . ,y) highlights)
            (let ((x (+ end x)) (y (+ end y)))
-             (put-text-property x y 'rear-nonsticky t)
+             (add-text-properties x y '(consult--async-split t rear-nonsticky t))
              (add-face-text-property x y 'consult-async-split)))
          (funcall async input)))
       (_ (funcall async action)))))
@@ -2581,21 +2585,31 @@ Note that `consult-narrow-key' and `consult-widen-key' are bound dynamically."
 (defun consult--add-history (async items)
   "Add ITEMS to the minibuffer future history.
 ASYNC must be non-nil for async completion functions."
-  (delete-dups
-   (append
-    ;; the defaults are at the beginning of the future history
-    (ensure-list minibuffer-default)
-    ;; then our custom items
-    (remove "" (remq nil (ensure-list items)))
-    ;; Add all the completions for non-async commands.  For async commands this
-    ;; feature is not useful, since if one selects a completion candidate, the
-    ;; async search is restarted using that candidate string.  This usually does
-    ;; not yield a desired result since the async input uses a special format,
-    ;; e.g., `#grep#filter'.
-    (unless async
-      (all-completions ""
-                       minibuffer-completion-table
-                       minibuffer-completion-predicate)))))
+  (setq items
+        (delete-dups
+         (append
+          ;; Defaults are at the beginning of the future history
+          (ensure-list minibuffer-default)
+          ;; Custom items
+          (remove "" (remq nil (ensure-list items)))
+          ;; Add all completions for non-async commands.  For async commands
+          ;; this feature is not useful, since if one selects a completion
+          ;; candidate, the async search is restarted using that candidate
+          ;; string.  This usually does not yield a desired result since the
+          ;; async input uses a special format, e.g., `#grep#filter'.
+          (unless async
+            (all-completions "" minibuffer-completion-table
+                             minibuffer-completion-predicate)))))
+  ;; Prefix all items with the initial input from the async split style.
+  (when (and async (get-text-property (minibuffer-prompt-end) 'consult--async-split))
+    (let* ((beg (minibuffer-prompt-end))
+           (end (or (text-property-any beg (point-max) 'consult--async-split nil)
+                    (point-max)))
+           (pre (buffer-substring beg end)))
+      (cl-loop for item in-ref items do
+               (unless (string-prefix-p pre item)
+                 (setf item (concat pre item))))))
+  items)
 
 (defun consult--setup-keymap (keymap async narrow preview-key)
   "Setup minibuffer keymap.
@@ -3569,16 +3583,13 @@ to `consult--buffer-query'."
      :sort nil
      :require-match t
      ;; Always add last Isearch string to future history
-     :add-history (mapcar #'consult--async-split-initial
-                          (delq nil (list (thing-at-point 'symbol)
-                                          isearch-string)))
+     :add-history (delq nil (list (thing-at-point 'symbol) isearch-string))
      :history '(:input consult--line-multi-history)
      :lookup #'consult--line-multi-match
      ;; Add `isearch-string' as initial input if starting from Isearch
-     :initial (consult--async-split-initial
-               (or initial
-                   (and isearch-mode
-                        (prog1 isearch-string (isearch-done)))))
+     :initial (or initial
+                  (and isearch-mode
+                       (prog1 isearch-string (isearch-done))))
      :state (consult--location-state (lambda () (funcall collection nil)))
      :group #'consult--line-multi-group)))
 
@@ -4977,8 +4988,8 @@ input."
      :prompt prompt
      :lookup #'consult--lookup-member
      :state (consult--grep-state)
-     :initial (consult--async-split-initial initial)
-     :add-history (consult--async-split-thingatpt 'symbol)
+     :initial initial
+     :add-history (thing-at-point 'symbol)
      :require-match t
      :category 'consult-grep
      :group #'consult--prefix-group
@@ -5137,8 +5148,8 @@ INITIAL is initial input."
    :prompt prompt
    :sort nil
    :require-match t
-   :initial (consult--async-split-initial initial)
-   :add-history (consult--async-split-thingatpt 'filename)
+   :initial initial
+   :add-history (thing-at-point 'filename)
    :category 'file
    :history '(:input consult--find-history)))
 
@@ -5287,8 +5298,8 @@ the asynchronous search."
         :require-match t
         :category 'consult-man
         :lookup (apply-partially #'consult--lookup-prop 'consult-man)
-        :initial (consult--async-split-initial initial)
-        :add-history (consult--async-split-thingatpt 'symbol)
+        :initial initial
+        :add-history (thing-at-point 'symbol)
         :history '(:input consult--man-history))))
 
 ;;;; Preview at point in completions buffers
