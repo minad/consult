@@ -627,7 +627,10 @@ As an example, the bookmark source is defined as follows:
 Required source fields:
 - =:category= Completion category.
 - =:items= List of strings to select from or function returning list of strings.
-  A list of cons cells is not supported.
+  The strings can carry metadata in text properties, which is then available to
+  the :annotate, :action and :state functions. The list can also consist of
+  pairs, with the string in the =car= used for display and the =cdr= the actual
+  candidate.
 - =:async= Alternative to =:items= for asynchronous sources. See the docstring for
   details.
 

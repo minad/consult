@@ -3055,10 +3055,11 @@ plists with fields from the following list.
 
 Required source fields:
 * :category - Completion category symbol.
-* :items - List of strings to select from or function returning
-  list of strings.  Note that the strings can use text properties
-  to carry metadata, which is then available to the :annotate,
-  :action and :state functions.
+* :items - List of strings to select from or function returning list of
+  strings.  The strings can carry metadata in text properties, which is
+  then available to the :annotate, :action and :state functions.  The
+  list can also consist of pairs, with the string in the `car' used for
+  display and the `cdr' the actual candidate.
 * :async - Alternative to :items for asynchronous sources.  The function
   receives an asynchronous sink as argument and should return a new
   asynchronous function taking an action argument as documented by
@@ -4714,8 +4715,7 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
               (when (and (not (gethash file ht)) (string-prefix-p root file))
                 (let ((part (substring file len)))
                   (when (equal part "") (setq part "./"))
-                  (put-text-property 0 1 'multi-category `(file . ,file) part)
-                  (push part items))))))))
+                  (push (cons part file) items))))))))
   "Project file source for `consult-buffer'.")
 
 (defvar consult--source-project-root
