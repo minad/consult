@@ -2406,7 +2406,7 @@ The THROTTLE delay defaults to `consult-async-input-throttle'.
 The DEBOUNCE delay defaults to `consult-async-input-debounce'."
   (setq throttle (or throttle consult-async-input-throttle)
         debounce (or debounce consult-async-input-debounce))
-  (let* ((input nil) (timer (timer-create)) (last 0))
+  (let ((timer (timer-create)) (last 0) debounce-fun input)
     (lambda (action)
       (pcase action
         ((pred stringp)
@@ -2419,10 +2419,21 @@ The DEBOUNCE delay defaults to `consult-async-input-debounce'."
            (timer-set-time
             timer
             (timer-relative-time
-             nil (if input (max debounce (- (+ last throttle) (float-time))) 0)))
+             nil (max (funcall debounce-fun)
+                      (- (+ last throttle) (float-time)))))
            (setq input action)
            (timer-activate timer))
          nil)
+        ('setup
+         (setq debounce-fun
+               (consult--in-buffer
+                (let ((initial (minibuffer-contents-no-properties)))
+                  (lambda ()
+                    ;; Debounce only if the user entered new input.  Start
+                    ;; immediately if the minibuffer is pre-filled.
+                    (if (equal initial (minibuffer-contents-no-properties))
+                        0 debounce)))))
+         (funcall async action))
         ((or 'cancel 'destroy)
          (cancel-timer timer)
          (funcall async action))
