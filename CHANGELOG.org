@@ -13,6 +13,7 @@
 - ~consult--async-split-thingatpt~ and ~consult--async-split-initial~: Mark as
   obsolete. These functions are not needed anymore since ~consult--read~ will
   automatically insert the splitter prefix if needed.
+- Remove obsolete ~consult-yank-rotate~.
 
 * Version 1.9 (2024-12-22)
 

@@ -394,9 +394,6 @@ mode hooks, e.g., `prog-mode-hook'."
 Each element of the list must have the form (char name handlers...)."
   :type '(alist :key-type character :value-type (cons string (repeat function))))
 
-(define-obsolete-variable-alias
-  'consult-yank-rotate 'yank-from-kill-ring-rotate "1.8")
-
 ;;;; Faces
 
 (defgroup consult-faces nil
