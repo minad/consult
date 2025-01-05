@@ -1899,7 +1899,7 @@ This command is used internally by the narrowing system of `consult--read'."
        (let ((str (minibuffer-contents-no-properties)))
          (when-let ((keys (plist-get consult--narrow-config :keys))
                     (pair (or (and (length= str 1) (assoc (aref str 0) keys))
-                             (and (equal str "") (assoc ?\s keys)))))
+                              (and (equal str "") (assoc ?\s keys)))))
            (lambda ()
              (interactive)
              (delete-minibuffer-contents)
@@ -1925,7 +1925,7 @@ to make it available for commands with narrowing."
 (defun consult--narrow-setup (config map)
   "Setup narrowing with CONFIG and keymap MAP."
   (setq consult--narrow-config (if (memq :keys config)
-                                     config (list :keys config)))
+                                   config (list :keys config)))
   (when-let ((key consult-narrow-key))
     (setq key (consult--key-parse key))
     (dolist (pair (plist-get consult--narrow-config :keys))
