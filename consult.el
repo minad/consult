@@ -3107,9 +3107,11 @@ and should not be overwritten, except in in special scenarios.
 The function returns the selected candidate in the form (cons candidate
 source-plist).  The plist has the key :match with a value nil if the
 candidate does not exist, t if the candidate exists and `new' if the
-candidate has been created.  The sources of the source list can either be
-symbols of source variables or source values.  Source values must be
-plists with fields from the following list.
+candidate has been created.
+
+The sources of the source list can either be symbols of source variables
+or source values.  Sources which are nil are ignored.  Source values
+must be plists with the following fields.
 
 Either the :items or the :async source field is required:
 * :items - List of strings to select from or function returning list of
