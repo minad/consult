@@ -627,7 +627,7 @@ As an example, the bookmark source is defined as follows:
 Either the =:items= or the =:async= source field is required:
 - =:items= List of strings to select from or function returning list of strings.
   The strings can carry metadata in text properties, which is then available to
-  the :annotate, :action and :state functions. The list can also consist of
+  the =:annotate=, =:action= and =:state= functions. The list can also consist of
   pairs, with the string in the =car= used for display and the =cdr= the actual
   candidate.
 - =:async= Alternative to =:items= for asynchronous sources. See the docstring for
@@ -635,7 +635,7 @@ Either the =:items= or the =:async= source field is required:
 
 Optional source fields:
 - =:name= Name of the source, used for narrowing, group titles and annotations.
-- =:narrow= Narrowing character or =(character . string)= pair.
+- =:narrow= Narrowing character, =(char . string)= pair or list of pairs.
 - =:category= Completion category.
 - =:preview-key= Preview key or keys which trigger preview.
 - =:enabled= Function which must return t if the source is enabled.

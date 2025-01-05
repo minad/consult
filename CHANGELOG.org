@@ -4,16 +4,21 @@
 
 * Development
 
-- Add customizable variable ~consult-async-indicator~.
-- ~consult-completion-in-region~: When inside minibuffer, use minibuffer content
-  as prompt.
-- ~consult--multi~: Add support for ~:async~ sources. See the docstring of
-  ~consult--multi~ and commit 1d760971c110c573228b62043e5a4ea295662353 for
-  details.
-- ~consult--async-split-thingatpt~ and ~consult--async-split-initial~: Mark as
-  obsolete. These functions are not needed anymore since ~consult--read~ will
-  automatically insert the splitter prefix if needed.
-- Remove obsolete ~consult-yank-rotate~.
+- *BREAKING CHANGE*: New async API
+  + Async functions must have the uniform curried form ~(lambda (sink) (lambda
+    (action) ...)~ and are composed with ~consult--async-pipeline~. See the
+    docstring of ~consult--async-pipeline~ for details.
+  + ~consult--read~: New ~:async-wrap~ keyword argument.
+  + ~consult--multi~: Add support for ~:async~ sources.
+  + ~consult--async-refresh-timer~ and ~consult--async-refresh-immediate~: Replaced by
+    ~consult--async-refresh~ with a ~DELAY~ argument.
+  + ~consult--async-split-thingatpt~ and ~consult--async-split-initial~: Removed
+    since ~consult--read~ automatically inserts the splitter prefix if needed.
+- Minor changes:
+  + Remove obsolete ~consult-yank-rotate~.
+  + Add customizable variable ~consult-async-indicator~.
+  + ~consult-completion-in-region~: When inside minibuffer, use minibuffer content
+    as prompt.
 
 * Version 1.9 (2024-12-22)
 
