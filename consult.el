@@ -2929,10 +2929,10 @@ KEYMAP is a command-specific keymap."
       ;; Non-existing Tofu'ed candidate submitted, e.g., via Embark
       `(,(substring selected 0 -1) :match nil ,@(consult--multi-source sources selected)))))
 
-(defun consult--multi-candidates (idx src &optional items)
+(defun consult--multi-candidates (idx src items)
   "Create completion candidate strings from ITEMS.
 Attach source IDX and SRC properties to each item."
-  (when (plist-member src :items)
+  (unless (listp items)
     (setq items (plist-get src :items)
           items (if (functionp items) (funcall items) items)))
   (let ((face (plist-get src :face))
@@ -2966,7 +2966,7 @@ Attach source IDX and SRC properties to each item."
                (funcall async (consult--async-transform
                                sink consult--multi-candidates idx src))
                pred))
-          (let ((cands (consult--multi-candidates idx src)))
+          (let ((cands (consult--multi-candidates idx src t)))
             (lambda (sink)
               (consult--async-predicate
                (consult--async-static sink cands)
@@ -3025,7 +3025,7 @@ Attach source IDX and SRC properties to each item."
    (if (cl-loop for src across sources thereis (plist-get src :async))
        (consult--multi-async sources)
      (cl-loop for idx from 0 for src across sources nconc
-              (consult--multi-candidates idx src)))))
+              (consult--multi-candidates idx src t)))))
 
 (defun consult--multi (sources &rest options)
   "Select from candidates taken from a list of SOURCES.
