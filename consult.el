@@ -1577,18 +1577,21 @@ The function can be used as the `:state' argument of `consult--read'."
                                (vend (progn (end-of-visual-line) (point)))
                                (end (pos-eol)))
                            (consult--make-overlay vbeg (if (= vend end) (1+ end) vend)
-                                                  'face 'consult-preview-line
-                                                  'window (selected-window)
-                                                  'priority 1))))))
+                                                  'category 'consult-preview-line-overlay
+                                                  'window (selected-window)))))))
             (dolist (match (cdr-safe cand))
               (push (consult--make-overlay (+ (point) (car match))
                                            (+ (point) (cdr match))
-                                           'face 'consult-preview-match
-                                           'window (selected-window)
-                                           'priority 2)
+                                           'category 'consult-preview-match-overlay
+                                           'window (selected-window))
                     overlays))
             (push (lambda () (mapc #'delete-overlay overlays)) restore))
           (run-hooks 'consult-after-jump-hook))))))
+
+(put 'consult-preview-line-overlay 'face 'consult-preview-line)
+(put 'consult-preview-line-overlay 'priority 1)
+(put 'consult-preview-match-overlay 'face 'consult-preview-match)
+(put 'consult-preview-match-overlay 'priority 2)
 
 (defun consult--jump-state ()
   "The state function used if selecting from a list of candidate positions."
