@@ -2101,7 +2101,9 @@ can be made."
                     (reverse async) sink))))
 
 (defun consult--async-wrap (async)
-  "Wrap ASYNC function with the default pipeline."
+  "Wrap ASYNC function with the default pipeline.
+The default pipeline provides `consult--async-split',
+`consult--async-indicator' and `consult--async-refresh'."
   (consult--async-pipeline
    (consult--async-split)
    async
