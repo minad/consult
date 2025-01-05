@@ -1686,7 +1686,7 @@ The result can be passed as :state argument to `consult--read'." type)
   "Add preview support for FUN.
 See `consult--with-preview' for the arguments
 PREVIEW-KEY, STATE, TRANSFORM, CANDIDATE and SAVE-INPUT."
-  (let ((mb-input "") mb-narrow selected timer previewed)
+  (let ((mb-input "") (timer (timer-create)) mb-narrow selected previewed)
     (minibuffer-with-setup-hook
         (if (and state preview-key)
             (lambda ()
@@ -1696,9 +1696,7 @@ PREVIEW-KEY, STATE, TRANSFORM, CANDIDATE and SAVE-INPUT."
                       (lambda ()
                         (when (= (recursion-depth) depth)
                           (remove-hook 'minibuffer-exit-hook hook)
-                          (when timer
-                            (cancel-timer timer)
-                            (setq timer nil))
+                          (cancel-timer timer)
                           (with-selected-window (consult--original-window)
                             ;; STEP 3: Reset preview
                             (when previewed
@@ -1726,9 +1724,7 @@ PREVIEW-KEY, STATE, TRANSFORM, CANDIDATE and SAVE-INPUT."
                             (with-selected-window win
                               (when-let ((transformed (funcall transform narrow input cand))
                                          (debounce (consult--preview-key-debounce preview-key transformed)))
-                                (when timer
-                                  (cancel-timer timer)
-                                  (setq timer nil))
+                                (cancel-timer timer)
                                 ;; The transformed candidate may have text
                                 ;; properties, which change the preview display.
                                 ;; This matters for example for `consult-grep',
@@ -1747,18 +1743,20 @@ PREVIEW-KEY, STATE, TRANSFORM, CANDIDATE and SAVE-INPUT."
                                 ;; thing which is actually previewed.
                                 (unless (equal-including-properties previewed transformed)
                                   (if (> debounce 0)
-                                      (setq timer
-                                            (run-at-time
-                                             debounce nil
-                                             (lambda ()
-                                               ;; Preview only when a completion
-                                               ;; window is selected and when
-                                               ;; the preview window is alive.
-                                               (when (and (consult--completion-window-p)
-                                                          (window-live-p win))
-                                                 (with-selected-window win
-                                                   ;; STEP 2: Preview candidate
-                                                   (funcall state 'preview (setq previewed transformed)))))))
+                                      (progn
+                                        (timer-set-function
+                                         timer
+                                         (lambda ()
+                                           ;; Preview only when a completion
+                                           ;; window is selected and when
+                                           ;; the preview window is alive.
+                                           (when (and (consult--completion-window-p)
+                                                      (window-live-p win))
+                                             (with-selected-window win
+                                               ;; STEP 2: Preview candidate
+                                               (funcall state 'preview (setq previewed transformed))))))
+                                        (timer-set-time timer (timer-relative-time nil debounce))
+                                        (timer-activate timer))
                                     ;; STEP 2: Preview candidate
                                     (funcall state 'preview (setq previewed transformed)))))))))))
               (consult--preview-append-local-pch
@@ -2045,11 +2043,16 @@ BIND is the asynchronous function binding."
                        ;; We use a symbol in order to avoid adding lambdas to
                        ;; the hook variable.  Symbol indirection because of
                        ;; bug#46407.
-                       (hook (make-symbol "consult--async-after-change-hook")))
+                       (hook (make-symbol "consult--async-after-change-hook"))
+                       (timer (timer-create)))
+                  (timer-set-function timer fun)
                   ;; Delay modification hook to ensure that minibuffer is still
                   ;; alive after the change, such that we don't restart a new
                   ;; asynchronous search right before exiting the minibuffer.
-                  (fset hook (lambda (&rest _) (run-at-time 0 nil fun)))
+                  (fset hook (lambda (&rest _)
+                               (unless (memq timer timer-list)
+                                 (timer-set-time timer (current-time))
+                                 (timer-activate timer))))
                   (add-hook 'after-change-functions hook nil 'local)
                   ;; Immediately start asynchronous computation. This may lead
                   ;; to problems unnecessary work if content is inserted shortly
@@ -2505,14 +2508,7 @@ FUN computes the candidates given the input.
 RESTART is the time after which an interrupted computation should be
 restarted and defaults to `consult-async-input-debounce'."
   (setq restart (or restart consult-async-input-debounce))
-  (let* ((current nil)
-         (timer nil)
-         (compute nil)
-         (cancel
-          (lambda ()
-            (when timer
-              (cancel-timer timer)
-              (setq timer nil)))))
+  (let ((timer (timer-create)) (current nil) (compute nil))
     (setq compute
           (lambda (input)
             (let ((state 'killed))
@@ -2531,14 +2527,16 @@ restarted and defaults to `consult-async-input-debounce'."
                 ;; can happen when moving point around.  Then the input doesn't
                 ;; change and the computation isn't started again otherwise.
                 (when (eq state 'killed)
-                  (setq timer (run-at-time restart nil compute input)))
+                  (timer-set-function timer compute (list input))
+                  (timer-set-time timer (timer-relative-time nil restart))
+                  (timer-activate timer))
                 (funcall async `[indicator ,state])))))
     (lambda (action)
       (prog1 (funcall async action)
         (pcase action
-          ((or 'cancel 'destroy) (funcall cancel))
+          ((or 'cancel 'destroy) (cancel-timer timer))
           ((pred stringp)
-           (funcall cancel)
+           (cancel-timer timer)
            (if (equal action current)
                (funcall async [indicator finished])
              (funcall compute action))))))))
