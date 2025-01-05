@@ -2014,15 +2014,15 @@ PLIST is the splitter configuration, including the separator."
   "Setup asynchronous completion in BODY.
 ASYNC is the asynchronous function or completion table."
   (declare (indent 1))
-  `(let ((new-chunk (max read-process-output-max consult--process-chunk))
-         orig-chunk)
+  `(let (new-chunk orig-chunk)
      (minibuffer-with-setup-hook
          ;; Append such that we overwrite the completion style setting of
          ;; `fido-mode'.  See `consult--async-split' and `consult--split-setup'.
          (:append
           (lambda ()
             (when (consult--async-p ,async)
-              (setq orig-chunk read-process-output-max
+              (setq new-chunk (max read-process-output-max consult--process-chunk)
+                    orig-chunk read-process-output-max
                     read-process-output-max new-chunk)
               (funcall ,async 'setup)
               (let* ((mb (current-buffer))
