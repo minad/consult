@@ -2459,7 +2459,7 @@ to `consult-async-refresh-delay'."
            (unless (memq timer timer-list)
              (timer-set-time timer (timer-relative-time nil delay))
              (timer-activate timer)))
-          ('destroy
+          ((or 'destroy 'refresh) ;; 'refresh already forced a refresh
            (cancel-timer timer)))))))
 
 (defmacro consult--async-command (builder &rest args)
