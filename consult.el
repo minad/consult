@@ -2008,62 +2008,55 @@ PLIST is the splitter configuration, including the separator."
 
 (defun consult--async-p (fun)
   "Return t if FUN is an asynchronous completion function."
-  (and (functionp fun)
-       (condition-case nil
-           (progn (funcall fun "" nil 'metadata) nil)
-         (wrong-number-of-arguments t))))
+  (and (functionp fun) (equal (func-arity fun) '(1 . 1))))
 
-(defmacro consult--with-async (bind &rest body)
+(defmacro consult--with-async (async &rest body)
   "Setup asynchronous completion in BODY.
-
-BIND is the asynchronous function binding."
+ASYNC is the asynchronous function or completion table."
   (declare (indent 1))
-  (let ((async (car bind)))
-    `(let ((,async ,@(cdr bind))
-           (new-chunk (max read-process-output-max consult--process-chunk))
-           orig-chunk)
-       (minibuffer-with-setup-hook
-           ;; Append such that we overwrite the completion style setting of
-           ;; `fido-mode'.  See `consult--async-split' and
-           ;; `consult--split-setup'.
-           (:append
-            (lambda ()
-              (when (consult--async-p ,async)
-                (setq orig-chunk read-process-output-max
-                      read-process-output-max new-chunk)
-                (funcall ,async 'setup)
-                (let* ((mb (current-buffer))
-                       (fun (lambda ()
-                              (when-let (win (active-minibuffer-window))
-                                (when (eq (window-buffer win) mb)
-                                  (with-current-buffer mb
-                                    (let ((inhibit-modification-hooks t))
-                                      ;; Push input string to request refresh.
-                                      (funcall ,async (minibuffer-contents-no-properties))))))))
-                       ;; We use a symbol in order to avoid adding lambdas to
-                       ;; the hook variable.  Symbol indirection because of
-                       ;; bug#46407.
-                       (hook (make-symbol "consult--async-after-change-hook"))
-                       (timer (timer-create)))
-                  (timer-set-function timer fun)
-                  ;; Delay modification hook to ensure that minibuffer is still
-                  ;; alive after the change, such that we don't restart a new
-                  ;; asynchronous search right before exiting the minibuffer.
-                  (fset hook (lambda (&rest _)
-                               (unless (memq timer timer-list)
-                                 (timer-set-time timer (current-time))
-                                 (timer-activate timer))))
-                  (add-hook 'after-change-functions hook nil 'local)
-                  ;; Immediately start asynchronous computation. This may lead
-                  ;; to problems unnecessary work if content is inserted shortly
-                  ;; afterwards.
-                  (funcall fun)))))
-         (let ((,async (if (consult--async-p ,async) ,async (lambda (_) ,async))))
-           (unwind-protect
-               ,(macroexp-progn body)
-             (funcall ,async 'destroy)
-             (when (and orig-chunk (eq read-process-output-max new-chunk))
-               (setq read-process-output-max orig-chunk))))))))
+  `(let ((new-chunk (max read-process-output-max consult--process-chunk))
+         orig-chunk)
+     (minibuffer-with-setup-hook
+         ;; Append such that we overwrite the completion style setting of
+         ;; `fido-mode'.  See `consult--async-split' and `consult--split-setup'.
+         (:append
+          (lambda ()
+            (when (consult--async-p ,async)
+              (setq orig-chunk read-process-output-max
+                    read-process-output-max new-chunk)
+              (funcall ,async 'setup)
+              (let* ((mb (current-buffer))
+                     (fun (lambda ()
+                            (when-let (win (active-minibuffer-window))
+                              (when (eq (window-buffer win) mb)
+                                (with-current-buffer mb
+                                  (let ((inhibit-modification-hooks t))
+                                    ;; Push input string to request refresh.
+                                    (funcall ,async (minibuffer-contents-no-properties))))))))
+                     ;; We use a symbol in order to avoid adding lambdas to
+                     ;; the hook variable.  Symbol indirection because of
+                     ;; bug#46407.
+                     (hook (make-symbol "consult--async-after-change-hook"))
+                     (timer (timer-create)))
+                (timer-set-function timer fun)
+                ;; Delay modification hook to ensure that minibuffer is still
+                ;; alive after the change, such that we don't restart a new
+                ;; asynchronous search right before exiting the minibuffer.
+                (fset hook (lambda (&rest _)
+                             (unless (memq timer timer-list)
+                               (timer-set-time timer (current-time))
+                               (timer-activate timer))))
+                (add-hook 'after-change-functions hook nil 'local)
+                ;; Immediately start asynchronous computation. This may lead
+                ;; to problems unnecessary work if content is inserted shortly
+                ;; afterwards.
+                (funcall fun)))))
+       (let ((,async (if (consult--async-p ,async) ,async (lambda (_) ,async))))
+         (unwind-protect
+             ,(macroexp-progn body)
+           (funcall ,async 'destroy)
+           (when (and orig-chunk (eq read-process-output-max new-chunk))
+             (setq read-process-output-max orig-chunk)))))))
 
 (defun consult--async-sink ()
   "Create ASYNC sink function.
@@ -2687,11 +2680,11 @@ PREVIEW-KEY are the preview keys."
                  (when initial-narrow (consult-narrow initial-narrow))
                  (setq-local minibuffer-default-add-function
                              (apply-partially #'consult--add-history (consult--async-p table) add-history))))
-    (consult--with-async (async table)
+    (consult--with-async table
       (consult--with-preview
           preview-key state
           (lambda (narrow input cand)
-            (funcall lookup cand (funcall async nil) input narrow))
+            (funcall lookup cand (funcall table nil) input narrow))
           (apply-partially #'run-hook-with-args-until-success
                            'consult--completion-candidate-hook)
           (pcase-exhaustive history
@@ -2717,7 +2710,7 @@ PREVIEW-KEY are the preview keys."
                 (completing-read
                  prompt
                  (lambda (str pred action)
-                   (let ((result (complete-with-action action (funcall async nil) str pred)))
+                   (let ((result (complete-with-action action (funcall table nil) str pred)))
                      (if (eq action 'metadata)
                          (if (and (eq (car result) 'metadata) (cdr result))
                              ;; Merge metadata
