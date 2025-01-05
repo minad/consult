@@ -3047,8 +3047,7 @@ Attach source IDX and SRC properties to each item."
   (vconcat
    (cl-loop
     for src in sources
-    if (progn
-         (setq src (if (symbolp src) (symbol-value src) src))
+    if (when (setq src (if (symbolp src) (symbol-value src) src))
          (unless (xor (plist-member src :async) (plist-member src :items))
            (error "Source must specify either :items or :async"))
          (funcall (or (plist-get src :enabled) #'always)))
