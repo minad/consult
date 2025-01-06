@@ -2523,12 +2523,17 @@ PROPS are optional properties passed to `make-process'."
            (funcall sink action))
           (_ (funcall sink action)))))))
 
-(defun consult--async-highlight (highlight)
+(defun consult--async-highlight (&optional highlight)
   "Async function with candidate highlighting.
 HIGHLIGHT is a function called with the input string.  It should return
 a function which mutably adds highlighting to a candidate string.
 HIGHLIGHT can also return a pair where the second element is the actual
-highlight function."
+highlight function.  If not given, HIGHLIGHT defaults to a function
+which highlights words."
+  (unless (functionp highlight)
+    (setq highlight
+          (lambda (input)
+            (consult--compile-regexp input 'emacs completion-ignore-case))))
   (lambda (sink)
     (let (hl)
       (lambda (action)
@@ -2632,7 +2637,8 @@ be updated incrementally.
 MIN-INPUT is passed to `consult--async-min-input'.
 THROTTLE and DEBOUNCE are passed to `consult--async-throttle'.
 TRANSFORM is an optional async function transforming the candidate.
-HIGHLIGHT is an optional highlight function."
+HIGHLIGHT is an optional highlight function, can be t for the default
+highlighting function."
   (declare (indent 1))
   (consult--async-pipeline
    (consult--async-min-input min-input)
