@@ -2614,34 +2614,51 @@ The refresh happens after a DELAY, defaulting to
   "Filter candidates by FUN."
   (consult--async-transform (apply-partially #'seq-filter fun)))
 
-(cl-defun consult--dynamic-collection (fun &key min-input throttle debounce)
+;;;; Prebuilt async pipelines
+
+(cl-defun consult--dynamic-collection (fun &key min-input throttle debounce
+                                           transform highlight)
   "Dynamic candidate computation pipeline.
-FUN computes the candidates. It takes either a single input argument or
+FUN computes the candidates.  It takes either a single input argument or
 an input argument and a callback function, if computed candidates should
 be updated incrementally.
 MIN-INPUT is passed to `consult--async-min-input'.
-THROTTLE and DEBOUNCE are passed to `consult--async-throttle'."
+THROTTLE and DEBOUNCE are passed to `consult--async-throttle'.
+TRANSFORM is an optional async function transforming the candidate.
+HIGHLIGHT is an optional highlight function."
+  (declare (indent 1))
   (consult--async-pipeline
    (consult--async-min-input min-input)
    (consult--async-throttle throttle debounce)
-   (consult--async-dynamic fun)))
+   (consult--async-dynamic fun)
+   (or transform #'identity)
+   (if highlight (consult--async-highlight highlight) #'identity)))
 
-(cl-defun consult--process-collection (builder &rest props
-                                               &key min-input throttle debounce
-                                               &allow-other-keys)
+(cl-defun consult--process-collection (builder &rest props &key min-input
+                                               debounce throttle transform
+                                               highlight &allow-other-keys)
   "Asynchronous process pipeline.
 BUILDER is the command line builder function, which takes the
 input string and must either return a list of command line
 arguments or a pair of the command line argument list and a
 highlighting function.
+TRANSFORM is an optional async function transforming the candidate.
+If HIGHLIGHT is non-nil, highlight the candidates.
 MIN-INPUT is passed to `consult--async-min-input'.
 THROTTLE and DEBOUNCE are passed to `consult--async-throttle'.
 Other PROPS are passed to `make-process'."
+  (declare (indent 1))
   (consult--async-pipeline
    (consult--async-min-input min-input)
    (consult--async-throttle throttle debounce)
    (apply #'consult--async-process builder
-          (consult--plist-remove '(:min-input :throttle :debounce) props))))
+          (consult--plist-remove
+           '(:min-input :throttle :debounce :transform :highlight) props))
+   (or transform #'identity)
+   (if highlight
+       (consult--async-highlight
+        (if (functionp highlight) highlight builder))
+     #'identity)))
 
 ;;;; Special keymaps
 
@@ -5075,9 +5092,9 @@ input."
                (default-directory dir)
                (builder (funcall make-builder paths)))
     (consult--read
-     (consult--async-pipeline
-      (consult--process-collection builder :file-handler t) ;; allow tramp
-      (consult--grep-format builder))
+     (consult--process-collection builder
+       :transform (consult--grep-format builder)
+       :file-handler t)
      :prompt prompt
      :lookup #'consult--lookup-member
      :state (consult--grep-state)
@@ -5234,10 +5251,9 @@ BUILDER is the command line builder function.
 PROMPT is the prompt.
 INITIAL is initial input."
   (consult--read
-   (consult--async-pipeline
-    (consult--process-collection builder :file-handler t) ;; allow tramp
-    (consult--async-map (lambda (x) (string-remove-prefix "./" x)))
-    (consult--async-highlight builder))
+   (consult--process-collection builder
+     :transform (consult--async-map (lambda (x) (string-remove-prefix "./" x)))
+     :highlight t :file-handler t) ;; allow tramp
    :prompt prompt
    :sort nil
    :require-match t
@@ -5384,10 +5400,9 @@ similar to `consult-grep'.  See `consult-grep' for more details regarding
 the asynchronous search."
   (interactive)
   (man (consult--read
-        (consult--async-pipeline
-         (consult--process-collection #'consult--man-builder)
-         (consult--async-transform #'consult--man-format)
-         (consult--async-highlight #'consult--man-builder))
+        (consult--process-collection #'consult--man-builder
+          :transform (consult--async-transform #'consult--man-format)
+          :highlight t)
         :prompt "Manual entry: "
         :require-match t
         :category 'consult-man
