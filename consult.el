@@ -2050,7 +2050,7 @@ which describes the updated API."
 (define-obsolete-function-alias 'consult--async-command #'consult--async-deprecation
   "Use `consult--process-collection' instead.")
 
-(defmacro consult--async-pipeline (&rest async)
+(defun consult--async-pipeline (&rest async)
   "Compose ASYNC pipeline.
 
 An async function must accept a single SINK argument and return a
@@ -2102,10 +2102,8 @@ string   Update with the current user input string.  Return nil.
 For the \\='setup action it is guaranteed that the call originates from
 the minibuffer.  For the other actions no assumption about the context
 can be made."
-  (cl-with-gensyms (sink)
-    `(lambda (,sink)
-       ,(seq-reduce (lambda (s f) `(funcall ,f ,s))
-                    (reverse async) sink))))
+  (lambda (sink)
+    (seq-reduce (lambda (s f) (funcall f s)) (reverse async) sink)))
 
 (defun consult--async-wrap (async)
   "Wrap ASYNC function with the default pipeline.
