@@ -2211,7 +2211,7 @@ ASYNC is the asynchronous function or completion table."
 
 (defun consult--async-dynamic (fun &optional restart)
   "Dynamic computation of candidates.
-FUN computes the candidates. It takes either a single input argument or
+FUN computes the candidates.  It takes either a single input argument or
 an input argument and a callback function, if computed candidates should
 be updated incrementally.
 RESTART is the time after which an interrupted computation should be
@@ -2362,14 +2362,12 @@ MIN-INPUT is the minimum input length and defaults to
   (lambda (sink)
     (lambda (action)
       (if (stringp action)
-          (funcall sink
-                   ;; Input can be marked with the `consult--force' property such
-                   ;; that it is passed through in any case.
-                   (if (or (and (not (equal action ""))
-                                (get-text-property 0 'consult--force action))
-                           (>= (length action) min-input))
-                       action
-                     'cancel))
+          ;; Input can be marked with the `consult--force' property such that it
+          ;; is passed through in any case.
+          (funcall sink (if (or (and (not (equal action ""))
+                                     (get-text-property 0 'consult--force action))
+                                (>= (length action) min-input))
+                       action 'cancel))
         (funcall sink action)))))
 
 (defun consult--async-split (&optional style)
@@ -2534,19 +2532,13 @@ which highlights words."
     (setq highlight
           (lambda (input)
             (consult--compile-regexp input 'emacs completion-ignore-case))))
-  (lambda (sink)
-    (let (hl)
-      (lambda (action)
-        (cond
-         ((stringp action)
-          (setq hl (funcall highlight action))
-          (unless (functionp hl) (setq hl (cdr hl)))
-          (funcall sink action))
-         ((and (consp action) hl)
-          (dolist (x action)
-            (funcall hl (if (consp x) (car x) x)))
-          (funcall sink action))
-         (t (funcall sink action)))))))
+  (consult--async-transform-by-input
+   (lambda (input)
+     (when-let ((hl (funcall highlight input))
+                (hl (if (functionp hl) hl (cdr hl))))
+       (lambda (cands)
+         (dolist (x cands cands)
+           (funcall hl (if (consp x) (car x) x))))))))
 
 (defun consult--async-throttle (&optional throttle debounce)
   "Async function which throttles input.
@@ -2611,6 +2603,20 @@ The refresh happens after a DELAY, defaulting to
                  (timer-activate timer)))
               ((or 'destroy 'refresh) ;; 'refresh already forced a refresh
                (cancel-timer timer)))))))))
+
+(defun consult--async-transform-by-input (fun)
+  "Transform candidates via FUN.
+FUN takes the input string and must return a transformation function."
+  (lambda (sink)
+    (let (transform)
+      (lambda (action)
+        (cond
+         ((stringp action)
+          (setq transform (funcall fun action))
+          (funcall sink action))
+         ((and (consp action) transform)
+          (funcall sink (funcall transform action)))
+         (t (funcall sink action)))))))
 
 (defun consult--async-transform (fun)
   "Use FUN to transform candidates."
@@ -5012,17 +5018,13 @@ outside a project.  See `consult-buffer' for more details."
 (defun consult--grep-format (builder)
   "Async function highlighting grep match results.
 BUILDER is the command line builder function."
-  (lambda (sink)
-    (let (highlight)
-      (lambda (action)
-        (cond
-         ((stringp action)
-          (setq highlight (cdr (funcall builder action)))
-          (funcall sink action))
-         ((consp action)
+  (consult--async-transform-by-input
+   (lambda (input)
+     (let ((highlight (cdr (funcall builder input))))
+       (lambda (cands)
           (let ((file "") (file-len 0) result)
             (save-match-data
-              (dolist (str action)
+              (dolist (str cands (nreverse result))
                 (when (and (string-match consult--grep-match-regexp str)
                            ;; Filter out empty context lines
                            (or (/= (aref str (match-beginning 3)) ?-)
@@ -5051,9 +5053,7 @@ BUILDER is the command line builder function."
                     (put-text-property (1+ file-len) (+ 1 file-len line-len) 'face 'consult-line-number str)
                     (when ctx
                       (add-face-text-property (+ 2 file-len line-len) (length str) 'consult-grep-context 'append str))
-                    (push str result)))))
-            (funcall sink (nreverse result))))
-         (t (funcall sink action)))))))
+                    (push str result)))))))))))
 
 (defun consult--grep-position (cand &optional find-file)
   "Return the grep position marker for CAND.
