@@ -14,6 +14,9 @@
     length. The input length check has been removed from ~consult--async-split~.
   + ~consult--async-transform~: Macro converted to function.
   + ~consult--process-collection~: New function replacing ~consult--async-command~.
+    The function accepts keyword arguments to customize the pipeline.
+  + ~consult--dynamic-collection~: The function accepts more keyword arguments to
+    customize the pipeline.
   + ~consult--async-refresh-timer~ and ~consult--async-refresh-immediate~: Replaced by
     ~consult--async-refresh~ with a ~DELAY~ argument.
   + ~consult--async-split-thingatpt~ and ~consult--async-split-initial~: Removed
