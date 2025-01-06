@@ -2042,6 +2042,10 @@ which describes the updated API."
   "Use `consult--async-refresh' instead.")
 (define-obsolete-function-alias 'consult--async-refresh-immediate #'consult--async-deprecation
   "Use `consult--async-refresh' instead.")
+(define-obsolete-function-alias 'consult--dynamic-compute #'consult--async-deprecation
+  "Use `consult--async-dynamic' instead.")
+(define-obsolete-function-alias 'consult--async-command #'consult--async-deprecation
+  "Use `consult--process-collection' instead.")
 
 (defmacro consult--async-pipeline (&rest async)
   "Compose ASYNC pipeline.
@@ -2071,14 +2075,14 @@ shown in these examples:
 
     (consult--read (consult--async-pipeline ...))
     (consult--read (consult--dynamic-collection (lambda (input) ...)))
-    (consult--read (consult--async-command #\\='consult--man-builder))
+    (consult--read (consult--process-collection #\\='consult--man-builder))
 
     (defvar async-source
       (list :async (consult--async-pipeline ...)))
     (defvar dynamic-source
       (list :async (consult--dynamic-collection (lambda (input) ...))))
     (defvar command-source
-      (list :async (consult--async-command #\\='consult--man-builder)))
+      (list :async (consult--process-collection #\\='consult--man-builder)))
 
 Incoming candidates and the action argument should be passed to the
 sink.  The action can take the following forms:
@@ -2189,15 +2193,55 @@ ASYNC is the asynchronous function or completion table."
         ((pred consp)
          ;; Lazily initialize last link, such that it is only initialized when
          ;; appending, and not for one-shot async functions like
-         ;; `consult--dynamic-compute'.
+         ;; `consult--async-static'.
          (if (not candidates)
              (setq candidates action)
            (setq last (last (setcdr (or last (last candidates)) action)))
            candidates))))))
 
+(defun consult--async-dynamic (fun &optional restart)
+  "Dynamic computation of candidates.
+FUN computes the candidates given the input.
+RESTART is the time after which an interrupted computation should be
+restarted and defaults to `consult-async-input-debounce'."
+  (setq restart (or restart consult-async-input-debounce))
+  (lambda (sink)
+    (let ((timer (timer-create)) (current nil) (compute nil))
+      (setq compute
+            (lambda (input)
+              (let ((state 'killed))
+                (unwind-protect
+                    (while-no-input
+                      (funcall sink [indicator running])
+                      (redisplay)
+                      ;; Run computation
+                      (let ((response (funcall fun input)))
+                        ;; Flush and update candidate list
+                        (funcall sink 'flush)
+                        (funcall sink response)
+                        (funcall sink 'refresh)
+                        (setq state 'finished current input)))
+                  ;; If the computation was killed, restart it after some time.  This
+                  ;; can happen when moving point around.  Then the input doesn't
+                  ;; change and the computation isn't started again otherwise.
+                  (when (eq state 'killed)
+                    (timer-set-function timer compute (list input))
+                    (timer-set-time timer (timer-relative-time nil restart))
+                    (timer-activate timer))
+                  (funcall sink `[indicator ,state])))))
+      (lambda (action)
+        (prog1 (funcall sink action)
+          (pcase action
+            ((or 'cancel 'destroy) (cancel-timer timer))
+            ((pred stringp)
+             (cancel-timer timer)
+             (if (equal action current)
+                 (funcall sink [indicator finished])
+               (funcall compute action)))))))))
+
 (defun consult--async-static (items)
   "Async function with static ITEMS."
-  (consult--dynamic-compute
+  (consult--async-dynamic
    (lambda (input)
      (pcase-let* ((`(,re . ,hl) (consult--compile-regexp
                                  input 'emacs completion-ignore-case)))
@@ -2539,23 +2583,6 @@ The refresh happens after a DELAY, defaulting to
               ((or 'destroy 'refresh) ;; 'refresh already forced a refresh
                (cancel-timer timer)))))))))
 
-(cl-defun consult--async-command (builder &rest props
-                                          &key min-input throttle debounce
-                                          &allow-other-keys)
-  "Asynchronous command pipeline.
-BUILDER is the command line builder function, which takes the
-input string and must either return a list of command line
-arguments or a pair of the command line argument list and a
-highlighting function.
-MIN-INPUT is passed to `consult--async-min-input'.
-THROTTLE and DEBOUNCE are passed to `consult--async-throttle'.
-Other PROPS are passed to `make-process'."
-  (consult--async-pipeline
-   (consult--async-min-input min-input)
-   (consult--async-throttle throttle debounce)
-   (apply #'consult--async-process builder
-          (consult--plist-remove '(:min-input :throttle :debounce) props))))
-
 (defun consult--async-transform (fun)
   "Use FUN to transform candidates."
   (lambda (sink)
@@ -2570,57 +2597,32 @@ Other PROPS are passed to `make-process'."
   "Filter candidates by FUN."
   (consult--async-transform (apply-partially #'seq-filter fun)))
 
-;;;; Dynamic collections
-
-(defun consult--dynamic-compute (fun &optional restart)
-  "Dynamic computation of candidates.
-FUN computes the candidates given the input.
-RESTART is the time after which an interrupted computation should be
-restarted and defaults to `consult-async-input-debounce'."
-  (setq restart (or restart consult-async-input-debounce))
-  (lambda (sink)
-    (let ((timer (timer-create)) (current nil) (compute nil))
-      (setq compute
-            (lambda (input)
-              (let ((state 'killed))
-                (unwind-protect
-                    (while-no-input
-                      (funcall sink [indicator running])
-                      (redisplay)
-                      ;; Run computation
-                      (let ((response (funcall fun input)))
-                        ;; Flush and update candidate list
-                        (funcall sink 'flush)
-                        (funcall sink response)
-                        (funcall sink 'refresh)
-                        (setq state 'finished current input)))
-                  ;; If the computation was killed, restart it after some time.  This
-                  ;; can happen when moving point around.  Then the input doesn't
-                  ;; change and the computation isn't started again otherwise.
-                  (when (eq state 'killed)
-                    (timer-set-function timer compute (list input))
-                    (timer-set-time timer (timer-relative-time nil restart))
-                    (timer-activate timer))
-                  (funcall sink `[indicator ,state])))))
-      (lambda (action)
-        (prog1 (funcall sink action)
-          (pcase action
-            ((or 'cancel 'destroy) (cancel-timer timer))
-            ((pred stringp)
-             (cancel-timer timer)
-             (if (equal action current)
-                 (funcall sink [indicator finished])
-               (funcall compute action)))))))))
-
 (cl-defun consult--dynamic-collection (fun &key min-input throttle debounce)
   "Dynamic collection with input splitting.
-FUN is passed to `consult--dynamic-compute'.
+FUN is passed to `consult--async-dynamic'.
 MIN-INPUT is passed to `consult--async-min-input'.
 THROTTLE and DEBOUNCE are passed to `consult--async-throttle'."
   (consult--async-pipeline
    (consult--async-min-input min-input)
    (consult--async-throttle throttle debounce)
-   (consult--dynamic-compute fun)))
+   (consult--async-dynamic fun)))
+
+(cl-defun consult--process-collection (builder &rest props
+                                               &key min-input throttle debounce
+                                               &allow-other-keys)
+  "Asynchronous process pipeline.
+BUILDER is the command line builder function, which takes the
+input string and must either return a list of command line
+arguments or a pair of the command line argument list and a
+highlighting function.
+MIN-INPUT is passed to `consult--async-min-input'.
+THROTTLE and DEBOUNCE are passed to `consult--async-throttle'.
+Other PROPS are passed to `make-process'."
+  (consult--async-pipeline
+   (consult--async-min-input min-input)
+   (consult--async-throttle throttle debounce)
+   (apply #'consult--async-process builder
+          (consult--plist-remove '(:min-input :throttle :debounce) props))))
 
 ;;;; Special keymaps
 
@@ -5053,7 +5055,7 @@ input."
                (builder (funcall make-builder paths)))
     (consult--read
      (consult--async-pipeline
-      (consult--async-command builder :file-handler t) ;; allow tramp
+      (consult--process-collection builder :file-handler t) ;; allow tramp
       (consult--grep-format builder))
      :prompt prompt
      :lookup #'consult--lookup-member
@@ -5212,7 +5214,7 @@ PROMPT is the prompt.
 INITIAL is initial input."
   (consult--read
    (consult--async-pipeline
-    (consult--async-command builder :file-handler t) ;; allow tramp
+    (consult--process-collection builder :file-handler t) ;; allow tramp
     (consult--async-map (lambda (x) (string-remove-prefix "./" x)))
     (consult--async-highlight builder))
    :prompt prompt
@@ -5362,7 +5364,7 @@ the asynchronous search."
   (interactive)
   (man (consult--read
         (consult--async-pipeline
-         (consult--async-command #'consult--man-builder)
+         (consult--process-collection #'consult--man-builder)
          (consult--async-transform #'consult--man-format)
          (consult--async-highlight #'consult--man-builder))
         :prompt "Manual entry: "
