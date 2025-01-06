@@ -2072,6 +2072,15 @@ from the user.
       (consult--async-transform #\\='consult--man-format)
       (consult--async-highlight #\\='consult--man-builder))
 
+Nil functions are ignored to ease building conditional pipelines.
+
+    (consult--async-pipeline
+     (consult--async-min-input min-input)
+     (consult--async-throttle throttle debounce)
+     (consult--async-dynamic fun)
+     transform
+     (and highlight (consult--async-highlight highlight)))
+
 Async functions or pipelines can be passed as completion function to
 `consult--read' or used as `:async' field of `consult--multi' sources as
 shown in these examples:
@@ -2103,7 +2112,7 @@ For the \\='setup action it is guaranteed that the call originates from
 the minibuffer.  For the other actions no assumption about the context
 can be made."
   (lambda (sink)
-    (seq-reduce (lambda (s f) (funcall f s)) (reverse async) sink)))
+    (seq-reduce (lambda (s f) (funcall f s)) (delq nil (reverse async)) sink)))
 
 (defun consult--async-wrap (async)
   "Wrap ASYNC function with the default pipeline.
@@ -2629,8 +2638,8 @@ HIGHLIGHT is an optional highlight function."
    (consult--async-min-input min-input)
    (consult--async-throttle throttle debounce)
    (consult--async-dynamic fun)
-   (or transform #'identity)
-   (if highlight (consult--async-highlight highlight) #'identity)))
+   transform
+   (and highlight (consult--async-highlight highlight))))
 
 (cl-defun consult--process-collection (builder &rest props &key min-input
                                                debounce throttle transform
@@ -2652,11 +2661,9 @@ Other PROPS are passed to `make-process'."
    (apply #'consult--async-process builder
           (consult--plist-remove
            '(:min-input :throttle :debounce :transform :highlight) props))
-   (or transform #'identity)
-   (if highlight
-       (consult--async-highlight
-        (if (functionp highlight) highlight builder))
-     #'identity)))
+   transform
+   (and highlight (consult--async-highlight
+                   (if (functionp highlight) highlight builder)))))
 
 ;;;; Special keymaps
 
@@ -3068,16 +3075,14 @@ Attach source IDX and SRC properties to each item."
   (consult--async-merge
    (cl-loop
     for idx from 0 for src across sources collect
-    (let ((idx idx) (src src)
-          (pred (apply-partially #'consult--multi-visible-p src)))
-      (if-let ((async (plist-get src :async)))
-          (consult--async-pipeline
-           (consult--async-predicate pred)
-           async
-           (consult--async-transform
-            (apply-partially #'consult--multi-items idx src)))
-        (consult--async-pipeline
-         (consult--async-predicate pred)
+    (let ((idx idx) (src src))
+      (consult--async-pipeline
+       (consult--async-predicate (apply-partially #'consult--multi-visible-p src))
+       (if-let ((async (plist-get src :async)))
+           (consult--async-pipeline
+            async
+            (consult--async-transform
+             (apply-partially #'consult--multi-items idx src)))
          (consult--async-static (consult--multi-items idx src t))))))))
 
 (defun consult--multi-enabled-sources (sources)
