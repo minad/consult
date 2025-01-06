@@ -530,7 +530,10 @@ as the public API.")
         #'consult--default-completion-list-candidate)
   "Get candidate from completion system.")
 
-(defvar consult--completion-refresh-hook nil
+;; Redisplay such that the updated completion UI will be displayed, even when
+;; the update happened due to `accept-process-output' inside a loop of a dynamic
+;; collection. See `consult--async-dynamic'.
+(defvar consult--completion-refresh-hook '(redisplay)
   "Refresh completion system.")
 
 (defvar-local consult--preview-function nil
@@ -2201,34 +2204,48 @@ ASYNC is the asynchronous function or completion table."
 
 (defun consult--async-dynamic (fun &optional restart)
   "Dynamic computation of candidates.
-FUN computes the candidates given the input.
+FUN computes the candidates. It takes either a single input argument or
+an input argument and a callback function, if computed candidates should
+be updated incrementally.
 RESTART is the time after which an interrupted computation should be
 restarted and defaults to `consult-async-input-debounce'."
   (setq restart (or restart consult-async-input-debounce))
+  (when (equal (func-arity fun) '(1 . 1))
+    (let ((orig fun))
+      (setq fun (lambda (input callback)
+                  (funcall callback (funcall orig input))))))
   (lambda (sink)
     (let ((timer (timer-create)) (current nil) (compute nil))
       (setq compute
             (lambda (input)
-              (let ((state 'killed))
-                (unwind-protect
-                    (while-no-input
-                      (funcall sink [indicator running])
-                      (redisplay)
-                      ;; Run computation
-                      (let ((response (funcall fun input)))
-                        ;; Flush and update candidate list
-                        (funcall sink 'flush)
-                        (funcall sink response)
-                        (funcall sink 'refresh)
-                        (setq state 'finished current input)))
-                  ;; If the computation was killed, restart it after some time.  This
-                  ;; can happen when moving point around.  Then the input doesn't
-                  ;; change and the computation isn't started again otherwise.
-                  (when (eq state 'killed)
-                    (timer-set-function timer compute (list input))
-                    (timer-set-time timer (timer-relative-time nil restart))
-                    (timer-activate timer))
-                  (funcall sink `[indicator ,state])))))
+              (funcall sink [indicator running])
+              (redisplay)
+              (let* ((flush t)
+                     (killed
+                      (while-no-input
+                        (funcall
+                         fun input
+                         (lambda (response)
+                           (let (throw-on-input)
+                             (when flush
+                               (funcall sink 'flush)
+                               (setq flush nil))
+                             (when response
+                               (funcall sink response)
+                               ;; Accept process input such that timers
+                               ;; trigger and refresh the completion UI.
+                               (accept-process-output)))))
+                        (setq current input)
+                        nil)))
+                (funcall sink `[indicator ,(if killed 'killed 'finished)])
+                (funcall sink 'refresh)
+                ;; If the computation was killed, restart it after a while.
+                ;; This happens when the point is moved.  Then the input does
+                ;; not change and the computation is not restarted otherwise.
+                (when killed
+                  (timer-set-function timer compute (list input))
+                  (timer-set-time timer (timer-relative-time nil restart))
+                  (timer-activate timer)))))
       (lambda (action)
         (prog1 (funcall sink action)
           (pcase action
@@ -2598,8 +2615,10 @@ The refresh happens after a DELAY, defaulting to
   (consult--async-transform (apply-partially #'seq-filter fun)))
 
 (cl-defun consult--dynamic-collection (fun &key min-input throttle debounce)
-  "Dynamic collection with input splitting.
-FUN is passed to `consult--async-dynamic'.
+  "Dynamic candidate computation pipeline.
+FUN computes the candidates. It takes either a single input argument or
+an input argument and a callback function, if computed candidates should
+be updated incrementally.
 MIN-INPUT is passed to `consult--async-min-input'.
 THROTTLE and DEBOUNCE are passed to `consult--async-throttle'."
   (consult--async-pipeline
@@ -3598,37 +3617,39 @@ If TRANSFORM non-nil, return transformed CAND, otherwise return title."
                   (marker-buffer marker))))
       (if buf (buffer-name buf) "Dead buffer"))))
 
-(defun consult--line-multi-candidates (buffers input)
+(defun consult--line-multi-candidates (buffers input callback)
   "Collect matching candidates from multiple buffers.
 INPUT is the user input which should be matched.
-BUFFERS is the list of buffers."
+BUFFERS is the list of buffers.
+CALLBACK receives the candidates."
   (pcase-let ((`(,regexps . ,hl) (consult--compile-regexp input 'emacs completion-ignore-case))
               (candidates nil)
               (cand-idx 0))
     (when regexps
-      (save-match-data
-        (dolist (buf buffers (nreverse candidates))
-          (with-current-buffer buf
-            (save-excursion
-              (let ((line (line-number-at-pos (point-min) consult-line-numbers-widen)))
-                (goto-char (point-min))
-                (while (and (not (eobp))
-                            (save-excursion (re-search-forward (car regexps) nil t)))
-                  (cl-incf line (consult--count-lines (match-beginning 0)))
-                  (let ((bol (pos-bol))
-                        (eol (pos-eol)))
-                    (goto-char bol)
-                    (when (and (not (looking-at-p "^\\s-*$"))
-                               (cl-loop for r in (cdr regexps) always
-                                        (progn
-                                          (goto-char bol)
-                                          (re-search-forward r eol t))))
-                      (push (consult--location-candidate
-                             (funcall hl (buffer-substring-no-properties bol eol))
-                             (cons buf bol) (1- line) cand-idx)
-                            candidates)
-                      (cl-incf cand-idx))
-                    (goto-char (1+ eol))))))))))))
+      (dolist (buf buffers)
+        (with-current-buffer buf
+          (save-excursion
+            (let ((line (line-number-at-pos (point-min) consult-line-numbers-widen)))
+              (goto-char (point-min))
+              (while (and (not (eobp))
+                          (save-excursion (re-search-forward (car regexps) nil t)))
+                (cl-incf line (consult--count-lines (match-beginning 0)))
+                (let ((bol (pos-bol))
+                      (eol (pos-eol)))
+                  (goto-char bol)
+                  (when (and (not (looking-at-p "^\\s-*$"))
+                             (cl-loop for r in (cdr regexps) always
+                                      (progn
+                                        (goto-char bol)
+                                        (re-search-forward r eol t))))
+                    (push (consult--location-candidate
+                           (funcall hl (buffer-substring-no-properties bol eol))
+                           (cons buf bol) (1- line) cand-idx)
+                          candidates)
+                    (cl-incf cand-idx))
+                  (goto-char (1+ eol)))))))
+        (funcall callback (nreverse candidates))
+        (setq candidates nil)))))
 
 ;;;###autoload
 (defun consult-line-multi (query &optional initial)

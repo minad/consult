@@ -32,8 +32,11 @@
 (defvar-local consult-info--manual nil)
 (defvar consult-info--history nil)
 
-(defun consult-info--candidates (buffers input)
-  "Dynamically find lines in BUFFERS matching INPUT."
+(defun consult-info--candidates (buffers input callback)
+  "Collect matching candidates from info buffers.
+INPUT is the user input which should be matched.
+BUFFERS is the list of buffers.
+CALLBACK receives the candidates."
   (pcase-let* ((`(,regexps . ,hl) (consult--compile-regexp input 'emacs t))
                (re (concat "\\(\^_\n\\(?:.*Node:[ \t]*\\([^,\t\n]+\\)\\)?.*\n\\)\\|" (car regexps)))
                (candidates nil)
@@ -77,8 +80,9 @@
                     (put-text-property 0 1 'consult--info (list full-node bol buf) cand)
                     (cl-incf cand-idx)
                     (push cand candidates)))
-                (goto-char (1+ eol)))))))
-      (nreverse candidates))))
+                (goto-char (1+ eol))))))
+        (funcall callback (nreverse candidates))
+        (setq candidates nil)))))
 
 (defun consult-info--position (cand)
   "Return position information for CAND."
