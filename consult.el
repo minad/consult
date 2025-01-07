@@ -5406,16 +5406,21 @@ details regarding the asynchronous search."
         buffers)
     (lambda (action cand)
       (unless cand
-        (dolist (buf buffers)
-          (unless (memq buf orig)
-            (kill-buffer buf)))
+        (mapc #'kill-buffer buffers)
         (setq buffers nil))
-      (funcall preview action
-               (and cand
-                    (eq action 'preview)
-                    (let ((buf (consult--man-action cand t)))
-                      (push buf buffers)
-                      buf))))))
+      (let ((consult--buffer-display #'switch-to-buffer-other-window))
+        (funcall preview action
+                 (and cand
+                      (eq action 'preview)
+                      (let ((buf (consult--man-action cand t)))
+                        (unless (memq buf orig)
+                          (with-current-buffer buf
+                            (rename-buffer (format " Preview:%s" (buffer-name)) 'unique))
+                          (push buf buffers)
+                          (when (length> buffers consult-preview-max-count)
+                            (kill-buffer (car (last buffers)))
+                            (setq buffers (nbutlast buffers))))
+                        buf)))))))
 
 (defun consult--man-action (page &optional nodisplay)
   "Create man PAGE buffer, do not display if NODISPLAY is non-nil."
