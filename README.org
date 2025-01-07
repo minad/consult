@@ -353,7 +353,8 @@ their descriptions.
 #+findex: consult-info
 #+findex: consult-man
 - =consult-man=: Find Unix man page, via Unix =apropos= or =man -k=. =consult-man= opens
-  the selected man page using the Emacs =man= command.
+  the selected man page using the Emacs =man= command. Supports live preview of
+  the theme while scrolling through the candidates.
 - =consult-info=: Full text search through info pages. If the command is invoked
   from within an ~*info*~ buffer, it will search through the current manual. You
   may want to create your own commands which search through a predefined set of
@@ -465,7 +466,7 @@ to be considered.
 
 #+begin_src emacs-lisp
 (consult-customize
- consult-ripgrep consult-git-grep consult-grep
+ consult-ripgrep consult-git-grep consult-grep consult-man
  consult-bookmark consult-recent-file consult-xref
  consult--source-bookmark consult--source-file-register
  consult--source-recent-file consult--source-project-recent-file
@@ -862,7 +863,7 @@ configuration examples.
   ;; :preview-key on a per-command basis using the `consult-customize' macro.
   (consult-customize
    consult-theme :preview-key '(:debounce 0.2 any)
-   consult-ripgrep consult-git-grep consult-grep
+   consult-ripgrep consult-git-grep consult-grep consult-man
    consult-bookmark consult-recent-file consult-xref
    consult--source-bookmark consult--source-file-register
    consult--source-recent-file consult--source-project-recent-file

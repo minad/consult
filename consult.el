@@ -5399,6 +5399,35 @@ details regarding the asynchronous search."
             (push cand candidates)))))
     (nreverse candidates)))
 
+(defun consult--man-preview ()
+  "Create preview function for man pages."
+  (let ((preview (consult--buffer-preview))
+        (orig (buffer-list))
+        buffers)
+    (lambda (action cand)
+      (unless cand
+        (dolist (buf buffers)
+          (unless (memq buf orig)
+            (kill-buffer buf)))
+        (setq buffers nil))
+      (funcall preview action
+               (and cand
+                    (eq action 'preview)
+                    (let ((buf (consult--man-action cand t)))
+                      (push buf buffers)
+                      buf))))))
+
+(defun consult--man-action (page &optional nodisplay)
+  "Create man PAGE buffer, do not display if NODISPLAY is non-nil."
+  (dlet ((Man-prefer-synchronous-call t)
+         (Man-notify-method (and (not nodisplay) 'aggressive)))
+    (let (inhibit-message message-log-max)
+      (with-current-buffer (man page)
+        (goto-char (point-min))
+        (current-buffer)))))
+
+(consult--define-state man)
+
 ;;;###autoload
 (defun consult-man (&optional initial)
   "Search for man page given INITIAL input.
@@ -5408,17 +5437,18 @@ underlying man commands.  The man process is started asynchronously,
 similar to `consult-grep'.  See `consult-grep' for more details regarding
 the asynchronous search."
   (interactive)
-  (man (consult--read
-        (consult--process-collection #'consult--man-builder
-          :transform (consult--async-transform #'consult--man-format)
-          :highlight t)
-        :prompt "Manual entry: "
-        :require-match t
-        :category 'consult-man
-        :lookup (apply-partially #'consult--lookup-prop 'consult-man)
-        :initial initial
-        :add-history (thing-at-point 'symbol)
-        :history '(:input consult--man-history))))
+  (consult--read
+   (consult--process-collection #'consult--man-builder
+     :transform (consult--async-transform #'consult--man-format)
+     :highlight t)
+   :prompt "Manual entry: "
+   :require-match t
+   :category 'consult-man
+   :state (consult--man-state)
+   :lookup (apply-partially #'consult--lookup-prop 'consult-man)
+   :initial initial
+   :add-history (thing-at-point 'symbol)
+   :history '(:input consult--man-history)))
 
 ;;;; Preview at point in completions buffers
 
