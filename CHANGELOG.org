@@ -4,6 +4,9 @@
 
 * Development
 
+- New features:
+  + ~consult--multi~: Add support for asynchronous sources.
+  + ~consult-man~: Add preview.
 - *BREAKING CHANGE*: New async API
   + Async functions must have the uniform curried form ~(lambda (sink) (lambda
     (action) ...)~ and are composed with ~consult--async-pipeline~. See the
