@@ -1290,6 +1290,12 @@ Return the location marker."
 
 ;;;; Preview support
 
+(defun consult--preview-rename-buffer (buf &optional name)
+  "Rename BUF to the preview buffer name convention.
+NAME defaults to `buffer-name'."
+  (with-current-buffer buf
+    (rename-buffer (concat " Preview:" (or name (buffer-name))) 'unique)))
+
 (defun consult--preview-allowed-p (fun)
   "Return non-nil if FUN is an allowed preview mode hook."
   (or (memq fun consult-preview-allowed-hooks)
@@ -1452,11 +1458,8 @@ ORIG is the original function, HOOKS the arguments."
                  ;; and `dired-directory' to nil and rename the buffer.  This
                  ;; lets us open an already previewed buffer with the Embark
                  ;; default action C-. RET.
-                 (with-current-buffer buf
-                   (rename-buffer
-                    (format " Preview:%s"
-                            (file-name-nondirectory (directory-file-name name)))
-                    'unique))
+                 (consult--preview-rename-buffer
+                  buf (file-name-nondirectory (directory-file-name name)))
                  ;; The buffer disassociation is delayed to avoid breaking modes
                  ;; like `pdf-view-mode' or `doc-view-mode' which rely on
                  ;; `buffer-file-name'.  Executing (set-visited-file-name nil)
@@ -5414,8 +5417,7 @@ details regarding the asynchronous search."
                       (eq action 'preview)
                       (let ((buf (consult--man-action cand t)))
                         (unless (memq buf orig)
-                          (with-current-buffer buf
-                            (rename-buffer (format " Preview:%s" (buffer-name)) 'unique))
+                          (consult--preview-rename-buffer buf)
                           (push buf buffers)
                           (when (length> buffers consult-preview-max-count)
                             (kill-buffer (car (last buffers)))

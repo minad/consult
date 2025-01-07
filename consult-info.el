@@ -134,7 +134,7 @@ CALLBACK receives the candidates."
             (setq consult-info--manual (concat "(" manual ")"))
             (and (ignore-errors (funcall init))
                  (prog1 buf
-                   (rename-buffer (format " Preview:%s" (buffer-name)) 'unique)
+                   (consult--preview-rename-buffer buf)
                    (setq buf nil)))))
       (when buf (kill-buffer buf)))))
 
