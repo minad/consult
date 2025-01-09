@@ -1290,11 +1290,17 @@ Return the location marker."
 
 ;;;; Preview support
 
-(defun consult--preview-rename-buffer (buf &optional name)
-  "Rename BUF to the preview buffer name convention.
-NAME defaults to `buffer-name'."
-  (with-current-buffer buf
-    (rename-buffer (concat " Preview:" (or name (buffer-name))) 'unique)))
+(defun consult--preview-add-buffer (list buf &optional name)
+  "Add BUF to LIST and rename BUF to the preview buffer name convention.
+NAME defaults to `buffer-name'.  Kill old buffers if the list length
+exceeds `consult-preview-max-count'."
+  (with-current-buffer (cdr buf)
+    (rename-buffer (concat " Preview:" (or name (buffer-name))) 'unique))
+  (push buf list)
+  (while (length> list consult-preview-max-count)
+    (kill-buffer (cdar (last list)))
+    (setq list (nbutlast list)))
+  list)
 
 (defun consult--preview-allowed-p (fun)
   "Return non-nil if FUN is an allowed preview mode hook."
@@ -1453,13 +1459,11 @@ ORIG is the original function, HOOKS the arguments."
                ;; Only add new buffer if not already in the list
                (unless (or (rassq buf temporary-buffers) (memq buf orig-buffers))
                  (add-hook 'window-selection-change-functions hook)
-                 (push (cons name buf) temporary-buffers)
+                 (cl-callf consult--preview-add-buffer temporary-buffers
+                   (cons name buf) (file-name-nondirectory (directory-file-name name)))
                  ;; Disassociate buffer from file by setting `buffer-file-name'
-                 ;; and `dired-directory' to nil and rename the buffer.  This
-                 ;; lets us open an already previewed buffer with the Embark
-                 ;; default action C-. RET.
-                 (consult--preview-rename-buffer
-                  buf (file-name-nondirectory (directory-file-name name)))
+                 ;; and `dired-directory' to nil.  This lets us open an already
+                 ;; previewed buffer with the Embark default action C-. RET.
                  ;; The buffer disassociation is delayed to avoid breaking modes
                  ;; like `pdf-view-mode' or `doc-view-mode' which rely on
                  ;; `buffer-file-name'.  Executing (set-visited-file-name nil)
@@ -1472,11 +1476,7 @@ ORIG is the original function, HOOKS the arguments."
                                     (setq-local buffer-read-only t
                                                 dired-directory nil
                                                 buffer-file-name nil)))))
-                   (add-hook 'pre-command-hook hook))
-                 ;; Only keep a few buffers alive
-                 (while (length> temporary-buffers consult-preview-max-count)
-                   (kill-buffer (cdar (last temporary-buffers)))
-                   (setq temporary-buffers (nbutlast temporary-buffers))))
+                   (add-hook 'pre-command-hook hook)))
                buf)))
         (remove-hook 'window-selection-change-functions hook)
         (pcase-dolist (`(,_ . ,buf) temporary-buffers)
@@ -5409,20 +5409,19 @@ details regarding the asynchronous search."
         buffers)
     (lambda (action cand)
       (unless cand
-        (mapc #'kill-buffer buffers)
+        (pcase-dolist (`(,_ . ,buf) buffers)
+          (kill-buffer buf))
         (setq buffers nil))
       (let ((consult--buffer-display #'switch-to-buffer-other-window))
         (funcall preview action
                  (and cand
                       (eq action 'preview)
-                      (let ((buf (consult--man-action cand t)))
-                        (unless (memq buf orig)
-                          (consult--preview-rename-buffer buf)
-                          (push buf buffers)
-                          (when (length> buffers consult-preview-max-count)
-                            (kill-buffer (car (last buffers)))
-                            (setq buffers (nbutlast buffers))))
-                        buf)))))))
+                      (or (cdr (assoc cand buffers))
+                          (let ((buf (consult--man-action cand t)))
+                            (unless (memq buf orig)
+                              (cl-callf consult--preview-add-buffer
+                                  buffers (cons cand buf)))
+                            buf))))))))
 
 (defun consult--man-action (page &optional nodisplay)
   "Create man PAGE buffer, do not display if NODISPLAY is non-nil."
