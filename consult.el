@@ -133,7 +133,7 @@ This applies to asynchronous commands, e.g., `consult-grep'."
                  (const :tag "Perl" perl)))
 
 (defcustom consult-async-split-styles-alist
-  `((nil :function ,#'consult--split-nil)
+  `((none :function ,#'consult--split-none)
     (comma :separator ?, :function ,#'consult--split-separator)
     (semicolon :separator ?\; :function ,#'consult--split-separator)
     (perl :initial "#" :function ,#'consult--split-perl))
@@ -1977,7 +1977,7 @@ determines the separator.  Examples: \"/async/filter\",
             ,@(and (match-end 2) `((,(match-beginning 2) . ,(match-end 2)))))))
     `(,str ,(length str))))
 
-(defun consult--split-nil (str &optional _plist)
+(defun consult--split-none (str &optional _plist)
   "Treat the complete input STR as async input."
   `(,str ,(length str)))
 
@@ -2382,7 +2382,7 @@ MIN-INPUT is the minimum input length and defaults to
   "Async function, which splits the input string.
 STYLE is the splitting style and defaults to the splitting style
 configured by `consult-async-split-style'."
-  (setq style (or style consult-async-split-style)
+  (setq style (or style consult-async-split-style 'none)
         style (or (alist-get style consult-async-split-styles-alist)
                   (user-error "Splitting style `%s' not found" style)))
   (lambda (sink)
