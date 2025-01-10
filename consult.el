@@ -2877,7 +2877,7 @@ PREVIEW-KEY are the preview keys."
                                prompt predicate require-match history default
                                keymap category initial narrow initial-narrow
                                add-history annotate state preview-key sort
-                               lookup group inherit-input-method)
+                               lookup group inherit-input-method async-wrap)
   "Enhanced completing read function to select from TABLE.
 
 The function is a thin wrapper around `completing-read'.  Keyword
@@ -2929,7 +2929,7 @@ ASYNC-WRAP wraps asynchronous functions and defaults to
                  (and (consp (car table)) (symbolp (caar table))))) ;; symbol alist
   (ignore prompt predicate require-match history default keymap category
           initial narrow initial-narrow add-history annotate state
-          preview-key sort lookup group inherit-input-method)
+          preview-key sort lookup group inherit-input-method async-wrap)
   (apply #'consult--read-1 table
          (append
           (consult--customize-get)
