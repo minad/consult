@@ -1290,12 +1290,17 @@ Return the location marker."
 
 ;;;; Preview support
 
+(defun consult--preview-rename-buffer (buf &optional name)
+  "Rename BUF to the preview buffer name convention.
+NAME defaults to `buffer-name'."
+ (with-current-buffer buf
+   (rename-buffer (concat " Preview:" (or name (buffer-name))) 'unique)))
+
 (defun consult--preview-add-buffer (list buf &optional name)
   "Add BUF to LIST and rename BUF to the preview buffer name convention.
 NAME defaults to `buffer-name'.  Kill old buffers if the list length
 exceeds `consult-preview-max-count'."
-  (with-current-buffer (cdr buf)
-    (rename-buffer (concat " Preview:" (or name (buffer-name))) 'unique))
+  (consult--preview-rename-buffer (cdr buf) name)
   (push buf list)
   (while (length> list consult-preview-max-count)
     (kill-buffer (cdar (last list)))
