@@ -2233,6 +2233,7 @@ restarted and defaults to `consult-async-input-debounce'."
     (let ((timer (timer-create)) (current nil) (compute nil))
       (setq compute
             (lambda (input)
+              (cancel-timer timer)
               (funcall sink [indicator running])
               (redisplay)
               (let* ((flush t)
@@ -2257,7 +2258,7 @@ restarted and defaults to `consult-async-input-debounce'."
                 ;; If the computation was killed, restart it after a while.
                 ;; This happens when the point is moved.  Then the input does
                 ;; not change and the computation is not restarted otherwise.
-                (when killed
+                (when (and killed (not (memq timer timer-list)))
                   (timer-set-function timer compute (list input))
                   (timer-set-time timer (timer-relative-time nil restart))
                   (timer-activate timer)))))
@@ -2266,10 +2267,10 @@ restarted and defaults to `consult-async-input-debounce'."
           (pcase action
             ((or 'cancel 'destroy) (cancel-timer timer))
             ((pred stringp)
-             (cancel-timer timer)
-             (if (equal action current)
-                 (funcall sink [indicator finished])
-               (funcall compute action)))))))))
+             (if (not (equal action current))
+                 (funcall compute action)
+               (cancel-timer timer)
+               (funcall sink [indicator finished])))))))))
 
 (defun consult--async-static (items)
   "Async function with static ITEMS."
