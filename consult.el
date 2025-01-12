@@ -554,6 +554,11 @@ We use invalid characters outside the Unicode range.")
 (defconst consult--tofu-range #x100000
   "Special character range.")
 
+(defconst consult--tofu-regexp
+  (format "[%c-%c]" consult--tofu-char
+          (+ consult--tofu-char consult--tofu-range -1))
+  "Special character regexp.")
+
 (defvar-local consult--narrow nil
   "Current narrowing key.")
 
@@ -1047,11 +1052,7 @@ region has been fontified."
 
 (defun consult--tofu-strip (str)
   "Strip tofus from STR."
-  (substring-no-properties
-   (replace-regexp-in-string
-    (format "[%c-%c]" consult--tofu-char
-            (+ consult--tofu-char consult--tofu-range -1))
-    "" str)))
+  (replace-regexp-in-string consult--tofu-regexp "" (substring-no-properties str)))
 
 (defsubst consult--tofu-append (cand id)
   "Append tofu-encoded ID to CAND.
