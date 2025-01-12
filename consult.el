@@ -1045,16 +1045,13 @@ region has been fontified."
   "Return non-nil if CHAR is a tofu."
   (<= consult--tofu-char char (+ consult--tofu-char consult--tofu-range -1)))
 
-(defun consult--tofu-hide (str)
-  "Hide the tofus in STR."
-  (let* ((max (length str))
-         (end max))
-    (while (and (> end 0) (consult--tofu-p (aref str (1- end))))
-      (cl-decf end))
-    (when (< end max)
-      (setq str (copy-sequence str))
-      (put-text-property end max 'invisible t str))
-    str))
+(defun consult--tofu-strip (str)
+  "Strip tofus from STR."
+  (substring-no-properties
+   (replace-regexp-in-string
+    (format "[%c-%c]" consult--tofu-char
+            (+ consult--tofu-char consult--tofu-range -1))
+    "" str)))
 
 (defsubst consult--tofu-append (cand id)
   "Append tofu-encoded ID to CAND.
@@ -2825,7 +2822,8 @@ PREVIEW-KEY are the preview keys."
                  (consult--setup-keymap keymap (consult--async-p table) narrow preview-key)
                  (when initial-narrow (consult-narrow initial-narrow))
                  (setq-local minibuffer-default-add-function
-                             (apply-partially #'consult--add-history (consult--async-p table) add-history))))
+                             (apply-partially #'consult--add-history (consult--async-p table) add-history)
+                             kill-transform-function #'consult--tofu-strip)))
     (consult--with-async table
       (consult--with-preview
           preview-key state
@@ -4353,7 +4351,7 @@ history is used."
    ((minibufferp)
     (when (eq minibuffer-history-variable t)
       (user-error "Minibuffer history is disabled for `%s'" this-command))
-    (list (mapcar #'consult--tofu-hide
+    (list (mapcar #'consult--tofu-strip
                   (if (eq minibuffer-history-variable 'command-history)
                       ;; If pressing "C-x M-:", i.e., `repeat-complex-command',
                       ;; we are instead querying the `command-history' and get a
