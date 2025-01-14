@@ -3341,13 +3341,12 @@ value for `completion-in-region-function'."
              (or (not (consp (ignore-errors (nthcdr threshold all))))
                  (and completion-cycling completion-all-sorted-completions)))
         (completion--in-region start end collection predicate)
-      (let* ((limit (car (completion-boundaries initial collection predicate "")))
-             (this-command #'consult-completion-in-region)
+      (let* ((this-command #'consult-completion-in-region)
              (completion
               (cond
                ((atom all) nil)
                ((and (consp all) (atom (cdr all)))
-                (concat (substring initial 0 limit) (car all)))
+                (concat (substring initial 0 (cdr all)) (car all)))
                (t
                 (consult--local-let ((enable-recursive-minibuffers t))
                   ;; Evaluate completion table in the original buffer.
