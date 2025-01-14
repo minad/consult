@@ -136,7 +136,7 @@ This applies to asynchronous commands, e.g., `consult-grep'."
   `((none :function ,#'consult--split-none)
     (comma :separator ?, :function ,#'consult--split-separator)
     (semicolon :separator ?\; :function ,#'consult--split-separator)
-    (perl :initial "#" :function ,#'consult--split-perl))
+    (perl :initial ?# :function ,#'consult--split-perl))
   "Async splitting styles."
   :type '(alist :key-type symbol :value-type plist))
 
@@ -2393,7 +2393,8 @@ configured by `consult-async-split-style'."
          (when-let ((initial (plist-get style :initial)))
            (save-excursion
              (goto-char (minibuffer-prompt-end))
-             (insert-before-markers initial)))
+             (unless (equal initial (char-after))
+               (insert-before-markers initial))))
          (funcall sink 'setup))
         ((pred stringp)
          (pcase-let ((`(,input ,_ . ,highlights)
