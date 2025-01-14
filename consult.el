@@ -2393,7 +2393,8 @@ configured by `consult-async-split-style'."
          (when-let ((initial (plist-get style :initial)))
            (save-excursion
              (goto-char (minibuffer-prompt-end))
-             (insert-before-markers initial)))
+             (unless (string-prefix-p initial (minibuffer-contents))
+               (insert-before-markers initial))))
          (funcall sink 'setup))
         ((pred stringp)
          (pcase-let ((`(,input ,_ . ,highlights)
