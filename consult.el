@@ -1147,7 +1147,10 @@ if IGNORE-CASE is non-nil."
    ;; since PCRE does not make this distinction.  Usually the
    ;; context determines if \b is the beginning or the end.
    '(("\\<" . "\\b") ("\\>" . "\\b")
-     ("\\_<" . "\\b") ("\\_>" . "\\b"))
+     ("\\_<" . "\\b") ("\\_>" . "\\b")
+     ("\\s-" . "[ \\n\\t\\r]") ("\\S-" . "[^ \\n\\t\\r]")
+     ("\\sw" . "[a-zA-Z0-9]") ("\\Sw" . "[^a-zA-Z0-0]")
+     ("\\s_" . "[a-zA-Z0-9_-]") ("\\S_" . "[^a-zA-Z0-0_-]"))
    ;; Treat \` and \' as beginning and end of line.  This is more
    ;; widely supported and makes sense for line-based commands.
    '(("\\`" . "^") ("\\'" . "$"))
@@ -1172,7 +1175,7 @@ if IGNORE-CASE is non-nil."
     ;; Support for Emacs regular expressions is fairly complete for basic
     ;; usage.  There are a few unsupported Emacs regexp features:
     ;; - \= point matching
-    ;; - Syntax classes \sx \Sx
+    ;; - Most syntax classes \sx \Sx
     ;; - Character classes \cx \Cx
     ;; - Explicitly numbered groups (?3:group)
     (replace-regexp-in-string
@@ -1182,6 +1185,7 @@ if IGNORE-CASE is non-nil."
              (seq (or bos "^") (any "*+?"))       ;; Historical: + or * at the beginning
              (seq (opt "\\") (any "(){|}"))       ;; Escape parens/braces/pipe
              (seq "\\" (any "'<>`"))              ;; Special escapes
+             (seq "\\" (any "Ss") (any "-w_"))    ;; Whitespace, word, symbol syntax class
              (seq "\\_" (any "<>"))))             ;; Beginning or end of symbol
      (lambda (x) (or (cdr (assoc x consult--convert-regexp-table)) x))
      regexp 'fixedcase 'literal)))
