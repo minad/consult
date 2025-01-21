@@ -2238,22 +2238,25 @@ restarted and defaults to `consult-async-input-debounce'."
               (cancel-timer timer)
               (funcall sink [indicator running])
               (redisplay)
-              (let* ((flush t)
+              (let* ((state 'init)
                      (killed
                       (while-no-input
                         (funcall
                          fun input
                          (lambda (response)
+                           (when (eq state 'done)
+                             (error "consult--async-dynamic: Callback called too late"))
                            (let (throw-on-input)
-                             (when flush
+                             (when (eq state 'init)
                                (funcall sink 'flush)
-                               (setq flush nil))
+                               (setq state 'running))
                              (when response
                                (funcall sink response)
                                ;; Accept process input such that timers
                                ;; trigger and refresh the completion UI.
                                (accept-process-output)))))
-                        (setq current input)
+                        (setq current input
+                              state 'done)
                         nil)))
                 (funcall sink `[indicator ,(if killed 'killed 'finished)])
                 (funcall sink 'refresh)
