@@ -2223,7 +2223,8 @@ ASYNC is the asynchronous function or completion table."
   "Dynamic computation of candidates.
 FUN computes the candidates.  It takes either a single input argument or
 an input argument and a callback function, if computed candidates should
-be updated incrementally.
+be updated incrementally.  The callback function must not be called
+after FUN has returned.
 RESTART is the time after which an interrupted computation should be
 restarted and defaults to `consult-async-input-debounce'."
   (setq restart (or restart consult-async-input-debounce))
@@ -2654,7 +2655,8 @@ FUN takes the input string and must return a transformation function."
   "Dynamic candidate computation pipeline.
 FUN computes the candidates.  It takes either a single input argument or
 an input argument and a callback function, if computed candidates should
-be updated incrementally.
+be updated incrementally.  The callback function must not be called
+after FUN has returned.
 MIN-INPUT is passed to `consult--async-min-input'.
 THROTTLE and DEBOUNCE are passed to `consult--async-throttle'.
 TRANSFORM is an optional async function transforming the candidate.
