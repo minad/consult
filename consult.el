@@ -818,9 +818,7 @@ asked for the directories or files to search via
                       ;; such that `consult-customize' continues to work.
                       (let ((this-command this-command)
                             (def (abbreviate-file-name default-directory))
-                            ;; TODO: `minibuffer-completing-file-name' is
-                            ;; mostly deprecated, but still in use. Packages
-                            ;; should instead use the completion metadata.
+                            ;; bug#75910: category instead of `minibuffer-completing-file-name'
                             (minibuffer-completing-file-name t)
                             (ignore-case read-file-name-completion-ignore-case))
                         (minibuffer-with-setup-hook
@@ -3292,8 +3290,7 @@ value for `completion-in-region-function'."
   (barf-if-buffer-read-only)
   (let* ((initial (buffer-substring-no-properties start end))
          (metadata (completion-metadata initial collection predicate))
-         ;; TODO: `minibuffer-completing-file-name' is mostly deprecated, but
-         ;; still in use. Packages should instead use the completion metadata.
+         ;; bug#75910: category instead of `minibuffer-completing-file-name'
          (minibuffer-completing-file-name
           (eq 'file (completion-metadata-get metadata 'category)))
          (threshold (completion--cycle-threshold metadata))
