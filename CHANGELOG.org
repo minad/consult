@@ -2,7 +2,7 @@
 #+author: Daniel Mendler
 #+language: en
 
-* Development
+* Version 2.0 (2025-01-28)
 
 - New features:
   + ~consult--multi~: Add support for asynchronous sources.
