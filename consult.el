@@ -317,7 +317,7 @@ Can be either a string, or a list of strings or expressions."
   :type '(choice string (repeat (choice string sexp))))
 
 (defcustom consult-man-args
-  "man -k"
+  (concat manual-program " -k")
   "Command line arguments for man, see `consult-man'.
 The dynamically computed arguments are appended.
 Can be either a string, or a list of strings or expressions."
