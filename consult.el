@@ -214,6 +214,7 @@ for navigation commands like `consult-line'."
 (defcustom consult-buffer-filter
   '("\\` "
     "\\`\\*Completions\\*\\'"
+    "\\`\\*Multiple Choice Help\\*\\'"
     "\\`\\*Flymake log\\*\\'"
     "\\`\\*Semantic SymRef\\*\\'"
     "\\`\\*vc\\*\\'"
