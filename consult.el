@@ -358,7 +358,8 @@ function `buffer-match-p'."
   :type 'sexp)
 
 (defcustom consult-preview-excluded-files
-  '("\\`/[^/|:]+:") ;; Do not preview remote files
+  ;; Do not preview remote and gpg files
+  '("\\`/[^/|:]+:" "\\.gpg\\'")
   "List of regexps matched against names of files, which are not previewed."
   :type '(repeat regexp))
 
