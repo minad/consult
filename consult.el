@@ -3282,14 +3282,10 @@ of functions and in `consult-completion-in-region'."
           ;; Use the `before-string' property since the overlay might be empty.
           (overlay-put ov 'before-string cand)))))))
 
-;;;###autoload
-(defun consult-completion-in-region (start end collection &optional predicate)
-  "Use minibuffer completion as the UI for `completion-at-point'.
-
-The function is called with 4 arguments: START END COLLECTION
-PREDICATE.  The arguments and expected return value are as
-specified for `completion-in-region'.  Use this function as a
-value for `completion-in-region-function'."
+(defun consult--in-region (start end collection predicate)
+  "Internal `completion-in-region-function'.
+The arguments START, END, COLLECTION and PREDICATE and
+expected return value are as specified for `completion-in-region'."
   (barf-if-buffer-read-only)
   (let* ((initial (buffer-substring-no-properties start end))
          (metadata (completion-metadata initial collection predicate))
@@ -3358,6 +3354,19 @@ value for `completion-in-region-function'."
               t)
           (message "No completion")
           nil)))))
+
+;;;###autoload
+(defun consult-completion-in-region (start end collection predicate)
+  "Use minibuffer completion as the UI for `completion-at-point'.
+
+The arguments START, END, COLLECTION and PREDICATE and expected return
+value are as specified for `completion-in-region'.  Use this function as
+a value for `completion-in-region-function'."
+  (if (and (eq completing-read-function #'completing-read-default)
+           (not (bound-and-true-p vertico-mode))
+           (not (bound-and-true-p icomplete-mode)))
+      (completion--in-region start end collection predicate)
+    (consult--in-region start end collection predicate)))
 
 ;;;;; Command: consult-outline
 
