@@ -7,6 +7,8 @@
 - Remove obsolete ~consult--async-*~ APIs.
 - File preview: Ensure that remote files do not slow down preview.
 - File preview: Do not preview gpg files.
+- ~consult-yank-pop~, ~consult-history~: Respect display properties when previewing
+  to avoid leaking hidden data.
 - ~consult-completion-in-region~: Auto-detect completion UI.
 
 * Version 2.0 (2025-01-28)
