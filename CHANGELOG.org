@@ -10,6 +10,7 @@
 - ~consult-yank-pop~, ~consult-history~: Respect display properties when previewing
   to avoid leaking hidden data.
 - ~consult-completion-in-region~: Auto-detect completion UI.
+- ~consult-completion-in-region~: Improve handling of single candidates.
 
 * Version 2.0 (2025-01-28)
 
