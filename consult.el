@@ -4164,6 +4164,7 @@ If no MODES are specified, use currently active major and minor modes."
     :sort nil
     :category 'kill-ring
     :require-match t
+    :lookup #'consult--lookup-member
     :state
     (consult--insertion-preview
      (point)
@@ -4396,6 +4397,7 @@ of the prompt.  See also `cape-history' from the Cape package."
                               ('file-name-history 'file)))
                        :sort nil
                        :initial (buffer-substring-no-properties beg end)
+                       :lookup #'consult--lookup-member
                        :state (consult--insertion-preview beg end)))))
     (delete-region beg end)
     (when index
