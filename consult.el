@@ -3289,71 +3289,63 @@ expected return value are as specified for `completion-in-region'."
   (barf-if-buffer-read-only)
   (let* ((initial (buffer-substring-no-properties start end))
          (metadata (completion-metadata initial collection predicate))
-         ;; bug#75910: category instead of `minibuffer-completing-file-name'
-         (minibuffer-completing-file-name
-          (eq 'file (completion-metadata-get metadata 'category)))
          (threshold (completion--cycle-threshold metadata))
-         (all (completion-all-completions initial collection predicate (length initial)))
-         ;; Wrap all annotation functions to ensure that they are executed
-         ;; in the original buffer.
-         (exit-fun (plist-get completion-extra-properties :exit-function))
-         (ann-fun (plist-get completion-extra-properties :annotation-function))
-         (aff-fun (plist-get completion-extra-properties :affixation-function))
-         (docsig-fun (plist-get completion-extra-properties :company-docsig))
-         (completion-extra-properties
-          `(,@(and ann-fun (list :annotation-function (consult--in-buffer ann-fun)))
-            ,@(and aff-fun (list :affixation-function (consult--in-buffer aff-fun)))
-            ;; Provide `:annotation-function' if `:company-docsig' is specified.
-            ,@(and docsig-fun (not ann-fun) (not aff-fun)
-                   (list :annotation-function
-                         (consult--in-buffer
-                          (lambda (cand)
-                            (concat (propertize " " 'display '(space :align-to center))
-                                    (funcall docsig-fun cand)))))))))
-    ;; error if `threshold' is t or the improper list `all' is too short
-    (if (and threshold
-             (or (not (consp (ignore-errors (nthcdr threshold all))))
-                 (and completion-cycling completion-all-sorted-completions)))
+         (all (completion-all-completions initial collection predicate (length initial))))
+    ;; Normalize improper list
+    (when-let ((last (last all)))
+      (setcdr last nil))
+    (if (or (eq threshold t) (length< all (1+ (or threshold 1)))
+            (and completion-cycling completion-all-sorted-completions))
         (completion--in-region start end collection predicate)
       (let* ((this-command #'consult-completion-in-region)
+             ;; bug#75910: category instead of `minibuffer-completing-file-name'
+             (minibuffer-completing-file-name
+              (eq 'file (completion-metadata-get metadata 'category)))
+             ;; Wrap all annotation functions to ensure that they are executed
+             ;; in the original buffer.
+             (exit-fun (plist-get completion-extra-properties :exit-function))
+             (ann-fun (plist-get completion-extra-properties :annotation-function))
+             (aff-fun (plist-get completion-extra-properties :affixation-function))
+             (docsig-fun (plist-get completion-extra-properties :company-docsig))
+             (completion-extra-properties
+              `(,@(and ann-fun (list :annotation-function (consult--in-buffer ann-fun)))
+                ,@(and aff-fun (list :affixation-function (consult--in-buffer aff-fun)))
+                ;; Provide `:annotation-function' if `:company-docsig' is specified.
+                ,@(and docsig-fun (not ann-fun) (not aff-fun)
+                       (list :annotation-function
+                             (consult--in-buffer
+                              (lambda (cand)
+                                (concat (propertize " " 'display '(space :align-to center))
+                                        (funcall docsig-fun cand))))))))
              (completion
-              (cond
-               ((atom all) nil)
-               ((and (consp all) (atom (cdr all)))
-                (concat (substring initial 0 (cdr all)) (car all)))
-               (t
-                (consult--local-let ((enable-recursive-minibuffers t))
-                  ;; Evaluate completion table in the original buffer.
-                  ;; This is a reasonable thing to do and required by
-                  ;; some completion tables in particular by lsp-mode.
-                  ;; See gh:minad/vertico#61.
-                  (consult--read
-                   (consult--completion-table-in-buffer collection)
-                   :prompt (if (minibufferp)
-                               ;; Use existing minibuffer prompt and input
-                               (let ((prompt (buffer-substring (point-min) start)))
-                                 (put-text-property
-                                  (max 0 (1- (minibuffer-prompt-end))) (length prompt)
-                                  'face 'shadow prompt)
-                                 prompt)
-                             "Complete: ")
-                   :state (consult--insertion-preview start end)
-                   :predicate predicate
-                   :initial initial))))))
-        (if completion
-            (progn
-              ;; bug#55205: completion--replace removes properties!
-              (completion--replace start end (setq completion (concat completion)))
-              (when exit-fun
-                (funcall exit-fun completion
-                         ;; If completion is finished and cannot be further
-                         ;; completed, return `finished'.  Otherwise return
-                         ;; `exact'.
-                         (if (eq (try-completion completion collection predicate) t)
-                             'finished 'exact)))
-              t)
-          (message "No completion")
-          nil)))))
+              (consult--local-let ((enable-recursive-minibuffers t))
+                ;; Evaluate completion table in the original buffer.
+                ;; This is a reasonable thing to do and required by
+                ;; some completion tables in particular by lsp-mode.
+                ;; See gh:minad/vertico#61.
+                (consult--read
+                 (consult--completion-table-in-buffer collection)
+                 :prompt (if (minibufferp)
+                             ;; Use existing minibuffer prompt and input
+                             (let ((prompt (buffer-substring (point-min) start)))
+                               (put-text-property
+                                (max 0 (1- (minibuffer-prompt-end))) (length prompt)
+                                'face 'shadow prompt)
+                               prompt)
+                           "Complete: ")
+                 :state (consult--insertion-preview start end)
+                 :predicate predicate
+                 :initial initial))))
+        ;; bug#55205: completion--replace removes properties!
+        (completion--replace start end (setq completion (concat completion)))
+        (when exit-fun
+          (funcall exit-fun completion
+                   ;; If completion is finished and cannot be further
+                   ;; completed, return `finished'.  Otherwise return
+                   ;; `exact'.
+                   (if (eq (try-completion completion collection predicate) t)
+                       'finished 'exact)))
+        t))))
 
 ;;;###autoload
 (defun consult-completion-in-region (start end collection predicate)
