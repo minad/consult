@@ -2,7 +2,7 @@
 #+author: Daniel Mendler
 #+language: en
 
-* Development
+* Version 2.1 (2025-03-11)
 
 - Remove obsolete ~consult--async-*~ APIs.
 - File preview: Ensure that remote files do not slow down preview.
