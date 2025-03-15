@@ -3289,8 +3289,15 @@ expected return value are as specified for `completion-in-region'."
   (barf-if-buffer-read-only)
   (let* ((initial (buffer-substring-no-properties start end))
          (metadata (completion-metadata initial collection predicate))
+         ;; bug#75910: category instead of `minibuffer-completing-file-name'
+         (minibuffer-completing-file-name
+          (eq 'file (completion-metadata-get metadata 'category)))
          (threshold (completion--cycle-threshold metadata))
-         (all (completion-all-completions initial collection predicate (length initial))))
+         (all (completion-all-completions initial collection predicate
+                                          (if (<= start (point) end)
+                                              (- (point) start)
+                                            (length initial))
+                                          metadata)))
     ;; Normalize improper list
     (when-let ((last (last all)))
       (setcdr last nil))
@@ -3298,9 +3305,6 @@ expected return value are as specified for `completion-in-region'."
             (and completion-cycling completion-all-sorted-completions))
         (completion--in-region start end collection predicate)
       (let* ((this-command #'consult-completion-in-region)
-             ;; bug#75910: category instead of `minibuffer-completing-file-name'
-             (minibuffer-completing-file-name
-              (eq 'file (completion-metadata-get metadata 'category)))
              ;; Wrap all annotation functions to ensure that they are executed
              ;; in the original buffer.
              (exit-fun (plist-get completion-extra-properties :exit-function))
