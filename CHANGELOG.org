@@ -2,6 +2,11 @@
 #+author: Daniel Mendler
 #+language: en
 
+* Development
+
+- Add ~consult-info-define~ to conveniently define custom ~consult-info-*~ commands
+  to search through a subset of info manuals.
+
 * Version 2.1 (2025-03-11)
 
 - Remove obsolete ~consult--async-*~ APIs.

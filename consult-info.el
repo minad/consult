@@ -200,5 +200,20 @@ CALLBACK receives the candidates."
        :add-history (thing-at-point 'symbol)
        :lookup #'consult--lookup-member))))
 
+;;;###autoload
+(progn ;; Wrapped with `progn' to preload `consult-info-define'.
+  (defun consult-info-define (name &rest manuals)
+    "Define `consult-info-NAME' command to search through MANUALS.
+MANUALS is a list of a strings. NAME can be a symbol or a string. If
+NAME is a string, it is added to the MANUALS list."
+    (let ((cmd (intern (format "consult-info-%s" name))))
+      (when (stringp name) (push name manuals))
+      (defalias cmd (lambda () (interactive) (apply #'consult-info manuals))
+        (format "Search via `consult-info' through the manual%s %s:\n\n%s"
+                (if (cdr manuals) "s" "")
+                (mapconcat (lambda (m) (format "\"%s\"" m)) manuals ", ")
+                (mapconcat (lambda (m) (format "  * Info node `(%s)'" m)) manuals "\n")))
+      cmd)))
+
 (provide 'consult-info)
 ;;; consult-info.el ends here
