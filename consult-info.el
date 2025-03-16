@@ -205,7 +205,8 @@ CALLBACK receives the candidates."
   (defun consult-info-define (name &rest manuals)
     "Define `consult-info-NAME' command to search through MANUALS.
 MANUALS is a list of a strings. NAME can be a symbol or a string. If
-NAME is a string, it is added to the MANUALS list."
+NAME is a string, it is added to the MANUALS list. Return name of
+defined command as symbol."
     (let ((cmd (intern (format "consult-info-%s" name))))
       (when (stringp name) (push name manuals))
       (defalias cmd (lambda () (interactive) (apply #'consult-info manuals))
