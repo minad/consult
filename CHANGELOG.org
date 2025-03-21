@@ -6,6 +6,7 @@
 
 - Add ~consult-info-define~ to conveniently define custom ~consult-info-*~ commands
   to search through a subset of info manuals.
+- ~consult-focus-lines~: Add mode line indicator if active.
 
 * Version 2.1 (2025-03-11)
 
