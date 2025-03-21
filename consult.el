@@ -3799,13 +3799,14 @@ to `consult--buffer-query'."
 
 ;;;###autoload
 (defun consult-keep-lines (filter &optional initial)
-  "Select a subset of the lines in the current buffer with live preview.
+  "Filter a subset of the lines in the current buffer with live preview.
 
-The selected lines are kept and the other lines are deleted.  When called
-interactively, the lines selected are those that match the minibuffer input.  In
-order to match the inverse of the input, prefix the input with `! '.  When
-called from Elisp, the filtering is performed by a FILTER function.  This
-command obeys narrowing.
+The filtered lines are kept and the other lines are deleted.  When
+called interactively, the lines selected are those that match the
+minibuffer input.  In order to match the inverse of the input, prefix
+the input with `! '.  When called from Elisp, the filtering is performed
+by a FILTER function.  If the buffer is narrowed to a region, the
+command only acts on this region.
 
 FILTER is the filter function.
 INITIAL is the initial input."
@@ -3917,11 +3918,13 @@ INITIAL is the initial input."
   "Hide or show lines using overlays.
 
 The selected lines are shown and the other lines hidden.  When called
-interactively, the lines selected are those that match the minibuffer input.  In
-order to match the inverse of the input, prefix the input with `! '.  With
-optional prefix argument SHOW reveal the hidden lines.  Alternatively the
-command can be restarted to reveal the lines.  When called from Elisp, the
-filtering is performed by a FILTER function.  This command obeys narrowing.
+interactively, the lines selected are those that match the minibuffer
+input.  In order to match the inverse of the input, prefix the input
+with `! '.  With optional prefix argument SHOW reveal the hidden lines.
+Alternatively rerun the command and exit the minibuffer directly without
+input to reveal the lines.  When called from Elisp, the filtering is
+performed by a FILTER function.  If the buffer is narrowed to a region,
+the command only acts on this region.
 
 FILTER is the filter function.
 INITIAL is the initial input."
