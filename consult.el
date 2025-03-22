@@ -588,7 +588,7 @@ We use invalid characters outside the Unicode range.")
 
 (defvar consult--focus-lines-indicator
   (propertize "FOCUS" 'face 'highlight
-              'help-echo "`consult-focus-lines': \\[consult-focus-lines] \\[newline] to reveal.")
+              'help-echo "`consult-focus-lines': \\[consult-focus-lines] \\`RET' to reveal.")
   "Mode line indicator displayed if `consult-focus-lines' is active.")
 
 ;;;; Miscellaneous helper functions
