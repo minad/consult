@@ -3811,9 +3811,11 @@ called interactively, the lines selected are those that match the
 minibuffer input.  In order to match the inverse of the input, prefix
 the input with `! '.  When called from Elisp, the filtering is performed
 by a FILTER function.  If the buffer is narrowed to a region, the
-command only acts on this region.
+command only acts on this region.  See also `consult-focus-lines' which
+uses overlays to display only matching lines, but does not modify the
+buffer.
 
-FILTER is the filter function.
+FILTER is the filter function, called for each line.
 INITIAL is the initial input."
   (interactive
    (list (lambda (pattern cands)
@@ -3922,14 +3924,15 @@ INITIAL is the initial input."
 (defun consult-focus-lines (filter &optional show initial)
   "Show only matching lines using overlays.
 
-The buffer is not modified.  The FILTER selects the lines which are
-shown.  When called interactively, the lines selected are those that
-match the minibuffer input.  In order to match the inverse of the input,
-prefix the input with `! '.  With optional prefix argument SHOW reveal
-the hidden lines.  Alternatively rerun the command and exit the
-minibuffer directly without input to reveal the lines.  When called from
-Elisp, the filtering is performed by a FILTER function.  If the buffer
-is narrowed to a region, the command only acts on this region.
+In contrast to `consult-keep-lines' the buffer is not modified.  The
+FILTER selects the lines which are shown.  When called interactively,
+the lines selected are those that match the minibuffer input.  In order
+to match the inverse of the input, prefix the input with `! '.  With
+optional prefix argument SHOW reveal the hidden lines.  Alternatively
+rerun the command and exit the minibuffer directly without input to
+reveal the lines.  When called from Elisp, the filtering is performed by
+a FILTER function.  If the buffer is narrowed to a region, the command
+only acts on this region.
 
 FILTER is the filter function, called for each line.
 SHOW is the prefix argument, if non-nil reveal all hidden lines.
