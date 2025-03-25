@@ -666,7 +666,7 @@ Turn ARG into a list, and for each element either:
 
 (defmacro consult--keep! (list form)
   "Evaluate FORM for every element of LIST and keep the non-nil results."
-  (declare (indent 1))
+  (declare (indent 1) (debug (gv-place body)))
   (cl-with-gensyms (head prev result)
     `(let* ((,head (cons nil ,list))
             (,prev ,head))
@@ -676,7 +676,7 @@ Turn ARG into a list, and for each element either:
                (pop ,prev)
                (setcar ,prev ,result))
            (setcdr ,prev (cddr ,prev))))
-       (setq ,list (cdr ,head))
+       (setf ,list (cdr ,head))
        nil)))
 
 (defun consult--completion-filter (pattern cands category highlight)
@@ -720,7 +720,7 @@ HIGHLIGHT."
   "Iterate over each line.
 
 The line beginning/ending BEG/END is bound in BODY."
-  (declare (indent 2))
+  (declare (indent 2) (debug (symbolp symbolp body)))
   (cl-with-gensyms (max)
     `(save-excursion
        (let ((,beg (point-min)) (,max (point-max)) ,end)
@@ -755,7 +755,7 @@ The line beginning/ending BEG/END is bound in BODY."
 
 (defmacro consult--local-let (binds &rest body)
   "Buffer local let BINDS of dynamic variables in BODY."
-  (declare (indent 1))
+  (declare (indent 1) (debug let))
   (let ((buffer (gensym "buffer"))
         (local (mapcar (lambda (x) (cons (gensym "local") (car x))) binds)))
     `(let ((,buffer (current-buffer))
@@ -960,6 +960,7 @@ always return an appropriate non-minibuffer window."
 
 (defmacro consult--with-increased-gc (&rest body)
   "Temporarily increase the GC limit in BODY to optimize for throughput."
+  (declare (indent 0) (debug t))
   (cl-with-gensyms (overwrite)
     `(let* ((,overwrite (> consult--gc-threshold gc-cons-threshold))
             (gc-cons-threshold (if ,overwrite consult--gc-threshold gc-cons-threshold))
@@ -969,7 +970,7 @@ always return an appropriate non-minibuffer window."
 (defmacro consult--slow-operation (message &rest body)
   "Show delayed MESSAGE if BODY takes too long.
 Also temporarily increase the GC limit via `consult--with-increased-gc'."
-  (declare (indent 1))
+  (declare (indent 1) (debug t))
   `(with-delayed-message (1 ,message)
      (consult--with-increased-gc ,@body)))
 
@@ -1716,10 +1717,8 @@ The result can be passed as :state argument to `consult--read'." type)
                  (list hook)
                  (and (memq t post-command-hook) '(t))))))
 
-(defun consult--with-preview-1 (preview-key state transform candidate save-input fun)
-  "Add preview support for FUN.
-See `consult--with-preview' for the arguments
-PREVIEW-KEY, STATE, TRANSFORM, CANDIDATE and SAVE-INPUT."
+(defun consult--with-preview-f (preview-key state transform candidate save-input body)
+  "See `consult--with-preview' for documentation."
   (let ((mb-input "") (timer (timer-create)) mb-narrow selected previewed)
     (minibuffer-with-setup-hook
         (if (and state preview-key)
@@ -1804,7 +1803,7 @@ PREVIEW-KEY, STATE, TRANSFORM, CANDIDATE and SAVE-INPUT."
                (setq mb-input (minibuffer-contents-no-properties)
                      mb-narrow consult--narrow)))))
       (unwind-protect
-          (setq selected (when-let (result (funcall fun))
+          (setq selected (when-let (result (funcall body))
                            (when-let ((save-input)
                                       (list (symbol-value save-input))
                                       ((equal (car list) result)))
@@ -1859,8 +1858,8 @@ argument is the continuation of `consult--read'.  Via `unwind-protect' it
 is guaranteed, that if the `setup' action of a state function is
 invoked, the state function will also be called with `exit' and
 `return'."
-  (declare (indent 5))
-  `(consult--with-preview-1 ,preview-key ,state ,transform ,candidate ,save-input (lambda () ,@body)))
+  (declare (indent 5) (debug t))
+  `(consult--with-preview-f ,preview-key ,state ,transform ,candidate ,save-input (lambda () ,@body)))
 
 ;;;; Narrowing and grouping
 
@@ -2123,50 +2122,54 @@ The default pipeline provides `consult--async-split',
 (defmacro consult--with-async (async &rest body)
   "Setup asynchronous completion in BODY.
 ASYNC is the asynchronous function or completion table."
-  (declare (indent 1))
-  `(let (new-chunk orig-chunk)
-     (minibuffer-with-setup-hook
-         ;; Append such that we overwrite the completion style setting of
-         ;; `fido-mode'.  See `consult--async-split' and `consult--split-setup'.
-         (:append
-          (lambda ()
-            (when (consult--async-p ,async)
-              (setq new-chunk (max read-process-output-max consult--process-chunk)
-                    orig-chunk read-process-output-max
-                    read-process-output-max new-chunk)
-              (funcall ,async 'setup)
-              (let* ((mb (current-buffer))
-                     (fun (lambda ()
-                            (when-let (win (active-minibuffer-window))
-                              (when (eq (window-buffer win) mb)
-                                (with-current-buffer mb
-                                  (let ((inhibit-modification-hooks t))
-                                    ;; Push input string to request refresh.
-                                    (funcall ,async (minibuffer-contents-no-properties))))))))
-                     ;; We use a symbol in order to avoid adding lambdas to
-                     ;; the hook variable.  Symbol indirection because of
-                     ;; bug#46407.
-                     (hook (make-symbol "consult--async-after-change-hook"))
-                     (timer (timer-create)))
-                (timer-set-function timer fun)
-                ;; Delay modification hook to ensure that minibuffer is still
-                ;; alive after the change, such that we don't restart a new
-                ;; asynchronous search right before exiting the minibuffer.
-                (fset hook (lambda (&rest _)
-                             (unless (memq timer timer-list)
-                               (timer-set-time timer (current-time))
-                               (timer-activate timer))))
-                (add-hook 'after-change-functions hook nil 'local)
-                ;; Immediately start asynchronous computation. This may lead
-                ;; to problems unnecessary work if content is inserted shortly
-                ;; afterwards.
-                (funcall fun)))))
-       (let ((,async (if (consult--async-p ,async) ,async (lambda (_) ,async))))
-         (unwind-protect
-             ,(macroexp-progn body)
-           (funcall ,async 'destroy)
-           (when (and orig-chunk (eq read-process-output-max new-chunk))
-             (setq read-process-output-max orig-chunk)))))))
+  (declare (indent 1) (debug (symbolp body)))
+  `(consult--with-async-f ,async (lambda (,async) ,@body)))
+
+(defun consult--with-async-f (async body)
+  "See `consult--with-async' for documentation."
+  (let (new-chunk orig-chunk)
+    (minibuffer-with-setup-hook
+        ;; Append such that we overwrite the completion style setting of
+        ;; `fido-mode'.  See `consult--async-split' and `consult--split-setup'.
+        (:append
+         (lambda ()
+           (when (consult--async-p async)
+             (setq new-chunk (max read-process-output-max consult--process-chunk)
+                   orig-chunk read-process-output-max
+                   read-process-output-max new-chunk)
+             (funcall async 'setup)
+             (let* ((mb (current-buffer))
+                    (fun (lambda ()
+                           (when-let (win (active-minibuffer-window))
+                             (when (eq (window-buffer win) mb)
+                               (with-current-buffer mb
+                                 (let ((inhibit-modification-hooks t))
+                                   ;; Push input string to request refresh.
+                                   (funcall async (minibuffer-contents-no-properties))))))))
+                    ;; We use a symbol in order to avoid adding lambdas to
+                    ;; the hook variable.  Symbol indirection because of
+                    ;; bug#46407.
+                    (hook (make-symbol "consult--async-after-change-hook"))
+                    (timer (timer-create)))
+               (timer-set-function timer fun)
+               ;; Delay modification hook to ensure that minibuffer is still
+               ;; alive after the change, such that we don't restart a new
+               ;; asynchronous search right before exiting the minibuffer.
+               (fset hook (lambda (&rest _)
+                            (unless (memq timer timer-list)
+                              (timer-set-time timer (current-time))
+                              (timer-activate timer))))
+               (add-hook 'after-change-functions hook nil 'local)
+               ;; Immediately start asynchronous computation. This may lead
+               ;; to problems unnecessary work if content is inserted shortly
+               ;; afterwards.
+               (funcall fun)))))
+      (let ((async (if (consult--async-p async) async (lambda (_) async))))
+        (unwind-protect
+            (funcall body async)
+          (funcall async 'destroy)
+          (when (and orig-chunk (eq read-process-output-max new-chunk))
+            (setq read-process-output-max orig-chunk)))))))
 
 (defun consult--async-sink ()
   "Asynchronous sink function."
@@ -2503,7 +2506,7 @@ PROPS are optional properties passed to `make-process'."
                                      `(,@props
                                        :connection-type pipe
                                        :name ,(car args)
-                                     ;;; XXX tramp bug, the stderr buffer must be empty
+                                       ;;; XXX tramp bug, the stderr buffer must be empty
                                        :stderr ,proc-buf
                                        :noquery t
                                        :command ,args
@@ -2804,7 +2807,7 @@ PREVIEW-KEY are the preview keys."
                                  prompt predicate require-match history default keymap category
                                  initial narrow initial-narrow add-history annotate state
                                  preview-key sort lookup group inherit-input-method async-wrap)
-  "See `consult--read' for the documentation of the arguments."
+  "See `consult--read' for documentation."
   (when (and async-wrap (consult--async-p table))
     (setq table (funcall (funcall async-wrap table) (consult--async-sink))))
   (minibuffer-with-setup-hook
@@ -4522,7 +4525,7 @@ starts a new Isearch session otherwise."
                   (lambda (cand) (= (consult--tofu-get cand) consult--narrow))
                   :keys consult--isearch-history-narrow))
            isearch-new-message
-           (mapconcat 'isearch-text-char-description isearch-new-string "")))
+           (mapconcat #'isearch-text-char-description isearch-new-string "")))
     ;; Setting `isearch-regexp' etc only works outside of `with-isearch-suspended'.
     (unless (plist-member (text-properties-at 0 isearch-string) 'isearch-regexp-function)
       (setq isearch-regexp t
@@ -4980,21 +4983,23 @@ configuration of the virtual buffer sources."
 
 (defmacro consult--with-project (&rest body)
   "Ensure that BODY is executed with a project root."
-  ;; We have to work quite hard here to ensure that the project root is
-  ;; only overridden at the current recursion level.  When entering a
-  ;; recursive minibuffer session, we should be able to still switch the
-  ;; project.  But who does that? Working on the first level on project A
-  ;; and on the second level on project B and on the third level on project C?
-  ;; You mustn't be afraid to dream a little bigger, darling.
-  `(let ((consult-project-function
-          (let ((root (or (consult--project-root t) (user-error "No project found")))
-                (depth (recursion-depth))
-                (orig consult-project-function))
-            (lambda (may-prompt)
-              (if (= depth (recursion-depth))
-                  root
-                (funcall orig may-prompt))))))
-     ,@body))
+  (declare (indent 0) (debug t))
+  `(consult--with-project-f (lambda () ,@body)))
+
+(defun consult--with-project-f (body)
+  "See `consult--with-project' for documentation."
+  ;; We have to work quite hard here to ensure that the project root is only
+  ;; overridden at the current recursion level.  When entering a recursive
+  ;; minibuffer session, we should be able to still switch the project.
+  (let ((consult-project-function
+         (let ((root (or (consult--project-root t) (user-error "No project found")))
+               (depth (recursion-depth))
+               (orig consult-project-function))
+           (lambda (may-prompt)
+             (if (= depth (recursion-depth))
+                 root
+               (funcall orig may-prompt))))))
+    (funcall body)))
 
 ;;;###autoload
 (defun consult-project-buffer ()
