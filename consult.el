@@ -5043,10 +5043,7 @@ BUILDER is the command line builder function."
           (let ((file "") (file-len 0) result)
             (save-match-data
               (dolist (str cands (nreverse result))
-                (when (and (string-match consult--grep-match-regexp str)
-                           ;; Filter out empty context lines
-                           (or (/= (aref str (match-beginning 3)) ?-)
-                               (/= (match-end 0) (length str))))
+                (when (string-match consult--grep-match-regexp str)
                   ;; We share the file name across candidates to reduce
                   ;; the amount of allocated memory.
                   (unless (and (= file-len (- (match-end 1) (match-beginning 1)))
