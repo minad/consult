@@ -4976,6 +4976,7 @@ configuration of the virtual buffer sources."
                                   (confirm-nonexistent-file-or-buffer)
                                   :prompt "Switch to: "
                                   :history 'consult--buffer-history
+                                  :category 'consult-buffer
                                   :sort nil)))
     ;; For non-matching candidates, fall back to buffer creation.
     (unless (plist-get (cdr selected) :match)
