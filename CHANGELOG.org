@@ -8,6 +8,7 @@
   to search through a subset of info manuals.
 - ~consult-focus-lines~: Add mode line indicator if active.
 - ~consult-grep~: Preserve empty context lines.
+- ~consult-register-store~: Support Dired buffers.
 
 * Version 2.1 (2025-03-11)
 
