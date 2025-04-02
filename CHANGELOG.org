@@ -2,7 +2,7 @@
 #+author: Daniel Mendler
 #+language: en
 
-* Development
+* Version 2.2 (2025-04-02)
 
 - Add ~consult-info-define~ to conveniently define custom ~consult-info-*~ commands
   to search through a subset of info manuals.
