@@ -4631,7 +4631,10 @@ The command supports previewing the currently selected theme."
     (when theme
       (if (custom-theme-p theme)
           (enable-theme theme)
-        (load-theme theme :no-confirm)))))
+        (load-theme theme :no-confirm :no-enable)
+        (if (custom-theme-p theme)
+            (enable-theme theme)
+          (message "%s is not really a theme" theme))))))
 
 ;;;;; Command: consult-buffer
 
