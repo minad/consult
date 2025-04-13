@@ -4629,9 +4629,11 @@ The command supports previewing the currently selected theme."
   (unless (eq theme (car custom-enabled-themes))
     (mapc #'disable-theme custom-enabled-themes)
     (when theme
+      (unless (custom-theme-p theme)
+        (load-theme theme 'no-confirm 'no-enable))
       (if (custom-theme-p theme)
           (enable-theme theme)
-        (load-theme theme :no-confirm)))))
+        (consult--minibuffer-message "%s is not a valid theme")))))
 
 ;;;;; Command: consult-buffer
 
