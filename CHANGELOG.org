@@ -2,6 +2,11 @@
 #+author: Daniel Mendler
 #+language: en
 
+* Development
+
+- Bugfix: ~consult--read~ accepts list of symbols.
+- Bugfix: ~consult-theme~ handles invalid themes gracefully.
+
 * Version 2.2 (2025-04-02)
 
 - Add ~consult-info-define~ to conveniently define custom ~consult-info-*~ commands
