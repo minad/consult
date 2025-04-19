@@ -2,7 +2,7 @@
 #+author: Daniel Mendler
 #+language: en
 
-* Development
+* Version 2.3 (2025-04-19)
 
 - Bugfix: ~consult--read~ accepts list of symbols.
 - Bugfix: ~consult-theme~ handles invalid themes gracefully.
