@@ -52,7 +52,8 @@
           (pos (point-min)))
       (save-excursion
         (while (setq pos (compilation-next-single-property-change pos 'compilation-message))
-          (when-let (msg (get-text-property pos 'compilation-message))
+          (when-let* ((msg (get-text-property pos 'compilation-message))
+                      ((compilation--message->loc msg)))
             (goto-char pos)
             (push (propertize
                    (consult-compile--font-lock (consult--buffer-substring pos (pos-eol)))
