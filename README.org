@@ -166,7 +166,7 @@ their descriptions.
   context with an action menu. With an active region, store/append/prepend the
   contents, optionally deleting the region when a prefix argument is given.
   With a numeric prefix argument, store/add the number. Otherwise store point,
-  frameset, window or kmacro. Usage examples:
+  file, buffer, frameset, window or kmacro. Usage examples:
   * =M-' x=: If no region is active, store point in register =x=.
     If a region is active, store the region in register =x=.
   * =M-' M-w x=: Store window configuration in register =x=.
