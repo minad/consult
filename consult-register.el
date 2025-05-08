@@ -323,6 +323,7 @@ kmacro."
        (?p "point" "Point to register: " ,#'point-to-register)
        ,@(when-let ((file (or buffer-file-name default-directory)))
           `((?f "file" "File to register: " ,(lambda (r) (set-register r `(file . ,file))))))
+       (?b "buffer" "Buffer to register: " ,(lambda (r) (set-register r `(buffer . ,(buffer-name)))))
        (?t "frameset" "Frameset to register: " ,#'frameset-to-register)
        (?w "window" "Window to register: " ,#'window-configuration-to-register)
        ,@(and last-kbd-macro `((?k "kmacro" "Kmacro to register: " ,#'kmacro-to-register))))))))
