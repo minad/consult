@@ -573,7 +573,7 @@ We use invalid characters outside the Unicode range.")
 (defvar consult--gc-threshold (* 64 1024 1024)
   "Large GC threshold for temporary increase.")
 
-(defvar consult--gc-percentage 0.5
+(defvar consult--gc-percentage 0.2
   "Large GC percentage for temporary increase.")
 
 (defvar consult--process-chunk (* 1024 1024)
