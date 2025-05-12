@@ -6,6 +6,7 @@
 
 - ~consult-register-store~: Add =M-b= action to store the buffer in a register.
 - ~consult-compile~: Ignore messages without a location.
+- ~consult-compile~: Introduce key =g= for grep locations.
 
 * Version 2.3 (2025-04-19)
 
