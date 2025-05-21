@@ -4683,7 +4683,7 @@ to search and is passed to `consult--buffer-query'."
                    (t "")))
           buffers)))
 
-(cl-defun consult--buffer-query (&key sort directory mode as predicate (filter t)
+(cl-defun consult--buffer-query (&key sort directory mode mode-invert as predicate (filter t)
                                       include (exclude consult-buffer-filter)
                                       (buffer-list t))
   "Query for a list of matching buffers.
@@ -4696,6 +4696,7 @@ FILTER can be either t, nil or invert.
 EXCLUDE is a list of regexps.
 INCLUDE is a list of regexps.
 MODE can be a mode or a list of modes to restrict the returned buffers.
+MODE-INVERT can be t or nil. If t, modes in MODE are excluded from returned buffers.
 PREDICATE is a predicate function.
 BUFFER-LIST is the unfiltered list of buffers.
 AS is a conversion function."
@@ -4710,10 +4711,14 @@ AS is a conversion function."
         (consult--keep! buffer-list
           (and
            (or (not mode)
-               (let ((mm (buffer-local-value 'major-mode it)))
+               (let ((mm (buffer-local-value 'major-mode it))
+                     (include-mode-fn (if mode-invert #'not #'identity)))
                  (if (consp mode)
-                     (seq-some (lambda (m) (provided-mode-derived-p mm m)) mode)
-                   (provided-mode-derived-p mm mode))))
+                     (seq-some (lambda (m) (funcall include-mode-fn
+                                                    (provided-mode-derived-p mm m)))
+                               mode)
+                   (funcall include-mode-fn
+                            (provided-mode-derived-p mm mode)))))
            (pcase-exhaustive filter
              ('nil t)
              ((or 't 'invert)
