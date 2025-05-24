@@ -99,13 +99,14 @@
         (funcall jump action pos)))))
 
 ;;;###autoload
-(defun consult-compile-error ()
+(defun consult-compile-error (&optional arg)
   "Jump to a compilation error in the current buffer.
 
-This command collects entries from compilation buffers and grep
-buffers related to the current buffer.  The command supports
-preview of the currently selected error."
-  (interactive)
+This command collects entries from compilation buffers and grep buffers
+related to the current buffer.  The command supports preview of the
+currently selected error.  With prefix ARG, jump to the error message in
+the compilation buffer, instead of to the actual location of the error."
+  (interactive "P")
   (consult--read
    (or (mapcan #'consult-compile--error-candidates
                (or (consult-compile--compilation-buffers
@@ -121,7 +122,7 @@ preview of the currently selected error."
    :group (consult--type-group consult-compile--narrow)
    :narrow (consult--type-narrow consult-compile--narrow)
    :history '(:input consult-compile--history)
-   :state (consult-compile--state)))
+   :state (if arg (consult--jump-state) (consult-compile--state))))
 
 (provide 'consult-compile)
 ;;; consult-compile.el ends here
