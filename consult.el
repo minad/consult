@@ -1531,7 +1531,9 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
       ;; Switch to buffer if it is not visible
       (when-let ((buf (marker-buffer pos)))
         (or (and (eq (current-buffer) buf) (eq (window-buffer) buf))
-            (consult--buffer-action buf 'norecord)
+            (if-let ((win (get-buffer-window buf)))
+                (select-window win 'norecord)
+              (consult--buffer-action buf 'norecord))
             t))))
 
 (defun consult--jump (pos)
