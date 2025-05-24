@@ -2,6 +2,11 @@
 #+author: Daniel Mendler
 #+language: en
 
+* Development
+
+- ~consult--directory-prompt~: Use current directory as default, no initial input
+  such that multiple files or directories can be selected more easily.
+
 * Version 2.4 (2025-05-21)
 
 - ~consult-register-store~: Add =M-b= action to store the buffer in a register.
