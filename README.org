@@ -719,10 +719,11 @@ the matching lines from =consult-line=, =consult-outline=, =consult-mark= and
 they can be edited via the =occur-edit-mode= (press key =e=). Similarly, Embark
 supports exporting the matches found by =consult-grep=, =consult-ripgrep= and
 =consult-git-grep= to a Grep buffer, where the matches across files can be edited,
-if the [[https://github.com/mhayashi1120/Emacs-wgrep][wgrep]] package is installed. These three workflows are symmetric.
+via =grep-edit-mode= on Emacs 31 (or via the [[https://github.com/mhayashi1120/Emacs-wgrep][wgrep]] package). These three workflows
+are symmetric.
 
-+ =consult-line= -> =embark-export= to =occur-mode= buffer -> =occur-edit-mode= for editing of matches in buffer.
-+ =consult-grep= -> =embark-export= to =grep-mode= buffer -> =wgrep= for editing of all matches.
++ =consult-line= -> =embark-export= to =occur-mode= buffer -> =occur-edit-mode= for editing of matches.
++ =consult-grep= -> =embark-export= to =grep-mode= buffer -> =grep-edit-mode= for editing of matches.
 + =consult-find= -> =embark-export= to =dired-mode= buffer -> =wdired-change-to-wdired-mode= for editing.
 
 * Configuration
@@ -1030,7 +1031,8 @@ I use and recommend this combination of packages:
 - [[https://github.com/minad/marginalia][marginalia]]: Annotations for the completion candidates
 - [[https://github.com/oantolin/embark][embark and embark-consult]]: Action commands, which can act on the completion candidates
 - [[https://github.com/oantolin/orderless][orderless]]: Completion style which offers flexible candidate filtering
-- [[https://github.com/mhayashi1120/Emacs-wgrep][wgrep]]: Editing of grep buffers. Use with =consult-grep= via =embark-export=.
+- [[https://github.com/mhayashi1120/Emacs-wgrep][wgrep]] (or =grep-edit-mode= on Emacs 31): Editing of grep buffers. Use with
+  =consult-grep= via =embark-export=.
 
 There exist multiple fine completion UIs beside Vertico, which are supported by
 Consult. Give them a try and find out which interaction model fits best for you.
