@@ -116,12 +116,13 @@ Each element of the list must have the form (char . name).")
     (list (consult-register--format-value val) 'consult--type ?t)))
 
 ;;;###autoload
-(defun consult-register-window (buffer &optional show-empty)
+(defun consult-register-window (buffer &optional show-empty pred)
   "Enhanced drop-in replacement for `register-preview'.
 
 BUFFER is the window buffer.
-SHOW-EMPTY must be t if the window should be shown for an empty register list."
-  (let ((regs (consult-register--alist 'noerror))
+SHOW-EMPTY must be t if the window should be shown for an empty register list.
+Optional argument PRED specifies the types of register to show."
+  (let ((regs (consult-register--alist 'noerror pred))
         (separator
          (and (display-graphic-p)
               (propertize #(" \n" 0 1 (display (space :align-to right)))
@@ -168,24 +169,24 @@ If COMPLETION is non-nil format the register for completion."
        str))
     str))
 
-(defun consult-register--alist (&optional noerror filter)
-  "Return register list, sorted and filtered with FILTER.
+(defun consult-register--alist (&optional noerror pred)
+  "Return register list, sorted and filtered with PRED.
 Raise an error if the list is empty and NOERROR is nil."
   (or (sort (cl-loop for reg in register-alist
                      ;; Sometimes, registers are made without a `cdr' or with
                      ;; invalid markers.  Such registers don't do anything, and
                      ;; can be ignored.
-                     if (and (cdr reg)
-                             (or (not (markerp (cdr reg))) (marker-buffer (cdr reg)))
-                             (or (not filter) (funcall filter reg)))
+                     if (when-let ((val (cdr reg)))
+                          (and (or (not (markerp val)) (marker-buffer val))
+                               (or (not pred) (funcall pred val))))
                      collect reg)
             #'car-less-than-car)
       (and (not noerror) (user-error "All registers are empty"))))
 
-(defun consult-register--candidates (&optional filter)
-  "Return formatted completion candidates, filtered with FILTER."
+(defun consult-register--candidates (&optional pred)
+  "Return formatted completion candidates, filtered with PRED."
   (mapcar (lambda (reg) (consult-register-format reg 'completion))
-          (consult-register--alist nil filter)))
+          (consult-register--alist nil pred)))
 
 ;;;###autoload
 (defun consult-register (&optional arg)

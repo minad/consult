@@ -4918,7 +4918,7 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
 
 (defun consult--file-register-p (reg)
   "Return non-nil if REG is a file register."
-  (memq (car-safe (cdr reg)) '(file-query file)))
+  (memq (car-safe reg) '(file-query file)))
 
 (autoload 'consult-register--candidates "consult-register")
 (defvar consult--source-file-register
@@ -4926,7 +4926,8 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
      :narrow   (?r . "Register")
      :category file
      :state    ,#'consult--file-state
-     :enabled  ,(lambda () (seq-some #'consult--file-register-p register-alist))
+     :enabled  ,(lambda () (cl-loop for (_ . reg) in register-alist
+                                    thereis (consult--file-register-p reg)))
      :items    ,(lambda () (consult-register--candidates #'consult--file-register-p)))
   "File register source.")
 
