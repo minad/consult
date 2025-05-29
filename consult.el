@@ -232,6 +232,7 @@ buffers.  The regular expressions are matched case sensitively."
     consult--source-modified-buffer
     consult--source-buffer
     consult--source-recent-file
+    consult--source-buffer-register
     consult--source-file-register
     consult--source-bookmark
     consult--source-project-buffer-hidden
@@ -4916,11 +4917,26 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
                                         :as #'consult--buffer-pair)))
   "Buffer source for `consult-buffer'.")
 
+(autoload 'consult-register--candidates "consult-register")
+
+(defun consult--buffer-register-p (reg)
+  "Return non-nil if REG is a buffer register."
+  (and (eq (car-safe reg) 'buffer) (buffer-live-p (get-buffer (cdr reg)))))
+
+(defvar consult--source-buffer-register
+  `( :name     "Buffer Register"
+     :narrow   (?r . "Register")
+     :category buffer
+     :state    ,#'consult--buffer-state
+     :enabled  ,(lambda () (cl-loop for (_ . reg) in register-alist
+                                    thereis (consult--buffer-register-p reg)))
+     :items    ,(lambda () (consult-register--candidates #'consult--buffer-register-p)))
+  "Buffer register source.")
+
 (defun consult--file-register-p (reg)
   "Return non-nil if REG is a file register."
   (memq (car-safe reg) '(file-query file)))
 
-(autoload 'consult-register--candidates "consult-register")
 (defvar consult--source-file-register
   `( :name     "File Register"
      :narrow   (?r . "Register")
