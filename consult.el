@@ -830,6 +830,7 @@ asked for the directories or files to search via
                       ;; Preserve this-command across `completing-read-multiple' call,
                       ;; such that `consult-customize' continues to work.
                       (let ((this-command this-command)
+                            (def (abbreviate-file-name default-directory))
                             ;; bug#75910: category instead of `minibuffer-completing-file-name'
                             (minibuffer-completing-file-name t)
                             (ignore-case read-file-name-completion-ignore-case))
@@ -837,9 +838,9 @@ asked for the directories or files to search via
                             (lambda ()
                               (setq-local completion-ignore-case ignore-case)
                               (set-syntax-table minibuffer-local-filename-syntax))
-                          (completing-read-multiple (format-prompt "Dirs or files" "./")
+                          (completing-read-multiple "Directories or files: "
                                                     #'completion-file-name-table
-                                                    nil t nil 'consult--path-history ""))))
+                                                    nil t def 'consult--path-history def))))
                ((and `(,p) (guard (file-directory-p p))) p)
                (ps (setq paths (mapcar (lambda (p)
                                          (file-relative-name (expand-file-name p)))
