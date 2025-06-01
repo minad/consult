@@ -5452,10 +5452,11 @@ details regarding the asynchronous search."
   "Create man PAGE buffer, do not display if NODISPLAY is non-nil."
   (dlet ((Man-prefer-synchronous-call t)
          (Man-notify-method (and (not nodisplay) 'aggressive)))
-    (let (inhibit-message message-log-max)
-      (with-current-buffer (man page)
-        (goto-char (point-min))
-        (current-buffer)))))
+    (let* ((inhibit-message nil) (message-log-max nil) (buf (man page)))
+      (when (buffer-live-p buf)
+        (with-current-buffer buf
+          (goto-char (point-min))
+          (current-buffer))))))
 
 (consult--define-state man)
 
