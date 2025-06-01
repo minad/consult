@@ -5442,7 +5442,7 @@ details regarding the asynchronous search."
                  (and cand
                       (eq action 'preview)
                       (or (cdr (assoc cand buffers))
-                          (let ((buf (consult--man-action cand t)))
+                          (when-let ((buf (consult--man-action cand t)))
                             (unless (memq buf orig)
                               (cl-callf consult--preview-add-buffer
                                   buffers (cons cand buf)))
