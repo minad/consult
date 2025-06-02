@@ -1920,26 +1920,24 @@ This command is used internally by the narrowing system of `consult--read'."
   (run-hooks 'consult--completion-refresh-hook))
 
 (defconst consult--narrow-delete
-  `(menu-item
-    "" nil :filter
-    ,(lambda (&optional _)
-       (when (equal (minibuffer-contents-no-properties) "")
-         (lambda ()
-           (interactive)
-           (consult-narrow nil))))))
+  `( menu-item "" nil :filter
+     ,(lambda (&optional _)
+        (when (equal (minibuffer-contents-no-properties) "")
+          (lambda ()
+            (interactive)
+            (consult-narrow nil))))))
 
 (defconst consult--narrow-space
-  `(menu-item
-    "" nil :filter
-    ,(lambda (&optional _)
-       (let ((str (minibuffer-contents-no-properties)))
-         (when-let ((keys (plist-get consult--narrow-config :keys))
-                    (pair (or (and (length= str 1) (assoc (aref str 0) keys))
-                              (and (equal str "") (assoc ?\s keys)))))
-           (lambda ()
-             (interactive)
-             (delete-minibuffer-contents)
-             (consult-narrow (car pair))))))))
+  `( menu-item "" nil :filter
+     ,(lambda (&optional _)
+        (let ((str (minibuffer-contents-no-properties)))
+          (when-let ((keys (plist-get consult--narrow-config :keys))
+                     (pair (or (and (length= str 1) (assoc (aref str 0) keys))
+                               (and (equal str "") (assoc ?\s keys)))))
+            (lambda ()
+              (interactive)
+              (delete-minibuffer-contents)
+              (consult-narrow (car pair))))))))
 
 (defun consult-narrow-help ()
   "Print narrowing help as a `minibuffer-message'.
