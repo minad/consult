@@ -2,9 +2,10 @@
 #+author: Daniel Mendler
 #+language: en
 
-* Development
+* Version 2.5 (2025-06-05)
 
 - ~consult--source-buffer-register~: New source for buffer registers.
+- ~consult--jump-ensure-buffer~: Reuse window if possible.
 - ~consult-compile-error~: Add prefix argument to jump to error message in the
   compilation buffer instead of error location.
 
