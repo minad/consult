@@ -92,14 +92,14 @@ See `xref-show-xrefs-function' for the description of the
 FETCHER and ALIST arguments."
   (let* ((consult-xref--fetcher fetcher)
          (candidates (consult-xref--candidates))
-         (display (alist-get 'display-action alist))
-         (this-command #'consult-xref))
+         (display (alist-get 'display-action alist)))
     (unless candidates
       (user-error "No xref locations"))
     (xref-pop-to-location
      (if (cdr candidates)
          (consult--read
           candidates
+          :command #'consult-xref
           :prompt "Go to xref: "
           :history 'consult-xref--history
           :require-match t

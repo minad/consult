@@ -2804,10 +2804,10 @@ PREVIEW-KEY are the preview keys."
                         (propertize ann 'face 'completions-annotations))))))
           cands))
 
-(cl-defun consult--read-1 (table &key
-                                 prompt predicate require-match history default keymap category
-                                 initial narrow initial-narrow add-history annotate state
-                                 preview-key sort lookup group inherit-input-method async-wrap)
+(cl-defun consult--read-1 ( table &key
+                            prompt predicate require-match history default keymap category
+                            initial narrow initial-narrow add-history annotate state
+                            preview-key sort lookup group inherit-input-method async-wrap)
   "See `consult--read' for documentation."
   (when (and async-wrap (consult--async-p table))
     (setq table (funcall (funcall async-wrap table) (consult--async-sink))))
@@ -2867,11 +2867,11 @@ PREVIEW-KEY are the preview keys."
             (user-error "No selection"))
           selected)))))
 
-(cl-defun consult--read (table &rest options &key
-                               prompt predicate require-match history default
-                               keymap category initial narrow initial-narrow
-                               add-history annotate state preview-key sort
-                               lookup group inherit-input-method async-wrap)
+(cl-defun consult--read ( table &rest options &key
+                          prompt predicate require-match history default command
+                          keymap category initial narrow initial-narrow annotate
+                          add-history state preview-key sort lookup group
+                          inherit-input-method async-wrap)
   "Enhanced completing read function to select from TABLE.
 
 The function is a thin wrapper around `completing-read'.  Keyword
@@ -2892,6 +2892,7 @@ HISTORY is the symbol of the history variable.
 DEFAULT is the default selected value.
 ADD-HISTORY is a list of items to add to the history.
 CATEGORY is the completion category symbol.
+COMMAND is used for customization, defaulting to `this-command.'
 SORT should be set to nil if the candidates are already sorted.
 This will disable sorting in the completion UI.
 LOOKUP is a lookup function passed the selected candidate string,
@@ -2914,22 +2915,21 @@ input method.
 ASYNC-WRAP wraps asynchronous functions and defaults to
 `consult--async-wrap'."
   (ignore prompt predicate require-match history default keymap category
-          initial narrow initial-narrow add-history annotate state
+          initial narrow initial-narrow add-history annotate state command
           preview-key sort lookup group inherit-input-method async-wrap)
   (apply #'consult--read-1 table
-         (append
-          (consult--customize-get)
+         (consult--customize-args
           options
-          (list :prompt "Select: "
-                :preview-key consult-preview-key
-                :sort t
-                :async-wrap #'consult--async-wrap
-                :lookup (lambda (selected &rest _) selected)))))
+          :prompt "Select: "
+          :preview-key consult-preview-key
+          :sort t
+          :async-wrap #'consult--async-wrap
+          :lookup (lambda (selected &rest _) selected))))
 
 ;;;; Internal API: consult--prompt
 
-(cl-defun consult--prompt-1 (&key prompt history add-history initial default
-                                  keymap state preview-key transform inherit-input-method)
+(cl-defun consult--prompt-1 ( &key prompt history add-history initial default
+                              keymap state preview-key transform inherit-input-method)
   "See `consult--prompt' for documentation."
   (minibuffer-with-setup-hook
       (:append (lambda ()
@@ -2943,8 +2943,8 @@ ASYNC-WRAP wraps asynchronous functions and defaults to
         history
       (read-from-minibuffer prompt initial nil nil history default inherit-input-method))))
 
-(cl-defun consult--prompt (&rest options &key prompt history add-history initial default
-                                 keymap state preview-key transform inherit-input-method)
+(cl-defun consult--prompt ( &rest options &key prompt history add-history initial default
+                            keymap state preview-key transform inherit-input-method command)
   "Read from minibuffer.
 
 Keyword OPTIONS:
@@ -2957,16 +2957,16 @@ DEFAULT is the default selected value.
 ADD-HISTORY is a list of items to add to the history.
 STATE is the state function, see `consult--with-preview'.
 PREVIEW-KEY are the preview keys (nil, `any', a single key or a list of keys).
-KEYMAP is a command-specific keymap."
-  (ignore prompt history add-history initial default
+KEYMAP is a command-specific keymap.
+COMMAND is used for customization, defaulting to `this-command.'"
+  (ignore prompt history add-history initial default command
           keymap state preview-key transform inherit-input-method)
   (apply #'consult--prompt-1
-         (append
-          (consult--customize-get)
+         (consult--customize-args
           options
-          (list :prompt "Input: "
-                :preview-key consult-preview-key
-                :transform #'identity))))
+          :prompt "Input: "
+          :preview-key consult-preview-key
+          :transform #'identity)))
 
 ;;;; Internal API: consult--multi
 
@@ -3234,10 +3234,10 @@ Optional source fields:
 (defmacro consult-customize (&rest args)
   "Set properties of commands or sources.
 ARGS is a list of commands or sources followed by the list of
-keyword-value pairs.  For `consult-customize' to succeed, the
-customized sources and commands must exist.  When a command is
-invoked, the value of `this-command' is used to lookup the
-corresponding customization options."
+keyword-value pairs.  For `consult-customize' to succeed, the customized
+sources and commands must exist.  When a command is invoked, the value
+of `:command' or `this-command' is used to lookup the corresponding
+customization options."
   (let (setter)
     (while args
       (let ((cmds (seq-take-while (lambda (x) (not (keywordp x))) args)))
@@ -3247,10 +3247,16 @@ corresponding customization options."
           (setq args (cddr args)))))
     (macroexp-progn setter)))
 
-(defun consult--customize-get ()
-  "Get configuration from `consult--customize-alist' for `this-command'."
-  (mapcar (lambda (x) (eval x 'lexical))
-          (alist-get this-command consult--customize-alist)))
+(defun consult--customize-args (options &rest defaults)
+  "Get configuration from `consult--customize-alist' for the current command.
+OPTIONS is the option plist, and DEFAULTS are default options which are
+overridden by OPTIONS."
+  (append
+   (mapcar (lambda (x) (eval x 'lexical))
+           (alist-get (or (plist-get options :command) this-command)
+                      consult--customize-alist))
+   (consult--plist-remove '(:command) options)
+   defaults))
 
 ;;;; Commands
 
@@ -3310,10 +3316,9 @@ expected return value are as specified for `completion-in-region'."
     (if (or (eq threshold t) (length< all (1+ (or threshold 1)))
             (and completion-cycling completion-all-sorted-completions))
         (completion--in-region start end collection predicate)
-      (let* ((this-command #'consult-completion-in-region)
-             ;; Wrap all annotation functions to ensure that they are executed
-             ;; in the original buffer.
-             (exit-fun (plist-get completion-extra-properties :exit-function))
+      ;; Wrap all annotation functions to ensure that they are executed
+      ;; in the original buffer.
+      (let* ((exit-fun (plist-get completion-extra-properties :exit-function))
              (ann-fun (plist-get completion-extra-properties :annotation-function))
              (aff-fun (plist-get completion-extra-properties :affixation-function))
              (docsig-fun (plist-get completion-extra-properties :company-docsig))
@@ -3335,6 +3340,7 @@ expected return value are as specified for `completion-in-region'."
                 ;; See gh:minad/vertico#61.
                 (consult--read
                  (consult--completion-table-in-buffer collection)
+                 :command #'consult-completion-in-region
                  :prompt (if (minibufferp)
                              ;; Use existing minibuffer prompt and input
                              (let ((prompt (buffer-substring (point-min) start)))
@@ -4684,9 +4690,9 @@ to search and is passed to `consult--buffer-query'."
                    (t "")))
           buffers)))
 
-(cl-defun consult--buffer-query (&key sort directory mode as predicate (filter t)
-                                      include (exclude consult-buffer-filter)
-                                      (buffer-list t))
+(cl-defun consult--buffer-query ( &key sort directory mode as predicate (filter t)
+                                  include (exclude consult-buffer-filter)
+                                  (buffer-list t))
   "Query for a list of matching buffers.
 The function supports filtering by various criteria which are
 used throughout Consult.  In particular it is the backbone of

@@ -8,6 +8,8 @@
 - ~consult--jump-ensure-buffer~: Reuse window if possible.
 - ~consult-compile-error~: Add prefix argument to jump to error message in the
   compilation buffer instead of error location.
+- ~consult--read~, ~consult--prompt~: Add ~:command~ keyword argument. Avoid
+  overriding ~this-command~ for ~consult-xref~ and ~consult-completion-in-region~.
 
 * Version 2.4 (2025-05-21)
 
