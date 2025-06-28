@@ -2,7 +2,7 @@
 #+author: Daniel Mendler
 #+language: en
 
-* Development
+* Version 2.6 (2025-06-28)
 
 - ~consult--read~, ~consult--prompt~: Accept a ~:command~ keyword argument which
   specifies the current command symbol to lookup the customization (see
