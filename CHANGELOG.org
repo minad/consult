@@ -2,6 +2,12 @@
 #+author: Daniel Mendler
 #+language: en
 
+* Development
+
+- ~consult--read~, ~consult--prompt~: Accept a ~:command~ keyword argument which
+  specifies the current command symbol to lookup the customization (see
+  ~consult-customize~). This change fixes an issue in ~embark-consult~.
+
 * Version 2.5 (2025-06-05)
 
 - ~consult--source-buffer-register~: New source for buffer registers.
