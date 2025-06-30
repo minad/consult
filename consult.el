@@ -794,7 +794,7 @@ network file systems."
   (save-match-data
     (let ((file (directory-file-name (abbreviate-file-name file)))
           (prefix nil))
-      (when (string-match "\\`/\\([^/|:]+:\\)" file)
+      (when (string-match "\\`/\\([^/|:]+:[^/|:]+:\\)" file)
         (setq prefix (propertize (match-string 1 file) 'face 'error)
               file (substring file (match-end 0))))
       (when (string-match "/\\([^/]+\\)/\\([^/]+\\)\\'" file)
