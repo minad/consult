@@ -792,11 +792,12 @@ network file systems."
 (defun consult--left-truncate-file (file)
   "Return abbreviated file name of FILE for use in `completing-read' prompt."
   (save-match-data
-    (let ((file (directory-file-name (abbreviate-file-name file)))
-          (prefix nil))
-      (when (string-match "\\`/\\([^/|:]+:[^/|:]+:\\)" file)
+    (let* ((file-name-handler-alist) ;; No Tramp interference please.
+           (file (directory-file-name (abbreviate-file-name file)))
+           (prefix nil))
+      (when (string-match "\\`/\\([^/|:]+:[^/|:]*:\\)" file)
         (setq prefix (propertize (match-string 1 file) 'face 'error)
-              file (substring file (match-end 0))))
+              file (if (= (match-end 0) (length file)) "/" (substring file (match-end 0)))))
       (when (string-match "/\\([^/]+\\)/\\([^/]+\\)\\'" file)
         (let* ((fst (truncate-string-to-width (match-string 1 file) 20 nil nil "…"))
                (snd (truncate-string-to-width (match-string 2 file) 20 nil nil "…"))
