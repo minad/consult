@@ -227,6 +227,13 @@ with a space character, the *Completions* buffer and a few log
 buffers.  The regular expressions are matched case sensitively."
   :type '(repeat regexp))
 
+(defcustom consult-buffer-list #'buffer-list
+  "List of buffers to use for selection.
+By default, the function `buffer-list' is used which returns all
+buffers.  Set it to a custom function to configure buffer isolation."
+  :type `(choice (const :tag "All buffers" ,#'buffer-list)
+                 (function :tag "Custom function")))
+
 (defcustom consult-buffer-sources
   '(consult--source-hidden-buffer
     consult--source-modified-buffer
@@ -4693,7 +4700,7 @@ to search and is passed to `consult--buffer-query'."
 
 (cl-defun consult--buffer-query ( &key sort directory mode as predicate (filter t)
                                   include (exclude consult-buffer-filter)
-                                  (buffer-list t))
+                                  (buffer-list consult-buffer-list))
   "Query for a list of matching buffers.
 The function supports filtering by various criteria which are
 used throughout Consult.  In particular it is the backbone of
@@ -4705,10 +4712,13 @@ EXCLUDE is a list of regexps.
 INCLUDE is a list of regexps.
 MODE can be a mode or a list of modes to restrict the returned buffers.
 PREDICATE is a predicate function.
-BUFFER-LIST is the unfiltered list of buffers.
+BUFFER-LIST is a function or a list of buffers.
 AS is a conversion function."
   (let ((root (consult--normalize-directory directory)))
-    (setq buffer-list (if (eq buffer-list t) (buffer-list) (copy-sequence buffer-list)))
+    (setq buffer-list (cond
+                        ((functionp buffer-list) (funcall buffer-list))
+                        ((listp buffer-list) (copy-sequence buffer-list))
+                        (t (buffer-list))))
     (when sort
       (setq buffer-list (funcall (intern (format "consult--buffer-sort-%s" sort)) buffer-list)))
     (when (or filter mode as root)
