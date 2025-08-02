@@ -229,10 +229,13 @@ buffers.  The regular expressions are matched case sensitively."
 
 (defcustom consult-buffer-list #'buffer-list
   "List of buffers to use for selection.
-By default, the function `buffer-list' is used which returns all
-buffers.  Set it to a custom function to configure buffer isolation."
+By default, the variable is set to the function `buffer-list', which
+returns all buffers from all frames.  Set it to
+`consult--frame-buffer-list' to only use buffers belonging to the
+current frame (or tab-bar tab).  Alternatively use a custom function for
+custom buffer isolation."
   :type `(choice (const :tag "All buffers" ,#'buffer-list)
-                 (const :tag "Frame buffers" ,#'consult--frame-buffer-list)
+                 (const :tag "Frame/Tab buffers" ,#'consult--frame-buffer-list)
                  (function :tag "Custom function")))
 
 (defcustom consult-buffer-sources
