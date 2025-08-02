@@ -232,6 +232,7 @@ buffers.  The regular expressions are matched case sensitively."
 By default, the function `buffer-list' is used which returns all
 buffers.  Set it to a custom function to configure buffer isolation."
   :type `(choice (const :tag "All buffers" ,#'buffer-list)
+                 (const :tag "Frame buffers" ,#'consult--frame-buffer-list)
                  (function :tag "Custom function")))
 
 (defcustom consult-buffer-sources
@@ -4697,6 +4698,11 @@ to search and is passed to `consult--buffer-query'."
                    (ndir (concat  ", " (consult--left-truncate-file ndir)))
                    (t "")))
           buffers)))
+
+(defun consult--frame-buffer-list ()
+  "List of buffers belonging to the current frame or tab."
+  (nconc (copy-sequence (frame-parameter nil 'buffer-list))
+         (copy-sequence (frame-parameter nil 'buried-buffer-list))))
 
 (cl-defun consult--buffer-query ( &key sort directory mode as predicate (filter t)
                                   include (exclude consult-buffer-filter)
