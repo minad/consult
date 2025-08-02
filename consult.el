@@ -4898,9 +4898,13 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
      :history  buffer-name-history
      :action   ,#'consult--buffer-action
      :items
-     ,(lambda () (consult--buffer-query :sort 'visibility
-                                        :filter 'invert
-                                        :as #'consult--buffer-pair)))
+     ,(lambda ()
+        (let ((unhidden (consult--string-hash (consult--buffer-query))))
+          (consult--buffer-query :sort 'visibility
+                                 :predicate (lambda (buf) (not (gethash buf unhidden)))
+                                 :as #'consult--buffer-pair
+                                 :filter nil
+                                 :buffer-list t))))
   "Hidden buffer source for `consult-buffer'.")
 
 (defvar consult--source-modified-buffer
