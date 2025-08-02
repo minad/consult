@@ -4728,9 +4728,7 @@ AS is a conversion function."
                         ((functionp buffer-list) (funcall buffer-list))
                         ((listp buffer-list) (copy-sequence buffer-list))
                         (t (buffer-list))))
-    (when sort
-      (setq buffer-list (funcall (intern (format "consult--buffer-sort-%s" sort)) buffer-list)))
-    (when (or filter mode as root)
+    (when (or filter mode root)
       (let ((exclude-re (consult--regexp-filter exclude))
             (include-re (consult--regexp-filter include))
             (case-fold-search))
@@ -4757,7 +4755,11 @@ AS is a conversion function."
                                       dir
                                     (expand-file-name dir)))))
            (or (not predicate) (funcall predicate it))
-           (if as (funcall as it) it)))))
+           it))))
+    (when sort
+      (setq buffer-list (funcall (intern (format "consult--buffer-sort-%s" sort)) buffer-list)))
+    (when as
+      (cl-loop for it in-ref buffer-list do (setf it (funcall as it))))
     buffer-list))
 
 (defun consult--buffer-file-hash ()
