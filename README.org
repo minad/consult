@@ -892,6 +892,7 @@ an overview of all Consult variables and functions with their descriptions.
 | consult-async-indicator          | Async indicator characters                          |
 | consult-bookmark-narrow          | Narrowing configuration for =consult-bookmark=        |
 | consult-buffer-filter            | Filter for =consult-buffer=                           |
+| consult-buffer-list              | Function to retrieve list of buffers                |
 | consult-buffer-sources           | List of virtual buffer sources                      |
 | consult-fd-args                  | Command line arguments for fd                       |
 | consult-find-args                | Command line arguments for find                     |
