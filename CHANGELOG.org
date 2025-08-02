@@ -2,6 +2,12 @@
 #+author: Daniel Mendler
 #+language: en
 
+* Development
+
+- ~consult-buffer-list~: New customizable variable to support frame or tab
+  isolation. Set to ~consult--frame-buffer-list~ for frame isolation.
+  Alternatively use buffer functions provided by packages like [[https://github.com/protesilaos/beframe][beframe]].
+
 * Version 2.6 (2025-06-28)
 
 - ~consult--read~, ~consult--prompt~: Accept a ~:command~ keyword argument which
