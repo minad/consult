@@ -97,6 +97,7 @@ their descriptions.
   - b Buffers
   - SPC Hidden buffers
   - * Modified buffers
+  - o Buffers from other frames/tabs
   - f Files (Requires =recentf-mode=)
   - r File and buffer registers
   - m Bookmarks
@@ -105,6 +106,9 @@ their descriptions.
   - F Project files
   - R Project roots
   - Custom [[#multiple-sources][other sources]] configured in =consult-buffer-sources=.
+  By default, buffers from all frames are taken into account. The buffers which
+  are taken into account, can be customized by the variable ~consult-buffer-list~.
+  Other buffers are available by pressing =o SPC=.
 - =consult-buffer-other-window=, =consult-buffer-other-frame=,
   =consult-buffer-other-tab=: Variants of =consult-buffer=.
 - =consult-project-buffer=: Variant of =consult-buffer= restricted to buffers and
