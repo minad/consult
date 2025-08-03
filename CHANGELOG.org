@@ -4,8 +4,8 @@
 
 * Development
 
-- ~consult-buffer-list~: New customizable variable to support frame or tab
-  isolation. Set to ~consult--frame-buffer-list~ for frame isolation.
+- ~consult-buffer-list-function~: New customizable variable to support frame or
+  tab isolation. Set to ~consult--frame-buffer-list~ for frame isolation.
   Alternatively use buffer functions provided by packages like [[https://github.com/protesilaos/beframe][beframe]].
 
 * Version 2.6 (2025-06-28)

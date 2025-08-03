@@ -227,7 +227,7 @@ with a space character, the *Completions* buffer and a few log
 buffers.  The regular expressions are matched case sensitively."
   :type '(repeat regexp))
 
-(defcustom consult-buffer-list #'buffer-list
+(defcustom consult-buffer-list-function #'buffer-list
   "List of buffers to use for selection.
 By default, the variable is set to the function `buffer-list', which
 returns all buffers from all frames.  Set it to
@@ -4710,7 +4710,7 @@ to search and is passed to `consult--buffer-query'."
 
 (cl-defun consult--buffer-query ( &key sort directory mode as predicate (filter t)
                                   include (exclude consult-buffer-filter)
-                                  (buffer-list consult-buffer-list))
+                                  (buffer-list consult-buffer-list-function))
   "Query for a list of matching buffers.
 The function supports filtering by various criteria which are
 used throughout Consult.  In particular it is the backbone of
@@ -4936,9 +4936,8 @@ all frames.")
                                                (buffer-file-name buf))))))
   "Modified buffer source for `consult-buffer'.
 The source is hidden by default and can be summoned via its narrow key.
-Only buffers from the `consult-buffer-list' are taken into account.  If
-`consult-buffer-list' is customized to `consult--frame-buffer-list' only
-buffers belonging to the current frame or tab are shown.")
+Only buffers returned by the `consult-buffer-list-function' are taken
+into account.")
 
 (defvar consult--source-buffer
   `( :name     "Buffer"
@@ -4952,9 +4951,8 @@ buffers belonging to the current frame or tab are shown.")
      ,(lambda () (consult--buffer-query :sort 'visibility
                                         :as #'consult--buffer-pair)))
   "Buffer source for `consult-buffer'.
-Only buffers from the `consult-buffer-list' are taken into account.  If
-`consult-buffer-list' is customized to `consult--frame-buffer-list' only
-buffers belonging to the current frame or tab are shown.")
+Only buffers returned by the `consult-buffer-list-function' are taken into
+account.")
 
 (defvar consult--source-other-buffer
   `( :name     "Other Buffer"
@@ -4964,7 +4962,7 @@ buffers belonging to the current frame or tab are shown.")
      :face     consult-buffer
      :history  buffer-name-history
      :state    ,#'consult--buffer-state
-     :enabled  (lambda () (not (eq consult-buffer-list #'buffer-list)))
+     :enabled  (lambda () (not (eq consult-buffer-list-function #'buffer-list)))
      :items
      ,(lambda ()
         (let ((local (consult--string-hash (consult--buffer-query))))
@@ -4974,9 +4972,8 @@ buffers belonging to the current frame or tab are shown.")
                                  :buffer-list t))))
   "Source for `consult-buffer' for buffers from other frames or tabs.
 The source is hidden by default and can be summoned via its narrow key.
-Only buffers which are not part of the `consult-buffer-list' are taken
-into account.  This source is only enabled if `consult-buffer-list' is
-not equal to `buffer-list'.")
+Only buffers returned by the `consult-buffer-list-function' are taken
+into account.")
 
 (autoload 'consult-register--candidates "consult-register")
 
