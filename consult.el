@@ -239,9 +239,10 @@ custom buffer isolation."
                  (function :tag "Custom function")))
 
 (defcustom consult-buffer-sources
-  '(consult--source-hidden-buffer
+  '(consult--source-buffer
+    consult--source-hidden-buffer
     consult--source-modified-buffer
-    consult--source-buffer
+    consult--source-other-buffer
     consult--source-recent-file
     consult--source-buffer-register
     consult--source-file-register
@@ -574,7 +575,7 @@ We use invalid characters outside the Unicode range.")
   "Special character regexp.")
 
 (defvar-local consult--narrow nil
-  "Current narrowing key.")
+  "Current narrow key.")
 
 (defvar-local consult--narrow-config nil
   "Narrowing config of the current completion.")
@@ -4913,7 +4914,10 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
                                         :filter 'invert
                                         :as #'consult--buffer-pair
                                         :buffer-list t)))
-  "Hidden buffer source for `consult-buffer'.")
+  "Hidden buffer source for `consult-buffer'.
+The source is hidden by default and can be summoned via its narrow key.
+All buffers are taken into account, i.e., the entire `buffer-list' from
+all frames.")
 
 (defvar consult--source-modified-buffer
   `( :name     "Modified Buffer"
@@ -4930,7 +4934,11 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
                                         (lambda (buf)
                                           (and (buffer-modified-p buf)
                                                (buffer-file-name buf))))))
-  "Modified buffer source for `consult-buffer'.")
+  "Modified buffer source for `consult-buffer'.
+The source is hidden by default and can be summoned via its narrow key.
+Only buffers from the `consult-buffer-list' are taken into account.  If
+`consult-buffer-list' is customized to `consult--frame-buffer-list' only
+buffers belonging to the current frame or tab are shown.")
 
 (defvar consult--source-buffer
   `( :name     "Buffer"
@@ -4943,7 +4951,32 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
      :items
      ,(lambda () (consult--buffer-query :sort 'visibility
                                         :as #'consult--buffer-pair)))
-  "Buffer source for `consult-buffer'.")
+  "Buffer source for `consult-buffer'.
+Only buffers from the `consult-buffer-list' are taken into account.  If
+`consult-buffer-list' is customized to `consult--frame-buffer-list' only
+buffers belonging to the current frame or tab are shown.")
+
+(defvar consult--source-other-buffer
+  `( :name     "Other Buffer"
+     :narrow   ?o
+     :hidden   t
+     :category buffer
+     :face     consult-buffer
+     :history  buffer-name-history
+     :state    ,#'consult--buffer-state
+     :enabled  (lambda () (not (eq consult-buffer-list #'buffer-list)))
+     :items
+     ,(lambda ()
+        (let ((local (consult--string-hash (consult--buffer-query))))
+          (consult--buffer-query :sort 'visibility
+                                 :predicate (lambda (buf) (not (gethash buf local)))
+                                 :as #'consult--buffer-pair
+                                 :buffer-list t))))
+  "Source for `consult-buffer' for buffers from other frames or tabs.
+The source is hidden by default and can be summoned via its narrow key.
+Only buffers which are not part of the `consult-buffer-list' are taken
+into account.  This source is only enabled if `consult-buffer-list' is
+not equal to `buffer-list'.")
 
 (autoload 'consult-register--candidates "consult-register")
 
