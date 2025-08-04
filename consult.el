@@ -4962,7 +4962,7 @@ account.")
      :face     consult-buffer
      :history  buffer-name-history
      :state    ,#'consult--buffer-state
-     :enabled  (lambda () (not (eq consult-buffer-list-function #'buffer-list)))
+     :enabled  ,(lambda () (not (eq consult-buffer-list-function #'buffer-list)))
      :items
      ,(lambda ()
         (let ((local (consult--string-hash (consult--buffer-query))))
