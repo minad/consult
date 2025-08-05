@@ -2,7 +2,7 @@
 #+author: Daniel Mendler
 #+language: en
 
-* Development
+* Version 2.7 (2025-08-05)
 
 - ~consult-buffer-list-function~: New customizable variable to support frame or
   tab isolation (see ~tab-bar-mode~). Set to ~consult--frame-buffer-list~ for frame
