@@ -169,6 +169,11 @@ of the line after the prompt."
 nil shows all `custom-available-themes'."
   :type '(repeat (choice symbol regexp)))
 
+(defcustom consult-fonts nil
+  "List of fonts (symbols or regexps) to be presented for selection.
+nil shows all available fonts."
+  :type '(repeat (choice symbol regexp)))
+
 (defcustom consult-after-jump-hook (list #'recenter)
   "Function called after jumping to a location.
 
@@ -4646,6 +4651,38 @@ The command supports previewing the currently selected theme."
       (if (custom-theme-p theme)
           (enable-theme theme)
         (consult--minibuffer-message "%s is not a valid theme")))))
+
+;;;;; Command: consult-font
+
+;;;###autoload
+(defun consult-font (font)
+  "Set the default frame font to FONT from available fonts.
+
+The command supports previewing the currently selected font."
+  (interactive
+   (list
+    (let* ((regexp (consult--regexp-filter
+                    (mapcar (lambda (x) (if (stringp x) x (format "\\`%s\\'" x)))
+                            consult-fonts)))
+           (avail-fonts (seq-filter
+                         (lambda (x) (string-match-p regexp x))
+                         (x-list-fonts "*")))
+           (current-font (frame-parameter nil 'font)))
+      (consult--read
+       avail-fonts
+       :prompt "Font: "
+       :require-match t
+       :category 'font
+       :history 'consult--font-history
+       :lookup (lambda (selected &rest _)
+                 (or selected current-font))
+       :state (lambda (action font)
+                (pcase action
+                  ('preview (when font (set-frame-font font)))
+                  ('return (when font (set-frame-font font)))))
+       :default current-font))))
+  (when font
+    (set-frame-font font)))
 
 ;;;;; Command: consult-buffer
 
