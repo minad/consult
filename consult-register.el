@@ -89,8 +89,9 @@ Each element of the list must have the form (char . name).")
 
 (cl-defmethod consult-register--describe ((val (head buffer)))
   "Describe buffer register VAL."
-  (list (propertize (cdr val) 'face 'consult-buffer)
-        'consult--type ?f 'multi-category `(buffer . ,(cdr val))))
+  (let ((buf (cdr val)))
+    (list (propertize (if (bufferp buf) (buffer-name buf) buf) 'face 'consult-buffer)
+          'consult--type ?f 'multi-category `(buffer . ,buf))))
 
 (cl-defmethod consult-register--describe ((val (head file-query)))
   "Describe file-query register VAL."
