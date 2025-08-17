@@ -72,8 +72,10 @@ ARGS are the arguments to the special item function."
     (`(,pos ,fn . ,args)
      (setq pos `(,pos ,#'consult-imenu--switch-buffer ,(current-buffer)
                       ,fn ,@args))))
-  (if (or (consp pos)
-          (eq imenu-default-goto-function #'imenu-default-goto-function))
+  (if (and (consp pos)
+           (stringp (car pos))
+           (or (markerp (cdr pos) (integerp (cdr pos))))
+           (eq imenu-default-goto-function #'imenu-default-goto-function))
       pos
     (list pos #'consult-imenu--switch-buffer (current-buffer)
           imenu-default-goto-function)))
