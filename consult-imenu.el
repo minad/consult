@@ -64,19 +64,15 @@ ARGS are the arguments to the special item function."
 (defun consult-imenu--normalize (pos)
   "Return normalized imenu POS."
   (pcase pos
-    ;; Create marker from integer item
-    ((pred integerp) (setq pos (copy-marker pos)))
-    ;; Semantic uses overlay for positions
-    ((pred overlayp) (setq pos (copy-marker (overlay-start pos))))
-    ;; Wrap special item
+    ;; Wrap special position
     (`(,pos ,fn . ,args)
-     (setq pos `(,pos ,#'consult-imenu--switch-buffer ,(current-buffer)
-                      ,fn ,@args))))
-  (if (or (consp pos)
-          (eq imenu-default-goto-function #'imenu-default-goto-function))
-      pos
-    (list pos #'consult-imenu--switch-buffer (current-buffer)
-          imenu-default-goto-function)))
+     `(,pos ,#'consult-imenu--switch-buffer ,(current-buffer) ,fn ,@args))
+    (_ (if (eq imenu-default-goto-function #'imenu-default-goto-function)
+           ;; Use markers instead of integers, such that positions are preserved
+           ;; when editing, and to support jumps across buffers.
+           (if (integerp pos) (copy-marker pos) pos)
+         (list pos #'consult-imenu--switch-buffer (current-buffer)
+               imenu-default-goto-function)))))
 
 (defun consult-imenu--flatten (prefix face list types)
   "Flatten imenu LIST.
