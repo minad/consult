@@ -80,7 +80,7 @@
 (defun consult-compile--compilation-buffers (file)
   "Return a list of compilation buffers relevant to FILE."
   (consult--buffer-query
-   :sort 'alpha :predicate
+   :sort 'alpha :buffer-list t :predicate
    (lambda (buffer)
      (and (buffer-local-value 'compilation-locs buffer)
           (file-in-directory-p file (buffer-local-value 'default-directory buffer))))))
