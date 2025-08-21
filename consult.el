@@ -4705,8 +4705,12 @@ to search and is passed to `consult--buffer-query'."
 
 (defun consult--frame-buffer-list ()
   "List of buffers belonging to the current frame or tab."
-  (append (frame-parameter nil 'buffer-list)
-          (reverse (frame-parameter nil 'buried-buffer-list))))
+  (let ((buffers (append (frame-parameter nil 'buffer-list)
+                         (reverse (frame-parameter nil 'buried-buffer-list)))))
+    ;; Sometimes visible buffers are not registered in the buffer-list.
+    (cl-loop for win in (window-list) for buf = (window-buffer win)
+             unless (memq buf buffers) do (push buf buffers))
+    buffers))
 
 (cl-defun consult--buffer-query ( &key sort directory mode as predicate (filter t)
                                   include (exclude consult-buffer-filter)
