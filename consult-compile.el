@@ -50,7 +50,7 @@
   "Return alist of errors and positions in BUFFER, a compilation buffer."
   (with-current-buffer buffer
     (let ((candidates)
-          (grep (and (derived-mode-p 'grep-mode) ?g))
+          (grep (and (derived-mode-p 'grep-mode 'grep-edit-mode) ?g))
           (pos (point-min)))
       (save-excursion
         (while (setq pos (compilation-next-single-property-change pos 'compilation-message))
