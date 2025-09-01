@@ -5230,6 +5230,19 @@ input."
                             opts paths)
                     hl))))))))
 
+(autoload 'consult-compile-error "consult-compile")
+
+;;;###autoload
+(defun consult-grep-match (&optional arg)
+  "Jump to grep matches related to the current project or file.
+
+This command collects entries from all related Grep buffers.  The
+command supports preview of the currently selected match.  With prefix
+ARG, jump to the match in the Grep buffer, instead of to the actual
+location of the match."
+  (interactive "P")
+  (consult-compile-error arg t))
+
 ;;;###autoload
 (defun consult-grep (&optional dir initial)
   "Search with `grep' for files in DIR where the content matches a regexp.

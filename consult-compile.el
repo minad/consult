@@ -45,10 +45,11 @@
         (setq pos end)))
     str))
 
-(defun consult-compile--error-candidates (buffer)
+(defun consult-compile--candidates (buffer)
   "Return alist of errors and positions in BUFFER, a compilation buffer."
   (with-current-buffer buffer
     (let ((candidates)
+          (grep (derived-mode-p 'grep-mode 'grep-edit-mode))
           (pos (point-min)))
       (save-excursion
         (while (setq pos (compilation-next-single-property-change pos 'compilation-message))
@@ -57,10 +58,9 @@
             (goto-char pos)
             (push (propertize
                    (consult-compile--font-lock (consult--buffer-substring pos (pos-eol)))
-                   'consult--type (pcase (compilation--message->type msg)
-                                    (0 ?i)
-                                    (1 ?w)
-                                    (_ ?e))
+                   'consult--type (and (not grep)
+                                       (pcase (compilation--message->type msg)
+                                         (0 ?i) (1 ?w) (_ ?e)))
                    'consult--candidate (point-marker))
                   candidates))))
       (nreverse candidates))))
@@ -77,14 +77,16 @@
             (compilation-next-error-function 0)
             (point-marker)))))))
 
-(defun consult-compile--compilation-buffers (file)
-  "Return a list of compilation buffers relevant to FILE."
+(defun consult-compile--buffers (grep file)
+  "List of compilation buffers relevant to FILE.
+If GREP is non-nil, search Grep buffers."
   (consult--buffer-query
    :sort 'alpha :predicate
    (lambda (buffer)
-     (with-current-buffer buffer
-       (and (compilation-buffer-internal-p)
-            (file-in-directory-p file default-directory))))))
+     (and (buffer-local-value 'compilation-locs buffer)
+          (file-in-directory-p file (buffer-local-value 'default-directory buffer))
+          (with-current-buffer buffer
+            (eq (not grep) (not (derived-mode-p 'grep-mode 'grep-edit-mode))))))))
 
 (defun consult-compile--state ()
   "Like `consult--jump-state', also setting the current compilation error."
@@ -100,21 +102,22 @@
         (funcall jump action pos)))))
 
 ;;;###autoload
-(defun consult-compile-error (&optional arg)
-  "Jump to a compilation error in the current buffer.
+(defun consult-compile-error (&optional arg grep)
+  "Jump to a compilation error related to the current project or file.
 
-This command collects entries from compilation buffers and grep buffers
-related to the current buffer.  The command supports preview of the
-currently selected error.  With prefix ARG, jump to the error message in
-the compilation buffer, instead of to the actual location of the error."
+This command collects entries from all related compilation buffers.  The
+command supports preview of the currently selected error.  With prefix
+ARG, jump to the error message in the compilation buffer, instead of to
+the actual location of the error.  If GREP is non-nil, Grep buffers are
+searched."
   (interactive "P")
   (consult--read
-   (or (mapcan #'consult-compile--error-candidates
-               (or (consult-compile--compilation-buffers
-                    default-directory)
-                   (user-error "No compilation buffers found for the current buffer")))
-       (user-error "No compilation errors found"))
-   :prompt "Go to error: "
+   (or (mapcan #'consult-compile--candidates
+               (or (consult-compile--buffers
+                    grep (or (consult--project-root) default-directory))
+                   (user-error "No related buffers")))
+       (user-error "No %s" (if grep "matches" "errors")))
+   :prompt (format "Go to %s: " (if grep "match" "error"))
    :category 'consult-compile-error
    :sort nil
    :require-match t

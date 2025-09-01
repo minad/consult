@@ -2,6 +2,14 @@
 #+author: Daniel Mendler
 #+language: en
 
+* Development
+
+- New command =consult-grep-match= based on =consult-compile-error=, which shows
+  Grep matches of related Grep buffers.
+- =consult-compile-error=: Exclude Grep matches. Show only compilation errors from
+  compilation buffers.
+- ~consult-compile-error~: Remove =g= narrow key.
+
 * Version 2.7 (2025-08-05)
 
 - ~consult-buffer-list-function~: New customizable variable to support frame or
