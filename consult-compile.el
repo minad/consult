@@ -31,8 +31,7 @@
 (defvar consult-compile--history nil)
 
 (defconst consult-compile--narrow
-  '((?g . "Grep")
-    (?e . "Error")
+  '((?e . "Error")
     (?w . "Warning")
     (?i . "Info")))
 
@@ -50,7 +49,6 @@
   "Return alist of errors and positions in BUFFER, a compilation buffer."
   (with-current-buffer buffer
     (let ((candidates)
-          (grep (and (derived-mode-p 'grep-mode 'grep-edit-mode) ?g))
           (pos (point-min)))
       (save-excursion
         (while (setq pos (compilation-next-single-property-change pos 'compilation-message))
@@ -59,8 +57,10 @@
             (goto-char pos)
             (push (propertize
                    (consult-compile--font-lock (consult--buffer-substring pos (pos-eol)))
-                   'consult--type (or grep (pcase (compilation--message->type msg)
-                                             (0 ?i) (1 ?w) (_ ?e)))
+                   'consult--type (pcase (compilation--message->type msg)
+                                    (0 ?i)
+                                    (1 ?w)
+                                    (_ ?e))
                    'consult--candidate (point-marker))
                   candidates))))
       (nreverse candidates))))
@@ -82,8 +82,9 @@
   (consult--buffer-query
    :sort 'alpha :predicate
    (lambda (buffer)
-     (and (buffer-local-value 'compilation-locs buffer)
-          (file-in-directory-p file (buffer-local-value 'default-directory buffer))))))
+     (with-current-buffer buffer
+       (and (compilation-buffer-internal-p)
+            (file-in-directory-p file default-directory))))))
 
 (defun consult-compile--state ()
   "Like `consult--jump-state', also setting the current compilation error."
