@@ -84,7 +84,7 @@ Each element of the list must have the form (char . name).")
 
 (cl-defmethod consult-register--describe ((val (head file)))
   "Describe file register VAL."
-  (list (propertize (abbreviate-file-name (cdr val)) 'face 'consult-file)
+  (list (propertize (consult--fast-abbreviate-file-name (cdr val)) 'face 'consult-file)
         'consult--type ?f 'multi-category `(file . ,(cdr val))))
 
 (cl-defmethod consult-register--describe ((val (head buffer)))
@@ -96,7 +96,7 @@ Each element of the list must have the form (char . name).")
 (cl-defmethod consult-register--describe ((val (head file-query)))
   "Describe file-query register VAL."
   (list (format "%s at position %d"
-                (propertize (abbreviate-file-name (cadr val))
+                (propertize (consult--fast-abbreviate-file-name (cadr val))
                             'face 'consult-file)
                 (caddr val))
         'consult--type ?f 'multi-category `(file . ,(cadr val))))
