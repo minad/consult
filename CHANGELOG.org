@@ -8,7 +8,7 @@
   Grep matches of related Grep buffers.
 - =consult-compile-error=: Exclude Grep matches. Show only compilation errors from
   compilation buffers.
-- ~consult-compile-error~: Remove =g= narrow key.
+- =consult-compile-error=: Remove =g= narrow key.
 
 * Version 2.7 (2025-08-05)
 
