@@ -2,7 +2,7 @@
 #+author: Daniel Mendler
 #+language: en
 
-* Development
+* Version 2.8 (2025-09-08)
 
 - New command =consult-grep-match= based on =consult-compile-error=, which shows
   Grep matches of related Grep buffers.
