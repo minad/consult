@@ -35,16 +35,6 @@
     (?w . "Warning")
     (?i . "Info")))
 
-(defun consult-compile--font-lock (str)
-  "Apply `font-lock' faces in STR, copy them to `face'."
-  (let ((pos 0) (len (length str)))
-    (while (< pos len)
-      (let* ((face (get-text-property pos 'font-lock-face str))
-             (end (or (text-property-not-all pos len 'font-lock-face face str) len)))
-        (put-text-property pos end 'face face str)
-        (setq pos end)))
-    str))
-
 (defun consult-compile--candidates (buffer)
   "Return alist of errors and positions in BUFFER, a compilation buffer."
   (with-current-buffer buffer
@@ -53,11 +43,11 @@
           (pos (point-min)))
       (save-excursion
         (while (setq pos (compilation-next-single-property-change pos 'compilation-message))
-          (when-let* ((msg (get-text-property pos 'compilation-message))
-                      ((compilation--message->loc msg)))
+          (when-let ((msg (get-text-property pos 'compilation-message))
+                     ((compilation--message->loc msg)))
             (goto-char pos)
             (push (propertize
-                   (consult-compile--font-lock (consult--buffer-substring pos (pos-eol)))
+                   (consult--buffer-substring pos (pos-eol))
                    'consult--type (and (not grep)
                                        (pcase (compilation--message->type msg)
                                          (0 ?i) (1 ?w) (_ ?e)))
