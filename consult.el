@@ -5239,7 +5239,8 @@ input."
 This command collects entries from all related Grep buffers.  The
 command supports preview of the currently selected match.  With prefix
 ARG, jump to the match in the Grep buffer, instead of to the actual
-location of the match."
+location of the match.  This command is a thin wrapper around
+`consult-compile-error'."
   (interactive "P")
   (consult-compile-error arg t))
 

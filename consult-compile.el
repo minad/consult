@@ -19,9 +19,10 @@
 
 ;;; Commentary:
 
-;; Provides the command `consult-compile-error'.  This is an extra
-;; package, to allow lazy loading of compile.el.  The
-;; `consult-compile-error' command is autoloaded.
+;; Provides the command `consult-compile-error'.  This is an extra package, to
+;; allow lazy loading of compile.el.  The `consult-compile-error' command is
+;; autoloaded.  See also the command `consult-grep-match' which adapts
+;; `consult-compile-error' to Grep buffers.
 
 ;;; Code:
 
@@ -99,7 +100,7 @@ This command collects entries from all related compilation buffers.  The
 command supports preview of the currently selected error.  With prefix
 ARG, jump to the error message in the compilation buffer, instead of to
 the actual location of the error.  If GREP is non-nil, Grep buffers are
-searched."
+searched.  See also `consult-grep-match'."
   (interactive "P")
   (consult--read
    (or (mapcan #'consult-compile--candidates
