@@ -37,7 +37,7 @@
     ;; List of macros
     (append (and last-kbd-macro (list (kmacro-ring-head))) kmacro-ring)
     (mapcar (lambda (x)
-              (list (kmacro--keys x) (kmacro--counter x) (kmacro--format x) x))
+              (list (kmacro--keys x) (kmacro--counter x) (kmacro--format x) x)))
     ;; Filter mouse clicks
     (seq-remove (lambda (x) (seq-some #'mouse-event-p (car x))))
     ;; Format macros
