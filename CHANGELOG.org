@@ -2,6 +2,10 @@
 #+author: Daniel Mendler
 #+language: en
 
+* Development
+
+- Require Emacs 29.
+
 * Version 2.8 (2025-09-08)
 
 - New command =consult-grep-match= based on =consult-compile-error=, which shows

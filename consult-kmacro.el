@@ -36,12 +36,8 @@
   (thread-last
     ;; List of macros
     (append (and last-kbd-macro (list (kmacro-ring-head))) kmacro-ring)
-    ;; Emacs 29 uses OClosures.  I like OClosures but it would have been better
-    ;; if public APIs wouldn't change like that.
     (mapcar (lambda (x)
-              (static-if (> emacs-major-version 28)
-                  (list (kmacro--keys x) (kmacro--counter x) (kmacro--format x) x)
-                `(,@x ,x))))
+              (list (kmacro--keys x) (kmacro--counter x) (kmacro--format x) x))
     ;; Filter mouse clicks
     (seq-remove (lambda (x) (seq-some #'mouse-event-p (car x))))
     ;; Format macros
@@ -69,23 +65,20 @@
 With prefix ARG, run the macro that many times.
 Macros containing mouse clicks are omitted."
   (interactive "p")
-  (let ((km (consult--read
-             (or (consult-kmacro--candidates)
-                 (user-error "No keyboard macros defined"))
-             :prompt "Keyboard macro: "
-             :category 'consult-kmacro
-             :require-match t
-             :sort nil
-             :history 'consult-kmacro--history
-             :annotate
-             (lambda (cand)
-               (get-text-property 0 'consult-kmacro--annotation cand))
-             :lookup #'consult--lookup-candidate)))
-    ;; Kmacros are lambdas (oclosures) on Emacs 29
-    (funcall (static-if (> emacs-major-version 28)
-                 km
-               (kmacro-lambda-form km))
-             arg)))
+  (funcall
+   (consult--read
+    (or (consult-kmacro--candidates)
+        (user-error "No keyboard macros defined"))
+    :prompt "Keyboard macro: "
+    :category 'consult-kmacro
+    :require-match t
+    :sort nil
+    :history 'consult-kmacro--history
+    :annotate
+    (lambda (cand)
+      (get-text-property 0 'consult-kmacro--annotation cand))
+    :lookup #'consult--lookup-candidate)
+   arg))
 
 (provide 'consult-kmacro)
 ;;; consult-kmacro.el ends here

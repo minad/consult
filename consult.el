@@ -6,7 +6,7 @@
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2020
 ;; Version: 2.8
-;; Package-Requires: ((emacs "28.1") (compat "30"))
+;; Package-Requires: ((emacs "29.1") (compat "30"))
 ;; URL: https://github.com/minad/consult
 ;; Keywords: matching, files, completion
 
