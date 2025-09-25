@@ -4633,9 +4633,11 @@ The command supports previewing the currently selected theme."
                  (or (and selected (car (memq selected avail-themes)))
                      saved-theme))
        :state (lambda (action theme)
-                (pcase action
-                  ('return (consult-theme (or theme saved-theme)))
-                  ((and 'preview (guard theme)) (consult-theme theme))))
+                (with-selected-window (or (active-minibuffer-window)
+                                          (selected-window))
+                  (pcase action
+                    ('return (consult-theme (or theme saved-theme)))
+                    ((and 'preview (guard theme)) (consult-theme theme)))))
        :default (symbol-name (or saved-theme 'default))))))
   (when (eq theme 'default) (setq theme nil))
   (unless (eq theme (car custom-enabled-themes))
