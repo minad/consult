@@ -13,14 +13,14 @@
 #+html: <a href="https://stable.melpa.org/#/consult"><img alt="MELPA Stable" src="https://stable.melpa.org/packages/consult-badge.svg"/></a>
 
 Consult provides search and navigation commands based on the Emacs completion
-function [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Minibuffer-Completion.html][completing-read]] (see [[info:elisp#Minibuffer Completion][info manual]]). Completion allows you to quickly
-select an item from a list of candidates. Consult offers asynchronous and
-interactive =consult-grep= and =consult-ripgrep= commands, and the line-based search
-command =consult-line=. Furthermore Consult provides an advanced buffer switching
-command =consult-buffer= to switch between buffers, recently opened files,
-bookmarks and buffer-like candidates from other sources. Some of the Consult
-commands are enhanced versions of built-in Emacs commands. For example the
-command =consult-imenu= presents a flat list of the Imenu with [[#live-previews][live preview]],
+function [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Minibuffer-Completion.html][completing-read]] documented in the [[info:elisp#Minibuffer Completion][Elisp manual]]. Completion allows you
+to quickly select an item from a list of candidates. Consult offers asynchronous
+and interactive =consult-grep= and =consult-ripgrep= commands, and the line-based
+search command =consult-line=. Furthermore Consult provides an advanced buffer
+switching command =consult-buffer= to switch between buffers, recently opened
+files, bookmarks and buffer-like candidates from other sources. Some of the
+Consult commands are enhanced versions of built-in Emacs commands. For example
+the command =consult-imenu= presents a flat list of the Imenu with [[#live-previews][live preview]],
 [[#narrowing-and-grouping][grouping and narrowing]]. Please take a look at the [[#available-commands][full list of commands]].
 
 Consult is fully compatible with completion systems centered around the standard
