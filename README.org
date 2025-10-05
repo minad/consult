@@ -13,19 +13,19 @@
 #+html: <a href="https://stable.melpa.org/#/consult"><img alt="MELPA Stable" src="https://stable.melpa.org/packages/consult-badge.svg"/></a>
 
 Consult provides search and navigation commands based on the Emacs completion
-function [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Minibuffer-Completion.html][completing-read]]. Completion allows you to quickly select an item from a
-list of candidates. Consult offers asynchronous and interactive =consult-grep= and
-=consult-ripgrep= commands, and the line-based search command =consult-line=.
-Furthermore Consult provides an advanced buffer switching command =consult-buffer=
-to switch between buffers, recently opened files, bookmarks and buffer-like
-candidates from other sources. Some of the Consult commands are enhanced
-versions of built-in Emacs commands. For example the command =consult-imenu=
-presents a flat list of the Imenu with [[#live-previews][live preview]], [[#narrowing-and-grouping][grouping and narrowing]].
-Please take a look at the [[#available-commands][full list of commands]].
+function [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Minibuffer-Completion.html][completing-read]] (see [[info:elisp#Minibuffer Completion][info manual]]). Completion allows you to quickly
+select an item from a list of candidates. Consult offers asynchronous and
+interactive =consult-grep= and =consult-ripgrep= commands, and the line-based search
+command =consult-line=. Furthermore Consult provides an advanced buffer switching
+command =consult-buffer= to switch between buffers, recently opened files,
+bookmarks and buffer-like candidates from other sources. Some of the Consult
+commands are enhanced versions of built-in Emacs commands. For example the
+command =consult-imenu= presents a flat list of the Imenu with [[#live-previews][live preview]],
+[[#narrowing-and-grouping][grouping and narrowing]]. Please take a look at the [[#available-commands][full list of commands]].
 
 Consult is fully compatible with completion systems centered around the standard
-Emacs =completing-read= API, notably the default completion system, [[https://github.com/minad/vertico][Vertico]], [[https://github.com/protesilaos/mct][Mct]],
-and [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Icomplete.html][Icomplete]].
+Emacs =completing-read= API, [[https://github.com/minad/vertico][Vertico]], [[https://github.com/protesilaos/mct][Mct]], and the built-in default completion
+system and Icomplete.
 
 This package keeps the completion system specifics to a minimum. The ability of
 the Consult commands to work well with arbitrary completion systems is one of
@@ -745,7 +745,7 @@ repository via other non-standard package managers.
 There is the [[https://github.com/minad/consult/wiki][Consult wiki]], where additional configuration examples can be
 contributed.
 
-*IMPORTANT:* It is recommended that you enable [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Lexical-Binding.html][lexical binding]] in your
+*IMPORTANT:* It is recommended that you enable lexical binding in your
 configuration. Many Consult-related code snippets require lexical binding, since
 they use lambdas and closures.
 
@@ -1120,8 +1120,8 @@ Please provide the necessary important information with your bug report:
 - Do you use Evil? Consult does not provide Evil integration out of the box, but
   there is some support in [[https://github.com/emacs-evil/evil-collection][evil-collection]].
 
-When evaluating Consult-related code snippets you should enable [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Lexical-Binding.html][lexical binding]].
-Consult often relies on lambdas and lexical closures.
+When evaluating Consult-related code snippets you should enable lexical binding.
+Consult relies on lambdas and lexical closures.
 
 * Hacking
 ** Creating asynchronous completion commands
