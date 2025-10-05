@@ -138,33 +138,34 @@ CALLBACK receives the candidates."
                    (setq buf nil)))))
       (when buf (kill-buffer buf)))))
 
-(defun consult-info--prepare-buffers (manuals fun)
+(defun consult-info--with-buffers (manuals fun)
   "Prepare buffers for MANUALS and call FUN with buffers."
   (declare (indent 1))
   (let (buffers)
     (unwind-protect
         (let ((reporter (make-progress-reporter "Preparing" 0 (length manuals))))
           (consult--with-increased-gc
-           (cl-loop
-            for idx from 0 for manual in manuals do
-            (push (consult-info--buffer manual #'always) buffers)
-            ;; Create a separate buffer if the info manual has subfiles. They
-            ;; are present on my system and have names like
-            ;; /usr/share/info/texinfo.info-2.gz.
-            (while-let
-                ((sub (buffer-local-value 'Info-current-subfile (car buffers)))
-                 (pos (string-match-p "-\\([0-9]+\\)\\'" sub))
-                 (buf (consult-info--buffer
-                       manual
-                       (lambda ()
-                         (ignore-errors
-                           (Info-read-subfile
-                            (format "%s%s" (substring sub 0 pos)
-                                    (1- (string-to-number (substring sub pos)))))
-                           (Info-select-node)
-                           t)))))
-              (push buf buffers))
-            (progress-reporter-update reporter (1+ idx) manual)))
+            (save-window-excursion
+              (cl-loop
+               for idx from 0 for manual in manuals do
+               (push (consult-info--buffer manual #'always) buffers)
+               ;; Create a separate buffer if the info manual has subfiles. They
+               ;; are present on my system and have names like
+               ;; /usr/share/info/texinfo.info-2.gz.
+               (while-let
+                   ((sub (buffer-local-value 'Info-current-subfile (car buffers)))
+                    (pos (string-match-p "-\\([0-9]+\\)\\'" sub))
+                    (buf (consult-info--buffer
+                          manual
+                          (lambda ()
+                            (ignore-errors
+                              (Info-read-subfile
+                               (format "%s%s" (substring sub 0 pos)
+                                       (1- (string-to-number (substring sub pos)))))
+                              (Info-select-node)
+                              t)))))
+                 (push buf buffers))
+               (progress-reporter-update reporter (1+ idx) manual))))
           (progress-reporter-done reporter)
           (funcall fun (reverse buffers)))
       (mapc #'kill-buffer buffers))))
@@ -180,7 +181,7 @@ CALLBACK receives the candidates."
       "Info Manuals: "
       (info--manual-names current-prefix-arg)
       nil t)))
-  (consult-info--prepare-buffers manuals
+  (consult-info--with-buffers manuals
     (lambda (buffers)
       (consult--read
        (consult--dynamic-collection
