@@ -91,11 +91,11 @@ CALLBACK receives the candidates."
              (dest (+ (cadr pos) (car matches))))
     `( ,(cdr matches) ,dest . ,pos)))
 
-(defun consult-info--action (cand)
-  "Jump to info CAND."
+(defun consult-info--action (cand &optional buf)
+  "Jump to info CAND, optionally reuse BUF."
   (pcase (consult-info--position cand)
     (`( ,_matches ,pos ,node ,_bol ,_buf)
-     (info node)
+     (info node buf)
      (widen)
      (goto-char pos)
      (Info-select-node)
@@ -103,7 +103,8 @@ CALLBACK receives the candidates."
 
 (defun consult-info--state ()
   "Info manual preview state."
-  (let ((preview (consult--jump-preview)))
+  (let ((preview (consult--jump-preview))
+        (buf (and Info-current-file (current-buffer))))
     (lambda (action cand)
       (pcase action
         ('preview
@@ -115,7 +116,7 @@ CALLBACK receives the candidates."
          (let (Info-history Info-history-list Info-history-forward)
            (when cand (ignore-errors (Info-select-node)))))
         ('return
-         (consult-info--action cand))))))
+         (consult-info--action cand (and (buffer-live-p buf) buf)))))))
 
 (defun consult-info--group (cand transform)
   "Return title for CAND or TRANSFORM the candidate."
