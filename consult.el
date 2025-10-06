@@ -4643,9 +4643,9 @@ The command supports previewing the currently selected theme."
   (unless (eq theme (car custom-enabled-themes))
     (mapc #'disable-theme custom-enabled-themes)
     (when theme
-      (unless (custom-theme-p theme)
+      (unless (and (memq theme custom-known-themes) (get theme 'theme-settings))
         (load-theme theme 'no-confirm 'no-enable))
-      (if (custom-theme-p theme)
+      (if (and (memq theme custom-known-themes) (get theme 'theme-settings))
           (enable-theme theme)
         (consult--minibuffer-message "%s is not a valid theme")))))
 
