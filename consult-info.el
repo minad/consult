@@ -178,10 +178,7 @@ CALLBACK receives the candidates."
    (if Info-current-file
        (list (file-name-base Info-current-file))
      (info-initialize)
-     (completing-read-multiple
-      "Info Manuals: "
-      (info--manual-names current-prefix-arg)
-      nil t)))
+     (completing-read-multiple "Info Manuals: " (info--manual-names nil) nil t)))
   (consult-info--with-buffers manuals
     (lambda (buffers)
       (consult--read
