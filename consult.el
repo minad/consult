@@ -4647,7 +4647,7 @@ The command supports previewing the currently selected theme."
         (load-theme theme 'no-confirm 'no-enable))
       (if (and (memq theme custom-known-themes) (get theme 'theme-settings))
           (enable-theme theme)
-        (consult--minibuffer-message "%s is not a valid theme")))))
+        (consult--minibuffer-message "%s is not a valid theme" theme)))))
 
 ;;;;; Command: consult-buffer
 
