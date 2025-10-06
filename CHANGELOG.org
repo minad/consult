@@ -5,7 +5,6 @@
 * Development
 
 - Require Emacs 29.
-- Improve interaction with upcoming =minibuffer-nonselected-mode=.
 - =consult-info=: Reuse current info buffer when jumping to a search result.
 
 * Version 2.8 (2025-09-08)
