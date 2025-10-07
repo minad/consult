@@ -1124,6 +1124,60 @@ When evaluating Consult-related code snippets you should enable lexical binding.
 Consult relies on lambdas and lexical closures.
 
 * Hacking
+** Creating simple commands
+
+You can specify the completion candidates directly.
+
+#+begin_src emacs-lisp
+(consult--read
+ '("String A"
+   "String B"
+   "String C")
+ :sort nil
+ :prompt "Select: ")
+#+end_src
+
+If you pass it an alist of =(completion-string . value)=, you can look up the value.
+
+#+begin_src emacs-lisp
+(consult--read
+ '(("String A" . value-a)
+   ("String B" . value-b)
+   ("String C" . value-c))
+ :prompt "Select: "
+ :sort nil
+ :lookup #'consult--lookup-cdr)
+#+end_src
+
+You can add the result as a text property.
+
+#+begin_src emacs-lisp
+(consult--read
+ (list
+  (propertize "String A" 'consult--candidate 'value-a)
+  (propertize "String B" 'consult--candidate 'value-b)
+  (propertize "String C" 'consult--candidate 'value-c))
+ :prompt "Select: "
+ :sort nil
+ :lookup #'consult--lookup-candidate)
+#+end_src
+
+You can add other text properties.
+
+#+begin_src emacs-lisp
+(consult--read
+ (mapcar (lambda (value)
+           (propertize
+            (format "%s %s"
+                    (propertize "Option" 'face 'font-lock-comment-face)
+                    value)
+            'consult--candidate value))
+         '("A" "B" "C"))
+ :prompt "Select: "
+ :sort nil
+ :lookup #'consult--lookup-candidate)
+#+end_src
+
 ** Creating asynchronous completion commands
 
 If you have a completion source that's both dynamic and expensive to generate,
@@ -1241,8 +1295,7 @@ Spiers]], [[https://github.com/astoff][Augusto Stoffel]], [[https://github.com/c
 Ostapyshyn]], [[https://github.com/jakanakaevangeli][jakanakaevangeli]], [[https://github.com/jdtsmith][JD Smith]], [[https://github.com/jyp][Jean-Philippe Bernardy]], [[https://github.com/mattiasdrp][mattiasdrp]],
 [[https://github.com/mohamed-abdelnour][Mohamed Abdelnour]], [[https://github.com/mohkale][Mohsin Kaleem]], [[https://github.com/noctuid][Fox Kiester]], [[https://github.com/oantolin/][Omar Antolín Camarena]], [[https://github.com/okamsn/][Earl
 Hyatt]], [[https://github.com/omar-polo][Omar Polo]], [[https://github.com/piotrkwiecinski][Piotr Kwiecinski]], [[https://github.com/rswgnu][Robert Weiner]], [[https://github.com/s-kostyaev/][Sergey Kostyaev]], [[https://github.com/scvalex][Alexandru
-Scvorțov]], [[https://github.com/tecosaur][Tecosaur]], [[https://github.com/thisirs][Sylvain Rousseau]], [[https://github.com/tomfitzhenry/][Tom Fitzhenry]], [[https://hg.serna.eu][Iñigo Serna]] and [[https://github.com/akreisher][Alex
-Kreisher]].
+Scvorțov]], [[https://github.com/tecosaur][Tecosaur]], [[https://github.com/thisirs][Sylvain Rousseau]], [[https://github.com/tomfitzhenry/][Tom Fitzhenry]], [[https://hg.serna.eu][Iñigo Serna]] and [[https://github.com/akreisher][Alex Kreisher]].
 
 Advice and useful discussions: [[https://github.com/Qkessler][Enrique Kessler Martínez]], [[https://github.com/alphapapa/][Adam Porter]], [[https://github.com/bdarcus][Bruce
 d'Arcus]], [[https://github.com/clemera/][Clemens Radermacher]], [[https://github.com/dgutov/][Dmitry Gutov]], [[https://github.com/hmelman/][Howard Melman]], [[https://github.com/iyefrat][Itai Y. Efrat]], [[https://github.com/jdtsmith][JD
