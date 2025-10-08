@@ -33,7 +33,7 @@ the main advantages of the package. Consult fits well into existing setups and
 it helps you to create a full completion environment out of small and
 independent components.
 
-You can combine the complementary packages [[https://github.com/minad/marginalia/][Marginalia]], [[https://github.com/oantolin/embark/][Embark]] and [[https://github.com/oantolin/orderless][Orderless]] with
+You can combine the complementary packages [[https://github.com/minad/marginalia][Marginalia]], [[https://github.com/oantolin/embark][Embark]] and [[https://github.com/oantolin/orderless][Orderless]] with
 Consult. Marginalia enriches the completion display with annotations, e.g.,
 documentation strings or file information. The versatile Embark package provides
 local actions, comparable to a context menu. These actions operate on the
@@ -1126,7 +1126,10 @@ Consult relies on lambdas and lexical closures.
 * Hacking
 ** Creating simple commands
 
-You can specify the completion candidates directly.
+When creating simple commands you can either use =consult--read= or directly rely
+on the built-in =completing-read= function. =consult--read= provides a nicer and
+more featureful API on top of =completing-read=. You can specify the completion
+candidates directly.
 
 #+begin_src emacs-lisp
 (consult--read
@@ -1137,7 +1140,8 @@ You can specify the completion candidates directly.
  :prompt "Select: ")
 #+end_src
 
-If you pass it an alist of =(completion-string . value)=, you can look up the value.
+If you pass it an alist of =(completion-string . value)=, you can look up the
+value.
 
 #+begin_src emacs-lisp
 (consult--read
@@ -1290,17 +1294,17 @@ commands originated in the Counsel package or the wiki of the Selectrum package.
 This package exists only thanks to the help of these great contributors and
 thanks to the feedback of many users. Thank you!
 
-Code contributions: [[https://github.com/aagon][Aymeric Agon-Rambosson]], [[https://github.com/amosbird][Amos Bird]], [[https://github.com/ashton314][Ashton Wiersdorf]], [[https://github.com/aspiers/][Adam
-Spiers]], [[https://github.com/astoff][Augusto Stoffel]], [[https://github.com/clemera/][Clemens Radermacher]], [[https://github.com/fuzy112][Zhengyi]], [[https://github.com/geolessel][Geoffrey Lessel]], [[https://github.com/iostapyshyn][Illia
+Code contributions: [[https://github.com/aagon][Aymeric Agon-Rambosson]], [[https://github.com/amosbird][Amos Bird]], [[https://github.com/ashton314][Ashton Wiersdorf]], [[https://github.com/aspiers][Adam
+Spiers]], [[https://github.com/astoff][Augusto Stoffel]], [[https://github.com/clemera][Clemens Radermacher]], [[https://github.com/fuzy112][Zhengyi]], [[https://github.com/geolessel][Geoffrey Lessel]], [[https://github.com/iostapyshyn][Illia
 Ostapyshyn]], [[https://github.com/jakanakaevangeli][jakanakaevangeli]], [[https://github.com/jdtsmith][JD Smith]], [[https://github.com/jyp][Jean-Philippe Bernardy]], [[https://github.com/mattiasdrp][mattiasdrp]],
-[[https://github.com/mohamed-abdelnour][Mohamed Abdelnour]], [[https://github.com/mohkale][Mohsin Kaleem]], [[https://github.com/noctuid][Fox Kiester]], [[https://github.com/oantolin/][Omar Antolín Camarena]], [[https://github.com/okamsn/][Earl
-Hyatt]], [[https://github.com/omar-polo][Omar Polo]], [[https://github.com/piotrkwiecinski][Piotr Kwiecinski]], [[https://github.com/rswgnu][Robert Weiner]], [[https://github.com/s-kostyaev/][Sergey Kostyaev]], [[https://github.com/scvalex][Alexandru
-Scvorțov]], [[https://github.com/tecosaur][Tecosaur]], [[https://github.com/thisirs][Sylvain Rousseau]], [[https://github.com/tomfitzhenry/][Tom Fitzhenry]], [[https://hg.serna.eu][Iñigo Serna]] and [[https://github.com/akreisher][Alex Kreisher]].
+[[https://github.com/mohamed-abdelnour][Mohamed Abdelnour]], [[https://github.com/mohkale][Mohsin Kaleem]], [[https://github.com/noctuid][Fox Kiester]], [[https://github.com/oantolin][Omar Antolín Camarena]], [[https://github.com/okamsn][Earl
+Hyatt]], [[https://github.com/omar-polo][Omar Polo]], [[https://github.com/piotrkwiecinski][Piotr Kwiecinski]], [[https://github.com/rswgnu][Robert Weiner]], [[https://github.com/s-kostyaev][Sergey Kostyaev]], [[https://github.com/scvalex][Alexandru
+Scvorțov]], [[https://github.com/tecosaur][Tecosaur]], [[https://github.com/thisirs][Sylvain Rousseau]], [[https://github.com/tomfitzhenry][Tom Fitzhenry]], [[https://hg.serna.eu][Iñigo Serna]] and [[https://github.com/akreisher][Alex Kreisher]].
 
-Advice and useful discussions: [[https://github.com/Qkessler][Enrique Kessler Martínez]], [[https://github.com/alphapapa/][Adam Porter]], [[https://github.com/bdarcus][Bruce
-d'Arcus]], [[https://github.com/clemera/][Clemens Radermacher]], [[https://github.com/dgutov/][Dmitry Gutov]], [[https://github.com/hmelman/][Howard Melman]], [[https://github.com/iyefrat][Itai Y. Efrat]], [[https://github.com/jdtsmith][JD
-Smith]], [[https://github.com/manuel-uberti/][Manuel Uberti]], [[https://github.com/monnier/][Stefan Monnier]], [[https://github.com/oantolin/][Omar Antolín Camarena]], [[https://github.com/purcell/][Steve Purcell]],
-[[https://github.com/raxod502][Radon Rosborough]], [[https://github.com/tomfitzhenry/][Tom Fitzhenry]] and [[https://protesilaos.com][Protesilaos Stavrou]].
+Advice and useful discussions: [[https://github.com/Qkessler][Enrique Kessler Martínez]], [[https://github.com/alphapapa][Adam Porter]], [[https://github.com/bdarcus][Bruce
+d'Arcus]], [[https://github.com/clemera][Clemens Radermacher]], [[https://github.com/dgutov][Dmitry Gutov]], [[https://github.com/hmelman][Howard Melman]], [[https://github.com/iyefrat][Itai Y. Efrat]], [[https://github.com/jdtsmith][JD
+Smith]], [[https://github.com/manuel-uberti][Manuel Uberti]], [[https://github.com/monnier][Stefan Monnier]], [[https://github.com/oantolin][Omar Antolín Camarena]], [[https://github.com/purcell][Steve Purcell]],
+[[https://github.com/raxod502][Radon Rosborough]], [[https://github.com/tomfitzhenry][Tom Fitzhenry]] and [[https://protesilaos.com][Protesilaos Stavrou]].
 
 #+html: <!--
 
