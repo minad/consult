@@ -4,6 +4,7 @@
 
 * Development
 
+- Minor fixes.
 - Require Emacs 29.
 - =consult-info=: Reuse current info buffer when jumping to a search result.
 
