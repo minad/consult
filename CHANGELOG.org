@@ -2,6 +2,13 @@
 #+author: Daniel Mendler
 #+language: en
 
+* Development
+
+- Make =consult-source-*= variables public. These variables are commonly
+  customized via =consult-customize= and they are referenced by the customizable
+  variable =consult-buffer-sources=. Keep obsolete =consult--source-*= variable
+  aliases.
+
 * Version 2.9 (2025-10-13)
 
 - Minor fixes.

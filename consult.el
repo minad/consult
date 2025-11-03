@@ -239,26 +239,26 @@ custom buffer isolation."
                  (function :tag "Custom function")))
 
 (defcustom consult-buffer-sources
-  '(consult--source-buffer
-    consult--source-hidden-buffer
-    consult--source-modified-buffer
-    consult--source-other-buffer
-    consult--source-recent-file
-    consult--source-buffer-register
-    consult--source-file-register
-    consult--source-bookmark
-    consult--source-project-buffer-hidden
-    consult--source-project-recent-file-hidden
-    consult--source-project-root-hidden)
+  '(consult-source-buffer
+    consult-source-hidden-buffer
+    consult-source-modified-buffer
+    consult-source-other-buffer
+    consult-source-recent-file
+    consult-source-buffer-register
+    consult-source-file-register
+    consult-source-bookmark
+    consult-source-project-buffer-hidden
+    consult-source-project-recent-file-hidden
+    consult-source-project-root-hidden)
   "Sources used by `consult-buffer'.
 See also `consult-project-buffer-sources'.
 See `consult--multi' for a description of the source data structure."
   :type '(repeat symbol))
 
 (defcustom consult-project-buffer-sources
-  '(consult--source-project-buffer
-    consult--source-project-recent-file
-    consult--source-project-root)
+  '(consult-source-project-buffer
+    consult-source-project-recent-file
+    consult-source-project-root)
   "Sources used by `consult-project-buffer'.
 See also `consult-buffer-sources'.
 See `consult--multi' for a description of the source data structure."
@@ -4820,7 +4820,22 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
 
 (consult--define-state buffer)
 
-(defvar consult--source-bookmark
+(define-obsolete-variable-alias 'consult--source-bookmark 'consult-source-bookmark "2.9")
+(define-obsolete-variable-alias 'consult--source-buffer 'consult-source-buffer "2.9")
+(define-obsolete-variable-alias 'consult--source-buffer-register 'consult-source-buffer-register "2.9")
+(define-obsolete-variable-alias 'consult--source-file-register 'consult-source-file-register "2.9")
+(define-obsolete-variable-alias 'consult--source-hidden-buffer 'consult-source-hidden-buffer "2.9")
+(define-obsolete-variable-alias 'consult--source-modified-buffer 'consult-source-modified-buffer "2.9")
+(define-obsolete-variable-alias 'consult--source-other-buffer 'consult-source-other-buffer "2.9")
+(define-obsolete-variable-alias 'consult--source-project-buffer 'consult-source-project-buffer "2.9")
+(define-obsolete-variable-alias 'consult--source-project-buffer-hidden 'consult-source-project-buffer-hidden "2.9")
+(define-obsolete-variable-alias 'consult--source-project-recent-file 'consult-source-project-recent-file "2.9")
+(define-obsolete-variable-alias 'consult--source-project-recent-file-hidden 'consult-source-project-recent-file-hidden "2.9")
+(define-obsolete-variable-alias 'consult--source-project-root 'consult-source-project-root "2.9")
+(define-obsolete-variable-alias 'consult--source-project-root-hidden 'consult-source-project-root-hidden "2.9")
+(define-obsolete-variable-alias 'consult--source-recent-file 'consult-source-recent-file "2.9")
+
+(defvar consult-source-bookmark
   `( :name     "Bookmark"
      :narrow   ?m
      :category bookmark
@@ -4830,7 +4845,7 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
      :state    ,#'consult--bookmark-state)
   "Bookmark source for `consult-buffer'.")
 
-(defvar consult--source-project-buffer
+(defvar consult-source-project-buffer
   `( :name     "Project Buffer"
      :narrow   ?b
      :category buffer
@@ -4846,7 +4861,7 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
                                  :as #'consult--buffer-pair))))
   "Project buffer source for `consult-buffer'.")
 
-(defvar consult--source-project-recent-file
+(defvar consult-source-project-recent-file
   `( :name     "Project File"
      :narrow   ?f
      :category file
@@ -4880,7 +4895,7 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
                   (push (cons part file) items))))))))
   "Project file source for `consult-buffer'.")
 
-(defvar consult--source-project-root
+(defvar consult-source-project-root
   `( :name     "Project Root"
      :narrow   ?r
      :category file
@@ -4892,22 +4907,22 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
      :items    ,#'consult--project-known-roots)
   "Known project root source.")
 
-(defvar consult--source-project-buffer-hidden
+(defvar consult-source-project-buffer-hidden
   `( :hidden t :narrow ((?p . "Project") (?B . "Project Buffer"))
-     ,@consult--source-project-buffer)
-  "Like `consult--source-project-buffer' but hidden by default.")
+     ,@consult-source-project-buffer)
+  "Like `consult-source-project-buffer' but hidden by default.")
 
-(defvar consult--source-project-recent-file-hidden
+(defvar consult-source-project-recent-file-hidden
   `( :hidden t :narrow ((?p . "Project") (?F . "Project File"))
-     ,@consult--source-project-recent-file)
-  "Like `consult--source-project-recent-file' but hidden by default.")
+     ,@consult-source-project-recent-file)
+  "Like `consult-source-project-recent-file' but hidden by default.")
 
-(defvar consult--source-project-root-hidden
+(defvar consult-source-project-root-hidden
   `( :hidden t :narrow ((?p . "Project") (?R . "Project Root"))
-     ,@consult--source-project-root)
-  "Like `consult--source-project-root' but hidden by default.")
+     ,@consult-source-project-root)
+  "Like `consult-source-project-root' but hidden by default.")
 
-(defvar consult--source-hidden-buffer
+(defvar consult-source-hidden-buffer
   `( :name     "Hidden Buffer"
      :narrow   ?\s
      :hidden   t
@@ -4925,7 +4940,7 @@ The source is hidden by default and can be summoned via its narrow key.
 All buffers are taken into account, i.e., the entire `buffer-list' from
 all frames.")
 
-(defvar consult--source-modified-buffer
+(defvar consult-source-modified-buffer
   `( :name     "Modified Buffer"
      :narrow   ?*
      :hidden   t
@@ -4945,7 +4960,7 @@ The source is hidden by default and can be summoned via its narrow key.
 Only buffers returned by the `consult-buffer-list-function' are taken
 into account.")
 
-(defvar consult--source-buffer
+(defvar consult-source-buffer
   `( :name     "Buffer"
      :narrow   ?b
      :category buffer
@@ -4960,7 +4975,7 @@ into account.")
 Only buffers returned by the `consult-buffer-list-function' are taken into
 account.")
 
-(defvar consult--source-other-buffer
+(defvar consult-source-other-buffer
   `( :name     "Other Buffer"
      :narrow   ?o
      :hidden   t
@@ -4987,7 +5002,7 @@ into account.")
   "Return non-nil if REG is a buffer register."
   (and (eq (car-safe reg) 'buffer) (buffer-live-p (get-buffer (cdr reg)))))
 
-(defvar consult--source-buffer-register
+(defvar consult-source-buffer-register
   `( :name     "Buffer Register"
      :narrow   (?r . "Register")
      :category buffer
@@ -5001,7 +5016,7 @@ into account.")
   "Return non-nil if REG is a file register."
   (memq (car-safe reg) '(file-query file)))
 
-(defvar consult--source-file-register
+(defvar consult-source-file-register
   `( :name     "File Register"
      :narrow   (?r . "Register")
      :category file
@@ -5011,7 +5026,7 @@ into account.")
      :items    ,(lambda () (consult-register--candidates #'consult--file-register-p)))
   "File register source.")
 
-(defvar consult--source-recent-file
+(defvar consult-source-recent-file
   `( :name     "File"
      :narrow   ?f
      :category file
@@ -5173,7 +5188,7 @@ FIND-FILE is the file open function, defaulting to `find-file-noselect'."
 
 (defun consult--grep-exclude-args ()
   "Produce grep exclude arguments.
-Take the variables `grep-find-ignored-directories' and
+Take the variable `grep-find-ignored-directories' and the variable
 `grep-find-ignored-files' into account."
   (unless (boundp 'grep-find-ignored-files) (require 'grep))
   (nconc (mapcar (lambda (s) (concat "--exclude=" s))
