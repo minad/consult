@@ -2,7 +2,7 @@
 #+author: Daniel Mendler
 #+language: en
 
-* Development
+* Version 3.0 (2025-11-15)
 
 - Make =consult-source-*= variables public. These variables are commonly
   customized via =consult-customize= and they are referenced by the customizable
