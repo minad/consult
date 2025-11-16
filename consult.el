@@ -212,8 +212,8 @@ See also `display-line-numbers-widen'."
 (defcustom consult-fontify-max-size (* 1024 1024)
   "Buffers larger than this character limit are not fontified.
 
-This is necessary in order to prevent a large startup time
-for navigation commands like `consult-line'."
+This is necessary in order to prevent a large startup time for the
+commands `consult-focus-lines' and `consult-keep-lines'."
   :type '(natnum :tag "Buffer size in characters"))
 
 (defcustom consult-buffer-filter
@@ -972,7 +972,7 @@ always return an appropriate non-minibuffer window."
              (< (buffer-size) consult-fontify-max-size))
     (jit-lock-fontify-now)))
 
-(defun consult--fontify-region (start end)
+(defsubst consult--fontify-region (start end)
   "Ensure that region between START and END is fontified."
   (when (and consult-fontify-preserve jit-lock-mode)
     (jit-lock-fontify-now start end)))
@@ -1016,8 +1016,21 @@ Also temporarily increase the GC limit via `consult--with-increased-gc'."
             (goto-char (min (+ (point) column) (pos-eol))))
           (point-marker))))))
 
-(defun consult--line-prefix (&optional curr-line)
-  "Annotate `consult-location' candidates with line numbers.
+(defun consult--copy-property (beg end str prop)
+  "Copy PROP from buffer region BEG to END to STR.
+The string STR is modified."
+  (let ((pos beg))
+    (while (< pos end)
+      (let ((next (next-single-property-change pos prop nil end))
+            (val (get-text-property pos prop)))
+        (when val
+          (if (eq prop 'face)
+              (add-face-text-property (- pos beg) (- next beg) val t str)
+            (put-text-property (- pos beg) (- next beg) prop val str)))
+        (setq pos next)))))
+
+(defun consult--line-fontify (&optional curr-line)
+  "Annotation function to fontify `consult-location' line and add line number.
 CURR-LINE is the current line number."
   (setq curr-line (or curr-line -1))
   (let* ((width (length (number-to-string (line-number-at-pos
@@ -1026,7 +1039,22 @@ CURR-LINE is the current line number."
          (before (format #("%%%dd " 0 6 (face consult-line-number-wrapped)) width))
          (after (format #("%%%dd " 0 6 (face consult-line-number-prefix)) width)))
     (lambda (cand)
-      (let ((line (cdr (get-text-property 0 'consult-location cand))))
+      (pcase-let* ((`(,pos . ,line) (get-text-property 0 'consult-location cand))
+                   (buf (when consult-fontify-preserve
+                          (if (consp pos)
+                              (car pos)
+                            (and (markerp pos) (marker-buffer pos))))))
+        (when (buffer-live-p buf)
+          (with-current-buffer buf
+            (goto-char (if (markerp pos) pos (cdr pos)))
+            (let ((beg (pos-bol))
+                  (end (pos-eol)))
+              (when (> (length cand) (- end beg))
+                (setq cand (copy-sequence cand))
+                (consult--fontify-region beg end)
+                (consult--copy-property beg end cand 'face)
+                (consult--copy-property beg end cand 'invisible)
+                (consult--copy-property beg end cand 'display)))))
         (list cand (format (if (< line curr-line) before after) line) "")))))
 
 (defsubst consult--location-candidate (cand marker line tofu &rest props)
@@ -3419,7 +3447,7 @@ a value for `completion-in-region-function'."
                  (re-search-forward heading-regexp nil t)))
         (cl-incf line (consult--count-lines (match-beginning 0)))
         (push (consult--location-candidate
-               (consult--buffer-substring (pos-bol) (pos-eol) 'fontify)
+               (buffer-substring-no-properties (pos-bol) (pos-eol))
                (cons buffer (point)) (1- line) (1- line)
                'consult--outline-level (funcall level-fun))
               candidates)
@@ -3452,7 +3480,7 @@ argument.  The symbol at point is added to the future history."
     (consult--read
      candidates
      :prompt "Go to heading: "
-     :annotate (consult--line-prefix)
+     :annotate (consult--line-fontify)
      :category 'consult-location
      :sort nil
      :require-match t
@@ -3567,14 +3595,13 @@ The symbol at point is added to the future history."
 Start from top if TOP non-nil.
 CURR-LINE is the current line number."
   (consult--forbid-minibuffer)
-  (consult--fontify-all)
   (let* ((buffer (current-buffer))
          (line (line-number-at-pos (point-min) consult-line-numbers-widen))
          default-cand candidates)
     (consult--each-line beg end
       (unless (looking-at-p "^\\s-*$")
         (push (consult--location-candidate
-               (consult--buffer-substring beg end)
+               (buffer-substring-no-properties beg end)
                (cons buffer beg) line line)
               candidates)
         (when (and (not default-cand) (>= line curr-line))
@@ -3644,7 +3671,7 @@ and the last `isearch-string' is added to the future history."
       (consult--read
        candidates
        :prompt (if top "Go to line from top: " "Go to line: ")
-       :annotate (consult--line-prefix curr-line)
+       :annotate (consult--line-fontify curr-line)
        :category 'consult-location
        :sort nil
        :require-match t
@@ -3732,7 +3759,7 @@ to `consult--buffer-query'."
     (consult--read
      collection
      :prompt prompt
-     :annotate (consult--line-prefix)
+     :annotate (consult--line-fontify)
      :category 'consult-location
      :sort nil
      :require-match t
