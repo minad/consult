@@ -205,11 +205,11 @@ See also `display-line-numbers-widen'."
   :type 'boolean)
 
 (defcustom consult-fontify-max-size 1048576
-  "Buffers larger than this byte limit are not fontified.
+  "Buffers larger than this character limit are not fontified.
 
 This is necessary in order to prevent a large startup time
 for navigation commands like `consult-line'."
-  :type '(natnum :tag "Buffer size in bytes"))
+  :type '(natnum :tag "Buffer size in characters"))
 
 (defcustom consult-buffer-filter
   '("\\` "
