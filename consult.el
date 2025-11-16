@@ -3468,8 +3468,12 @@ argument.  The symbol at point is added to the future history."
 (defun consult--mark-candidates (markers)
   "Return list of candidates strings for MARKERS."
   (consult--forbid-minibuffer)
-  (let ((candidates)
-        (current-buf (current-buffer)))
+  (let* ((candidates)
+         (current-buf (current-buffer))
+         (width (length (number-to-string (line-number-at-pos
+                                           (point-max)
+                                           consult-line-numbers-widen))))
+         (fmt (format #("%%%dd %%s%%s" 0 6 (face consult-line-number-prefix)) width)))
     (save-excursion
       (dolist (marker markers)
         (when-let ((pos (marker-position marker))
@@ -3481,11 +3485,11 @@ argument.  The symbol at point is added to the future history."
             ;; replaced everywhere.  However in this case the slow
             ;; line-number-at-pos does not hurt much, since the mark ring is
             ;; usually small since it is limited by `mark-ring-max'.
-            (push (consult--location-candidate
-                   (consult--line-with-mark marker) marker
-                   (line-number-at-pos pos consult-line-numbers-widen)
-                   marker)
-                  candidates)))))
+            (let* ((line (line-number-at-pos pos consult-line-numbers-widen))
+                   (cand (format fmt line (consult--line-with-mark marker) (consult--tofu-encode marker))))
+              (put-text-property 0 width 'consult-strip t cand)
+              (put-text-property 0 (length cand) 'consult-location (cons marker line) cand)
+              (push cand candidates))))))
     (unless candidates
       (user-error "No marks"))
     (nreverse (delete-dups candidates))))
@@ -3501,7 +3505,6 @@ The symbol at point is added to the future history."
    (consult--mark-candidates
     (or markers (cons (mark-marker) mark-ring)))
    :prompt "Go to mark: "
-   :annotate (consult--line-prefix)
    :category 'consult-location
    :sort nil
    :require-match t
