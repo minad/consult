@@ -204,7 +204,7 @@ See also `display-line-numbers-widen'."
   "Preserve fontification for line-based commands."
   :type 'boolean)
 
-(defcustom consult-fontify-max-size 1048576
+(defcustom consult-fontify-max-size (* 1024 1024)
   "Buffers larger than this character limit are not fontified.
 
 This is necessary in order to prevent a large startup time
@@ -350,11 +350,11 @@ individual keys must be strings accepted by `key-valid-p'."
                  (key :tag "Key")
                  (repeat :tag "List of keys" key)))
 
-(defcustom consult-preview-partial-size 1048576
+(defcustom consult-preview-partial-size (* 1024 1024)
   "Files larger than this byte limit are previewed partially."
   :type '(natnum :tag "File size in bytes"))
 
-(defcustom consult-preview-partial-chunk 102400
+(defcustom consult-preview-partial-chunk (* 10 1024)
   "Partial preview chunk size in bytes.
 If a file is larger than `consult-preview-partial-size' only the
 chunk from the beginning of the file is previewed."
