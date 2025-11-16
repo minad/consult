@@ -1520,9 +1520,9 @@ ORIG is the original function, HOOKS the arguments."
   "Open overlays which hide the current line.
 See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
   (dolist (ov (overlays-in (pos-bol) (pos-eol)))
-    (when-let (fun (overlay-get ov 'isearch-open-invisible))
-      (when (invisible-p (overlay-get ov 'invisible))
-        (funcall fun ov)))))
+    (when-let ((fun (overlay-get ov 'isearch-open-invisible))
+               ((invisible-p (overlay-get ov 'invisible))))
+      (funcall fun ov))))
 
 (defun consult--invisible-open-temporarily ()
   "Temporarily open overlays which hide the current line.
@@ -3472,19 +3472,18 @@ argument.  The symbol at point is added to the future history."
     (save-excursion
       (dolist (marker markers)
         (when-let ((pos (marker-position marker))
-                   (buf (marker-buffer marker)))
-          (when (and (eq buf current-buf)
-                     (consult--in-range-p pos))
-            (goto-char pos)
-            ;; `line-number-at-pos' is a very slow function, which should be
-            ;; replaced everywhere.  However in this case the slow
-            ;; line-number-at-pos does not hurt much, since the mark ring is
-            ;; usually small since it is limited by `mark-ring-max'.
-            (let* ((line (line-number-at-pos pos consult-line-numbers-widen))
-                   (cand (format fmt line (consult--line-with-mark marker) (consult--tofu-encode marker))))
-              (put-text-property 0 width 'consult-strip t cand)
-              (put-text-property 0 (length cand) 'consult-location (cons marker line) cand)
-              (push cand candidates))))))
+                   (buf (marker-buffer marker))
+                   ((and (eq buf current-buf) (consult--in-range-p pos))))
+          (goto-char pos)
+          ;; `line-number-at-pos' is a very slow function, which should be
+          ;; replaced everywhere.  However in this case the slow
+          ;; line-number-at-pos does not hurt much, since the mark ring is
+          ;; usually small since it is limited by `mark-ring-max'.
+          (let* ((line (line-number-at-pos pos consult-line-numbers-widen))
+                 (cand (format fmt line (consult--line-with-mark marker) (consult--tofu-encode marker))))
+            (put-text-property 0 width 'consult-strip t cand)
+            (put-text-property 0 (length cand) 'consult-location (cons marker line) cand)
+            (push cand candidates)))))
     (unless candidates
       (user-error "No marks"))
     (nreverse (delete-dups candidates))))
@@ -3517,18 +3516,18 @@ The symbol at point is added to the future history."
     (save-excursion
       (dolist (marker markers)
         (when-let ((pos (marker-position marker))
-                   (buf (marker-buffer marker)))
-          (unless (minibufferp buf)
-            (with-current-buffer buf
-              (when (consult--in-range-p pos)
-                (goto-char pos)
-                ;; `line-number-at-pos' is slow, see comment in `consult--mark-candidates'.
-                (let* ((line (line-number-at-pos pos consult-line-numbers-widen))
-                       (prefix (consult--format-file-line-match (buffer-name buf) line ""))
-                       (cand (concat prefix (consult--line-with-mark marker) (consult--tofu-encode marker))))
-                  (put-text-property 0 (length prefix) 'consult-strip t cand)
-                  (put-text-property 0 (length cand) 'consult-location (cons marker line) cand)
-                  (push cand candidates))))))))
+                   (buf (marker-buffer marker))
+                   ((not (minibufferp buf))))
+          (with-current-buffer buf
+            (when (consult--in-range-p pos)
+              (goto-char pos)
+              ;; `line-number-at-pos' is slow, see comment in `consult--mark-candidates'.
+              (let* ((line (line-number-at-pos pos consult-line-numbers-widen))
+                     (prefix (consult--format-file-line-match (buffer-name buf) line ""))
+                     (cand (concat prefix (consult--line-with-mark marker) (consult--tofu-encode marker))))
+                (put-text-property 0 (length prefix) 'consult-strip t cand)
+                (put-text-property 0 (length cand) 'consult-location (cons marker line) cand)
+                (push cand candidates)))))))
     (unless candidates
       (user-error "No global marks"))
     (nreverse (delete-dups candidates))))
