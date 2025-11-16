@@ -911,6 +911,7 @@ an overview of all Consult variables and functions with their descriptions.
 | consult-grep-max-columns         | Maximal number of columns of the matching lines     |
 | consult-grep-args                | Command line arguments for grep                     |
 | consult-imenu-config             | Mode-specific configuration for =consult-imenu=       |
+| consult-line-max-size            | Switch to dynamic search if buffer is too large     |
 | consult-line-numbers-widen       | Show absolute line numbers when narrowing is active |
 | consult-line-start-from-top      | Start the =consult-line= search from the top          |
 | consult-locate-args              | Command line arguments for locate                   |

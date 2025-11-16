@@ -178,17 +178,22 @@ current line, e.g., `pulse-momentary-highlight-one-line'.  The hook
 called during preview and for the jump after selection."
   :type 'hook)
 
-(defcustom consult-line-start-from-top nil
-  "Start search from the top if non-nil.
-Otherwise start the search at the current line and wrap around."
-  :type 'boolean)
-
 (defcustom consult-point-placement 'match-beginning
   "Where to leave point when jumping to a match.
 This setting affects the command `consult-line' and the `consult-grep' variants."
   :type '(choice (const :tag "Beginning of the line" line-beginning)
                  (const :tag "Beginning of the match" match-beginning)
                  (const :tag "End of the match" match-end)))
+
+(defcustom consult-line-start-from-top nil
+  "Start `consult-line' search from the top if non-nil.
+Otherwise start the search at the current line and wrap around."
+  :type 'boolean)
+
+(defcustom consult-line-max-size (* 5 1024 1024)
+  "For buffers larger than this character limit, use dynamic search.
+This affects the command `consult-line'."
+  :type '(natnum :tag "Buffer size in characters"))
 
 (defcustom consult-line-numbers-widen t
   "Show absolute line numbers when narrowing is active.
@@ -3624,27 +3629,32 @@ INITIAL input can be provided.  The search starting point is
 changed if the START prefix argument is set.  The symbol at point
 and the last `isearch-string' is added to the future history."
   (interactive (list nil (not (not current-prefix-arg))))
-  (let* ((curr-line (line-number-at-pos (point) consult-line-numbers-widen))
-         (top (not (eq start consult-line-start-from-top)))
-         (candidates (consult--slow-operation "Collecting lines..."
-                       (consult--line-candidates top curr-line))))
-    (consult--read
-     candidates
-     :prompt (if top "Go to line from top: " "Go to line: ")
-     :annotate (consult--line-prefix curr-line)
-     :category 'consult-location
-     :sort nil
-     :require-match t
-     ;; Always add last `isearch-string' to future history
-     :add-history (list (thing-at-point 'symbol) isearch-string)
-     :history '(:input consult--line-history)
-     :lookup #'consult--line-match
-     :default (car candidates)
-     ;; Add `isearch-string' as initial input if starting from Isearch
-     :initial (or initial
-                  (and isearch-mode
-                       (prog1 isearch-string (isearch-done))))
-     :state (consult--location-state candidates))))
+  (if (and (> (buffer-size) consult-line-max-size) (not (buffer-narrowed-p)))
+      (minibuffer-with-setup-hook
+          (lambda ()
+            (consult--minibuffer-message "Buffer too large, using dynamic search"))
+        (consult-line-multi `(:buffer-list (,(current-buffer))) initial))
+    (let* ((curr-line (line-number-at-pos (point) consult-line-numbers-widen))
+           (top (not (eq start consult-line-start-from-top)))
+           (candidates (consult--slow-operation "Collecting lines..."
+                         (consult--line-candidates top curr-line))))
+      (consult--read
+       candidates
+       :prompt (if top "Go to line from top: " "Go to line: ")
+       :annotate (consult--line-prefix curr-line)
+       :category 'consult-location
+       :sort nil
+       :require-match t
+       ;; Always add last `isearch-string' to future history
+       :add-history (list (thing-at-point 'symbol) isearch-string)
+       :history '(:input consult--line-history)
+       :lookup #'consult--line-match
+       :default (car candidates)
+       ;; Add `isearch-string' as initial input if starting from Isearch
+       :initial (or initial
+                    (and isearch-mode
+                         (prog1 isearch-string (isearch-done))))
+       :state (consult--location-state candidates)))))
 
 ;;;;; Command: consult-line-multi
 
