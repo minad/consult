@@ -1053,16 +1053,16 @@ TOFU suffix for disambiguation."
   (add-text-properties 0 1 `(consult-location (,marker . ,line) ,@props) cand)
   cand)
 
- (defsubst consult--buffer-substring (beg end &optional fontify)
-   "Return buffer substring between BEG and END.
+(defsubst consult--buffer-substring (beg end &optional fontify)
+  "Return buffer substring between BEG and END.
  If FONTIFY and `consult-fontify-preserve' are non-nil, first ensure that the
  region has been fontified."
-   (if consult-fontify-preserve
-       (let ((str (buffer-substring-no-properties beg end)))
-         (when fontify (consult--fontify-region beg end))
-         (consult--copy-faces beg end str)
-         str)
-     (buffer-substring-no-properties beg end)))
+  (if consult-fontify-preserve
+      (let ((str (buffer-substring-no-properties beg end)))
+        (when fontify (consult--fontify-region beg end))
+        (consult--copy-faces beg end str)
+        str)
+    (buffer-substring-no-properties beg end)))
 
 (defun consult--line-with-mark (marker)
   "Current line string where the MARKER position is highlighted."
