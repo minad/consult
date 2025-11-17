@@ -9,6 +9,8 @@
   =consult-line= becomes usable on very large files now, up to files like the
   SQLite amalgamation. Furthermore =consult-line-multi= candidates are fontified,
   which was not the case before.
+- =consult-focus-lines=: Do not fontify buffer eagerly to reduce startup cost. The
+  focused lines are fontified lazily when they come into sight.
 
 * Version 3.0 (2025-11-15)
 
