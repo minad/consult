@@ -954,17 +954,6 @@ always return an appropriate non-minibuffer window."
   (unless (minibufferp)
     (user-error "`%s' must be called inside the minibuffer" this-command)))
 
-(defun consult--fontify-all ()
-  "Ensure that the whole buffer is fontified."
-  ;; Font-locking is lazy, i.e., if a line has not been looked at yet, the line
-  ;; is not font-locked.  We would observe this if consulting an unfontified
-  ;; line.  Therefore we have to enforce font-locking now, which is slow.  In
-  ;; order to prevent is hang-up we check the buffer size against
-  ;; `consult-fontify-max-size'.
-  (when (and consult-fontify-preserve jit-lock-mode
-             (< (buffer-size) consult-fontify-max-size))
-    (jit-lock-fontify-now)))
-
 (defsubst consult--fontify-region (start end)
   "Ensure that region between START and END is fontified."
   (when (and consult-fontify-preserve jit-lock-mode)
@@ -3791,7 +3780,12 @@ to `consult--buffer-query'."
                             (goto-char (or pos rbeg))
                             (setq rend (+ rbeg (length content)))
                             (add-face-text-property rbeg rend 'region t)))))
-      (consult--fontify-all)
+      ;; Font-locking is lazy, i.e., if a line has not been looked at yet, the
+      ;; line is not font-locked. Therefore we have to enforce slow font-locking
+      ;; now.  In order to prevent is hang-up we check the region size against
+      ;; `consult-fontify-max-size'.
+      (when (< (- (point-max) (point-min)) consult-fontify-max-size)
+        (consult--fontify-region (point-min) (point-max)))
       (setq content-orig (buffer-string)
             replace (lambda (content &optional pos)
                       (delete-region (point-min) (point-max))
