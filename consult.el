@@ -998,7 +998,7 @@ Also temporarily increase the GC limit via `consult--with-increased-gc'."
             (goto-char (min (+ (point) column) (pos-eol))))
           (point-marker))))))
 
-(defun consult--copy-property (beg end str prop)
+(defsubst consult--copy-property (beg end str prop)
   "Copy PROP from buffer region BEG to END to STR.
 The string STR is modified."
   (let ((pos beg))
@@ -1010,6 +1010,13 @@ The string STR is modified."
               (add-face-text-property (- pos beg) (- next beg) val t str)
             (put-text-property (- pos beg) (- next beg) prop val str)))
         (setq pos next)))))
+
+(defun consult--copy-faces (beg end str)
+  "Copy faces from buffer region BEG to END to STR.
+The string STR is modified."
+  (consult--copy-property beg end str 'face)
+  (consult--copy-property beg end str 'invisible)
+  (consult--copy-property beg end str 'display))
 
 (defun consult--line-fontify (&optional curr-line)
   "Annotation function to fontify `consult-location' line and add line number.
@@ -1035,9 +1042,7 @@ CURR-LINE is the current line number."
               (when (string-prefix-p (buffer-substring-no-properties beg end) cand)
                 (setq cand (copy-sequence cand))
                 (consult--fontify-region beg end)
-                (consult--copy-property beg end cand 'face)
-                (consult--copy-property beg end cand 'invisible)
-                (consult--copy-property beg end cand 'display)))))
+                (consult--copy-faces beg end cand)))))
         (list cand (format (if (< line curr-line) before after) line) "")))))
 
 (defsubst consult--location-candidate (cand marker line tofu &rest props)
@@ -1048,31 +1053,16 @@ TOFU suffix for disambiguation."
   (add-text-properties 0 1 `(consult-location (,marker . ,line) ,@props) cand)
   cand)
 
-;; There is a similar variable `yank-excluded-properties'.  Unfortunately
-;; we cannot use it here since it excludes too much (e.g., invisible)
-;; and at the same time not enough (e.g., cursor-sensor-functions).
-(defconst consult--remove-text-properties
-  '( category cursor cursor-intangible cursor-sensor-functions field follow-link
-     fontified front-sticky help-echo insert-behind-hooks insert-in-front-hooks
-     intangible keymap local-map modification-hooks mouse-face pointer read-only
-     rear-nonsticky yank-handler)
-  "List of text properties to remove from buffer strings.")
-
-(defsubst consult--buffer-substring (beg end &optional fontify)
-  "Return buffer substring between BEG and END.
-If FONTIFY and `consult-fontify-preserve' are non-nil, first ensure that the
-region has been fontified."
-  (if consult-fontify-preserve
-      (let (str)
-        (when fontify (consult--fontify-region beg end))
-        (setq str (buffer-substring beg end))
-        ;; TODO Propose the upstream addition of a function
-        ;; `preserve-list-of-text-properties', which should be as efficient as
-        ;; `remove-list-of-text-properties'.
-        (remove-list-of-text-properties
-         0 (- end beg) consult--remove-text-properties str)
-        str)
-    (buffer-substring-no-properties beg end)))
+ (defsubst consult--buffer-substring (beg end &optional fontify)
+   "Return buffer substring between BEG and END.
+ If FONTIFY and `consult-fontify-preserve' are non-nil, first ensure that the
+ region has been fontified."
+   (if consult-fontify-preserve
+       (let ((str (buffer-substring-no-properties beg end)))
+         (when fontify (consult--fontify-region beg end))
+         (consult--copy-faces beg end str)
+         str)
+     (buffer-substring-no-properties beg end)))
 
 (defun consult--line-with-mark (marker)
   "Current line string where the MARKER position is highlighted."
