@@ -6,7 +6,9 @@
 
 - =consult-line=, =consult-line-multi=, =consult-outline=: Use lazy fontification for
   completion candidates. This greatly reduces the startup cost of the commands.
-- =consult-line-multi=: Candidates are fontified, which was not the case before.
+  =consult-line= becomes usable on very large files now, up to files like the
+  SQLite amalgamation. Furthermore =consult-line-multi= candidates are fontified,
+  which was not the case before.
 
 * Version 3.0 (2025-11-15)
 
