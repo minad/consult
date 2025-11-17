@@ -1003,8 +1003,8 @@ Also temporarily increase the GC limit via `consult--with-increased-gc'."
 The string STR is modified."
   (let ((pos beg))
     (while (< pos end)
-      (let ((next (next-single-property-change pos prop nil end))
-            (val (get-text-property pos prop)))
+      (let ((next (next-single-char-property-change pos prop nil end))
+            (val (get-char-property pos prop)))
         (when val
           (if (eq prop 'face)
               (add-face-text-property (- pos beg) (- next beg) val t str)
@@ -1019,7 +1019,8 @@ CURR-LINE is the current line number."
                                            (point-max)
                                            consult-line-numbers-widen))))
          (before (format #("%%%dd " 0 6 (face consult-line-number-wrapped)) width))
-         (after (propertize before 'face 'consult-line-number-prefix)))
+         (after (propertize before 'face 'consult-line-number-prefix))
+         (fake-overlay (make-overlay (point-min) (point-min))))
     (lambda (cand)
       (pcase-let* ((`(,pos . ,line) (get-text-property 0 'consult-location cand))
                    (buf (when consult-fontify-preserve
@@ -1035,9 +1036,17 @@ CURR-LINE is the current line number."
               (when (string-prefix-p (buffer-substring-no-properties beg end) cand)
                 (setq cand (copy-sequence cand))
                 (consult--fontify-region beg end)
-                (consult--copy-property beg end cand 'face)
-                (consult--copy-property beg end cand 'invisible)
-                (consult--copy-property beg end cand 'display)))))
+                ;; Do not copy faces from Consult preview and hl-line overlays
+                (cl-letf (((get 'consult-preview-match-overlay 'face) nil)
+                          ((get 'consult-preview-line-overlay 'face) nil)
+                          ((overlay-get (or (bound-and-true-p hl-line-overlay)
+                                            (bound-and-true-p global-hl-line-overlay)
+                                            fake-overlay)
+                                        'face)
+                           nil))
+                  (consult--copy-property beg end cand 'face)
+                  (consult--copy-property beg end cand 'invisible)
+                  (consult--copy-property beg end cand 'display))))))
         (list cand (format (if (< line curr-line) before after) line) "")))))
 
 (defsubst consult--location-candidate (cand marker line tofu &rest props)
