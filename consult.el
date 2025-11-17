@@ -1055,8 +1055,8 @@ TOFU suffix for disambiguation."
 
 (defsubst consult--buffer-substring (beg end &optional fontify)
   "Return buffer substring between BEG and END.
- If FONTIFY and `consult-fontify-preserve' are non-nil, first ensure that the
- region has been fontified."
+If FONTIFY and `consult-fontify-preserve' are non-nil, first ensure that
+the region has been fontified."
   (if consult-fontify-preserve
       (let ((str (buffer-substring-no-properties beg end)))
         (when fontify (consult--fontify-region beg end))
