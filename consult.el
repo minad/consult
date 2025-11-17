@@ -205,10 +205,8 @@ See also `display-line-numbers-widen'."
   :type 'boolean)
 
 (defcustom consult-fontify-max-size (* 1024 1024)
-  "Buffers larger than this character limit are not fontified.
-
-This is necessary in order to prevent a large startup time for the
-commands `consult-focus-lines' and `consult-keep-lines'."
+  "Avoid whole-buffer fontification for buffers larger than this character limit.
+This setting affects the command `consult-keep-lines'."
   :type '(natnum :tag "Buffer size in characters"))
 
 (defcustom consult-buffer-filter
@@ -3892,9 +3890,7 @@ INITIAL is the initial input."
   (let (lines overlays last-input pt-orig pt-min pt-max)
     (save-excursion
       (save-restriction
-        (if (not (use-region-p))
-            (consult--fontify-all)
-          (consult--fontify-region (region-beginning) (region-end))
+        (when (use-region-p)
           (narrow-to-region
            (region-beginning)
            ;; Behave the same as `keep-lines'.
