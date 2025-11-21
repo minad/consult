@@ -3398,7 +3398,7 @@ a value for `completion-in-region-function'."
 ;;;;; Command: consult-outline
 
 (defun consult--outline-candidates ()
-  "Return alist of outline headings and positions."
+  "Return list of outline heading strings with position attached."
   (consult--forbid-minibuffer)
   (let* ((line (line-number-at-pos (point-min) consult-line-numbers-widen))
          (heading-regexp (concat "^\\(?:"

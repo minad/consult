@@ -32,7 +32,7 @@
 (defvar consult-kmacro--history nil)
 
 (defun consult-kmacro--candidates ()
-  "Return alist of kmacros and indices."
+  "Return list of formatted kmacros strings."
   (thread-last
     ;; List of macros
     (append (and last-kbd-macro (list (kmacro-ring-head))) kmacro-ring)

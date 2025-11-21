@@ -36,24 +36,24 @@
     (?w . "Warning")
     (?i . "Info")))
 
-(defun consult-compile--candidates (buffer)
-  "Return alist of errors and positions in BUFFER, a compilation buffer."
+(defun consult-compile--candidates (grep buffer)
+  "Return list of error candidate strings in BUFFER.
+If GREP is non-nil, the buffer is a Grep buffer."
   (with-current-buffer buffer
-    (let ((candidates)
-          (grep (derived-mode-p 'grep-mode 'grep-edit-mode))
-          (pos (point-min)))
+    (let ((pos (point-min)) candidates)
       (save-excursion
         (while (setq pos (compilation-next-single-property-change pos 'compilation-message))
           (when-let ((msg (get-text-property pos 'compilation-message))
                      ((compilation--message->loc msg)))
             (goto-char pos)
-            (push (propertize
-                   (consult--buffer-substring pos (pos-eol))
-                   'consult--type (and (not grep)
-                                       (pcase (compilation--message->type msg)
-                                         (0 ?i) (1 ?w) (_ ?e)))
-                   'consult--candidate (point-marker))
-                  candidates))))
+            (let ((str (consult--buffer-substring pos (pos-eol))))
+              (add-text-properties
+               0 1 (list 'consult--type (unless grep
+                                          (pcase (compilation--message->type msg)
+                                            (0 ?i) (1 ?w) (_ ?e)))
+                         'consult--candidate (point-marker))
+               str)
+              (push str candidates)))))
       (nreverse candidates))))
 
 (defun consult-compile--lookup (marker)
@@ -103,7 +103,7 @@ the actual location of the error.  If GREP is non-nil, Grep buffers are
 searched.  See also `consult-grep-match'."
   (interactive "P")
   (consult--read
-   (or (mapcan #'consult-compile--candidates
+   (or (mapcan (apply-partially #'consult-compile--candidates grep)
                (or (consult-compile--buffers
                     grep (or (consult--project-root) default-directory))
                    (user-error "No related buffers")))
