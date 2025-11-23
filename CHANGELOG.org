@@ -11,6 +11,8 @@
   which was not the case before.
 - =consult-focus-lines=: Do not fontify buffer eagerly to reduce startup cost. The
   focused lines are fontified lazily when they come into sight.
+- =consult--read=: Stop providing an =annotation-function=. Rely on the
+  =affixation-function= only.
 
 * Version 3.0 (2025-11-15)
 

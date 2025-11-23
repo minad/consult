@@ -2801,12 +2801,6 @@ PREVIEW-KEY are the preview keys."
     (when (< pos max)
       (add-text-properties pos max '(invisible t rear-nonsticky t cursor-intangible t)))))
 
-(defun consult--read-annotate (fun cand)
-  "Annotate CAND with annotation function FUN."
-  (pcase (funcall fun cand)
-    (`(,_ ,_ ,suffix) suffix)
-    (ann ann)))
-
 (defun consult--read-affixate (fun cands)
   "Affixate CANDS with annotation function FUN."
   (mapcar (lambda (cand)
@@ -2858,9 +2852,7 @@ PREVIEW-KEY are the preview keys."
                            ,@(when group `((group-function . ,group)))
                            ,@(when annotate
                                `((affixation-function
-                                  . ,(apply-partially #'consult--read-affixate annotate))
-                                 (annotation-function
-                                  . ,(apply-partially #'consult--read-annotate annotate))))
+                                  . ,(apply-partially #'consult--read-affixate annotate))))
                            ,@(unless sort '((cycle-sort-function . identity)
                                             (display-sort-function . identity)))))
                (consult--annotate-align-width 0)
