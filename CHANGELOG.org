@@ -2,7 +2,7 @@
 #+author: Daniel Mendler
 #+language: en
 
-* Development
+* Version 3.1 (2025-11-29)
 
 - =consult-line=, =consult-line-multi=, =consult-outline=: Use lazy fontification for
   completion candidates. This greatly reduces the startup cost of the commands.
