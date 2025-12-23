@@ -5622,10 +5622,19 @@ the asynchronous search."
 
 (defun consult--default-completion-list-candidate ()
   "Return current candidate at point from completions buffer."
-  (when-let ((window (get-buffer-window "*Completions*" 'visible))
-             (buffer (window-buffer window))
-             ((eq (buffer-local-value 'completion-reference-buffer buffer)
-                  (window-buffer (active-minibuffer-window)))))
+  (when-let ((buffer
+              (if (derived-mode-p #'completion-list-mode)
+                  ;; Use current buffer if already inside *Completions* buffer
+                  (current-buffer)
+                ;; Otherwise check if there is an active *Completions* buffer
+                ;; which can be controlled remotely from the minibuffer.  See
+                ;; the setting `minibuffer-visible-completions'.
+                (when-let ((bound-and-true-p minibuffer-visible-completions)
+                           (window (get-buffer-window "*Completions*" 'visible))
+                           (buffer (window-buffer window))
+                           ((eq (buffer-local-value 'completion-reference-buffer buffer)
+                                (window-buffer (active-minibuffer-window)))))
+                  buffer))))
     (with-current-buffer buffer
       ;; TODO Use `completion-list-candidate-at-point' on Emacs 31
       (let (beg)
