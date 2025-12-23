@@ -5577,28 +5577,40 @@ the asynchronous search."
    :add-history (thing-at-point 'symbol)
    :history '(:input consult--man-history)))
 
-;;;; Preview at point in completions buffers
-
-(define-minor-mode consult-preview-at-point-mode
-  "Preview minor mode for *Completions* buffers.
-When moving around in the *Completions* buffer, the candidate at point is
-automatically previewed."
-  :group 'consult
-  (if consult-preview-at-point-mode
-      (add-hook 'post-command-hook #'consult-preview-at-point nil 'local)
-    (remove-hook 'post-command-hook #'consult-preview-at-point 'local)))
+;;;; Obsolete preview at point (enabled automatically)
 
 (defun consult-preview-at-point ()
+  "Obsolete since preview is enabled automatically."
+  (interactive))
+(define-minor-mode consult-preview-at-point-mode
+  "Obsolete since preview is enabled automatically."
+  :group 'consult)
+(make-obsolete 'consult-preview-at-point-mode nil
+               "Obsolete since preview is enabled automatically.")
+(make-obsolete-variable 'consult-preview-at-point-mode nil
+                        "Obsolete since preview is enabled automatically.")
+(make-obsolete 'consult-preview-at-point nil
+               "Obsolete since preview is enabled automatically.")
+
+;;;; Integration with completion systems
+
+;;;;; Integration: Default *Completions*
+
+(defun consult--default-completion-list-preview ()
   "Preview candidate at point in *Completions* buffer."
-  (interactive)
   (when-let ((win (active-minibuffer-window))
              (buf (window-buffer win))
              (fun (buffer-local-value 'consult--preview-function buf)))
     (funcall fun)))
 
-;;;; Integration with completion systems
+(defun consult--default-completion-list-preview-setup ()
+  "Setup preview at point in *Completions* buffer."
+  (add-hook 'post-command-hook #'consult--default-completion-list-preview nil 'local))
 
-;;;;; Integration: Default *Completions*
+(add-hook 'completion-list-mode-hook #'consult--default-completion-list-preview-setup)
+;; TODO move to embark-consult.el
+(with-eval-after-load 'embark
+  (add-hook 'embark-collect-mode-hook #'consult--default-completion-list-preview-setup))
 
 (defun consult--default-completion-minibuffer-candidate ()
   "Return current minibuffer candidate from default completion system or Icomplete."
