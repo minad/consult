@@ -2,6 +2,11 @@
 #+author: Daniel Mendler
 #+language: en
 
+* Development
+
+- Improve default completion UI support on Emacs 31.
+- Make =consult-preview-at-point-mode= and =consult-preview-at-point= obsolete.
+
 * Version 3.1 (2025-11-29)
 
 - =consult-line=, =consult-line-multi=, =consult-outline=: Use lazy fontification for
