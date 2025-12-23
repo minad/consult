@@ -5603,11 +5603,7 @@ the asynchronous search."
 (defun consult--default-completion-list-preview-setup ()
   "Setup preview at point in *Completions* buffer."
   (add-hook 'post-command-hook #'consult--default-completion-list-preview nil 'local))
-
 (add-hook 'completion-list-mode-hook #'consult--default-completion-list-preview-setup)
-;; TODO move to embark-consult.el
-(with-eval-after-load 'embark
-  (add-hook 'embark-collect-mode-hook #'consult--default-completion-list-preview-setup))
 
 (defun consult--default-completion-minibuffer-candidate ()
   "Return current minibuffer candidate from default completion system or Icomplete."
