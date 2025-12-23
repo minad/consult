@@ -1028,6 +1028,29 @@ following techniques:
 4. Create advices to modify some internal behavior.
 5. Write or propose a patch.
 
+** Default completion UI with auto update
+
+I recommend to use Vertico for best performance and an intuitive UI.
+Nevertheless the default completions buffer UI works decently and supports
+automatic update in newer Emacs versions. I suggest the following configuration
+on Emacs 31:
+
+#+begin_src emacs-lisp
+(setq
+ ;; One column view with annotations
+ completions-format 'one-column
+ completions-detailed t
+ completions-group t
+ ;; Allow navigating from the minibuffer
+ minibuffer-visible-completions t
+ ;; Show completions eagerly and update automatically
+ completion-eager-update t
+ completion-eager-display t
+ ;; Disable noise (inline help also blocks input)
+ completion-show-help nil
+ completion-show-inline-help nil)
+#+end_src
+
 * Recommended packages
 :properties:
 :description: Related packages recommended for installation

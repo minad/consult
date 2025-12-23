@@ -539,14 +539,15 @@ as the public API.")
   "Buffer display function.")
 
 (defvar consult--completion-candidate-hook
-  (list #'consult--default-completion-minibuffer-candidate
-        #'consult--default-completion-list-candidate)
+  (list #'consult--default-completion-list-candidate
+        #'consult--default-completion-minibuffer-candidate)
   "Get candidate from completion system.")
 
 ;; Redisplay such that the updated completion UI will be displayed, even when
 ;; the update happened due to `accept-process-output' inside a loop of a dynamic
 ;; collection. See `consult--async-dynamic'.
-(defvar consult--completion-refresh-hook '(redisplay)
+(defvar consult--completion-refresh-hook
+  (list #'redisplay #'consult--default-completion-list-refresh)
   "Refresh completion system.")
 
 (defvar-local consult--preview-function nil
@@ -5601,8 +5602,7 @@ automatically previewed."
 
 (defun consult--default-completion-minibuffer-candidate ()
   "Return current minibuffer candidate from default completion system or Icomplete."
-  (when (and (minibufferp)
-             (eq completing-read-function #'completing-read-default))
+  (when (minibufferp)
     (let ((content (minibuffer-contents-no-properties)))
       ;; When the current minibuffer content matches a candidate, return it!
       (if (test-completion content
@@ -5617,17 +5617,28 @@ automatically previewed."
 
 (defun consult--default-completion-list-candidate ()
   "Return current candidate at point from completions buffer."
-  ;; See feature request bug#74408 for `completion-list-candidate-at-point'.
-  (let (beg)
-    (when (and
-           (derived-mode-p 'completion-list-mode)
-           (cond
-            ((and (not (eobp)) (get-text-property (point) 'completion--string))
-             (setq beg (1+ (point))))
-            ((and (not (bobp)) (get-text-property (1- (point)) 'completion--string))
-             (setq beg (point)))))
-      (get-text-property (previous-single-property-change beg 'completion--string)
-                         'completion--string))))
+  (when-let ((window (get-buffer-window "*Completions*" 'visible))
+             (buffer (window-buffer window))
+             ((eq (buffer-local-value 'completion-reference-buffer buffer)
+                  (window-buffer (active-minibuffer-window)))))
+    (with-current-buffer buffer
+      ;; TODO Use `completion-list-candidate-at-point' on Emacs 31
+      (let (beg)
+        (when (cond
+               ((and (not (eobp)) (get-text-property (point) 'completion--string))
+                (setq beg (1+ (point))))
+               ((and (not (bobp)) (get-text-property (1- (point)) 'completion--string))
+                (setq beg (point))))
+          (get-text-property (previous-single-property-change beg 'completion--string)
+                             'completion--string))))))
+
+(defun consult--default-completion-list-refresh ()
+  "Refresh default completion UI."
+  (when (and (bound-and-true-p completion-eager-update)
+             (bound-and-true-p completion-eager-display)
+             (not (bound-and-true-p vertico-mode))
+             (not (bound-and-true-p icomplete-mode)))
+    (minibuffer-completion-help)))
 
 ;;;;; Integration: Vertico
 
@@ -5652,8 +5663,8 @@ automatically previewed."
 
 ;;;;; Integration: Mct
 
-(with-eval-after-load 'mct (add-hook 'consult--completion-refresh-hook
-                                     'mct--live-completions-refresh))
+(with-eval-after-load 'mct
+  (add-hook 'consult--completion-refresh-hook 'mct--live-completions-refresh))
 
 ;;;;; Integration: Icomplete
 
