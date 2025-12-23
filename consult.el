@@ -5579,12 +5579,9 @@ the asynchronous search."
 
 ;;;; Obsolete preview at point (enabled automatically)
 
-(defun consult-preview-at-point ()
-  "Obsolete since preview is enabled automatically."
-  (interactive))
-(define-minor-mode consult-preview-at-point-mode
-  "Obsolete since preview is enabled automatically."
-  :group 'consult)
+(defvar consult-preview-at-point-mode nil)
+(defun consult-preview-at-point-mode () "Obsolete." (interactive))
+(defun consult-preview-at-point () "Obsolete." (interactive))
 (make-obsolete 'consult-preview-at-point-mode nil
                "Obsolete since preview is enabled automatically.")
 (make-obsolete-variable 'consult-preview-at-point-mode nil
