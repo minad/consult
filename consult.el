@@ -3463,7 +3463,6 @@ argument.  The symbol at point is added to the future history."
   "Return list of candidates strings for MARKERS."
   (consult--forbid-minibuffer)
   (let* ((candidates)
-         (current-buf (current-buffer))
          (width (length (number-to-string (line-number-at-pos
                                            (point-max)
                                            consult-line-numbers-widen))))
@@ -3471,8 +3470,8 @@ argument.  The symbol at point is added to the future history."
     (save-excursion
       (dolist (marker markers)
         (when-let ((pos (marker-position marker))
-                   (buf (marker-buffer marker))
-                   ((and (eq buf current-buf) (consult--in-range-p pos))))
+                   ((and (eq (marker-buffer marker) (current-buffer))
+                         (consult--in-range-p pos))))
           (goto-char pos)
           ;; `line-number-at-pos' is a very slow function, which should be
           ;; replaced everywhere.  However in this case the slow
