@@ -1032,6 +1032,8 @@ on Emacs 31:
  completions-format 'one-column
  completions-detailed t
  completions-group t
+ ;; Sort candidates by history position
+ completions-sort 'historical
  ;; Allow navigating from the minibuffer
  minibuffer-visible-completions t
  ;; Show completions eagerly and update automatically
