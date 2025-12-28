@@ -5,7 +5,8 @@
 * Development
 
 - Improve default completion UI support on Emacs 31.
-- Make =consult-preview-at-point-mode= and =consult-preview-at-point= obsolete.
+- Make =consult-preview-at-point-mode= and =consult-preview-at-point= obsolete. The
+  preview functionality in completion buffers is enabled automatically.
 
 * Version 3.1 (2025-11-29)
 
