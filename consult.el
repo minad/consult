@@ -1327,8 +1327,8 @@ Return the location marker."
 (defun consult--preview-rename-buffer (buf &optional name)
   "Rename BUF to the preview buffer name convention.
 NAME defaults to `buffer-name'."
- (with-current-buffer buf
-   (rename-buffer (concat " Preview:" (or name (buffer-name))) 'unique)))
+  (with-current-buffer buf
+    (rename-buffer (concat " Preview:" (or name (buffer-name))) 'unique)))
 
 (defun consult--preview-add-buffer (list buf &optional name)
   "Add BUF to LIST and rename BUF to the preview buffer name convention.
@@ -2388,7 +2388,7 @@ MIN-INPUT is the minimum input length and defaults to
           (funcall sink (if (or (and (not (equal action ""))
                                      (get-text-property 0 'consult--force action))
                                 (>= (length action) min-input))
-                       action 'cancel))
+                            action 'cancel))
         (funcall sink action)))))
 
 (defun consult--async-split (&optional style)
@@ -3151,10 +3151,10 @@ Attach source IDX and SRC properties to each item."
 (defun consult--multi-collection (sources)
   "Static or asynchronous completion function from SOURCES."
   (consult--with-increased-gc
-   (if (cl-loop for src across sources thereis (plist-get src :async))
-       (consult--multi-async sources)
-     (cl-loop for idx from 0 for src across sources nconc
-              (consult--multi-items idx src t)))))
+    (if (cl-loop for src across sources thereis (plist-get src :async))
+        (consult--multi-async sources)
+      (cl-loop for idx from 0 for src across sources nconc
+               (consult--multi-items idx src t)))))
 
 (defun consult--multi (sources &rest options)
   "Select from candidates taken from a list of SOURCES.
@@ -3713,8 +3713,8 @@ to `consult--buffer-query'."
     (setq query (list :sort 'alpha-current :directory (and (not query) 'project))))
   (pcase-let* ((`(,prompt . ,buffers) (consult--buffer-query-prompt "Go to line" query))
                (collection (consult--dynamic-collection
-                            (apply-partially #'consult--line-multi-candidates
-                                             buffers))))
+                               (apply-partially #'consult--line-multi-candidates
+                                                buffers))))
     (consult--read
      collection
      :prompt prompt
@@ -3852,11 +3852,11 @@ INITIAL is the initial input."
                   " [Unlocked read-only buffer. \\[minibuffer-keyboard-quit] to quit.]"))))
           (setq buffer-read-only nil)
           (consult--with-increased-gc
-           (consult--prompt
-            :prompt "Keep lines: "
-            :initial initial
-            :history 'consult--line-history
-            :state (consult--keep-lines-state filter))))
+            (consult--prompt
+             :prompt "Keep lines: "
+             :initial initial
+             :history 'consult--line-history
+             :state (consult--keep-lines-state filter))))
       (setq buffer-read-only ro))))
 
 ;;;;; Command: consult-focus-lines
@@ -3967,14 +3967,14 @@ INITIAL is the initial input."
         (message "All lines revealed"))
     (consult--forbid-minibuffer)
     (consult--with-increased-gc
-     (consult--prompt
-      :prompt
-      (if consult--focus-lines-overlays
-          "Focus on lines (RET to reveal): "
-        "Focus on lines: ")
-      :initial initial
-      :history 'consult--line-history
-      :state (consult--focus-lines-state filter))))
+      (consult--prompt
+       :prompt
+       (if consult--focus-lines-overlays
+           "Focus on lines (RET to reveal): "
+         "Focus on lines: ")
+       :initial initial
+       :history 'consult--line-history
+       :state (consult--focus-lines-state filter))))
   (cl-callf2 assq-delete-all 'consult--focus-lines-overlays mode-line-misc-info)
   (when (and consult--focus-lines-overlays consult--focus-lines-indicator)
     (push `(consult--focus-lines-overlays ,consult--focus-lines-indicator)
@@ -4734,9 +4734,9 @@ BUFFER-LIST is a function or a list of buffers.
 AS is a conversion function."
   (let ((root (consult--normalize-directory directory)))
     (setq buffer-list (cond
-                        ((functionp buffer-list) (funcall buffer-list))
-                        ((listp buffer-list) (copy-sequence buffer-list))
-                        (t (buffer-list))))
+                       ((functionp buffer-list) (funcall buffer-list))
+                       ((listp buffer-list) (copy-sequence buffer-list))
+                       (t (buffer-list))))
     (when (or filter mode root)
       (let ((exclude-re (consult--regexp-filter exclude))
             (include-re (consult--regexp-filter include))
@@ -5101,7 +5101,7 @@ The command may prompt you for a project directory if it is invoked from
 outside a project.  See `consult-buffer' for more details."
   (interactive)
   (consult--with-project
-   (consult-buffer consult-project-buffer-sources)))
+    (consult-buffer consult-project-buffer-sources)))
 
 ;;;###autoload
 (defun consult-buffer-other-window ()
@@ -5133,35 +5133,35 @@ BUILDER is the command line builder function."
    (lambda (input)
      (let ((highlight (cdr (funcall builder input))))
        (lambda (cands)
-          (let ((file "") (file-len 0) result)
-            (save-match-data
-              (dolist (str cands (nreverse result))
-                (when (string-match consult--grep-match-regexp str)
-                  ;; We share the file name across candidates to reduce
-                  ;; the amount of allocated memory.
-                  (unless (and (= file-len (- (match-end 1) (match-beginning 1)))
-                               (eq t (compare-strings
-                                      file 0 file-len
-                                      str (match-beginning 1) (match-end 1) nil)))
-                    (setq file (match-string 1 str)
-                          file-len (length file)))
-                  (let* ((line (match-string 2 str))
-                         (ctx (= (aref str (match-beginning 3)) ?-))
-                         (sep (if ctx "-" ":"))
-                         (content (substring str (match-end 0)))
-                         (line-len (length line)))
-                    (when (and consult-grep-max-columns
-                               (length> content consult-grep-max-columns))
-                      (setq content (substring content 0 consult-grep-max-columns)))
-                    (when highlight
-                      (funcall highlight content))
-                    (setq str (concat file sep line sep content))
-                    ;; Store file name in order to avoid allocations in `consult--prefix-group'
-                    (add-text-properties 0 file-len `(face consult-file consult--prefix-group ,file) str)
-                    (put-text-property (1+ file-len) (+ 1 file-len line-len) 'face 'consult-line-number str)
-                    (when ctx
-                      (add-face-text-property (+ 2 file-len line-len) (length str) 'consult-grep-context 'append str))
-                    (push str result)))))))))))
+         (let ((file "") (file-len 0) result)
+           (save-match-data
+             (dolist (str cands (nreverse result))
+               (when (string-match consult--grep-match-regexp str)
+                 ;; We share the file name across candidates to reduce
+                 ;; the amount of allocated memory.
+                 (unless (and (= file-len (- (match-end 1) (match-beginning 1)))
+                              (eq t (compare-strings
+                                     file 0 file-len
+                                     str (match-beginning 1) (match-end 1) nil)))
+                   (setq file (match-string 1 str)
+                         file-len (length file)))
+                 (let* ((line (match-string 2 str))
+                        (ctx (= (aref str (match-beginning 3)) ?-))
+                        (sep (if ctx "-" ":"))
+                        (content (substring str (match-end 0)))
+                        (line-len (length line)))
+                   (when (and consult-grep-max-columns
+                              (length> content consult-grep-max-columns))
+                     (setq content (substring content 0 consult-grep-max-columns)))
+                   (when highlight
+                     (funcall highlight content))
+                   (setq str (concat file sep line sep content))
+                   ;; Store file name in order to avoid allocations in `consult--prefix-group'
+                   (add-text-properties 0 file-len `(face consult-file consult--prefix-group ,file) str)
+                   (put-text-property (1+ file-len) (+ 1 file-len line-len) 'face 'consult-line-number str)
+                   (when ctx
+                     (add-face-text-property (+ 2 file-len line-len) (length str) 'consult-grep-context 'append str))
+                   (push str result)))))))))))
 
 (defun consult--grep-position (cand &optional find-file)
   "Return the grep position marker for CAND.
