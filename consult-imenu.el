@@ -89,7 +89,7 @@ TYPES is the mode-specific types configuration."
                                    'consult-imenu-prefix 'append name)
            (if prefix
                (setq next-prefix (concat prefix "/" name))
-             (when-let (type (cdr (assoc name types)))
+             (when-let* ((type (cdr (assoc name types))))
                (put-text-property 0 (length name) 'consult--type (car type) name)
                (setq next-face (cadr type))))
            (consult-imenu--flatten next-prefix next-face (cdr item) types))
@@ -114,7 +114,7 @@ TYPES is the mode-specific types configuration."
                      (funcall imenu-create-index-function)))))
          (config (cdr (seq-find (lambda (x) (derived-mode-p (car x))) consult-imenu-config))))
     ;; Fix toplevel items, e.g., emacs-lisp-mode toplevel items are functions
-    (when-let (toplevel (plist-get config :toplevel))
+    (when-let* ((toplevel (plist-get config :toplevel)))
       (let ((tops (seq-remove (lambda (x) (listp (cdr x))) items))
             (rest (seq-filter (lambda (x) (listp (cdr x))) items)))
         (setq items (nconc rest (and tops (list (cons toplevel tops)))))))
@@ -129,7 +129,7 @@ TYPES is the mode-specific types configuration."
   ;; Some imenu backends generate duplicate items (e.g. for overloaded methods in java)
   (let ((ht (make-hash-table :test #'equal :size (length items))))
     (dolist (item items)
-      (if-let (count (gethash (car item) ht))
+      (if-let* ((count (gethash (car item) ht)))
           (setcar item (format "%s (%s)" (car item)
                                (puthash (car item) (1+ count) ht)))
         (puthash (car item) 0 ht)))))
@@ -184,7 +184,7 @@ this function can jump across buffers."
 
 (defun consult-imenu--group ()
   "Create a imenu group function for the current buffer."
-  (when-let (narrow (consult-imenu--narrow))
+  (when-let* ((narrow (consult-imenu--narrow)))
     (lambda (cand transform)
       (let ((type (get-text-property 0 'consult--type cand)))
         (cond
@@ -206,7 +206,7 @@ this function can jump across buffers."
         ;; in order to avoid any bad side effects.
         (funcall preview action (and (markerp (cdr cand)) (cdr cand)))))
     :narrow
-    (when-let (narrow (consult-imenu--narrow))
+    (when-let* ((narrow (consult-imenu--narrow)))
       (list :predicate
             (lambda (cand)
               (eq (get-text-property 0 'consult--type (car cand)) consult--narrow))

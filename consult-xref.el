@@ -65,11 +65,11 @@ The fetch is stored globally such that it can be accessed by
         (funcall open))
       (let ((consult--buffer-display display))
         (funcall preview action
-                 (when-let ((loc (and cand (eq action 'preview)
-                                      (xref-item-location cand)))
-                            (type (type-of loc))
-                            ;; Only preview xrefs listed in consult-xref--preview
-                            ((memq type consult-xref--preview)))
+                 (when-let* ((loc (and cand (eq action 'preview)
+                                       (xref-item-location cand)))
+                             (type (type-of loc))
+                             ;; Only preview xrefs listed in consult-xref--preview
+                             ((memq type consult-xref--preview)))
                    (pcase type
                      ((or 'xref-file-location 'xref-etags-location)
                       (consult--marker-from-line-column
@@ -108,10 +108,10 @@ FETCHER and ALIST arguments."
           :group #'consult--prefix-group
           :state
           ;; do not preview other frame
-          (when-let (fun (pcase-exhaustive display
-                           ('frame nil)
-                           ('window #'switch-to-buffer-other-window)
-                           ('nil #'switch-to-buffer)))
+          (when-let* ((fun (pcase-exhaustive display
+                             ('frame nil)
+                             ('window #'switch-to-buffer-other-window)
+                             ('nil #'switch-to-buffer))))
             (consult-xref--preview fun))
           :lookup (apply-partially #'consult--lookup-prop 'consult-xref))
        (get-text-property 0 'consult-xref (car candidates)))

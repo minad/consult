@@ -69,7 +69,7 @@ MATCH, SCOPE and SKIP are as in `org-map-entries'."
                org-outline-path-cache nil))
        (pcase-let* ((`(_ ,level ,todo ,prio ,_hl ,tags) (org-heading-components))
                     (tags (if org-use-tag-inheritance
-                              (when-let ((tags (org-get-tags)))
+                              (when-let* ((tags (org-get-tags)))
                                 (concat ":" (string-join tags ":") ":"))
                             tags))
                     (cand (org-format-outline-path

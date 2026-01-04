@@ -52,7 +52,7 @@ CALLBACK receives the candidates."
           (while (and (not (eobp)) (re-search-forward re nil t))
             (if (match-end 1)
                 (progn
-                  (if-let ((node (match-string 2)))
+                  (if-let* ((node (match-string 2)))
                       (unless (equal node last-node)
                         (setq full-node (concat consult-info--manual node)
                               last-node node))
@@ -86,9 +86,9 @@ CALLBACK receives the candidates."
 
 (defun consult-info--position (cand)
   "Return position information for CAND."
-  (when-let ((pos (and cand (get-text-property 0 'consult--info cand)))
-             (matches (consult--point-placement cand 0))
-             (dest (+ (cadr pos) (car matches))))
+  (when-let* ((pos (and cand (get-text-property 0 'consult--info cand)))
+              (matches (consult--point-placement cand 0))
+              (dest (+ (cadr pos) (car matches))))
     `( ,(cdr matches) ,dest . ,pos)))
 
 (defun consult-info--action (cand &optional buf)

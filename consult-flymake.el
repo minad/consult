@@ -98,7 +98,7 @@ buffers in the current project instead of just the current buffer."
   (consult--forbid-minibuffer)
   (consult--read
    (consult-flymake--candidates
-     (if-let ((project (and project (project-current))))
+     (if-let* ((project (and project (project-current))))
          (flymake--project-diagnostics project)
        (flymake-diagnostics)))
    :prompt "Flymake diagnostic: "

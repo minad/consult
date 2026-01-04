@@ -177,7 +177,7 @@ Raise an error if the list is empty and NOERROR is nil."
                      ;; Sometimes, registers are made without a `cdr' or with
                      ;; invalid markers.  Such registers don't do anything, and
                      ;; can be ignored.
-                     if (when-let ((val (cdr reg)))
+                     if (when-let* ((val (cdr reg)))
                           (and (or (not (markerp val)) (marker-buffer val))
                                (or (not pred) (funcall pred val))))
                      collect reg)
@@ -210,7 +210,7 @@ built-in register access functions.  The command supports narrowing, see
       (lambda (action cand)
         ;; Preview only markers
         (funcall preview action
-                 (when-let (reg (get-register cand))
+                 (when-let* ((reg (get-register cand)))
                    (and (markerp reg) reg)))))
     :group (consult--type-group consult-register--narrow)
     :narrow (consult--type-narrow consult-register--narrow)
@@ -250,7 +250,7 @@ This function is derived from `register-read-with-preview'."
           (lambda ()
             (unless (get-buffer-window buffer)
               (register-preview buffer 'show-empty)
-              (when-let (win (get-buffer-window buffer))
+              (when-let* ((win (get-buffer-window buffer)))
                 (with-selected-window win
                   (let ((inhibit-read-only t))
                     (goto-char (point-max))
@@ -323,7 +323,7 @@ kmacro."
     (t
      `("Store"
        (?p "point" "Point to register: " ,#'point-to-register)
-       ,@(when-let ((file (or buffer-file-name default-directory)))
+       ,@(when-let* ((file (or buffer-file-name default-directory)))
           `((?f "file" "File to register: " ,(lambda (r) (set-register r `(file . ,file))))))
        (?b "buffer" "Buffer to register: " ,(lambda (r) (set-register r `(buffer . ,(buffer-name)))))
        (?t "frameset" "Frameset to register: " ,#'frameset-to-register)
