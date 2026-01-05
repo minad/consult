@@ -3364,8 +3364,7 @@ expected return value are as specified for `completion-in-region'."
                  :state (consult--insertion-preview start end)
                  :predicate predicate
                  :initial initial))))
-        ;; bug#55205: completion--replace removes properties!
-        (completion--replace start end (setq completion (concat completion)))
+        (completion--replace start end completion)
         (when exit-fun
           (funcall exit-fun completion
                    ;; If completion is finished and cannot be further
