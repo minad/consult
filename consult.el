@@ -1,4 +1,4 @@
-;;; consult.el --- Consulting completing-read -*- lexical-binding: t -*-
+;;; consult.el --- Search and navigate via completing-read -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2021-2026 Free Software Foundation, Inc.
 
@@ -57,7 +57,7 @@
 (require 'bookmark)
 
 (defgroup consult nil
-  "Consulting `completing-read'."
+  "Search and navigate via `completing-read'."
   :link '(info-link :tag "Info Manual" "(consult)")
   :link '(url-link :tag "Website" "https://github.com/minad/consult")
   :link '(url-link :tag "Wiki" "https://github.com/minad/consult/wiki")
