@@ -673,8 +673,11 @@ Turn ARG into a list, and for each element either:
     (let ((opts (when (string-match " +--\\( +\\|\\'\\)" str)
                   (prog1 (substring str (match-end 0))
                     (setq str (substring str 0 (match-beginning 0)))))))
-      ;; split-string-and-unquote fails if the quotes are invalid.  Ignore it.
-      (cons str (and opts (ignore-errors (split-string-and-unquote opts)))))))
+      ;; Use `split-string-shell-command' here instead of
+      ;; `split-string-and-unquote' since it handles more flexible input -
+      ;; double quoted strings, single quoted strings and spaces escaped with
+      ;; backslash.
+      (cons str (and opts (split-string-shell-command opts))))))
 
 (defmacro consult--keep! (list form)
   "Evaluate FORM for every element of LIST and keep the non-nil results."
