@@ -1,4 +1,4 @@
-;;; consult-org.el --- Consult commands for org-mode -*- lexical-binding: t -*-
+;;; consult-org.el --- Consult commands to navigate Org files -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2021-2026 Free Software Foundation, Inc.
 
@@ -19,8 +19,8 @@
 
 ;;; Commentary:
 
-;; Provides a `completing-read' interface for Org mode navigation.
-;; This is an extra package, to allow lazy loading of Org.
+;; Provides the commands `consult-org-agenda' and `consult-org-heading'.  This
+;; is an extra file to allow lazy loading of org.el.
 
 ;;; Code:
 

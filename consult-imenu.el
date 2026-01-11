@@ -1,4 +1,4 @@
-;;; consult-imenu.el --- Consult commands for imenu -*- lexical-binding: t -*-
+;;; consult-imenu.el --- Consult commands to navigate the Imenu -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2021-2026 Free Software Foundation, Inc.
 
@@ -19,7 +19,8 @@
 
 ;;; Commentary:
 
-;; Provides imenu-related Consult commands.
+;; Provides the commands `consult-imenu' and `consult-imenu-multi'.  This is an
+;; extra file to allow lazy loading of imenu.el.
 
 ;;; Code:
 

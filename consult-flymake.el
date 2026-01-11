@@ -1,4 +1,4 @@
-;;; consult-flymake.el --- Provides the command `consult-flymake' -*- lexical-binding: t -*-
+;;; consult-flymake.el --- Consult commands to navigate Flymake errors -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2021-2026 Free Software Foundation, Inc.
 
@@ -19,9 +19,8 @@
 
 ;;; Commentary:
 
-;; Provides the command `consult-flymake'.  This is an extra package,
-;; to allow lazy loading of flymake.el.  The `consult-flymake' command
-;; is autoloaded.
+;; Provides the command `consult-flymake'.  This is an extra file to allow lazy
+;; loading of flymake.el.
 
 ;;; Code:
 

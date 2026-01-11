@@ -19,7 +19,8 @@
 
 ;;; Commentary:
 
-;; Provides register-related Consult commands.
+;; Provides the register-related commands `consult-register',
+;; `consult-register-load' and `consult-register-store'.
 
 ;;; Code:
 

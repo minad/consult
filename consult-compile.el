@@ -1,4 +1,4 @@
-;;; consult-compile.el --- Provides the command `consult-compile-error' -*- lexical-binding: t -*-
+;;; consult-compile.el --- Consult commands to navigate compilation errors -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2021-2026 Free Software Foundation, Inc.
 
@@ -19,10 +19,10 @@
 
 ;;; Commentary:
 
-;; Provides the command `consult-compile-error'.  This is an extra package, to
-;; allow lazy loading of compile.el.  The `consult-compile-error' command is
-;; autoloaded.  See also the command `consult-grep-match' which adapts
-;; `consult-compile-error' to Grep buffers.
+;; Provides the command `consult-compile-error'.  This is an extra file to
+;; allow lazy loading of compile.el.  See also the command
+;; `consult-grep-match' which adapts `consult-compile-error' to Grep
+;; buffers.
 
 ;;; Code:
 

@@ -1,4 +1,4 @@
-;;; consult-kmacro.el --- Provides the command `consult-kmacro' -*- lexical-binding: t -*-
+;;; consult-kmacro.el --- Consult commands to run keyboard macros -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2021-2026 Free Software Foundation, Inc.
 
@@ -19,9 +19,8 @@
 
 ;;; Commentary:
 
-;; Provides the command `consult-kmacro'.  This is an extra package,
-;; to allow lazy loading of kmacro.el.  The `consult-kmacro' command
-;; is autoloaded.
+;; Provides the command `consult-kmacro'.  This is an extra file to allow lazy
+;; loading of kmacro.el.
 
 ;;; Code:
 

@@ -1,4 +1,4 @@
-;;; consult-info.el --- Search through the info manuals -*- lexical-binding: t -*-
+;;; consult-info.el --- Consult commands to search the info manuals -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2021-2026 Free Software Foundation, Inc.
 
@@ -19,9 +19,8 @@
 
 ;;; Commentary:
 
-;; Provides the command `consult-info'.  This is an extra package,
-;; to allow lazy loading of info.el.  The `consult-info' command
-;; is autoloaded.
+;; Provides the command `consult-info' and the macro `consult-info-define'.
+;; This is an extra file to allow lazy loading of info.el.
 
 ;;; Code:
 
