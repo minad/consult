@@ -2,7 +2,7 @@
 #+author: Daniel Mendler
 #+language: en
 
-* Development
+* Version 3.2 (2026-01-12)
 
 - Improve default completion UI support on Emacs 31.
 - Make =consult-preview-at-point-mode= and =consult-preview-at-point= obsolete. The
