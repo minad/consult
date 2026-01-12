@@ -439,7 +439,7 @@ than the `cursor' face to avoid confusion.")
 Used by `consult-completion-in-region', `consult-yank' and `consult-history'.")
 
 (defface consult-narrow-indicator
-  '((t :inherit warning))
+  '((t :inherit warning :weight normal))
   "Face used for the narrowing indicator.")
 
 (defface consult-async-running
@@ -457,6 +457,10 @@ Used by `consult-completion-in-region', `consult-yank' and `consult-history'.")
 (defface consult-async-split
   '((t :inherit font-lock-negation-char-face))
   "Face used to highlight punctuation character.")
+
+(defface consult-async-option
+  '((t :inherit warning :weight normal))
+  "Face used to highlight asynchronous command options.")
 
 (defface consult-help
   '((t :inherit shadow))
@@ -491,7 +495,7 @@ Used by `consult-completion-in-region', `consult-yank' and `consult-history'.")
   "Face used to highlight line number prefixes.")
 
 (defface consult-line-number-wrapped
-  '((t :inherit consult-line-number-prefix :inherit font-lock-warning-face))
+  '((t :inherit consult-line-number-prefix :inherit warning :weight normal))
   "Face used to highlight line number prefixes after wrap around.")
 
 (defface consult-separator
@@ -670,15 +674,22 @@ Turn ARG into a list, and for each element either:
 (defun consult--command-split (str)
   "Return command argument and options list given input STR."
   (save-match-data
-    (let (opts)
+    (let ((opts ""))
       (setq str (substring-no-properties str))
-      (when (string-match " +--\\( +\\|\\'\\)" str)
-        (setq opts (substring str (match-end 0))
+      ;; Find first option
+      (when (string-match "\\(?:\\`\\| \\)-" str)
+        (setq opts (substring str (1- (match-end 0)))
               str (substring str 0 (match-beginning 0))))
+      ;; Replace backlash-escaped dashes
+      (setq str (replace-regexp-in-string "\\(\\`\\| \\)\\-" "\\1-" str))
+      ;; Options end with double dash
+      (when (string-match "\\(\\`\\| \\)--\\(?: \\|\\'\\)" opts)
+        (setq str (concat str " " (substring opts (match-end 0)))
+              opts (substring opts 0 (match-beginning 0))))
       ;; Use `split-string-shell-command' here instead of
       ;; `split-string-and-unquote' since it handles more flexible input -
       ;; double quoted strings, single quoted strings and escaped spaces.
-      (cons str (and opts (split-string-shell-command (string-trim opts)))))))
+      (cons str (split-string-shell-command (string-trim opts))))))
 
 (defmacro consult--keep! (list form)
   "Evaluate FORM for every element of LIST and keep the non-nil results."
@@ -2426,6 +2437,26 @@ configured by `consult-async-split-style'."
            (funcall sink input)))
         (_ (funcall sink action))))))
 
+(defun consult--async-options ()
+  "Async function, which highlights commands options in the input string."
+  (lambda (sink)
+    (lambda (action)
+      (when (stringp action)
+        (save-match-data
+          (when-let* ((iend (save-excursion
+                              (goto-char (minibuffer-prompt-end))
+                              (search-forward action nil t)))
+                      (ibeg (- iend (length action))))
+            (remove-list-of-text-properties ibeg iend '(face rear-nonsticky))
+            (when-let* (((string-match "\\(?:\\`\\| \\)\\(-\\)" action))
+                        (beg (match-beginning 1))
+                        ((string-match "\\(?:\\`\\| \\)\\(--\\)\\(?: \\|\\'\\)\\|\\'" action))
+                        (end (or (match-end 1) (match-end 0))))
+              (add-text-properties (+ ibeg beg) (+ ibeg end)
+                                   '( face consult-async-option
+                                      rear-nonsticky t))))))
+      (funcall sink action))))
+
 (defun consult--async-indicator ()
   "Async function with a state indicator overlay."
   (lambda (sink)
@@ -2695,6 +2726,7 @@ THROTTLE and DEBOUNCE are passed to `consult--async-throttle'.
 Other PROPS are passed to `make-process'."
   (declare (indent 1))
   (consult--async-pipeline
+   (consult--async-options)
    (consult--async-min-input min-input)
    (consult--async-throttle throttle debounce)
    (apply #'consult--async-process builder
@@ -5289,7 +5321,7 @@ The input string is split at a punctuation character, which is given as
 the first character of the input string.  The format is similar to
 Perl-style regular expressions, e.g., /regexp/.  Furthermore command
 line options can be passed to grep, specified behind --.  The overall
-prompt input has the form `#async-input -- grep-opts#filter-string'.
+prompt input has the form `#async-input --grep-opt#filter-string'.
 
 Note that the grep input string is transformed from Emacs regular
 expressions to Posix regular expressions.  Always enter Emacs regular
@@ -5305,7 +5337,7 @@ Here we give a few example inputs:
 #alpha beta         : Search for alpha and beta in any order.
 #alpha.*beta        : Search for alpha before beta.
 #\\(alpha\\|beta\\) : Search for alpha or beta (Note Emacs syntax!)
-#word -- -C3        : Search for word, include 3 lines as context
+#word -C3           : Search for word, include 3 lines as context
 #first#second       : Search for first, quick filter for second.
 
 The symbol at point is added to the future history."

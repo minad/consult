@@ -4,6 +4,16 @@
 
 * Development
 
+- Breaking change: The syntax to pass options to =consult-ripgrep=, =consult-fd=
+  etc. has changed. The overall syntax should be familiar since it resembles the
+  usual shell syntax. The input after a dash is treated as options. In order to
+  search for a token starting with a dash, escape the dash with a backlash.
+  Input after two dashes is treated as search pattern. Examples:
+  - =#word -C2= or =#-C2 -- word=: Grep for =word= with a context of two lines.
+  - =#\-C= or =#-- -C=: Grep for =-C=.
+  - =#--newer 1h=: Find files which are newer than 1h with =consult-fd=.
+- New face =consult-async-option= which is used to highlight options passed to
+  asynchronous commands.
 - =consult-fd=, =consult-find=: Start search if either pattern or options are given.
 
 * Version 3.2 (2026-01-12)

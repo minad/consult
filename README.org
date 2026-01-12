@@ -580,13 +580,18 @@ Examples:
 You can pass options to the underlying command. The following examples apply to
 ripgrep:
 
-- =#word -- --invert-match= or =#word -- -v=: Invert matching.
-- =#word -- --context=2= or =#word -- -C2=: Include two lines of context.
-- =#word -- --hidden= or =#word -- -.=: Search hidden files.
-- =#word -- --glob=*.org= or =#word -- -g *.org=: Search files matching the glob pattern.
-- =#word -- --type=elisp= or =#word -- -t elisp=: Search only Elisp files.
-- =#.* -- -F=: Treat input as fixed string, and not as regular expression.
-- =#word -- -s=: Treat input as case sensitive (=-s=), sensitive (=-i=), or smart case (=-S=).
+- =#foo bar --invert-match= or =#foo bar -v=: Invert matching.
+- =#foo bar --context=2= or =#foo bar -C2=: Include two lines of context.
+- =#foo bar --hidden= or =#foo bar -.=: Search hidden files.
+- =#foo bar --glob=*.org= or =#foo bar -g *.org=: Search files matching the glob pattern.
+- =#foo bar --type=elisp= or =#foo bar -t elisp=: Search only Elisp files.
+- =#.* -F=: Treat input as fixed string, and not as regular expression.
+- =#foo bar -s=: Treat input as case sensitive (=-s=), sensitive (=-i=), or smart case (=-S=).
+
+Input can come after the options and the dash can be escaped:
+
+- =#\-foo bar=: Search for =-foo= and =bar= with escaped dash.
+- =#-v -- foo bar=: Inverted search, words come after options.
 
 The asynchronous processes create an error log buffer =_*consult-async*= (note the
 leading space), which you can inspect for troubleshooting. The prompt has a
