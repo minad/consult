@@ -670,13 +670,14 @@ Turn ARG into a list, and for each element either:
 (defun consult--command-split (str)
   "Return command argument and options list given input STR."
   (save-match-data
-    (let ((opts (when (string-match " +--\\( +\\|\\'\\)" str)
-                  (prog1 (substring str (match-end 0))
-                    (setq str (substring str 0 (match-beginning 0)))))))
+    (let (opts)
+      (setq str (substring-no-properties str))
+      (when (string-match " +--\\( +\\|\\'\\)" str)
+        (setq opts (substring str (match-end 0))
+              str (substring str 0 (match-beginning 0))))
       ;; Use `split-string-shell-command' here instead of
       ;; `split-string-and-unquote' since it handles more flexible input -
-      ;; double quoted strings, single quoted strings and spaces escaped with
-      ;; backslash.
+      ;; double quoted strings, single quoted strings and escaped spaces.
       (cons str (and opts (split-string-shell-command opts))))))
 
 (defmacro consult--keep! (list form)
@@ -2005,7 +2006,7 @@ determines the separator.  Examples: \"/async/filter\",
       (save-match-data
         (let ((q (regexp-quote (substring str 0 1))))
           (string-match (concat "^" q "\\([^" q "]*\\)\\(" q "\\)?") str)
-          ;; Force update it two punctuation characters are entered.
+          ;; Force update if two punctuation characters are entered.
           `(,(propertize (match-string 1 str) 'consult--force (match-end 2))
             ,(match-end 0)
             ;; List of highlights
