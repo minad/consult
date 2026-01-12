@@ -2,6 +2,10 @@
 #+author: Daniel Mendler
 #+language: en
 
+* Development
+
+- =consult-fd=, =consult-find=: Start search if either pattern or options are given.
+
 * Version 3.2 (2026-01-12)
 
 - Improve default completion UI support on Emacs 31.
