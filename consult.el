@@ -678,7 +678,7 @@ Turn ARG into a list, and for each element either:
       ;; Use `split-string-shell-command' here instead of
       ;; `split-string-and-unquote' since it handles more flexible input -
       ;; double quoted strings, single quoted strings and escaped spaces.
-      (cons str (and opts (split-string-shell-command opts))))))
+      (cons str (and opts (split-string-shell-command (string-trim opts)))))))
 
 (defmacro consult--keep! (list form)
   "Evaluate FORM for every element of LIST and keep the non-nil results."
