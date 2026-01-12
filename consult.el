@@ -2292,8 +2292,8 @@ restarted and defaults to `consult-async-input-debounce'."
   "Async function with static ITEMS."
   (consult--async-dynamic
    (lambda (input)
-     (pcase-let* ((`(,re . ,hl) (consult--compile-regexp
-                                 input 'emacs completion-ignore-case)))
+     (pcase-let ((`(,re . ,hl) (consult--compile-regexp
+                                input 'emacs completion-ignore-case)))
        (if re
            (let* ((completion-regexp-list re)
                   (all (all-completions "" items)))
@@ -2466,7 +2466,7 @@ PROPS are optional properties passed to `make-process'."
         (pcase action
           ((pred stringp)
            (funcall sink action)
-           (let* ((args (funcall builder action)))
+           (let ((args (funcall builder action)))
              (unless (stringp (car args))
                (setq args (car args)))
              (unless (equal args last-args)
