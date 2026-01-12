@@ -576,11 +576,21 @@ Examples:
   characters.
 - =#to#=: Force searching for "to" using grep, since the grep pattern
   must be longer than =consult-async-min-input= characters by default.
-- =#defun -- --invert-match#=: Pass argument =--invert-match= to grep.
 
-Asynchronous processes like =find= and =grep= create an error log buffer
-=_*consult-async*= (note the leading space), which is useful for
-troubleshooting. The prompt has a small indicator showing the process status:
+You can pass options to the underlying command. The following examples apply to
+ripgrep:
+
+- =#word -- --invert-match= or =#word -- -v=: Invert matching.
+- =#word -- --context=2= or =#word -- -C2=: Include two lines of context.
+- =#word -- --hidden= or =#word -- -.=: Search hidden files.
+- =#word -- --glob=*.org= or =#word -- -g *.org=: Search files matching the glob pattern.
+- =#word -- --type=elisp= or =#word -- -t elisp=: Search only Elisp files.
+- =#.* -- -F=: Treat input as fixed string, and not as regular expression.
+- =#word -- -s=: Treat input as case sensitive (=-s=), sensitive (=-i=), or smart case (=-S=).
+
+The asynchronous processes create an error log buffer =_*consult-async*= (note the
+leading space), which you can inspect for troubleshooting. The prompt has a
+small indicator showing the process status:
 
 - =:= the usual prompt colon, before input is provided.
 - =*= with warning face, the process is running.
