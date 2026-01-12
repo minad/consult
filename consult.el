@@ -5408,7 +5408,7 @@ INITIAL is initial input."
       (pcase-let* ((`(,arg . ,opts) (consult--command-split input))
                    ;; ignore-case=t since -iregex is used below
                    (`(,re . ,hl) (consult--compile-regexp arg type t)))
-        (when re
+        (when (or re opts) ;; Either option or regexp must be provided
           (cons (append cmd
                         (cdr (mapcan
                               (lambda (x)
@@ -5453,7 +5453,7 @@ regarding the asynchronous search and the arguments."
                   (apply-partially #'consult--highlight-regexps
                                    (list (regexp-quote arg)) ignore-case))
           (pcase-let ((`(,re . ,hl) (consult--compile-regexp arg 'pcre ignore-case)))
-            (when re
+             (when (or re opts) ;; Either option or regexp must be provided
               (cons (append cmd
                             (mapcan (lambda (x) `("--and" ,x)) re)
                             opts
