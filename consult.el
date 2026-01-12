@@ -5480,7 +5480,7 @@ regarding the asynchronous search and the arguments."
     (unless (string-blank-p arg)
       (cons (append (consult--build-args consult-locate-args)
                     (consult--split-escaped arg) opts)
-            (cdr (consult--default-regexp-compiler input 'basic t))))))
+            (cdr (consult--default-regexp-compiler arg 'basic t))))))
 
 ;;;###autoload
 (defun consult-locate (&optional initial)
