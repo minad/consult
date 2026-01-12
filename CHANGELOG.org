@@ -15,6 +15,8 @@
 - New face =consult-async-option= which is used to highlight options passed to
   asynchronous commands.
 - =consult-fd=, =consult-find=: Start search if either pattern or options are given.
+- Remove obsolete =consult--source-*= variables. Use the public variables
+  =consult-source-*= instead.
 
 * Version 3.2 (2026-01-12)
 

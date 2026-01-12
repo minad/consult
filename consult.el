@@ -4857,21 +4857,6 @@ If NORECORD is non-nil, do not record the buffer switch in the buffer list."
 
 (consult--define-state buffer)
 
-(define-obsolete-variable-alias 'consult--source-bookmark 'consult-source-bookmark "2.9")
-(define-obsolete-variable-alias 'consult--source-buffer 'consult-source-buffer "2.9")
-(define-obsolete-variable-alias 'consult--source-buffer-register 'consult-source-buffer-register "2.9")
-(define-obsolete-variable-alias 'consult--source-file-register 'consult-source-file-register "2.9")
-(define-obsolete-variable-alias 'consult--source-hidden-buffer 'consult-source-hidden-buffer "2.9")
-(define-obsolete-variable-alias 'consult--source-modified-buffer 'consult-source-modified-buffer "2.9")
-(define-obsolete-variable-alias 'consult--source-other-buffer 'consult-source-other-buffer "2.9")
-(define-obsolete-variable-alias 'consult--source-project-buffer 'consult-source-project-buffer "2.9")
-(define-obsolete-variable-alias 'consult--source-project-buffer-hidden 'consult-source-project-buffer-hidden "2.9")
-(define-obsolete-variable-alias 'consult--source-project-recent-file 'consult-source-project-recent-file "2.9")
-(define-obsolete-variable-alias 'consult--source-project-recent-file-hidden 'consult-source-project-recent-file-hidden "2.9")
-(define-obsolete-variable-alias 'consult--source-project-root 'consult-source-project-root "2.9")
-(define-obsolete-variable-alias 'consult--source-project-root-hidden 'consult-source-project-root-hidden "2.9")
-(define-obsolete-variable-alias 'consult--source-recent-file 'consult-source-recent-file "2.9")
-
 (defvar consult-source-bookmark
   `( :name     "Bookmark"
      :narrow   ?m
