@@ -2431,9 +2431,8 @@ configured by `consult-async-split-style'."
                      (end (minibuffer-prompt-end)))
            ;; Highlight punctuation characters
            (pcase-dolist (`(,x . ,y) highlights)
-             (let ((x (+ end x)) (y (+ end y)))
-               (add-text-properties x y '(consult--split t rear-nonsticky t))
-               (add-face-text-property x y 'consult-async-split)))
+             (add-text-properties (+ end x) (+ end y)
+                                  '(face consult-async-split consult--split t rear-nonsticky t)))
            (funcall sink input)))
         (_ (funcall sink action))))))
 
