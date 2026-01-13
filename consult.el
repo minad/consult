@@ -5464,15 +5464,21 @@ regarding the asynchronous search and the arguments."
                              (let (case-fold-search)
                                ;; Case insensitive if there are no uppercase letters
                                (not (string-match-p "[[:upper:]]" arg)))))))
-        (if (or (member "-F" flags) (member "--fixed-strings" flags))
-            (cons (append cmd (list arg) opts paths)
-                  (apply-partially #'consult--highlight-regexps
-                                   (list (regexp-quote arg)) ignore-case))
+        (if (or (member "-F" flags) (member "--fixed-strings" flags)
+                (member "-g" flags) (member "--glob" flags))
+            (when-let* ((args (consult--split-escaped arg)))
+              (cons (append cmd opts
+                            (mapcan (lambda (x) `("--and" ,x))
+                                    (if (or (member "-g" flags) (member "--glob" flags))
+                                        (mapcar (lambda (x) (concat "**/" x)) args)
+                                      args))
+                            (mapcan (lambda (x) `("--search-path" ,x)) paths))
+                    (apply-partially #'consult--highlight-regexps
+                                     (mapcar #'regexp-quote args) ignore-case)))
           (pcase-let ((`(,re . ,hl) (consult--compile-regexp arg 'pcre ignore-case)))
              (when (or re opts) ;; Either option or regexp must be provided
-              (cons (append cmd
+              (cons (append cmd opts
                             (mapcan (lambda (x) `("--and" ,x)) re)
-                            opts
                             (mapcan (lambda (x) `("--search-path" ,x)) paths))
                     hl))))))))
 
