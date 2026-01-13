@@ -7,7 +7,7 @@
 - *BREAKING CHANGE*: The syntax to pass options to =consult-ripgrep=, =consult-fd=
   etc. has changed. The overall syntax should be familiar since it resembles the
   usual shell syntax. The input after a dash is treated as options. In order to
-  search for a token starting with a dash, escape the dash with a backlash.
+  search for a token starting with a dash, escape the dash with a backslash.
   Input after two dashes is treated as search pattern. Examples:
   - =#word -C2= or =#-C2 -- word=: Grep for =word= with a context of two lines.
   - =#\-C= or =#-- -C=: Grep for =-C=.
