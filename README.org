@@ -460,9 +460,9 @@ to be considered.
  consult-bookmark consult-recent-file consult-xref
  consult-source-bookmark consult-source-file-register
  consult-source-recent-file consult-source-project-recent-file
- ;; my/command-wrapping-consult    ;; disable auto previews inside my command
- :preview-key '(:debounce 0.4 any) ;; Option 1: Delay preview
- ;; :preview-key "M-.")            ;; Option 2: Manual preview
+ ;; my/command-wrapping-consult     ;; disable auto previews inside my command
+ :preview-key '(:debounce 0.4 any)) ;; Option 1: Delay preview
+ ;; :preview-key "M-.")             ;; Option 2: Manual preview
 #+end_src
 
 In this case one may wonder what the difference is between using an Embark
