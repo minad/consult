@@ -2,7 +2,7 @@
 #+author: Daniel Mendler
 #+language: en
 
-* Development
+* Version 3.3 (2026-01-18)
 
 - *BREAKING CHANGE*: The syntax to pass options to =consult-ripgrep=, =consult-fd=
   etc. has changed. The overall syntax should be familiar since it resembles the
