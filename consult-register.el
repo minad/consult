@@ -126,9 +126,8 @@ SHOW-EMPTY must be t if the window should be shown for an empty register list.
 Optional argument PRED specifies the types of register to show."
   (let ((regs (consult-register--alist 'noerror pred))
         (separator
-         (and (display-graphic-p)
-              (propertize #(" \n" 0 1 (display (space :align-to right)))
-                          'face '(:inherit consult-separator :height 1 :underline t)))))
+         (when (display-graphic-p)
+           (propertize "\n" 'face 'consult-separator))))
     (when (or show-empty regs)
       (with-current-buffer-window buffer
           (cons 'display-buffer-at-bottom

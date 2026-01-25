@@ -499,10 +499,11 @@ Used by `consult-completion-in-region', `consult-yank' and `consult-history'.")
   "Face used to highlight line number prefixes after wrap around.")
 
 (defface consult-separator
-  '((((class color) (min-colors 88) (background light))
-     :foreground "#ccc")
+  '((default :extend t :height 1 :underline t)
+    (((class color) (min-colors 88) (background light))
+     :underline "#ccc")
     (((class color) (min-colors 88) (background dark))
-     :foreground "#333"))
+     :underline "#333"))
   "Face used for thin line separators in `consult-register-window'.")
 
 ;;;; Input history variables
