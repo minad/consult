@@ -5563,12 +5563,14 @@ details regarding the asynchronous search."
 (defun consult--man-action (page &optional nodisplay)
   "Create man PAGE buffer, do not display if NODISPLAY is non-nil."
   (dlet ((Man-prefer-synchronous-call t)
-         (Man-notify-method (and (not nodisplay) 'aggressive)))
-    (let* ((inhibit-message nil) (message-log-max nil) (buf (man page)))
-      (when (buffer-live-p buf)
-        (with-current-buffer buf
-          (goto-char (point-min))
-          (current-buffer))))))
+         (Man-notify-method (and (not nodisplay) 'aggressive))
+         (inhibit-message t)
+         (message-log-max nil))
+    (when-let* ((buf (man page))
+                ((buffer-live-p buf)))
+      (with-current-buffer buf
+        (goto-char (point-min))
+        (current-buffer)))))
 
 (consult--define-state man)
 
