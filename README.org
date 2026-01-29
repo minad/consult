@@ -1054,9 +1054,8 @@ on Emacs 31:
  completion-eager-update t
  completion-eager-display t
  completion-auto-help 'always
- ;; Disable noise (inline help also blocks input)
- completion-show-help nil
- completion-show-inline-help nil)
+ ;; Disable noise in the *Completions* buffer
+ completion-show-help nil)
 
 ;; Unbind `minibuffer-complete-word'
 (keymap-unset minibuffer-local-completion-map "SPC")
