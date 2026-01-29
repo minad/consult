@@ -3403,17 +3403,16 @@ expected return value are as specified for `completion-in-region'."
         t))))
 
 ;;;###autoload
-(defun consult-completion-in-region (start end collection predicate)
+(defun consult-completion-in-region (start end table predicate)
   "Use minibuffer completion as the UI for `completion-at-point'.
 
-The arguments START, END, COLLECTION and PREDICATE and expected return
-value are as specified for `completion-in-region'.  Use this function as
-a value for `completion-in-region-function'."
-  (if (and (eq completing-read-function #'completing-read-default)
-           (not (bound-and-true-p vertico-mode))
-           (not (bound-and-true-p icomplete-mode)))
-      (completion--in-region start end collection predicate)
-    (consult--in-region start end collection predicate)))
+The arguments START, END, TABLE and PREDICATE and expected return value
+are as specified for `completion-in-region'.  Use this function as a
+value for `completion-in-region-function'."
+  (if (and (or (bound-and-true-p vertico-mode) (bound-and-true-p icomplete-mode))
+           (not (eq table minibuffer-completion-table)))
+      (consult--in-region start end table predicate)
+    (completion--in-region start end table predicate)))
 
 ;;;;; Command: consult-outline
 
