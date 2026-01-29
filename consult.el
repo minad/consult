@@ -3355,7 +3355,8 @@ expected return value are as specified for `completion-in-region'."
       (setcdr last nil))
     (if (or (eq threshold t) (length< all (1+ (or threshold 1)))
             (and completion-cycling completion-all-sorted-completions))
-        (completion--in-region start end table predicate)
+        (let (completion-auto-help)
+          (completion--in-region start end table predicate))
       ;; Wrap all annotation functions to ensure that they are executed
       ;; in the original buffer.
       (let* ((exit-fun (plist-get completion-extra-properties :exit-function))
