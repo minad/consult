@@ -4,6 +4,8 @@
 
 * Development
 
+- Bugfixes.
+- Improve default completion UI support on Emacs 31.
 - Remove =consult-separator= face.
 
 * Version 3.3 (2026-01-18)
