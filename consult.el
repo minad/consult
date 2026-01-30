@@ -559,7 +559,7 @@ outside the minibuffer.")
   "Maximum candidate width used for annotation alignment.")
 
 (defconst consult--tofu-char #x100000
-  "Special character used to encode line prefixes for disambiguation.
+  "Special character used to encode line suffixes for disambiguation.
 We use characters in the Unicode PUA-B.")
 
 (defconst consult--tofu-range #xFFFE
@@ -1107,11 +1107,11 @@ than `consult--tofu-range'."
 See `consult--tofu-append'."
   (- (aref cand (1- (length cand))) consult--tofu-char))
 
-;; We must disambiguate the lines by adding a prefix such that two lines with
+;; We must disambiguate the lines by adding a suffix such that two lines with
 ;; the same text can be distinguished.  In order to avoid matching the line
 ;; number, such that the user can search for numbers with `consult-line', we
-;; encode the line number as characters outside the Unicode range.  By doing
-;; that, no accidental matching can occur.
+;; encode the line number as Unicode PUA-B characters.  This way accidental
+;; matching is unlikely.
 (defun consult--tofu-encode (n)
   "Return tofu-encoded number N as a string.
 Large numbers are encoded as multiple tofu characters."
