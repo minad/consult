@@ -558,11 +558,11 @@ outside the minibuffer.")
 (defvar consult--annotate-align-width 0
   "Maximum candidate width used for annotation alignment.")
 
-(defconst consult--tofu-char #x200000
+(defconst consult--tofu-char #x100000
   "Special character used to encode line prefixes for disambiguation.
-We use invalid characters outside the Unicode range.")
+We use characters in the Unicode PUA-B.")
 
-(defconst consult--tofu-range #x100000
+(defconst consult--tofu-range #xFFFE
   "Special character range.")
 
 (defconst consult--tofu-regexp
