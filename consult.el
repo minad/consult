@@ -3268,7 +3268,7 @@ Optional source fields:
       (setf (plist-get (symbol-value cmd) prop) (eval form 'lexical)))
      ((functionp cmd)
       (setf (plist-get (alist-get cmd consult--customize-alist) prop) form))
-     (t (user-error "%s is neither a Command command nor a source" cmd))))
+     (t (warn "%s is neither a Consult command nor a source" cmd))))
   nil)
 
 (defmacro consult-customize (&rest args)
