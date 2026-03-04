@@ -5596,18 +5596,6 @@ the asynchronous search."
    :add-history (thing-at-point 'symbol)
    :history '(:input consult--man-history)))
 
-;;;; Obsolete preview at point (enabled automatically)
-
-(defvar consult-preview-at-point-mode nil)
-(defun consult-preview-at-point-mode () "Obsolete." (interactive))
-(defun consult-preview-at-point () "Obsolete." (interactive))
-(make-obsolete 'consult-preview-at-point-mode nil
-               "Obsolete since preview is enabled automatically.")
-(make-obsolete-variable 'consult-preview-at-point-mode nil
-                        "Obsolete since preview is enabled automatically.")
-(make-obsolete 'consult-preview-at-point nil
-               "Obsolete since preview is enabled automatically.")
-
 ;;;; Integration with completion systems
 
 ;;;;; Integration: Default *Completions*

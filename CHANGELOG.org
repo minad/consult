@@ -7,6 +7,7 @@
 - Bugfixes.
 - Improve default completion UI support on Emacs 31.
 - Remove =consult-separator= face.
+- Remove obsolete =consult-preview-at-point-mode= and =consult-preview-at-point=.
 
 * Version 3.3 (2026-01-18)
 
