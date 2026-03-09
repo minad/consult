@@ -2,7 +2,7 @@
 #+author: Daniel Mendler
 #+language: en
 
-* Development
+* Version 3.4 (2026-03-09)
 
 - Bugfixes.
 - Improve default completion UI support on Emacs 31.
