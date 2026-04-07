@@ -674,7 +674,7 @@ Turn ARG into a list, and for each element either:
         (setq opts (substring str (1- (match-end 0)))
               str (substring str 0 (match-beginning 0))))
       ;; Replace backslash-escaped dashes
-      (setq str (replace-regexp-in-string "\\(\\`\\| \\)\\-" "\\1-" str))
+      (setq str (replace-regexp-in-string "\\(\\`\\| \\)\\\\-" "\\1-" str))
       ;; Options end with double dash
       (when (string-match "\\(\\`\\| \\)--\\(?: \\|\\'\\)" opts)
         (setq str (concat str " " (substring opts (match-end 0)))
