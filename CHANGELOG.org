@@ -2,6 +2,13 @@
 #+author: Daniel Mendler
 #+language: en
 
+* Development
+
+- Add =consult-after-final-jump-hook=, which is executed when a candidate is
+  finally selected. The convenience function =consult-run-suppressed-hooks=
+  can be added to this hook to ensure that suppressed =find-file-hook=
+  members (e.g., =recentf=, =vc-refresh-state=) are executed upon arrival.
+
 * Version 3.4 (2026-03-09)
 
 - Bugfixes.

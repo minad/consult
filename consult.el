@@ -170,12 +170,33 @@ nil shows all `custom-available-themes'."
   :type '(repeat (choice symbol regexp)))
 
 (defcustom consult-after-jump-hook (list #'recenter)
-  "Function called after jumping to a location.
+  "Functions called after jumping to a location.
+
+This hook is executed after every jump, including both preview
+movements during completion and the final jump after selection.
 
 Commonly used functions for this hook are `recenter' and
 `reposition-window'.  You may want to add a function which pulses the
-current line, e.g., `pulse-momentary-highlight-one-line'.  The hook
-called during preview and for the jump after selection."
+current line, e.g., `pulse-momentary-highlight-one-line'.
+
+See also `consult-after-final-jump-hook' for a hook that is executed
+only once after the final selection."
+  :type 'hook)
+
+(defcustom consult-after-final-jump-hook nil
+  "Functions called after the final jump to a location.
+
+This hook is called only once when the user officially selects a
+candidate, in contrast to `consult-after-jump-hook' which also
+fires during every preview movement.
+
+One can add functions such as `recentf-track-opened-file' or
+`vc-refresh-state' to this hook to ensure that standard Emacs hooks
+are executed upon selection.  For convenience, the utility function
+`consult-run-suppressed-hooks' is provided to automatically execute
+all hooks that were blocked during preview.  Adding this function to
+`consult-after-final-jump-hook' ensures the buffer is fully
+initialized, as when normally opening a file."
   :type 'hook)
 
 (defcustom consult-line-start-from-top nil
@@ -1566,10 +1587,20 @@ See `isearch-open-necessary-overlays' and `isearch-open-overlay-temporary'."
               (consult--buffer-action buf 'norecord))
             t))))
 
+(defun consult-run-suppressed-hooks ()
+  "Run `find-file-hook' functions that were blocked during preview.
+This function is intended to be added to `consult-after-final-jump-hook'."
+  (save-excursion
+    (dolist (hook find-file-hook)
+      (unless (consult--preview-allowed-p hook)
+        (when (and (symbolp hook) (fboundp hook))
+          (funcall hook))))))
+
 (defun consult--jump (pos)
   "Jump to POS.
 First push current position to mark ring, then move to new
-position and run `consult-after-jump-hook'."
+position and run `consult-after-jump-hook' and
+`consult-after-final-jump-hook'."
   (when pos
     ;; Extract marker from list with with overlay positions, see `consult--line-match'
     (when (consp pos) (setq pos (car pos)))
@@ -1586,7 +1617,8 @@ position and run `consult-after-jump-hook'."
         (widen)
         (goto-char pos))
       (consult--invisible-open-permanently)
-      (run-hooks 'consult-after-jump-hook)))
+      (run-hooks 'consult-after-jump-hook)
+      (run-hooks 'consult-after-final-jump-hook)))
   nil)
 
 (defun consult--jump-preview ()
