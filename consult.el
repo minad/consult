@@ -398,7 +398,7 @@ mode hooks, e.g., `prog-mode-hook'."
     (?p "Picture" image-bookmark-jump)
     (?d "Docview" doc-view-bookmark-jump)
     (?m "Mail" gnus-summary-bookmark-jump)
-    (?s "Eshell" eshell-bookmark-jump)
+    (?s "Shell" eshell-bookmark-jump shell-bookmark-jump)
     (?w "Web" eww-bookmark-jump xwidget-webkit-bookmark-jump-handler)
     (?v "VC Directory" vc-dir-bookmark-jump)
     (nil "Other"))
