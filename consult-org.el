@@ -81,7 +81,7 @@ MATCH, SCOPE and SKIP are as in `org-map-entries'."
            (put-text-property 0 (length tags) 'face 'org-tag tags))
          (setq cand (concat (and prefix buffer) (and prefix " ") cand (and tags " ")
                             tags (consult--tofu-encode idx)))
-         (cl-incf idx)
+         (incf idx)
          (add-text-properties 0 1
                               `(org-marker ,(point-marker)
                                 consult-org--heading (,level ,todo ,prio . ,buffer))

@@ -6,7 +6,7 @@
 ;; Maintainer: Daniel Mendler <mail@daniel-mendler.de>
 ;; Created: 2020
 ;; Version: 3.4
-;; Package-Requires: ((emacs "29.1") (compat "30"))
+;; Package-Requires: ((emacs "29.1") (compat "31"))
 ;; URL: https://github.com/minad/consult
 ;; Keywords: matching, files, completion
 
@@ -990,7 +990,7 @@ Also temporarily increase the GC limit via `consult--with-increased-gc'."
     (while (< (point) pos)
       (forward-line)
       (when (<= (point) pos)
-        (cl-incf line)))
+        (incf line)))
     (goto-char pos)
     line))
 
@@ -1155,8 +1155,8 @@ Return cons of point position and a list of match begin/end pairs."
                 ('match-end (or (cdar (last matches)) 0))
                 ('line-beginning 0))))
     (dolist (match matches)
-      (cl-decf (car match) pos)
-      (cl-decf (cdr match) pos))
+      (decf (car match) pos)
+      (decf (cdr match) pos))
     (cons pos matches)))
 
 (defun consult--highlight-regexps (regexps ignore-case str)
@@ -2323,7 +2323,7 @@ IDX is the index of the corresponding link in TAIL."
       ('flush
        ;; Flush items if sub-list exists.
        (when-let* ((tl (aref tail idx)) (pre t))
-         (let ((i idx)) (while (not (setq pre (aref tail (cl-decf i))))))
+         (let ((i idx)) (while (not (setq pre (aref tail (decf i))))))
          (setcdr pre (cdr tl))
          (aset tail idx nil)
          (funcall sink 'flush)
@@ -2338,7 +2338,7 @@ IDX is the index of the corresponding link in TAIL."
                (setcdr last (cdr tl))
                (setcdr tl action))
            ;; Otherwise insert new sub-list.
-           (let ((i idx)) (while (not (setq pre (aref tail (cl-decf i))))))
+           (let ((i idx)) (while (not (setq pre (aref tail (decf i))))))
            (setcdr last (cdr pre))
            (setcdr pre action))
          (funcall sink 'flush)
@@ -2523,7 +2523,7 @@ PROPS are optional properties passed to `make-process'."
                              (setq flush nil)
                              (funcall sink 'flush))
                             ((and (string-prefix-p "finished" event) (not (equal rest "")))
-                             (cl-incf count)
+                             (incf count)
                              (funcall sink (list rest))))
                            (funcall sink `[indicator
                                            ,(cond
@@ -2826,7 +2826,7 @@ PREVIEW-KEY are the preview keys."
          (max (point-max))
          (pos max))
     (while (and (> pos min) (consult--tofu-p (char-before pos)))
-      (cl-decf pos))
+      (decf pos))
     (when (< pos max)
       (add-text-properties pos max '(invisible t rear-nonsticky t cursor-intangible t)))))
 
@@ -3438,7 +3438,7 @@ value for `completion-in-region-function'."
                (if-let* ((fun (bound-and-true-p outline-search-function)))
                    (funcall fun)
                  (re-search-forward heading-regexp nil t)))
-        (cl-incf line (consult--count-lines (match-beginning 0)))
+        (incf line (consult--count-lines (match-beginning 0)))
         (push (consult--location-candidate
                (buffer-substring-no-properties (pos-bol) (pos-eol))
                (cons buffer (point)) (1- line) (1- line)
@@ -3597,7 +3597,7 @@ CURR-LINE is the current line number."
               candidates)
         (when (and (not default-cand) (>= line curr-line))
           (setq default-cand candidates)))
-      (cl-incf line))
+      (incf line))
     (unless candidates
       (user-error "No lines"))
     (nreverse
@@ -3707,7 +3707,7 @@ CALLBACK receives the candidates."
               (goto-char (point-min))
               (while (and (not (eobp))
                           (save-excursion (re-search-forward (car regexps) nil t)))
-                (cl-incf line (consult--count-lines (match-beginning 0)))
+                (incf line (consult--count-lines (match-beginning 0)))
                 (let ((bol (pos-bol))
                       (eol (pos-eol)))
                   (goto-char bol)
@@ -3720,7 +3720,7 @@ CALLBACK receives the candidates."
                            (funcall hl (buffer-substring-no-properties bol eol))
                            (cons buf bol) (1- line) cand-idx)
                           candidates)
-                    (cl-incf cand-idx))
+                    (incf cand-idx))
                   (goto-char (1+ eol)))))))
         (funcall callback (nreverse candidates))
         (setq candidates nil)))))
@@ -3910,7 +3910,7 @@ INITIAL is the initial input."
             ;; attach the text property to.
             (let ((line (if (eq beg end) (char-to-string ?\n)
                           (buffer-substring-no-properties beg end))))
-              (put-text-property 0 1 'consult--focus-line (cons (cl-incf i) beg) line)
+              (put-text-property 0 1 'consult--focus-line (cons (incf i) beg) line)
               (push line lines)))
           (setq lines (nreverse lines)))))
     (lambda (action input)

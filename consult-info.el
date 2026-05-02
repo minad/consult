@@ -77,7 +77,7 @@ CALLBACK receives the candidates."
                                (funcall hl (buffer-substring-no-properties bol eol))
                                (consult--tofu-encode cand-idx))))
                     (put-text-property 0 1 'consult--info (list full-node bol buf) cand)
-                    (cl-incf cand-idx)
+                    (incf cand-idx)
                     (push cand candidates)))
                 (goto-char (1+ eol))))))
         (funcall callback (nreverse candidates))
