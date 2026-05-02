@@ -26,6 +26,7 @@
 
 (require 'consult)
 (require 'org)
+(require 'org-agenda)
 
 (defvar consult-org--history nil)
 
@@ -139,6 +140,77 @@ By default, all agenda entries are offered.  MATCH is as in
   (unless org-agenda-files
     (user-error "No agenda files"))
   (consult-org-heading match 'agenda))
+
+(defun consult-org-tag ()
+  "Add or remove tags for an Org heading."
+  (interactive)
+  (let ((current-tags nil)
+        (new-tags nil))
+    (save-excursion
+      ;; There are 3 cases:
+      ;; - In Org Agenda, marked none: save current tags
+      ;; - In Org Agenda, marked multiple (or one): don't
+      ;; - In normal Org mode: save current tags
+      (if (eq major-mode 'org-agenda-mode)
+          (unless org-agenda-bulk-marked-entries
+            (let ((hdmarker (or (org-get-at-bol 'org-hd-marker)
+                                (org-agenda-error))))
+              (with-current-buffer (marker-buffer hdmarker)
+                (goto-char hdmarker)
+                (setq current-tags (org-get-tags nil t)))))
+        (unless (org-at-heading-p)
+          (org-back-to-heading t))
+        (setq current-tags (org-get-tags nil t)))
+
+      (let* ((org-last-tags-completion-table ; for `org-tags-completion-function'
+              (append (and (or org-complete-tags-always-offer-all-agenda-tags
+                               (eq major-mode 'org-agenda-mode))
+                           (org-global-tags-completion-table
+                            (org-agenda-files)))
+                      (or org-current-tag-alist
+                          ;; `org-get-buffer-tags' errors for me in Org Agenda
+                          ;; about org-element-cache not being active. Since
+                          ;; this is just for completion (convenience) if it
+                          ;; errors just go on without it.
+                          (ignore-errors (org-get-buffer-tags)))))
+             (selected (consult--read
+                        (lambda (str _pred _action)
+                          (delete-dups
+                           (all-completions str #'org-tags-completion-function)))
+                        :prompt (if current-tags
+                                    (format "Tags (%s): " (mapconcat #'identity current-tags ", "))
+                                  "Tags: ")
+                        :history 'org-tags-history)))
+
+        (setq new-tags
+              (cond ((member selected current-tags) (remove selected current-tags))
+                    ((equal selected "") current-tags)
+                    (t (append current-tags (list selected)))))
+
+        ;; The same 3 cases:
+        ;; - In Org Agenda, marked none: find the entry at point and set
+        ;;   tags for it
+        ;; - In Org Agenda, marked some: set tags for each of them, although for
+        ;;   these we need to check their original tags here instead of having
+        ;;   that done at the top
+        ;; - In normal Org mode: set tags for the current entry
+        (if (eq major-mode 'org-agenda-mode)
+            (if (null org-agenda-bulk-marked-entries)
+                (let ((hdmarker (or (org-get-at-bol 'org-hd-marker)
+                                    (org-agenda-error))))
+                  (with-current-buffer (marker-buffer hdmarker)
+                    (goto-char hdmarker)
+                    (org-set-tags new-tags)))
+              (dolist (m org-agenda-bulk-marked-entries)
+                (with-current-buffer (marker-buffer m)
+                  (save-excursion
+                    (goto-char m)
+                    (org-set-tags
+                     (seq-uniq
+                      (append (org-get-tags nil t) new-tags)))))))
+          (org-set-tags new-tags)
+          (unless (member selected new-tags)
+            (consult--minibuffer-message "Tag %S has been removed." selected)))))))
 
 (provide 'consult-org)
 ;;; consult-org.el ends here

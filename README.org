@@ -343,6 +343,7 @@ their descriptions.
 
 #+findex: consult-org-heading
 #+findex: consult-org-agenda
+#+findex: consult-org-tag
 - =consult-org-heading=: Variant of =consult-imenu= or =consult-outline= for Org
   buffers. The headline and its ancestors headlines are separated by slashes.
   Supports narrowing by heading level, priority and TODO keyword, as well as live
@@ -350,6 +351,7 @@ their descriptions.
 - =consult-org-agenda=: Jump to an Org agenda heading. Supports narrowing by
   heading level, priority and TODO keyword, as well as live preview and
   recursive editing.
+- =consult-org-tag=: Add or remove tags for a heading. Selecting a tag that a heading already has will remove it from the heading. Works in Org agenda buffers.
 ** Help
 :properties:
 :description: Searching through help
