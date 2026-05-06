@@ -6,6 +6,7 @@
 
 - =consult-bookmark=: Add support for shell bookmarks.
 - Fix bug in command line splitter for asynchronous commands.
+- Require Compat 31.
 
 * Version 3.4 (2026-03-09)
 
