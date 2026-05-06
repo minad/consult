@@ -1052,7 +1052,8 @@ on Emacs 31:
  completion-eager-update t
  completion-eager-display t
  completion-auto-help 'always
- ;; Disable noise in the *Completions* buffer
+ ;; Disable noise during completion
+ completion-show-inline-help nil
  completion-show-help nil)
 
 ;; Unbind `minibuffer-complete-word'
