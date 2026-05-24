@@ -1160,11 +1160,11 @@ Return cons of point position and a list of match begin/end pairs."
     (cons pos matches)))
 
 (defun consult--highlight-regexps (regexps ignore-case str)
-  "Highlight REGEXPS in STR.
+  "Highlight REGEXPS (or single regexp string) in STR.
 If a regular expression contains capturing groups, only these are highlighted.
 If no capturing groups are used highlight the whole match.  Case is ignored
 if IGNORE-CASE is non-nil."
-  (dolist (re regexps)
+  (dolist (re (ensure-list regexps))
     (let ((i 0))
       (while (and (let ((case-fold-search ignore-case))
                     (string-match re str i))
@@ -1180,6 +1180,12 @@ if IGNORE-CASE is non-nil."
                                       'consult-highlight-match nil str))
             (setq m (cddr m)))))))
   str)
+
+(defun consult--highlight-literals (literals ignore-case str)
+  "Highlight list of LITERALS or single literal string in STR.
+Case insensitive if IGNORE-CASE is non-nil."
+  (consult--highlight-regexps (mapcar #'regexp-quote (ensure-list literals))
+                              ignore-case str))
 
 (defconst consult--convert-regexp-table
   (append
@@ -5251,8 +5257,7 @@ input."
                    (ignore-case (or (member "-i" flags) (member "--ignore-case" flags))))
         (if (or (member "-F" flags) (member "--fixed-strings" flags))
             (cons (append cmd (list "-e" arg) opts paths)
-                  (apply-partially #'consult--highlight-regexps
-                                   (list (regexp-quote arg)) ignore-case))
+                  (apply-partially #'consult--highlight-literals arg ignore-case))
           (pcase-let ((`(,re . ,hl) (consult--compile-regexp arg type ignore-case)))
             (when re
               (cons (append cmd
@@ -5332,8 +5337,7 @@ The symbol at point is added to the future history."
                    (ignore-case (or (member "-i" flags) (member "--ignore-case" flags))))
         (if (or (member "-F" flags) (member "--fixed-strings" flags))
             (cons (append cmd (list "-e" arg) opts paths)
-                  (apply-partially #'consult--highlight-regexps
-                                   (list (regexp-quote arg)) ignore-case))
+                  (apply-partially #'consult--highlight-literals arg ignore-case))
           (pcase-let ((`(,re . ,hl) (consult--compile-regexp arg 'extended ignore-case)))
             (when re
               (cons (append cmd
@@ -5366,8 +5370,7 @@ See `consult-grep' for details."
                                     (not (string-match-p "[[:upper:]]" arg))))))))
         (if (or (member "-F" flags) (member "--fixed-strings" flags))
             (cons (append cmd (list "-e" arg) opts paths)
-                  (apply-partially #'consult--highlight-regexps
-                                   (list (regexp-quote arg)) ignore-case))
+                  (apply-partially #'consult--highlight-literals arg ignore-case))
           (pcase-let ((`(,re . ,hl) (consult--compile-regexp arg type ignore-case)))
             (when re
               (cons (append cmd (and (eq type 'pcre) '("-P"))
@@ -5429,8 +5432,7 @@ INITIAL is initial input."
                                   (lambda (x) `("-and" ,method ,(format "*%s*" x)))
                                   args))
                             opts)
-                    (apply-partially #'consult--highlight-regexps
-                                     (mapcar #'regexp-quote args) ignore-case)))
+                    (apply-partially #'consult--highlight-literals args ignore-case)))
           (pcase-let ((`(,re . ,hl) (consult--compile-regexp arg type ignore-case)))
             (when (or re opts) ;; Either option or regexp must be provided
               (cons (append cmd
@@ -5482,8 +5484,7 @@ regarding the asynchronous search and the arguments."
                                         (mapcar (lambda (x) (concat "**/" x)) args)
                                       args))
                             (mapcan (lambda (x) `("--search-path" ,x)) paths))
-                    (apply-partially #'consult--highlight-regexps
-                                     (mapcar #'regexp-quote args) ignore-case)))
+                    (apply-partially #'consult--highlight-literals args ignore-case)))
           (pcase-let ((`(,re . ,hl) (consult--compile-regexp arg 'pcre ignore-case)))
              (when (or re opts) ;; Either option or regexp must be provided
               (cons (append cmd opts
