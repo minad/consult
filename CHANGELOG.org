@@ -2,6 +2,12 @@
 #+author: Daniel Mendler
 #+language: en
 
+* Development
+
+- =consult--command-splitter=: Require at least a single character behind the
+  dash to recognize an option.
+- =consult-find=: Support =-name=, =-iname=, =-regex= and =-iregex= options.
+
 * Version 3.5 (2026-05-19)
 
 - =consult-bookmark=: Add support for shell bookmarks.
