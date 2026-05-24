@@ -670,8 +670,8 @@ Turn ARG into a list, and for each element either:
     (let ((opts ""))
       (setq str (substring-no-properties str))
       ;; Find first option
-      (when (string-match "\\(?:\\`\\| \\)-" str)
-        (setq opts (substring str (1- (match-end 0)))
+      (when (string-match "\\(?:\\`\\| \\)-." str)
+        (setq opts (substring str (- (match-end 0) 2))
               str (substring str 0 (match-beginning 0))))
       ;; Replace backslash-escaped dashes
       (setq str (replace-regexp-in-string "\\(\\`\\| \\)\\\\-" "\\1-" str))
