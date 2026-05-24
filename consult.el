@@ -5415,18 +5415,25 @@ INITIAL is initial input."
                    'emacs 'basic)))
     (lambda (input)
       (pcase-let* ((`(,arg . ,opts) (consult--command-split input))
-                   ;; ignore-case=t since -iregex is used below
-                   (`(,re . ,hl) (consult--compile-regexp arg type t)))
+                   (method (or (seq-find (lambda (o)
+                                           (member o '("-name" "-path" "-regex"
+                                                       "-iname" "-ipath" "-iregex")))
+                                         opts)
+                               "-iregex"))
+                   (opts (remove method opts))
+                   (`(,re . ,hl) (consult--compile-regexp
+                                  arg type (string-prefix-p "-i" method))))
         (when (or re opts) ;; Either option or regexp must be provided
           (cons (append cmd
                         (cdr (mapcan
                               (lambda (x)
-                                `("-and" "-iregex"
-                                  ,(format ".*%s.*"
-                                           ;; Replace non-capturing groups with capturing groups.
-                                           ;; GNU find does not support non-capturing groups.
-                                           (replace-regexp-in-string
-                                            "\\\\(\\?:" "\\(" x 'fixedcase 'literal))))
+                                `("-and" ,method
+                                  ,(format
+                                    (if (string-suffix-p "regex" method) ".*%s.*" "*%s*")
+                                    ;; Replace non-capturing groups with capturing groups.
+                                    ;; GNU find does not support non-capturing groups.
+                                    (replace-regexp-in-string
+                                     "\\\\(\\?:" "\\(" x 'fixedcase 'literal))))
                               re))
                         opts)
                 hl))))))
