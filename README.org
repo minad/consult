@@ -585,7 +585,7 @@ ripgrep:
 - =#foo bar --glob=*.org= or =#foo bar -g *.org=: Search files matching the glob pattern.
 - =#foo bar --type=elisp= or =#foo bar -t elisp=: Search only Elisp files.
 - =#.* -F=: Treat input as fixed string, and not as regular expression.
-- =#foo bar -s=: Treat input as case sensitive (=-s=), sensitive (=-i=), or smart case (=-S=).
+- =#foo bar -s=: Treat input as case sensitive (=-s=), insensitive (=-i=), or smart case (=-S=).
 
 Input can come after the options and the dash can be escaped:
 
