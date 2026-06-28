@@ -747,7 +747,7 @@ are symmetric.
 :description: Example configuration and customization variables
 :end:
 
-Consult can be installed from [[https://elpa.gnu.org/packages/consult.html][ELPA]] or [[https://melpa.org/#/consult][MELPA]] via the Emacs built-in package
+Consult can be installed from [[https://elpa.gnu.org/packages/consult.html][ELPA]] or [[https://releases.melpa.org/#/consult][MELPA]] via the Emacs built-in package
 manager. Alternatively it can be directly installed from the development
 repository via other non-standard package managers.
 
