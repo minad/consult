@@ -1462,7 +1462,7 @@ ORIG is the original function, HOOKS the arguments."
 (defun consult--temporary-files ()
   "Return a function to open files temporarily for preview."
   (let ((dir default-directory)
-        (hook (make-symbol "consult--temporary-files-upgrade-hook"))
+        (hook (make-symbol "consult--temporary-files-upgrade"))
         (orig-buffers (buffer-list))
         temporary-buffers)
     (fset hook
@@ -1524,7 +1524,7 @@ ORIG is the original function, HOOKS the arguments."
                  ;; like `pdf-view-mode' or `doc-view-mode' which rely on
                  ;; `buffer-file-name'.  Executing (set-visited-file-name nil)
                  ;; early also prevents the major mode initialization.
-                 (let ((hook (make-symbol "consult--temporary-files-disassociate-hook")))
+                 (let ((hook (make-symbol "consult--temporary-files-disassociate")))
                    (fset hook (lambda ()
                                 (when (buffer-live-p buf)
                                   (with-current-buffer buf
@@ -1684,7 +1684,7 @@ The function can be used as the `:state' argument of `consult--read'."
 The cheap location markers from CANDIDATES are upgraded on window
 selection change to full Emacs markers."
   (let ((jump (consult--jump-state))
-        (hook (make-symbol "consult--location-upgrade-hook")))
+        (hook (make-symbol "consult--location-upgrade")))
     (fset hook
           (lambda (_)
             (unless (consult--completion-window-p)
@@ -1745,7 +1745,7 @@ The result can be passed as :state argument to `consult--read'." type)
 (defun consult--preview-append-local-pch (fun)
   "Append FUN to local `post-command-hook' list."
   ;; Symbol indirection because of bug#46407.
-  (let ((hook (make-symbol "consult--preview-post-command-hook")))
+  (let ((hook (make-symbol "consult--preview-post-command")))
     (fset hook fun)
     ;; TODO Emacs 28 has a bug, where the hook--depth-alist is not cleaned up properly
     ;; Do not use the broken add-hook here.
@@ -1762,20 +1762,17 @@ The result can be passed as :state argument to `consult--read'." type)
     (minibuffer-with-setup-hook
         (if (and state preview-key)
             (lambda ()
-              (let ((hook (make-symbol "consult--preview-minibuffer-exit-hook"))
-                    (depth (recursion-depth)))
+              (let ((hook (make-symbol "consult--preview-exit")))
                 (fset hook
                       (lambda ()
-                        (when (= (recursion-depth) depth)
-                          (remove-hook 'minibuffer-exit-hook hook)
-                          (cancel-timer timer)
-                          (with-selected-window (consult--original-window)
-                            ;; STEP 3: Reset preview
-                            (when previewed
-                              (funcall state 'preview nil))
-                            ;; STEP 4: Notify the preview function of the minibuffer exit
-                            (funcall state 'exit nil)))))
-                (add-hook 'minibuffer-exit-hook hook))
+                        (cancel-timer timer)
+                        (with-selected-window (consult--original-window)
+                          ;; STEP 3: Reset preview
+                          (when previewed
+                            (funcall state 'preview nil))
+                          ;; STEP 4: Notify the preview function of the minibuffer exit
+                          (funcall state 'exit nil))))
+                (add-hook 'minibuffer-exit-hook hook nil 'local))
               ;; STEP 1: Setup the preview function
               (with-selected-window (consult--original-window)
                 (funcall state 'setup nil))
@@ -2186,7 +2183,7 @@ ASYNC is the asynchronous function or completion table."
                     ;; We use a symbol in order to avoid adding lambdas to
                     ;; the hook variable.  Symbol indirection because of
                     ;; bug#46407.
-                    (hook (make-symbol "consult--async-after-change-hook"))
+                    (hook (make-symbol "consult--async-after-change"))
                     (timer (timer-create)))
                (timer-set-function timer fun)
                ;; Delay modification hook to ensure that minibuffer is still
