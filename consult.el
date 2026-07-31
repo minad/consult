@@ -5645,29 +5645,19 @@ the asynchronous search."
 
 (defun consult--default-completion-list-candidate ()
   "Return current candidate at point from completions buffer."
-  (when-let* ((buffer
-               (if (derived-mode-p #'completion-list-mode)
-                   ;; Use current buffer if already inside *Completions* buffer
-                   (current-buffer)
-                 ;; Otherwise check if there is an active *Completions* buffer
-                 ;; which can be controlled remotely from the minibuffer.  See
-                 ;; the setting `minibuffer-visible-completions'.
-                 (when-let* ((bound-and-true-p minibuffer-visible-completions)
-                             (window (get-buffer-window "*Completions*" 'visible))
-                             (buffer (window-buffer window))
-                             ((eq (buffer-local-value 'completion-reference-buffer buffer)
-                                  (window-buffer (active-minibuffer-window)))))
-                   buffer))))
-    (with-current-buffer buffer
-      ;; TODO Use `completion-list-candidate-at-point' on Emacs 31
-      (let (beg)
-        (when (cond
-               ((and (not (eobp)) (get-text-property (point) 'completion--string))
-                (setq beg (1+ (point))))
-               ((and (not (bobp)) (get-text-property (1- (point)) 'completion--string))
-                (setq beg (point))))
-          (get-text-property (previous-single-property-change beg 'completion--string)
-                             'completion--string))))))
+  (with-current-buffer
+      ;; Find active *Completions* buffer which can be controlled remotely from
+      ;; the minibuffer.  See the setting `minibuffer-visible-completions'.
+      (if-let* (((bound-and-true-p minibuffer-visible-completions))
+                ((not (derived-mode-p #'completion-list-mode)))
+                (window (get-buffer-window "*Completions*" 'visible))
+                (buffer (window-buffer window))
+                ((eq (buffer-local-value 'completion-reference-buffer buffer)
+                     (window-buffer (active-minibuffer-window)))))
+          buffer
+        (current-buffer))
+    (when (derived-mode-p #'completion-list-mode)
+      (car (completion-list-candidate-at-point)))))
 
 (defun consult--default-completion-list-refresh ()
   "Refresh default completion UI."
