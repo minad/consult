@@ -1,4 +1,4 @@
-#+title: consult.el - Changelog
+#+title: consult.el - News
 #+author: Daniel Mendler
 #+language: en
 
