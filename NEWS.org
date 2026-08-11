@@ -1,0 +1,625 @@
+#+title: consult.el - Changelog
+#+author: Daniel Mendler
+#+language: en
+
+* Version 3.7 (2026-08-05)
+
+- =minibuffer-exit-hook=: Internal refactoring of minibuffer-local hooks.
+- Use =completion-list-candidate-at-point= from Compat 31.
+
+* Version 3.6 (2026-06-05)
+
+- =consult--command-splitter=: Require at least a single character behind the
+  dash to recognize an option.
+- =consult-find=: Support =-name=, =-iname=, =-regex= and =-iregex= options.
+
+* Version 3.5 (2026-05-19)
+
+- =consult-bookmark=: Add support for shell bookmarks.
+- Fix bug in command line splitter for asynchronous commands.
+- Require Compat 31.
+
+* Version 3.4 (2026-03-09)
+
+- Bugfixes.
+- Improve default completion UI support on Emacs 31.
+- Remove =consult-separator= face.
+- Remove obsolete =consult-preview-at-point-mode= and =consult-preview-at-point=.
+
+* Version 3.3 (2026-01-18)
+
+- *BREAKING CHANGE*: The syntax to pass options to =consult-ripgrep=, =consult-fd=
+  etc. has changed. The overall syntax should be familiar since it resembles the
+  usual shell syntax. The input after a dash is treated as options. In order to
+  search for a token starting with a dash, escape the dash with a backslash.
+  Input after two standalone dashes is treated as search pattern. Examples:
+  - =#word -C2= or =#-C2 -- word=: Grep for =word= with a context of two lines.
+  - =#\-C= or =#-- -C=: Grep for =-C=.
+  - =#--newer 1h=: Find files which are newer than 1h with =consult-fd=.
+- New face =consult-async-option= which is used to highlight options passed to
+  asynchronous commands.
+- =consult-fd=, =consult-find=: Start search if either pattern or options are given.
+- Remove obsolete =consult--source-*= variables. Use the public variables
+  =consult-source-*= instead.
+
+* Version 3.2 (2026-01-12)
+
+- Improve default completion UI support on Emacs 31.
+- Make =consult-preview-at-point-mode= and =consult-preview-at-point= obsolete. The
+  preview functionality in completion buffers is enabled automatically.
+
+* Version 3.1 (2025-11-29)
+
+- =consult-line=, =consult-line-multi=, =consult-outline=: Use lazy fontification for
+  completion candidates. This greatly reduces the startup cost of the commands.
+  =consult-line= becomes usable on very large files now, up to files like the
+  SQLite amalgamation. Furthermore =consult-line-multi= candidates are fontified,
+  which was not the case before.
+- =consult-focus-lines=: Do not fontify buffer eagerly to reduce startup cost. The
+  focused lines are fontified lazily when they come into sight.
+- =consult--read=: Stop providing an =annotation-function=. Rely on the
+  =affixation-function= only.
+
+* Version 3.0 (2025-11-15)
+
+- Make =consult-source-*= variables public. These variables are commonly
+  customized via =consult-customize= and they are referenced by the customizable
+  variable =consult-buffer-sources=. Keep obsolete =consult--source-*= variable
+  aliases.
+
+* Version 2.9 (2025-10-13)
+
+- Minor fixes.
+- Require Emacs 29.
+- =consult-info=: Reuse current info buffer when jumping to a search result.
+
+* Version 2.8 (2025-09-08)
+
+- New command =consult-grep-match= based on =consult-compile-error=, which shows
+  Grep matches of related Grep buffers.
+- =consult-compile-error=: Exclude Grep matches. Show only compilation errors from
+  compilation buffers.
+- =consult-compile-error=: Remove =g= narrow key.
+
+* Version 2.7 (2025-08-05)
+
+- ~consult-buffer-list-function~: New customizable variable to support frame or
+  tab isolation (see ~tab-bar-mode~). Set to ~consult--frame-buffer-list~ for frame
+  isolation. Alternatively use buffer functions provided by packages like
+  [[https://github.com/protesilaos/beframe][beframe]].
+- ~consult--source-other-buffer~: Buffer source which lists all buffers which
+  missing from the list returned by ~consult-buffer-list-function~. If buffers are
+  restricted to the current frame or tab by default, then this source will list
+  the buffers belonging to other frames or tabs.
+
+* Version 2.6 (2025-06-28)
+
+- ~consult--read~, ~consult--prompt~: Accept a ~:command~ keyword argument which
+  specifies the current command symbol to lookup the customization (see
+  ~consult-customize~). This change fixes an issue in ~embark-consult~.
+
+* Version 2.5 (2025-06-05)
+
+- ~consult--source-buffer-register~: New source for buffer registers.
+- ~consult--jump-ensure-buffer~: Reuse window if possible.
+- ~consult-compile-error~: Add prefix argument to jump to error message in the
+  compilation buffer instead of error location.
+- ~consult--read~, ~consult--prompt~: Add ~:command~ keyword argument. Avoid
+  overriding ~this-command~ for ~consult-xref~ and ~consult-completion-in-region~.
+
+* Version 2.4 (2025-05-21)
+
+- ~consult-register-store~: Add =M-b= action to store the buffer in a register.
+- ~consult-compile~: Ignore messages without a location.
+- ~consult-compile~: Introduce key =g= for grep locations.
+
+* Version 2.3 (2025-04-19)
+
+- Bugfix: ~consult--read~ accepts list of symbols.
+- Bugfix: ~consult-theme~ handles invalid themes gracefully.
+
+* Version 2.2 (2025-04-02)
+
+- Add ~consult-info-define~ to conveniently define custom ~consult-info-*~ commands
+  to search through a subset of info manuals.
+- ~consult-focus-lines~: Add mode line indicator if active.
+- ~consult-grep~: Preserve empty context lines.
+- ~consult-register-store~: Support Dired buffers.
+
+* Version 2.1 (2025-03-11)
+
+- Remove obsolete ~consult--async-*~ APIs.
+- File preview: Ensure that remote files do not slow down preview.
+- File preview: Do not preview gpg files.
+- ~consult-yank-pop~, ~consult-history~: Respect display properties when previewing
+  to avoid leaking hidden data.
+- ~consult-completion-in-region~: Auto-detect completion UI.
+- ~consult-completion-in-region~: Improve handling of single candidates.
+
+* Version 2.0 (2025-01-28)
+
+- New features:
+  + ~consult--multi~: Add support for asynchronous sources.
+  + ~consult-man~: Add preview.
+- *BREAKING CHANGE*: New async API
+  + Async functions must have the uniform curried form
+    ~(lambda (sink) (lambda (action) ...)~ and are composed with
+    ~consult--async-pipeline~. See the docstring of ~consult--async-pipeline~ for
+    details.
+  + ~consult--read~: New ~:async-wrap~ keyword argument.
+  + ~consult--multi~: Add support for ~:async~ sources.
+  + ~consult--async-min-input~: New async function which enforces a minimum input
+    length. The input length check has been removed from ~consult--async-split~.
+  + ~consult--async-transform~: Macro converted to function.
+  + ~consult--process-collection~: New function replacing ~consult--async-command~.
+    The function accepts keyword arguments to customize the pipeline.
+  + ~consult--dynamic-collection~: The function accepts more keyword arguments to
+    customize the pipeline.
+  + ~consult--async-refresh-timer~ and ~consult--async-refresh-immediate~: Replaced by
+    ~consult--async-refresh~ with a ~DELAY~ argument.
+  + ~consult--async-split-thingatpt~ and ~consult--async-split-initial~: Removed
+    since ~consult--read~ automatically inserts the splitter prefix if needed.
+- Minor changes:
+  + Remove obsolete ~consult-yank-rotate~.
+  + Add customizable variable ~consult-async-indicator~.
+  + ~consult-completion-in-region~: When inside minibuffer, use minibuffer content
+    as prompt.
+
+* Version 1.9 (2024-12-22)
+
+- Require Emacs 28.1.
+- ~consult-grep~, ~consult-find~ and similar commands: Ask for project first, when
+  invoked with double prefix argument ~C-u C-u~.
+- Deprecate ~consult-yank-rotate~ in favor of ~yank-from-kill-ring-rotate~.
+- ~consult-grep-max-columns~: Support value ~nil~ to disable truncation.
+- ~consult-line~: Enforce global completion style settings for compatibility with
+  buffer-local completion style settings, which may be used by Corfu.
+- Support the value 0 for ~consult-async-min-input~.
+- Remove special ~org-fold~ code. Set ~org-fold-core-style~ to ~overlays~ if unfolding
+  in Org files does not work for you.
+- ~consult-info~: Support sub files.
+- ~consult-buffer~, ~consult-project-buffer~: Add sources for known project roots.
+- ~consult--multi~: Support multiple narrow keys per source. Used by the project
+  buffer and project recent file source.
+- ~consult--async-sink~: The new action ~cancel~ was added to the async protocol.
+- ~consult--read~: Add new keyword argument ~:initial-narrow~.
+
+* Version 1.8 (2024-07-25)
+
+- =consult-preview-excluded-buffers=: New customization variable.
+- =consult-fd=: Support multiple paths.
+- Bump Compat dependency to Compat 30.
+
+* Version 1.7 (2024-05-23)
+
+- Emacs 30 bug fix: Ensure that font locking is enabled when previewing files.
+- ~consult-preview-allowed-hooks~: Global minor modes, which should be enabled
+  during preview, can be added to this list. See the README for examples.
+- ~consult-xref~: Bug fix: Do not error when project root directory is nil.
+- ~consult-fd~: Bug fix: Avoid confusion of input pattern with options by
+  prefixing the input pattern with ~--and~.
+- ~consult--buffer-sort-visibility~: Bug fix: Only add current buffer to sorted
+  list, if already present in the original list.
+
+* Version 1.6 (2024-05-15)
+
+- ~consult-xref~: Compatibility with xref.el in Emacs 30.
+- ~consult-grep~ (and similar): Preserve files which are already open literally
+  and do not reopen them in normal mode.
+- ~consult-preview-allowed-hooks~: Run delayed mode hooks listed in this variable
+  during preview.
+- ~consult--buffer-query~: Add buffer-list keyword argument.
+
+* Version 1.5 (2024-04-19)
+
+- Bugfix ~consult-buffer~: Handle buffer renaming during minibuffer completion
+  gracefully, by attaching the actual buffer objects to the completion candidate
+  strings.
+- Bugfix ~consult-register~: Ignore marker registers pointing to dead buffers.
+
+* Version 1.4 (2024-03-08)
+
+- Bugfix: File preview: Ensure that binary files are not previewed partially.
+  Otherwise ~pdf-view-mode~ may observe corrupted PDF files.
+- ~consult--async-refresh-timer~: Optimize timer reuse and efficiency. This change
+  improves the performance of commands like ~consult-ripgrep~ for small values of
+  ~consult-async-refresh-delay~.
+- ~consult-completion-in-region~: Remove ~:cycle-threshold~ and ~:completion-styles~
+  customization options.
+
+* Version 1.3 (2024-02-23)
+
+- ~consult-bookmark-narrow~: More flexible grouping which supports multiple
+  bookmark handlers per group.
+- Bugfix: Ensure that preview is always executed in a non-minibuffer window.
+- Bugfix: File preview: Do not preview ~hexl-mode~ buffers.
+- Bugfix: File preview: use ~error-message-string~ to access error string.
+- Bugfix: Buffer preview: Retrieve original window correctly.
+- Bugfix: Fix ~consult-global-mark~ for ~embark-export~.
+
+* Version 1.2 (2024-01-23)
+
+- =consult-buffer=: Bugfix. Ensure that null completion works properly.
+- File preview: Add indication if previewed file got truncated.
+
+* Version 1.1 (2023-12-27)
+
+- Bugfixes:
+  + ~consult-xref~: Do not error for an empty location list.
+  + ~consult--read~: Catch null completion if require-match is non-nil.
+  + ~consult--multi~: Ensure that :new action is invoked on visible source.
+- File preview: Check for long lines when previewing files partially.
+- Use ~minibuffer-local-filename-syntax~ and ~read-file-name-completion-ignore-case~
+  for directory prompt of the ~consult-grep~ and ~consult--find~ family of commands.
+- Remove obsolete variables ~consult-preview-max-size~ and
+  ~consult-preview-raw-size~.
+
+* Version 1.0 (2023-12-01)
+
+- Bugfixes.
+- Preview large files partially. Add new customization variables
+  =consult-preview-partial-chunk= and =consult-preview-partial-limit=. This new
+  feature is experimental. Please report any issues you observe.
+- Obsoleted =consult-preview-max-size= and =consult-preview-raw-size=.
+- =consult-buffer-other-tab=: New command.
+- =consult-fd=: New command based on the fast =fd/fdfind= search utility.
+- =consult-outline=: New prefix argument to specify initial narrowing level.
+- =consult-org-heading=: Specify category =org-heading= such that Embark provides
+  appropriate Org heading actions.
+- =consult-org-heading=: Add annotation.
+- =consult-locate=: Split input into multiple words.
+- Remove unreliable =consult--maybe-recenter=.
+- Save input history even when using =embark-export= or when aborting from a
+  command via C-g. This change affects commands like =consult-line= and
+  =consult-grep=.
+- Unify history of =consult-line=, =consult-keep-lines= and =consult-focus-lines=.
+
+* Version 0.35 (2023-07-02)
+
+- Bugfixes.
+- =consult--read= now accepts programmable completion tables as argument, e.g.,
+  =completion-table-dynamic= or =completion--file-name-table=. This allows you to
+  reuse existing completion tables to write completion commands enhanced with
+  Consult candidate preview.
+- Replace =consult-preview-cursor= face with =cursor-highlight-mark=.
+- Change calling convention of =consult-focus-lines= and =consult-keep-lines=.
+- The regexps in =consult-buffer-filter= are matched case sensitively now.
+  Similarly, the =INCLUDE= and =EXCLUDE= arguments of =consult--buffer-query= are also
+  case sensitive.
+- Do not preview remote files by default, see =consult-preview-excluded-files=.
+- Use =consult--maybe-recenter= instead of =recenter= in =consult-after-jump-hook=.
+- =consult-goto-line=: Support =line:column= input.
+
+* Version 0.34 (2023-04-21)
+
+- Bugfixes.
+- =consult-org-heading=: Support tag inheritance.
+- Use pure =consult--fast-abbreviate-file-name= function to abbreviate file names
+  in =consult-buffer= and =consult-recent-file=. This ensures that abbreviation does
+  not access the file system (or worse remote hosts via Tramp) and is always
+  fast. The downside is that some paths may not get abbreviated.
+- Introduce buffer sources =consult--source-project-buffer-hidden= and
+  =consult--source-project-recent-file-hidden=. Set the buffer sources of
+  =consult-project= to =consult--source-project-buffer= and
+  =consult--source-project-recent-file= to ease customization.
+- =consult-buffer=: Explicitly save =window-next-buffers= and =window-prev-buffers=.
+- When previewing files literally (=consult-preview-raw-size=), set the multi byte
+  flag of the previewed buffer, such that UTF-8 buffers are not garbled.
+- Do not create preview cursor overlay. Instead display the actual point by
+  ensuring that =cursor-in-non-selected-windows= is set.
+
+* Version 0.33 (2023-03-11)
+
+- BREAKING: The key convention has been updated. The old key convention is not
+  supported anymore. Keys must now be strings valid according to =key-valid-p=.
+  This changes affects the keys =consult-narrow-key=, =consult-widen-key=,
+  =consult-preview-key= and the =:preview-key= of sources and passed as keyword
+  argument to =consult--read=. See the example configurations in the manual.
+- BREAKING: Remove the "." argument from  =consult-grep-args= and
+  =consult-ripgrep-args=, since directories or files to search are appended by the
+  command line builder. Take this change into account, when you use a customized
+  version of those variables.
+- =consult-grep=: Add support for grep and find over multiple files or directory.
+  If the prefix argument DIR is a single C-u, prompt for comma separated
+  directories or files to search recursively via =completing-read-multiple=.
+- =consult-buffer= and =consult-isearch-history=: Align annotations dynamically
+  depending on candidate width, instead of computing the alignment beforehand.
+- Add the full path as =help-echo= property to abbreviated directory paths and
+  project names. Enable =tooltip-mode= and hover with the mouse over the
+  abbreviated directory path to see the full path.
+- =consult-grep/find/etc=: Print first line of stderr output if command failed.
+
+* Version 0.32 (2023-02-06)
+
+- Bugfixes
+- Deprecate the old key convention. Keys must now be strings valid according to
+  =key-valid-p=. This changes affects the keys =consult-narrow-key=,
+  =consult-widen-key=, =consult-preview-key= and the =:preview-key= of sources and
+  passed as keyword argument to =consult--read=. See the example configurations in
+  the manual.
+- Add =consult-info= command (#634, #727).
+- =consult-buffer=: Always select the first candidate when narrowing (#714).
+- =consult-locate-args=: Remove =--existing=, which is not supported by =plocate= on
+  Debian stable.
+- =consult-ripgrep-args=: Add =--search-zip= option to automatically search through
+  compressed files. This will allow you to search Elisp files bundled with your
+  Emacs installation. Move to an Elisp library via =find-library=, then invoke
+  =consult-ripgrep=.
+- Drop obsolete =consult-apropos=. Alternatives: =describe-symbol= in combination
+  with =embark-export=. See also =consult-info= and =consult-ripgrep= to search
+  through info manuals and Elisp source code.
+- Drop obsolete =consult-multi-occur=. Alternative: Built-in =multi-occur=,
+  =multi-occur-in-matching-buffers= or =consult-line-multi=.
+- Drop obsolete =consult-file-externally=. The command has been moved to Embark
+  under the name =embark-open-externally=.
+
+* Version 0.31 (2023-01-06)
+
+- Version bump to update the Compat package dependency (29.1.0.1)
+
+* Version 0.30 (2023-01-02)
+
+- Bugfixes
+- Drop Selectrum support
+- Deprecate =consult-file-externally= in favor of =embark-open-externally=
+- Deprecate =consult-multi-occur=. The =multi-occur= command should be improved
+  upstream to take advantage of =completing-read-multiple=. Consult provides the
+  command =consult-line-multi= as an alternative.
+- =consult-history=: Use input as initial completion input
+
+* Version 0.29 (2022-12-03)
+
+- Bugfixes
+- =consult-line-multi= has been rewritten completely. The candidates are computed
+  on demand based on the input. This reduces startup speed greatly. The command
+  behaves like =consult-grep=, but operates on buffers instead of files.
+- Add =consult--source-file-register=, and make the registers available in
+  =consult-buffer=. Registers are often used as quick access keys for files, e.g.,
+  =(add-to-list 'register-alist '(?i file . "~/.emacs.d/init.el")))=.
+- Remove obsolete =consult-line-point-placement=
+- =consult-grep/find=: Always show directory in the prompt
+- Add variable =consult-yank-rotate=, =consult-yank-from-kill-ring= rotates kill ring
+- Emacs 29: =consult-register= supports =buffer= register type
+- Emacs 29: Support =outline-search-function=
+- Org 9.6: Support new =org-fold-core= API (both overlays and text-properties)
+- Support abbreviated file names in =recentf-list=, see =recentf-filename-handler=.
+- Deprecate =consult-apropos=
+
+* Version 0.20 (2022-10-16)
+
+- Bugfixes
+- Allow =consult-*-args= to be a string, or a list of strings or expressions.
+- Introduce face =consult-highlight-match= to highlight grep matches in the
+  completion buffer.
+- Highlight full matches in =consult-line=, =consult-outline=, =consult-*grep= and
+  =consult-flymake=.
+- Remove face =consult-preview-error=.
+- Deprecate =consult-line-point-placement= in favor of more general
+  =consult-point-placement=, which is also used by the =consult-*grep= commands.
+- =consult-imenu=: Support imenu-after-jump-hook and non-default
+  =imenu-default-goto-function=
+- =consult-history=: Add support for history index variables, which are updated
+  after selection.
+- Deprecate support for Selectrum in favor of Vertico. If you use Selectrum
+  consider switching to Vertico, Icomplete, Mct or default completion.
+
+* Version 0.19 (2022-09-09)
+
+- Bugfixes
+- Allow =consult-flymake= to work across all buffers in a project
+- Remove deprecated =consult-completing-read-multiple=
+- =consult-grep/git-grep/ripgrep=: Add =--fixed-strings= support
+- =consult-grep=: Respect =grep-find-ignored-directories/files=
+- =consult-org-heading=: Add tags to completion candidates
+- Add =consult-preview-excluded-files=
+- =consult-themes=: Support regexps
+
+* Version 0.18 (2022-05-25)
+
+- Bugfixes
+- Removed obsolete =consult-recent-file-filter= and =consult-preview-excluded-hooks=
+- Deprecate =consult-completing-read-multiple=. See #567 for details.
+- Add =consult--source-modified-buffer=
+
+* Version 0.17 (2022-04-22)
+
+- Bugfixes
+- Drop Emacs 26 support.
+- =consult-goto-line=: Use =goto-line-history= on Emacs 28.
+- =consult-customize=: Evaluate settings at runtime. This change makes it possible
+  to use =thing-at-point= to overwrite the =:initial= and =:add-history= settings.
+- Rename =consult--read-config= to =consult--customize-alist= and change the format.
+  The configuration is an alist. The car must be a command symbol. The cdr must
+  be a plist of keys and expressions, where the expressions evaluate to the
+  actual configuration values.
+- Mode hooks in previewed file buffers are delayed. The buffer is only fully
+  initialized when leaving the minibuffer for recursive editing.
+- Increase =consult-preview-raw-size=.
+- Replace =consult-preview-excluded-hooks= by =consult-preview-allowed-hooks=.
+- Add =consult-preview-variables= to bind variables for file preview.
+- BREAKING API CHANGE of =consult--read=, =consult--prompt=, =consult--multi=: The
+  state function protocol changed. The function gets notified of more completion
+  state changes. See the docstring of =consult--with-preview= for details.
+- BREAKING API CHANGE of =consult--read=: The lookup function protocol changed.
+  The function must now accept four or more arguments.
+- Remove unused =consult-preview-map=.
+- Remove unnecessary =consult-recent-file-filter=. Use =recentf-exclude= instead.
+- =consult--multi= sources can have a =:new= function to create candidates.
+  When narrowed to a source, new candidates will be created by calling the
+  respective =:new= function.
+- =consult--multi= returns =:match= information. =:match= can be nil, t, or new,
+  depending on if the candidate does not exist, exists or has been created.
+- =consult-locate= treats the input literally to take advantage of the db index.
+
+* Version 0.16 (2022-03-08)
+
+- Bugfixes
+- Deprecate =consult-project-root-function= in favor of =consult-project-function=.
+- Preconfigure =consult-project-function= with a default function based
+  on project.el.
+- Add =consult-project-buffer=, a variant of =consult-buffer= restricted to the
+  current project.
+- Add =consult-register-prefix= option.
+- Introduced a generic and extensible =consult-register= implementation.
+- Lazy marker creation in =consult-line/outline= (performance improvements)
+
+* Version 0.15 (2022-01-31)
+
+- Bugfixes
+- =consult-xref=: Prettify the group titles, use =xref--group-name-for-display=
+  if available.
+- =consult-focus-lines=: Thanks to @jdtsmith, the command is much faster and
+  actually useable in large files.
+- Added Mct integration, auto refreshing of asynchronous Consult commands.
+
+* Version 0.14 (2021-12-31)
+
+- Bugfixes
+- Add =consult-recent-file-filter=
+- Rename =consult--source-(project-)file= to =consult-source-(project-)recent-file=
+- =consult-keep-lines= makes read-only buffers temporarily writable if confirmed
+
+* Version 0.13 (2021-11-12)
+
+- Bugfixes
+- =consult-register=: Add support for file register values.
+- Rename =consult-isearch= to =consult-isearch-history=. The command is a history
+  browsing command and not a replacement for Isearch.
+- =consult-grep= support -[ABC] grep options
+- Add =consult-grep-context= face
+
+* Version 0.12 (2021-10-11)
+
+- Bugfixes
+- Removed obsolete =consult-project-imenu= and =consult-x-command= variables
+- =consult-grep=: Use ~--null~ argument to support file names with colons
+
+* Version 0.11 (2021-08-18)
+
+- Bugfixes only
+
+* Version 0.10 (2021-08-11)
+
+- =consult-mark=, =consult-global-mark=: Add optional marker list argument
+- =consult-completing-read-multiple=: New function
+- Rename =consult-project-imenu= to =consult-imenu-multi=
+- Add =consult-line-multi= to search multiple buffers
+- Removed obsolete =consult-yank=, =consult-async-default-split=, =consult-config=
+- =consult-ripgrep=: Use =--smart-case=
+- =consult-grep/git-grep=: Use =--ignore-case=
+- Deprecate =consult-<cmd>-command= in favor of =consult-<cmd>-config.=
+- =consult-find=: Use regular expressions instead of globbing/wildcards by default.
+  Due to the changes to =consult-find= it is not possible anymore to configure
+  =fd= as backend for =consult-find=. A replacement is documented in the wiki.
+- =consult-find/locate/man=: Add highlighting to the matching file/man page names.
+- =consult-grep/git-grep/ripgrep/find/locate=: Add support for multiple unordered
+  patterns. Each of the input patterns must be matched. For example,
+  =consult-find= transforms the input "first second third" to "first -and second
+  -and third".
+- =consult-grep/git-grep/ripgrep=: Compute the highlighting based on the input,
+  instead of relying on the ANSI-escaped output. This works better with multiple
+  patterns, but may occasionally produce false highlighting.
+- Deprecate =consult-x-command= configuration variables in favor of =consult-x-args=.
+  The variables have been renamed since the configuration format changed.
+- =consult-async-split-styles-alist=: Remove the =space= splitting style, since
+  it has been obsoleted by the support for multiple unordered patterns.
+
+* Version 0.9 (2021-06-22)
+
+- Add =consult-preview-excluded-hooks=
+- =consult--read/consult--prompt=: Add =:inherit-input-method= argument
+- Add debouncing support for preview
+
+* Version 0.8 (2021-05-30)
+
+- Async commands: Do not fix vertical height in Selectrum.
+- =consult-imenu=: Deduplicate items (some imenu backends generate duplicates).
+- =consult-org-heading=: Deduplicate items.
+- =consult-buffer-filter=: Hide more buffers.
+- =consult-line=: Matching line preview overlay only in the selected window.
+- =consult-yank/completion-in-region=: Insertion preview only in selected window.
+- =consult-yank=: Rename to =consult-yank-from-kill-ring= (Emacs 28 naming).
+- =consult-yank= commands: =delete-selection-mode= support, added properties.
+- =consult-preview-at-point=, =consult-preview-at-point-mode=: New command and
+  minor mode to preview candidate at point in =*Completions*= buffer.
+- Add =consult-async-split-style= and =consult-async-split-styles-alist=.
+- =consult-async-default-split=: Obsoleted in favor of =consult-async-split-style=.
+- Deprecate =consult-config= in favor of new =consult-customize= macro.
+- =consult-buffer=: Enable previews for files and bookmarks by default.
+- =consult-buffer=/=consult--multi=: Add support for =:preview-key= per source.
+- =consult-buffer=: Push visible buffers down in the buffer list.
+- =consult-flycheck=: Moved to separate repository prior to ELPA submission.
+- Submitted Consult to ELPA.
+
+* Version 0.7 (2021-04-29)
+
+- Bugfixes
+- =consult-buffer=: Respect =confirm-nonexistent-file-or-buffer=
+- =consult-widen-key=: Change default setting to twice the =consult-narrow-key=
+- =consult-flycheck=: Sort errors first
+- Added support for the Vertico completion system
+- Consult adds disambiguation suffixes as suffix instead of as prefix now
+  for the commands =consult-line=, =consult-buffer=, etc.
+  This enables support for the =basic= completion style and TAB completion.
+- =consult--read=: The =:title= function must accept two arguments now,
+  the candidate string and a flag. If the flag is nil, the function should
+  return the title of the candidate, otherwise the function should return the
+  transformed candidate.
+- =consult-grep= and related commands: Strip the file name if grouping is used.
+- =consult-find/grep=: Ensure that the commands work with Tramp
+- =consult-outline=: Add narrowing
+- Added =consult-org-heading= and =consult-org-agenda=
+- =consult-line=: Highlight visual line during jump preview
+- =consult-line=: Start search at current line, add configuration variable
+  =consult-start-from-top=. The starting point can be toggled by the prefix
+  argument =C-u=.
+
+* Version 0.6 (2021-03-02)
+
+- Bugfixes
+- =consult-keep/focus-lines=: Align behavior on regions with built-in =keep-lines=.
+- =consult-buffer=: Enable file sources only when =recentf-mode= is enabled
+- =consult--multi=: Add =:default= flag, use flag for =consult--source-buffer=
+- Add =consult-grep-max-columns= to prevent performance issues for long lines
+- Add =consult-fontify-preserve= customization variable
+- =consult-line=: Quits Isearch, when started from an Isearch session
+- =consult-register-load=: Align prefix argument handling with =insert-register=
+- Rename =consult-error= to =consult-compile-error=
+- =consult-compile-error=: Allow calling the command from any buffer,
+  use the errors from all compilation buffers related to the current buffer.
+- =consult-man=: Handle aggregated entries returned by mandoc
+- =consult-completion-in-region=: Added preview and =consult-preview-region= face
+- Added =consult-completion-in-region-styles= customization variable
+- Added =consult-xref=. The function can be set as =xref-show-xrefs-function=
+  and =xref-show-definitions-function=.
+- Added support for the candidate grouping function =x-group-function=
+
+* Version 0.5 (2021-02-09)
+
+- Bugfixes
+- =consult-keep/focus-lines=: If region is active, operate only on the region.
+- =consult-register-format=: Do not truncate register strings.
+- =consult-buffer= multi sources: Ensure that original buffer is
+  shown, when the currently selected source does not perform preview.
+- Add =consult-preview-raw-size=
+- Expose preview functionality for multi-source bookmarks/files
+- Multi sources: Add =:enabled=, =:state= and =:action= fields
+- =consult-imenu=: Add faces depending on item types
+
+* Version 0.4 (2021-02-01)
+
+- Bugfixes
+- Introduce multi sources, reimplement =consult-buffer= with multi sources
+- =consult-isearch=: Add preview highlighting
+- =consult-line=: Use =isearch-string= when invoked from running isearch
+
+* Version 0.3 (2021-01-28)
+
+- Bugfixes
+- New command =consult-isearch=
+- New functions =consult-register-format=, =consult-register-window=,
+  removed =consult-register-preview=
+
+* Version 0.2 (2021-01-16)
+
+- Initial stable release
