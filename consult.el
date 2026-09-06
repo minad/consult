@@ -3231,13 +3231,15 @@ must be plists with the following fields.
 
 Either the :items or the :async source field is required:
 * :items - List of strings to select from or function returning list of
-  strings.  The strings can carry metadata in text properties, which is
-  then available to the :annotate, :action and :state functions.  The
-  list can also consist of pairs, with the string in the `car' used for
-  display and the `cdr' the actual candidate.
-* :async - Alternative to :items for asynchronous sources.  The function
-  receives an asynchronous sink and an action as argument as documented
-  by `consult--async-pipeline'.
+  strings.  The function is only called for visible sources, such that
+  candidates are only computed on demand.  The strings can carry
+  metadata in text properties, which is then available to the :annotate,
+  :action and :state functions.  The list can also consist of pairs,
+  with the string in the `car' used for display and the `cdr' the actual
+  candidate.
+* :async - Alternative to :items for asynchronous sources.  The curried
+  function receives an asynchronous sink and an action as argument as
+  documented by `consult--async-pipeline'.
 
 Optional source fields:
 * :name - Name of the source as a string, used for narrowing,
