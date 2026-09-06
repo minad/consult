@@ -3193,22 +3193,23 @@ Attach source IDX and SRC properties to each item."
   "Static async function from multi SOURCES."
   (let ((cache-items (make-vector (length sources) t))
         cache-cands cache-vis)
-    (lambda (_)
-      (let ((vis (cl-loop for src across sources collect
-                          (consult--multi-visible-p src))))
-        (unless (equal vis cache-vis)
-          (let ((cands (cl-loop
-                        for idx from 0 for src across sources
-                        if (consult--multi-visible-p src) nconc
-                        (consult--multi-format
-                         idx src
-                         (let ((cached (aref cache-items idx)))
-                           (if (listp cached)
-                               cached
-                             (aset cache-items idx (consult--multi-items src))))))))
-            (setq cache-vis vis
-                  cache-cands cands)))
-        cache-cands))))
+    (lambda (action)
+      (unless action
+        (let ((vis (cl-loop for src across sources collect
+                            (consult--multi-visible-p src))))
+          (unless (equal vis cache-vis)
+            (let ((cands (cl-loop
+                          for idx from 0 for src across sources
+                          if (consult--multi-visible-p src) nconc
+                          (consult--multi-format
+                           idx src
+                           (let ((cached (aref cache-items idx)))
+                             (if (listp cached)
+                                 cached
+                               (aset cache-items idx (consult--multi-items src))))))))
+              (setq cache-vis vis
+                    cache-cands cands)))
+          cache-cands)))))
 
 (defun consult--multi (sources &rest options)
   "Select from candidates taken from a list of SOURCES.
