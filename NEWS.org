@@ -2,6 +2,11 @@
 #+author: Daniel Mendler
 #+language: en
 
+* Development
+
+- =consult-buffer=, =consult--multi=: Populate sources lazily, such that expensive
+  hidden sources are not computed unnecessarily.
+
 * Version 3.8 (2026-09-03)
 
 - =consult-completion-in-region=: Support default completion UI if eager display

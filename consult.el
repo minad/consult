@@ -2298,11 +2298,14 @@ restarted and defaults to `consult-async-input-debounce'."
                (funcall sink [indicator finished])))))))))
 
 (defun consult--async-static (items)
-  "Async function with static ITEMS."
+  "Async function with static ITEMS.
+ITEMS can be a function to compute candidates lazily."
   (consult--async-dynamic
    (lambda (input)
      (pcase-let ((`(,re . ,hl) (consult--compile-regexp
                                 input 'emacs completion-ignore-case)))
+       (when (functionp items)
+         (setq items (funcall items)))
        (if re
            (let* ((completion-regexp-list re)
                   (all (all-completions "" items)))
@@ -3027,10 +3030,6 @@ COMMAND is used for customization, defaulting to `this-command.'"
         ((or `(,k . ,_) k) (eq n k)))
     (not (plist-get src :hidden))))
 
-(defun consult--multi-predicate (sources cand)
-  "Predicate function called for each candidate CAND given SOURCES."
-  (consult--multi-visible-p (consult--multi-source sources cand)))
-
 (defun consult--multi-narrow (sources)
   "Return narrow list from SOURCES."
   (thread-last
@@ -3101,12 +3100,14 @@ COMMAND is used for customization, defaulting to `this-command.'"
       ;; Non-existing Tofu'ed candidate submitted, e.g., via Embark
       `(,(substring selected 0 -1) :match nil ,@(consult--multi-source sources selected)))))
 
-(defun consult--multi-items (idx src items)
-  "Create completion candidate strings from ITEMS.
+(defsubst consult--multi-items (src)
+  "Get static items from SRC."
+  (let ((items (plist-get src :items)))
+    (if (functionp items) (funcall items) items)))
+
+(defun consult--multi-format (idx src items)
+  "Format completion candidate strings from ITEMS.
 Attach source IDX and SRC properties to each item."
-  (unless (listp items)
-    (setq items (plist-get src :items)
-          items (if (functionp items) (funcall items) items)))
   (let ((face (plist-get src :face))
         (cat (or (plist-get src :category) 'general)))
     (cl-loop
@@ -3121,6 +3122,10 @@ Attach source IDX and SRC properties to each item."
          (add-face-text-property 0 len face t cand))
        cand))))
 
+(defun consult--multi-async-predicate (sources cand)
+  "Predicate function called for each candidate CAND given SOURCES."
+  (consult--multi-visible-p (consult--multi-source sources cand)))
+
 (defun consult--multi-async (sources)
   "Create async function from multi SOURCES."
   (consult--async-merge
@@ -3133,8 +3138,11 @@ Attach source IDX and SRC properties to each item."
            (consult--async-pipeline
             async
             (consult--async-transform
-             (apply-partially #'consult--multi-items idx src)))
-         (consult--async-static (consult--multi-items idx src t))))))))
+             (apply-partially #'consult--multi-format idx src)))
+         (consult--async-static
+          (lambda ()
+            (consult--multi-format
+             idx src (consult--multi-items src))))))))))
 
 (defun consult--multi-enabled-sources (sources)
   "Return vector of enabled SOURCES."
@@ -3181,13 +3189,26 @@ Attach source IDX and SRC properties to each item."
              (when selected-fun
                (funcall selected-fun 'return cand)))))))))
 
-(defun consult--multi-collection (sources)
-  "Static or asynchronous completion function from SOURCES."
-  (consult--with-increased-gc
-    (if (cl-loop for src across sources thereis (plist-get src :async))
-        (consult--multi-async sources)
-      (cl-loop for idx from 0 for src across sources nconc
-               (consult--multi-items idx src t)))))
+(defun consult--multi-static (sources)
+  "Static async function from multi SOURCES."
+  (let ((cache-items (make-vector (length sources) t))
+        cache-cands cache-vis)
+    (lambda (_)
+      (let ((vis (cl-loop for src across sources collect
+                          (consult--multi-visible-p src))))
+        (unless (equal vis cache-vis)
+          (let ((cands (cl-loop
+                        for idx from 0 for src across sources
+                        if (consult--multi-visible-p src) nconc
+                        (consult--multi-format
+                         idx src
+                         (let ((cached (aref cache-items idx)))
+                           (if (listp cached)
+                               cached
+                             (aset cache-items idx (consult--multi-items src))))))))
+            (setq cache-vis vis
+                  cache-cands cands)))
+        cache-cands))))
 
 (defun consult--multi (sources &rest options)
   "Select from candidates taken from a list of SOURCES.
@@ -3237,15 +3258,16 @@ Optional source fields:
   case.  Note that the source is returned by `consult--multi'
   together with the selected candidate."
   (let* ((sources (consult--multi-enabled-sources sources))
-         (collection (consult--multi-collection sources))
+         (async (cl-loop for src across sources thereis (plist-get src :async)))
          (selected
           (apply #'consult--read
-                 collection
+                 (if async (consult--multi-async sources) (consult--multi-static sources))
                  (append
                   options
                   (list
                    :category    'multi-category
-                   :predicate   (apply-partially #'consult--multi-predicate sources)
+                   :async-wrap  (and async #'consult--async-wrap)
+                   :predicate   (and async (apply-partially #'consult--multi-async-predicate sources))
                    :annotate    (apply-partially #'consult--multi-annotate sources)
                    :group       (apply-partially #'consult--multi-group sources)
                    :lookup      (apply-partially #'consult--multi-lookup sources)
