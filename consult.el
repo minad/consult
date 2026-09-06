@@ -1760,84 +1760,80 @@ The result can be passed as :state argument to `consult--read'." type)
   "See `consult--with-preview' for documentation."
   (let ((mb-input "") (timer (timer-create)) mb-narrow selected previewed)
     (minibuffer-with-setup-hook
-        (if (and state preview-key)
-            (lambda ()
-              (let ((hook (make-symbol "consult--preview-exit")))
-                (fset hook
-                      (lambda ()
-                        (cancel-timer timer)
-                        (with-selected-window (consult--original-window)
-                          ;; STEP 3: Reset preview
-                          (when previewed
-                            (funcall state 'preview nil))
-                          ;; STEP 4: Notify the preview function of the minibuffer exit
-                          (funcall state 'exit nil))))
-                (add-hook 'minibuffer-exit-hook hook nil 'local))
-              ;; STEP 1: Setup the preview function
-              (with-selected-window (consult--original-window)
-                (funcall state 'setup nil))
-              (setq consult--preview-function
+        (lambda ()
+          (when (and state preview-key)
+            (let ((hook (make-symbol "consult--preview-exit")))
+              (fset hook
                     (lambda ()
-                      (when-let* ((cand (funcall candidate)))
-                        ;; Drop properties to prevent bugs regarding candidate
-                        ;; lookup, which must handle candidates without
-                        ;; properties.  Otherwise the arguments passed to the
-                        ;; lookup function are confusing, since during preview
-                        ;; the candidate has properties but for the final lookup
-                        ;; after completion it does not.
-                        (setq cand (substring-no-properties cand))
-                        (with-selected-window (active-minibuffer-window)
-                          (let ((input (minibuffer-contents-no-properties))
-                                (narrow consult--narrow)
-                                (win (consult--original-window)))
-                            (with-selected-window win
-                              (when-let* ((transformed (funcall transform narrow input cand))
-                                          (debounce (consult--preview-key-debounce preview-key transformed)))
-                                (cancel-timer timer)
-                                ;; The transformed candidate may have text
-                                ;; properties, which change the preview display.
-                                ;; This matters for example for `consult-grep',
-                                ;; where the current candidate and input may
-                                ;; stay equal, but the highlighting of the
-                                ;; candidate changes while the candidates list
-                                ;; is lagging a bit behind and updates
-                                ;; asynchronously.
-                                ;;
-                                ;; In older Consult versions we instead compared
-                                ;; the input without properties, since I worried
-                                ;; that comparing the transformed candidates
-                                ;; could be potentially expensive. However
-                                ;; comparing the transformed candidates is more
-                                ;; correct. The transformed candidate is the
-                                ;; thing which is actually previewed.
-                                (unless (equal-including-properties previewed transformed)
-                                  (if (> debounce 0)
-                                      (progn
-                                        (timer-set-function
-                                         timer
-                                         (lambda ()
-                                           ;; Preview only when a completion
-                                           ;; window is selected and when
-                                           ;; the preview window is alive.
-                                           (when (and (consult--completion-window-p)
-                                                      (window-live-p win))
-                                             (with-selected-window win
-                                               ;; STEP 2: Preview candidate
-                                               (funcall state 'preview (setq previewed transformed))))))
-                                        (timer-set-time timer (timer-relative-time nil debounce))
-                                        (timer-activate timer))
-                                    ;; STEP 2: Preview candidate
-                                    (funcall state 'preview (setq previewed transformed)))))))))))
-              (consult--preview-append-local-pch
-               (lambda ()
-                 (setq mb-input (minibuffer-contents-no-properties)
-                       mb-narrow consult--narrow)
-                 (funcall consult--preview-function))))
-          (lambda ()
-            (consult--preview-append-local-pch
-             (lambda ()
-               (setq mb-input (minibuffer-contents-no-properties)
-                     mb-narrow consult--narrow)))))
+                      (cancel-timer timer)
+                      (with-selected-window (consult--original-window)
+                        ;; STEP 3: Reset preview
+                        (when previewed
+                          (funcall state 'preview nil))
+                        ;; STEP 4: Notify the preview function of the minibuffer exit
+                        (funcall state 'exit nil))))
+              (add-hook 'minibuffer-exit-hook hook nil 'local))
+            ;; STEP 1: Setup the preview function
+            (with-selected-window (consult--original-window)
+              (funcall state 'setup nil))
+            (setq consult--preview-function
+                  (lambda ()
+                    (when-let* ((cand (funcall candidate)))
+                      ;; Drop properties to prevent bugs regarding candidate
+                      ;; lookup, which must handle candidates without
+                      ;; properties.  Otherwise the arguments passed to the
+                      ;; lookup function are confusing, since during preview
+                      ;; the candidate has properties but for the final lookup
+                      ;; after completion it does not.
+                      (setq cand (substring-no-properties cand))
+                      (with-selected-window (active-minibuffer-window)
+                        (let ((input (minibuffer-contents-no-properties))
+                              (narrow consult--narrow)
+                              (win (consult--original-window)))
+                          (with-selected-window win
+                            (when-let* ((transformed (funcall transform narrow input cand))
+                                        (debounce (consult--preview-key-debounce preview-key transformed)))
+                              (cancel-timer timer)
+                              ;; The transformed candidate may have text
+                              ;; properties, which change the preview display.
+                              ;; This matters for example for `consult-grep',
+                              ;; where the current candidate and input may
+                              ;; stay equal, but the highlighting of the
+                              ;; candidate changes while the candidates list
+                              ;; is lagging a bit behind and updates
+                              ;; asynchronously.
+                              ;;
+                              ;; In older Consult versions we instead compared
+                              ;; the input without properties, since I worried
+                              ;; that comparing the transformed candidates
+                              ;; could be potentially expensive. However
+                              ;; comparing the transformed candidates is more
+                              ;; correct. The transformed candidate is the
+                              ;; thing which is actually previewed.
+                              (unless (equal-including-properties previewed transformed)
+                                (if (> debounce 0)
+                                    (progn
+                                      (timer-set-function
+                                       timer
+                                       (lambda ()
+                                         ;; Preview only when a completion
+                                         ;; window is selected and when
+                                         ;; the preview window is alive.
+                                         (when (and (consult--completion-window-p)
+                                                    (window-live-p win))
+                                           (with-selected-window win
+                                             ;; STEP 2: Preview candidate
+                                             (funcall state 'preview (setq previewed transformed))))))
+                                      (timer-set-time timer (timer-relative-time nil debounce))
+                                      (timer-activate timer))
+                                  ;; STEP 2: Preview candidate
+                                  (funcall state 'preview (setq previewed transformed))))))))))))
+          (consult--preview-append-local-pch
+           (lambda ()
+             (setq mb-input (minibuffer-contents-no-properties)
+                   mb-narrow consult--narrow)
+             (when consult--preview-function
+               (funcall consult--preview-function)))))
       (unwind-protect
           (setq selected (when-let* ((result (funcall body)))
                            (when-let* ((save-input)
