@@ -2161,49 +2161,42 @@ ASYNC is the asynchronous function or completion table."
 
 (defun consult--with-async-f (async body)
   "See `consult--with-async' for documentation."
-  (let (new-chunk orig-chunk)
-    (minibuffer-with-setup-hook
-        ;; Append such that we overwrite the completion style setting of
-        ;; `fido-mode'.  See `consult--async-split' and `consult--split-setup'.
-        (:append
-         (lambda ()
-           (when (consult--async-p async)
-             (setq new-chunk (max read-process-output-max consult--process-chunk)
-                   orig-chunk read-process-output-max
-                   read-process-output-max new-chunk)
-             (funcall async 'setup)
-             (let* ((mb (current-buffer))
-                    (fun (lambda ()
-                           (when-let* ((win (active-minibuffer-window)))
-                             (when (eq (window-buffer win) mb)
-                               (with-current-buffer mb
-                                 (let ((inhibit-modification-hooks t))
-                                   ;; Push input string to request refresh.
-                                   (funcall async (minibuffer-contents-no-properties))))))))
-                    ;; We use a symbol in order to avoid adding lambdas to
-                    ;; the hook variable.  Symbol indirection because of
-                    ;; bug#46407.
-                    (hook (make-symbol "consult--async-after-change"))
-                    (timer (timer-create)))
-               (timer-set-function timer fun)
-               ;; Delay modification hook to ensure that minibuffer is still
-               ;; alive after the change, such that we don't restart a new
-               ;; asynchronous search right before exiting the minibuffer.
-               (fset hook (lambda (&rest _)
-                            (unless (memq timer timer-list)
-                              (timer-set-time timer (current-time))
-                              (timer-activate timer))))
-               (add-hook 'after-change-functions hook nil 'local)
-               ;; Immediately start asynchronous computation. This may lead
-               ;; to problems unnecessary work if content is inserted shortly
-               ;; afterwards.
-               (funcall fun)))))
-      (let ((async (if (consult--async-p async) async (lambda (_) async))))
-        (unwind-protect
-            (funcall body async)
-          (funcall async 'destroy)
-          (when (and orig-chunk (eq read-process-output-max new-chunk))
-            (setq read-process-output-max orig-chunk)))))))
+  (minibuffer-with-setup-hook
+      ;; Append such that we overwrite the completion style setting of
+      ;; `fido-mode'.  See `consult--async-split' and `consult--split-setup'.
+      (:append
+       (lambda ()
+         (when (consult--async-p async)
+           (funcall async 'setup)
+           (let* ((mb (current-buffer))
+                  (fun (lambda ()
+                         (when-let* ((win (active-minibuffer-window)))
+                           (when (eq (window-buffer win) mb)
+                             (with-current-buffer mb
+                               (let ((inhibit-modification-hooks t))
+                                 ;; Push input string to request refresh.
+                                 (funcall async (minibuffer-contents-no-properties))))))))
+                  ;; We use a symbol in order to avoid adding lambdas to the
+                  ;; hook variable.  Symbol indirection because of bug#46407.
+                  (hook (make-symbol "consult--async-after-change"))
+                  (timer (timer-create)))
+             (timer-set-function timer fun)
+             ;; Delay modification hook to ensure that minibuffer is still alive
+             ;; after the change, such that we don't restart a new asynchronous
+             ;; search right before exiting the minibuffer.
+             (fset hook (lambda (&rest _)
+                          (unless (memq timer timer-list)
+                            (timer-set-time timer (current-time))
+                            (timer-activate timer))))
+             (add-hook 'after-change-functions hook nil 'local)
+             ;; Immediately start asynchronous computation. This may lead to
+             ;; problems unnecessary work if content is inserted shortly
+             ;; afterwards.
+             (funcall fun)))))
+    (let ((async (if (consult--async-p async) async (lambda (_) async))))
+      (unwind-protect
+          (funcall body async)
+        (funcall async 'destroy)))))
 
 (defun consult--async-sink ()
   "Asynchronous sink function."
@@ -2492,7 +2485,7 @@ configured by `consult-async-split-style'."
 BUILDER is the command line builder function.
 PROPS are optional properties passed to `make-process'."
   (lambda (sink)
-    (let (proc proc-buf last-args count)
+    (let (proc proc-buf last-args count orig-limit)
       (lambda (action)
         (pcase action
           ((pred stringp)
@@ -2569,7 +2562,15 @@ PROPS are optional properties passed to `make-process'."
                                        :filter ,proc-filter
                                        :sentinel ,proc-sentinel)))))))
            nil)
+          ('setup
+           (when (> consult--process-chunk read-process-output-max)
+             (setq orig-limit read-process-output-max)
+             (setq-default read-process-output-max consult--process-chunk))
+           (funcall sink action))
           ((or 'cancel 'destroy)
+           (when (and (eq action 'destroy) orig-limit
+                      (eq read-process-output-max consult--process-chunk))
+             (setq-default read-process-output-max orig-limit))
            (when proc
              (delete-process proc)
              (kill-buffer proc-buf)
