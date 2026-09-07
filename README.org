@@ -968,6 +968,19 @@ customization variable =consult-project-function=.
 (setq consult-project-function nil)
 #+end_src
 
+** Workspace isolation
+
+By default Consult operates on all buffers in your Emacs instance, as returned
+by =(buffer-list)=. The variable =consult-buffer-list-function= specifies a function
+which returns the list of buffers. This function is called for instance by
+=consult-buffer= sources. The variable variable can be set to alternative
+functions.
+
+For per-frame/per-tab isolation set =consult-buffer-list-function= to
+=consult--frame-buffer-list=. Alternatively use special buffer functions provided
+by workspace packages like [[https://github.com/protesilaos/beframe][beframe]], [[https://codeberg.org/mclear-tools/tabspaces][tabspaces]] or [[https://github.com/florommel/bufferlo][bufferlo]]. This way Consult
+integrates with your favored solution for workspaces and buffer isolation.
+
 ** Fine-tuning of individual commands
 :properties:
 :alt_title: Fine-tuning
