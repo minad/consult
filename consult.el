@@ -4129,18 +4129,17 @@ command respects narrowing and the settings
 (defun consult-recent-file ()
   "Find recent file using `completing-read'."
   (interactive)
-  (find-file
-   (consult--read
-    (or
-     (mapcar #'consult--fast-abbreviate-file-name (bound-and-true-p recentf-list))
-     (user-error "No recent files, `recentf-mode' is %s"
-                 (if recentf-mode "enabled" "disabled")))
-    :prompt "Find recent file: "
-    :sort nil
-    :require-match t
-    :category 'file
-    :state (consult--file-preview)
-    :history 'file-name-history)))
+  (consult--read
+   (or
+    (mapcar #'consult--fast-abbreviate-file-name (bound-and-true-p recentf-list))
+    (user-error "No recent files, `recentf-mode' is %s"
+                (if recentf-mode "enabled" "disabled")))
+   :prompt "Find recent file: "
+   :sort nil
+   :require-match t
+   :category 'file
+   :state (consult--file-state)
+   :history 'file-name-history))
 
 ;;;;; Command: consult-mode-command
 
