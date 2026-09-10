@@ -197,29 +197,30 @@ this function can jump across buffers."
 (defun consult-imenu--select (prompt items)
   "Select from imenu ITEMS given PROMPT string."
   (consult-imenu--deduplicate items)
-  (consult-imenu--jump
-   (consult--read
-    (or items (user-error "Imenu is empty"))
-    :state
-    (let ((preview (consult--jump-preview)))
-      (lambda (action cand)
-        ;; Only preview simple menu items which are markers,
-        ;; in order to avoid any bad side effects.
-        (funcall preview action (and (markerp (cdr cand)) (cdr cand)))))
-    :narrow
-    (when-let* ((narrow (consult-imenu--narrow)))
-      (list :predicate
-            (lambda (cand)
-              (eq (get-text-property 0 'consult--type (car cand)) consult--narrow))
-            :keys narrow))
-    :group (consult-imenu--group)
-    :prompt prompt
-    :require-match t
-    :category 'imenu
-    :lookup #'consult--lookup-cons
-    :history 'consult-imenu--history
-    :add-history (thing-at-point 'symbol)
-    :sort nil)))
+  (consult--read
+   (or items (user-error "Imenu is empty"))
+   :state
+   (let ((preview (consult--jump-preview)))
+     (lambda (action cand)
+       ;; Only preview simple menu items which are markers,
+       ;; in order to avoid any bad side effects.
+       (funcall preview action (and (markerp (cdr cand)) (cdr cand)))
+       (when (and cand (eq action 'return))
+         (consult-imenu--jump cand))))
+   :narrow
+   (when-let* ((narrow (consult-imenu--narrow)))
+     (list :predicate
+           (lambda (cand)
+             (eq (get-text-property 0 'consult--type (car cand)) consult--narrow))
+           :keys narrow))
+   :group (consult-imenu--group)
+   :prompt prompt
+   :require-match t
+   :category 'imenu
+   :lookup #'consult--lookup-cons
+   :history 'consult-imenu--history
+   :add-history (thing-at-point 'symbol)
+   :sort nil))
 
 ;;;###autoload
 (defun consult-imenu ()
