@@ -4055,9 +4055,8 @@ INITIAL is the initial input."
 
 ;;;;; Command: consult-goto-line
 
-(defun consult--goto-line-position (str msg)
-  "Transform input STR to line number.
-Print an error message with MSG function."
+(defun consult--goto-line-position (str)
+  "Transform input STR to line number."
   (save-match-data
     (if (and str (string-match "\\`\\([[:digit:]]+\\):?\\([[:digit:]]*\\)\\'" str))
         (let ((line (string-to-number (match-string 1 str)))
@@ -4071,7 +4070,7 @@ Print an error message with MSG function."
               (goto-char (min (+ (point) col) (pos-eol)))
               (point))))
       (when (and str (not (equal str "")))
-        (funcall msg "Please enter a number."))
+        (consult--minibuffer-message "Enter a number."))
       nil)))
 
 ;;;###autoload
@@ -4089,16 +4088,11 @@ command respects narrowing and the settings
     (consult--forbid-minibuffer)
     (consult--local-let ((display-line-numbers consult-goto-line-numbers)
                          (display-line-numbers-widen consult-line-numbers-widen))
-      (while (if-let* ((pos (consult--goto-line-position
-                             (consult--prompt
-                              :prompt "Go to line: "
-                              :history 'goto-line-history
-                              :state
-                              (let ((preview (consult--jump-preview)))
-                                (lambda (action str)
-                                  (funcall preview action
-                                           (consult--goto-line-position str #'ignore)))))
-                             #'consult--minibuffer-message)))
+      (while (if-let* ((pos (consult--prompt
+                             :prompt "Go to line: "
+                             :history 'goto-line-history
+                             :transform #'consult--goto-line-position
+                             :state (consult--jump-preview))))
                  (consult--jump pos)
                t)))))
 
