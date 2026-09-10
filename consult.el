@@ -2871,7 +2871,8 @@ PREVIEW-KEY are the preview keys."
       (consult--with-preview
           preview-key state
           (lambda (narrow input cand)
-            (funcall lookup cand (funcall table nil) input narrow))
+            (let ((consult--narrow narrow))
+              (funcall lookup cand (funcall table nil) input narrow)))
           (apply-partially #'run-hook-with-args-until-success
                            'consult--completion-candidate-hook)
           (pcase-exhaustive history
@@ -3072,16 +3073,16 @@ COMMAND is used for customization, defaulting to `this-command.'"
                                       consult-preview-key)))
                                  sources)))))
 
-(defun consult--multi-lookup (sources selected candidates _input narrow &rest _)
-  "Lookup SELECTED in CANDIDATES given SOURCES, with potential NARROW."
+(defun consult--multi-lookup (sources selected candidates &rest _)
+  "Lookup SELECTED in CANDIDATES given SOURCES."
   (if (or (string-blank-p selected)
           (not (consult--tofu-p (aref selected (1- (length selected))))))
       ;; Non-existing candidate without Tofu or default submitted (empty string)
       (let* ((src (cond
-                   (narrow (seq-find (lambda (src)
-                                       (let ((n (plist-get src :narrow)))
-                                         (eq (or (car-safe n) n -1) narrow)))
-                                     sources))
+                   (consult--narrow (seq-find (lambda (src)
+                                                (let ((n (plist-get src :narrow)))
+                                                  (eq (or (car-safe n) n -1) consult--narrow)))
+                                              sources))
                    ((seq-find (lambda (src) (plist-get src :default)) sources))
                    ((seq-find (lambda (src) (not (plist-get src :hidden))) sources))
                    ((aref sources 0))))
