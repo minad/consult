@@ -194,25 +194,25 @@ built-in register access functions.  The command supports narrowing, see
 `consult-register--narrow'.  Marker positions are previewed.  See
 `jump-to-register' and `insert-register' for the meaning of prefix ARG."
   (interactive "P")
-  (consult-register-load
-   (consult--read
-    (consult-register--candidates)
-    :prompt "Register: "
-    :category 'multi-category
-    :state
-    (let ((preview (consult--jump-preview)))
-      (lambda (action cand)
-        ;; Preview only markers
-        (funcall preview action
-                 (when-let* ((reg (get-register cand)))
-                   (and (markerp reg) reg)))))
-    :group (consult--type-group consult-register--narrow)
-    :narrow (consult--type-narrow consult-register--narrow)
-    :sort nil
-    :require-match t
-    :history t ;; disable history
-    :lookup #'consult--lookup-candidate)
-   arg))
+  (consult--read
+   (consult-register--candidates)
+   :prompt "Register: "
+   :category 'multi-category
+   :state
+   (let ((preview (consult--jump-preview)))
+     (lambda (action cand)
+       ;; Preview only markers
+       (funcall preview action
+                (when-let* ((reg (get-register cand)))
+                  (and (markerp reg) reg)))
+       (when (and cand (eq action 'return))
+         (consult-register-load cand arg))))
+   :group (consult--type-group consult-register--narrow)
+   :narrow (consult--type-narrow consult-register--narrow)
+   :sort nil
+   :require-match t
+   :history t ;; disable history
+   :lookup #'consult--lookup-candidate))
 
 ;;;###autoload
 (defun consult-register-load (reg &optional arg)
