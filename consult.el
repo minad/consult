@@ -4252,30 +4252,24 @@ If no MODES are specified, use currently active major and minor modes."
   ;; `current-kill' updates `kill-ring' with interprogram paste, see
   ;; gh:minad/consult#443.
   (current-kill 0)
-  ;; Do not specify a :lookup function in order to preserve completion-styles
-  ;; highlighting of the current candidate. We have to perform a final lookup to
-  ;; obtain the original candidate which may be propertized with yank-specific
-  ;; properties, like 'yank-handler.
-  (consult--lookup-member
-   (consult--read
-    (consult--remove-dups
-     (or (if yank-from-kill-ring-rotate
-             (append kill-ring-yank-pointer
-                     (butlast kill-ring (length kill-ring-yank-pointer)))
-           kill-ring)
-         (user-error "Kill ring is empty")))
-    :prompt "Yank from kill-ring: "
-    :history t ;; disable history
-    :sort nil
-    :category 'kill-ring
-    :require-match t
-    :lookup #'consult--lookup-member
-    :state
-    (consult--insertion-preview
-     (point)
-     ;; If previous command is yank, hide previously yanked string
-     (or (and (eq last-command 'yank) (mark t)) (point))))
-   kill-ring))
+  (consult--read
+   (consult--remove-dups
+    (or (if yank-from-kill-ring-rotate
+            (append kill-ring-yank-pointer
+                    (butlast kill-ring (length kill-ring-yank-pointer)))
+          kill-ring)
+        (user-error "Kill ring is empty")))
+   :prompt "Yank from kill-ring: "
+   :history t ;; disable history
+   :sort nil
+   :category 'kill-ring
+   :require-match t
+   :lookup #'consult--lookup-member
+   :state
+   (consult--insertion-preview
+    (point)
+    ;; If previous command is yank, hide previously yanked string
+    (or (and (eq last-command 'yank) (mark t)) (point)))))
 
 ;; Adapted from the Emacs `yank-from-kill-ring' function.
 ;;;###autoload
