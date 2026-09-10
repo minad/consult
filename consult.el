@@ -4573,42 +4573,44 @@ starts a new Isearch session otherwise."
          (candidates (consult--isearch-history-candidates)))
     (unless isearch-mode (isearch-mode t))
     (with-isearch-suspended
-     (setq isearch-new-string
-           (consult--read
-            candidates
-            :prompt "I-search: "
-            :category 'consult-isearch-history
-            :history t ;; disable history
-            :sort nil
-            :initial isearch-string
-            :keymap consult-isearch-history-map
-            :annotate
-            (lambda (cand)
-              (consult--annotate-align
-               cand
-               (alist-get (consult--tofu-get cand) consult--isearch-history-narrow)))
-            :group
-            (lambda (cand transform)
-              (if transform
-                  cand
-                (alist-get (consult--tofu-get cand) consult--isearch-history-narrow)))
-            :lookup
-            (lambda (selected candidates &rest _)
-              (if-let* ((found (member selected candidates)))
-                  (substring (car found) 0 -1)
-                selected))
-            :state
-            (lambda (action cand)
-              (when (and (eq action 'preview) cand)
-                (setq isearch-string cand)
-                (isearch-update-from-string-properties cand)
-                (isearch-update)))
-            :narrow
-            (list :predicate
-                  (lambda (cand) (= (consult--tofu-get cand) consult--narrow))
-                  :keys consult--isearch-history-narrow))
-           isearch-new-message
-           (mapconcat #'isearch-text-char-description isearch-new-string "")))
+     (consult--read
+      candidates
+      :prompt "I-search: "
+      :category 'consult-isearch-history
+      :history t ;; disable history
+      :sort nil
+      :initial isearch-string
+      :keymap consult-isearch-history-map
+      :annotate
+      (lambda (cand)
+        (consult--annotate-align
+         cand
+         (alist-get (consult--tofu-get cand) consult--isearch-history-narrow)))
+      :group
+      (lambda (cand transform)
+        (if transform
+            cand
+          (alist-get (consult--tofu-get cand) consult--isearch-history-narrow)))
+      :lookup
+      (lambda (selected candidates &rest _)
+        (if-let* ((found (member selected candidates)))
+            (substring (car found) 0 -1)
+          selected))
+      :state
+      (lambda (action cand)
+        (when cand
+          (pcase action
+            ('preview
+             (setq isearch-string cand)
+             (isearch-update-from-string-properties cand)
+             (isearch-update))
+            ('return
+             (setq isearch-new-string cand
+                   isearch-new-message (mapconcat #'isearch-text-char-description cand ""))))))
+      :narrow
+      (list :predicate
+            (lambda (cand) (= (consult--tofu-get cand) consult--narrow))
+            :keys consult--isearch-history-narrow)))
     ;; Setting `isearch-regexp' etc only works outside of `with-isearch-suspended'.
     (unless (plist-member (text-properties-at 0 isearch-string) 'isearch-regexp-function)
       (setq isearch-regexp t
