@@ -1682,7 +1682,8 @@ The function can be used as the `:state' argument of `consult--read'."
 (defun consult--location-state (candidates)
   "Location state function.
 The cheap location markers from CANDIDATES are upgraded on window
-selection change to full Emacs markers."
+selection change to full Emacs markers.  CANDIDATES can also be an
+asynchronous completion table, a function taking a single argument."
   (let ((jump (consult--jump-state))
         (hook (make-symbol "consult--location-upgrade")))
     (fset hook
@@ -1690,7 +1691,7 @@ selection change to full Emacs markers."
             (unless (consult--completion-window-p)
               (remove-hook 'window-selection-change-functions hook)
               (mapc #'consult--get-location
-                    (if (functionp candidates) (funcall candidates) candidates)))))
+                    (if (functionp candidates) (funcall candidates nil) candidates)))))
     (lambda (action cand)
       (pcase action
         ('setup (add-hook 'window-selection-change-functions hook))
@@ -3789,7 +3790,7 @@ to `consult--buffer-query'."
      :initial (or initial
                   (and isearch-mode
                        (prog1 isearch-string (isearch-done))))
-     :state (consult--location-state (lambda () (funcall collection nil)))
+     :state (consult--location-state collection)
      :group #'consult--line-multi-group)))
 
 ;;;;; Command: consult-keep-lines
