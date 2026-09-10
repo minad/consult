@@ -1903,10 +1903,10 @@ The candidate must have a `consult--group' property."
 
 (defun consult--prefix-group (cand transform)
   "Return title for CAND or TRANSFORM the candidate.
-The candidate must have a `consult--prefix-group' property."
+The candidate must have a `consult--group' property."
   (if transform
-      (substring cand (1+ (length (get-text-property 0 'consult--prefix-group cand))))
-    (get-text-property 0 'consult--prefix-group cand)))
+      (substring cand (1+ (length (get-text-property 0 'consult--group cand))))
+    (get-text-property 0 'consult--group cand)))
 
 (defun consult--type-group (types)
   "Return group function for TYPES."
@@ -5224,8 +5224,8 @@ BUILDER is the command line builder function."
                    (when highlight
                      (funcall highlight content))
                    (setq str (concat file sep line sep content))
-                   ;; Store file name in order to avoid allocations in `consult--prefix-group'
-                   (add-text-properties 0 file-len `(face consult-file consult--prefix-group ,file) str)
+                   ;; Store file name in order to avoid allocations in `consult--group'
+                   (add-text-properties 0 file-len `(face consult-file consult--group ,file) str)
                    (put-text-property (1+ file-len) (+ 1 file-len line-len) 'face 'consult-line-number str)
                    (when ctx
                      (add-face-text-property (+ 2 file-len line-len) (length str) 'consult-grep-context 'append str))

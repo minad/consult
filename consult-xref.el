@@ -51,7 +51,7 @@ The fetch is stored globally such that it can be accessed by
                             (or (xref-location-line loc) 0)
                             (xref-item-summary xref))))
                 (add-text-properties
-                 0 1 `(consult-xref ,xref consult--prefix-group ,group) cand)
+                 0 1 `(consult-xref ,xref consult--group ,group) cand)
                 cand))
             (funcall consult-xref--fetcher))))
 
