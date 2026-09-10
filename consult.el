@@ -1896,6 +1896,11 @@ invoked, the state function will also be called with `exit' and
 
 ;;;; Narrowing and grouping
 
+(defun consult--group-prop (cand transform)
+  "Return title for CAND or TRANSFORM the candidate.
+The candidate must have a `consult--group' property."
+  (if transform cand (get-text-property 0 'consult--group cand)))
+
 (defun consult--prefix-group (cand transform)
   "Return title for CAND or TRANSFORM the candidate.
 The candidate must have a `consult--prefix-group' property."
@@ -4629,7 +4634,7 @@ starts a new Isearch session otherwise."
       (logior
        (ash (if (local-variable-if-set-p sym) ?l ?g) 8)
        (if (and (boundp sym) (symbol-value sym)) ?i ?o))
-      'consult--minor-mode-group
+      'consult--group
       (concat
        (if (local-variable-if-set-p sym) "Local " "Global ")
        (if (and (boundp sym) (symbol-value sym)) "On" "Off"))))
@@ -4665,9 +4670,7 @@ This is an alternative to `minor-mode-menu-from-indicator'."
     :prompt "Minor mode: "
     :require-match t
     :category 'minor-mode
-    :group
-    (lambda (cand transform)
-      (if transform cand (get-text-property 0 'consult--minor-mode-group cand)))
+    :group #'consult--group-prop
     :narrow
     (list :predicate
           (lambda (cand)
@@ -4691,19 +4694,28 @@ The command supports previewing the currently selected theme."
     (let* ((regexp (consult--regexp-filter
                     (mapcar (lambda (x) (if (stringp x) x (format "\\`%s\\'" x)))
                             consult-themes)))
-           (avail-themes (seq-filter
-                          (lambda (x) (string-match-p regexp (symbol-name x)))
-                          (cons 'default (custom-available-themes))))
+           (avail-themes
+            (cl-loop for dir in (custom-theme--load-path)
+                     for group = (file-name-nondirectory (directory-file-name dir))
+                     if (file-directory-p dir) nconc
+                     (cl-loop for file in (directory-files dir nil "-theme\\.el\\'")
+                              for name = (string-remove-suffix "-theme.el" file)
+                              for sym = (intern name)
+                              if (and (string-match-p regexp name)
+                                      (custom-theme-name-valid-p sym))
+                              collect (propertize name 'consult--group group))))
            (saved-theme (car custom-enabled-themes)))
+      (setq avail-themes (delete-consecutive-dups
+                          (sort (cons "default" avail-themes) #'string<)))
       (consult--read
-       (mapcar #'symbol-name avail-themes)
+       avail-themes
        :prompt "Theme: "
        :require-match t
        :category 'theme
        :history 'consult--theme-history
+       :group #'consult--group-prop
        :lookup (lambda (selected &rest _)
-                 (setq selected (and selected (intern-soft selected)))
-                 (or (and selected (car (memq selected avail-themes)))
+                 (or (and selected (intern-soft (car (member selected avail-themes))))
                      saved-theme))
        :state (lambda (action theme)
                 (with-selected-window (or (active-minibuffer-window)
