@@ -2,7 +2,7 @@
 #+author: Daniel Mendler
 #+language: en
 
-* Development
+* Version 3.9 (2026-09-13)
 
 - =consult-buffer=, =consult--multi=: Populate sources lazily, such that expensive
   hidden sources are not computed unnecessarily.
