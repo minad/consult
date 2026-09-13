@@ -6,6 +6,8 @@
 
 - =consult-buffer=, =consult--multi=: Populate sources lazily, such that expensive
   hidden sources are not computed unnecessarily.
+- =consult-theme=: Group themes by package.
+- Minor internal refactoring.
 
 * Version 3.8 (2026-09-03)
 
