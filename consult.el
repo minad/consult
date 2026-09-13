@@ -5136,20 +5136,12 @@ configuration of the virtual buffer sources."
   (declare (indent 0) (debug t))
   `(consult--with-project-f (lambda () ,@body)))
 
-(defun consult--with-project-f (body)
-  "See `consult--with-project' for documentation."
-  ;; We have to work quite hard here to ensure that the project root is only
-  ;; overridden at the current recursion level.  When entering a recursive
-  ;; minibuffer session, we should be able to still switch the project.
+(defun consult--with-project-f (fun)
+  "Ensure that FUN is executed with a project root."
   (let ((consult-project-function
-         (let ((root (or (consult--project-root t) (user-error "No project found")))
-               (depth (recursion-depth))
-               (orig consult-project-function))
-           (lambda (may-prompt)
-             (if (= depth (recursion-depth))
-                 root
-               (funcall orig may-prompt))))))
-    (funcall body)))
+         (let ((root (or (consult--project-root t) (user-error "No project found"))))
+           (lambda (_prompt) root))))
+    (funcall fun)))
 
 ;;;###autoload
 (defun consult-project-buffer ()
