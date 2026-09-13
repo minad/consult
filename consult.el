@@ -970,14 +970,18 @@ always return an appropriate non-minibuffer window."
   (when (and consult-fontify-preserve jit-lock-mode)
     (jit-lock-fontify-now start end)))
 
+(defun consult--with-increased-gc-f (fun)
+  "Temporarily increase the GC limit in FUN to optimize for throughput."
+  (if (> consult--gc-threshold gc-cons-threshold)
+      (let ((gc-cons-threshold consult--gc-threshold)
+            (gc-cons-percentage consult--gc-percentage))
+        (funcall fun))
+    (funcall fun)))
+
 (defmacro consult--with-increased-gc (&rest body)
   "Temporarily increase the GC limit in BODY to optimize for throughput."
   (declare (indent 0) (debug t))
-  (cl-with-gensyms (overwrite)
-    `(let* ((,overwrite (> consult--gc-threshold gc-cons-threshold))
-            (gc-cons-threshold (if ,overwrite consult--gc-threshold gc-cons-threshold))
-            (gc-cons-percentage (if ,overwrite consult--gc-percentage gc-cons-percentage)))
-       ,@body)))
+  `(consult--with-increased-gc-f (lambda () ,@body)))
 
 (defmacro consult--slow-operation (message &rest body)
   "Show delayed MESSAGE if BODY takes too long.
