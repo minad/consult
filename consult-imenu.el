@@ -75,6 +75,19 @@ ARGS are the arguments to the special item function."
          (list pos #'consult-imenu--switch-buffer (current-buffer)
                imenu-default-goto-function)))))
 
+(defun consult-imenu--decorate (name prefix face kind)
+  "Return imenu NAME decorated with PREFIX, FACE and KIND metadata."
+  (let ((key (concat (if prefix (concat prefix " " name) name))))
+    (when (and prefix face)
+      (add-face-text-property (1+ (length prefix)) (length key)
+                              face 'append key))
+    (when kind
+      (add-face-text-property (if prefix (1+ (length prefix)) 0) (length key)
+                              (nth 2 kind) 'append key)
+      (setq key (concat (car kind) " " key))
+      (put-text-property 0 (length (car kind)) 'consult--type (nth 1 kind) key))
+    key))
+
 (defun consult-imenu--flatten (prefix face list types)
   "Flatten imenu LIST.
 PREFIX is prepended in front of all items.
@@ -82,26 +95,25 @@ FACE is the item face.
 TYPES is the mode-specific types configuration."
   (mapcan
    (lambda (item)
-     (if (imenu--subalist-p item)
-         (let* ((name (concat (car item)))
-                (next-prefix name)
-                (next-face face))
-           (add-face-text-property 0 (length name)
-                                   'consult-imenu-prefix 'append name)
-           (if prefix
-               (setq next-prefix (concat prefix "/" name))
-             (when-let* ((type (cdr (assoc name types))))
-               (put-text-property 0 (length name) 'consult--type (car type) name)
-               (setq next-face (cadr type))))
-           (consult-imenu--flatten next-prefix next-face (cdr item) types))
-       (list (cons
-              (if prefix
-                  (let ((key (concat prefix " " (car item))))
-                    (add-face-text-property (1+ (length prefix)) (length key)
-                                            face 'append key)
-                    key)
-                (car item))
-              (consult-imenu--normalize (cdr item))))))
+     (let* ((name (concat (car item)))
+            (kind (assoc (get-text-property 0 'imenu-kind name) types))
+            (key (consult-imenu--decorate name prefix face kind)))
+       (if (imenu--subalist-p item)
+           (let* ((next-prefix name)
+                  (next-face face)
+                  (region (get-text-property 0 'imenu-region name)))
+             (add-face-text-property 0 (length name)
+                                     'consult-imenu-prefix 'append name)
+             (if prefix
+                 (setq next-prefix (concat prefix "/" name))
+               (when-let* ((type (cdr (assoc name types))))
+                 (put-text-property 0 (length name) 'consult--type (car type) name)
+                 (setq next-face (cadr type))))
+             (nconc
+              (and region
+                   (list (cons key (consult-imenu--normalize (car region)))))
+              (consult-imenu--flatten next-prefix next-face (cdr item) types)))
+         (list (cons key (consult-imenu--normalize (cdr item)))))))
    list))
 
 (defun consult-imenu--compute ()
