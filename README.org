@@ -45,18 +45,15 @@ and Embark work together.
 
 #+toc: headlines 8
 
-* Screenshots :noexport:
+* Screenshots
 
-#+caption: consult-grep
-[[https://github.com/minad/consult/blob/screenshots/consult-grep.gif?raw=true]]
+#+html: <img src="https://github.com/minad/consult/blob/screenshots/consult-grep.gif?raw=true">
 Fig. 1: Command =consult-git-grep=
 
-#+caption: consult-imenu
-[[https://github.com/minad/consult/blob/screenshots/consult-imenu.png?raw=true]]
+#+html: <img src="https://github.com/minad/consult/blob/screenshots/consult-imenu.png?raw=true">
 Fig. 2: Command =consult-imenu=
 
-#+caption: consult-line
-[[https://github.com/minad/consult/blob/screenshots/consult-line.png?raw=true]]
+#+html: <img src="https://github.com/minad/consult/blob/screenshots/consult-line.png?raw=true">
 Fig. 3: Command =consult-line=
 
 * Available commands
