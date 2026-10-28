@@ -95,20 +95,25 @@ When PROJECT is non-nil then prompt with diagnostics from all
 buffers in the current project instead of just the current buffer."
   (interactive "P")
   (consult--forbid-minibuffer)
-  (consult--read
-   (consult-flymake--candidates
-     (if-let* ((project (and project (project-current))))
-         (flymake--project-diagnostics project)
-       (flymake-diagnostics)))
-   :prompt "Flymake diagnostic: "
-   :category 'consult-flymake-error
-   :history t ;; disable history
-   :require-match t
-   :sort nil
-   :group (consult--type-group consult-flymake--narrow)
-   :narrow (consult--type-narrow consult-flymake--narrow)
-   :lookup #'consult--lookup-candidate
-   :state (consult--jump-state)))
+  (let ((candidates
+         (consult--start-from-point
+          (lambda (cand) (car (get-text-property 0 'consult--candidate cand)))
+          (consult-flymake--candidates
+           (if-let* ((project (and project (project-current))))
+               (flymake--project-diagnostics project)
+             (flymake-diagnostics))))))
+    (consult--read
+     candidates
+     :default (car candidates)
+     :prompt "Flymake diagnostic: "
+     :category 'consult-flymake-error
+     :history t ;; disable history
+     :require-match t
+     :sort nil
+     :group (consult--type-group consult-flymake--narrow)
+     :narrow (consult--type-narrow consult-flymake--narrow)
+     :lookup #'consult--lookup-candidate
+     :state (consult--jump-state))))
 
 (provide 'consult-flymake)
 ;;; consult-flymake.el ends here

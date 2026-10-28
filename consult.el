@@ -183,6 +183,17 @@ called during preview and for the jump after selection."
 Otherwise start the search at the current line and wrap around."
   :type 'boolean)
 
+(defcustom consult-start-from-point nil
+  "Commands which preselect the candidate nearest to point.
+The candidate at or after point comes first, followed by the remaining
+candidates, such that the candidates before point wrap around.  By
+default the candidates are listed in their natural order.  See also
+`consult-line-start-from-top' for `consult-line'."
+  :type '(repeat (choice (const consult-flymake)
+                         (const consult-org-heading)
+                         (const consult-outline)
+                         (function :tag "Other command"))))
+
 (defcustom consult-point-placement 'match-beginning
   "Where to leave point when jumping to a match.
 This setting affects the command `consult-line' and the `consult-grep' variants."
@@ -1682,6 +1693,38 @@ The function can be used as the `:state' argument of `consult--read'."
       ;; Transform cheap marker to real marker
       (setcar loc (set-marker (make-marker) (cdar loc) (caar loc))))
     loc))
+
+(defun consult--start-from-point (locate candidates)
+  "Move the CANDIDATES nearest to point to the front.
+Do nothing unless `this-command' is listed in `consult-start-from-point'.
+LOCATE is a function which returns the position of a candidate as marker
+or as cons cell of buffer and position.  The candidate at or after point
+is preferred, otherwise the nearest one before point is used.  The order
+of the other candidates is preserved."
+  (if (not (memq this-command consult-start-from-point))
+      candidates
+    (let ((buffer (current-buffer)) (point (point))
+          (index 0) best-index best-distance)
+      (dolist (cand candidates)
+        (when-let* ((loc (funcall locate cand))
+                    ((eq (if (markerp loc) (marker-buffer loc) (car loc)) buffer))
+                    (distance (- (if (markerp loc) (marker-position loc) (cdr loc))
+                                 point)))
+          (when (or (not best-distance)
+                    (if (>= distance 0)
+                        (or (< best-distance 0) (< distance best-distance))
+                      (and (< best-distance 0) (> distance best-distance))))
+            (setq best-index index best-distance distance)))
+        (incf index))
+      (if best-index
+          (nconc (nthcdr best-index candidates) (take best-index candidates))
+        candidates))))
+
+(defun consult--start-from-point-location (candidates)
+  "Apply `consult--start-from-point' to `consult-location' CANDIDATES."
+  (consult--start-from-point
+   (lambda (cand) (car (get-text-property 0 'consult-location cand)))
+   candidates))
 
 (defun consult--location-state (candidates)
   "Location state function.
@@ -3502,9 +3545,10 @@ preview.  The initial narrowing LEVEL can be given as prefix
 argument.  The symbol at point is added to the future history."
   (interactive
    (list (and current-prefix-arg (prefix-numeric-value current-prefix-arg))))
-  (let* ((candidates (consult--slow-operation
-                         "Collecting headings..."
-                       (consult--outline-candidates)))
+  (let* ((candidates (consult--start-from-point-location
+                      (consult--slow-operation
+                          "Collecting headings..."
+                        (consult--outline-candidates))))
          (min-level (- (cl-loop for cand in candidates minimize
                                 (get-text-property 0 'consult--outline-level cand))
                        ?1))
@@ -3521,6 +3565,7 @@ argument.  The symbol at point is added to the future history."
      :category 'consult-location
      :sort nil
      :require-match t
+     :default (car candidates)
      :lookup #'consult--line-match
      :initial-narrow narrow-init
      :narrow (list :predicate narrow-pred :keys narrow-keys)

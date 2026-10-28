@@ -2,6 +2,12 @@
 #+author: Daniel Mendler
 #+language: en
 
+* Version 3.11 (UNRELEASED)
+
+- New option =consult-start-from-point=, a list of commands which preselect the
+  candidate nearest to point. Supported by =consult-flymake=,
+  =consult-org-heading= and =consult-outline=.
+
 * Version 3.10 (2026-09-26)
 
 - Bugfixes.

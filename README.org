@@ -934,6 +934,7 @@ an overview of all Consult variables and functions with their descriptions.
 | consult-project-function         | Function which returns current project root         |
 | consult-register-prefix          | Prefix string for register keys during completion   |
 | consult-ripgrep-args             | Command line arguments for ripgrep                  |
+| consult-start-from-point         | Commands which preselect the candidate nearest to point |
 | consult-themes                   | List of themes to be presented for selection        |
 | consult-widen-key                | Widening key during completion                      |
 

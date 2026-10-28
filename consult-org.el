@@ -113,15 +113,19 @@ entries are offered.  By default, all entries of the current
 buffer are offered."
   (interactive (unless (derived-mode-p #'org-mode)
                  (user-error "Must be called from an Org buffer")))
-  (let ((prefix (not (memq scope '(nil tree region region-start-level file)))))
+  (let* ((prefix (not (memq scope '(nil tree region region-start-level file))))
+         (candidates (consult--start-from-point
+                      (lambda (cand) (get-text-property 0 'org-marker cand))
+                      (consult--slow-operation "Collecting headings..."
+                        (or (consult-org--headings prefix match scope)
+                            (user-error "No headings"))))))
     (consult--read
-     (consult--slow-operation "Collecting headings..."
-       (or (consult-org--headings prefix match scope)
-           (user-error "No headings")))
+     candidates
      :prompt "Go to heading: "
      :category 'org-heading
      :sort nil
      :require-match t
+     :default (car candidates)
      :history '(:input consult-org--history)
      :narrow (consult-org--narrow)
      :state (consult--jump-state)
